@@ -34,9 +34,13 @@ module.exports = defineConfig([
     },
   },
   {
-    // Node-side config files.
-    files: ['*.config.js', '*.config.ts', 'scripts/**/*.js'],
-    rules: { '@typescript-eslint/no-require-imports': 'off' },
+    // Node-side config and build scripts: these run in a terminal, so printing
+    // progress is the point.
+    files: ['*.config.js', '*.config.ts', 'scripts/**/*.js', 'scripts/**/*.mjs'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-console': 'off',
+    },
   },
   prettierConfig,
   {

@@ -9,13 +9,8 @@ import { StyleSheet, View } from 'react-native';
 import { FormField } from '@/components/shared/FormField';
 import { Button, Select, Text } from '@/components/ui';
 import { brand } from '@/config/brand';
-import {
-  commonCurrencies,
-  commonTimezones,
-  countries,
-  DEFAULT_COUNTRY,
-  findCountry,
-} from '@/config/countries';
+import { DEFAULT_COUNTRY, findCountry, timezoneOptionsFor } from '@/config/countries';
+import { allCountries, allCurrencies } from '@/config/localeData.generated';
 import { AuthLayout } from '@/features/auth';
 import { useCreateBusiness, useSlugAvailable } from '@/features/onboarding/api/useBusiness';
 import {
@@ -75,6 +70,8 @@ export default function OnboardingScreen() {
   // useWatch rather than watch(): watch() returns a fresh function each render,
   // which React Compiler cannot memoize (it skips the whole component).
   const slug = useWatch({ control, name: 'slug' });
+  const countryCode = useWatch({ control, name: 'countryCode' });
+  const timezoneOptions = useMemo(() => timezoneOptionsFor(countryCode), [countryCode]);
 
   // Both of these used to be effects watching form values, which looped:
   // setValue re-rendered, the watched value looked "new", the effect ran again.
@@ -210,11 +207,15 @@ export default function OnboardingScreen() {
                   label={t('onboarding.fields.country')}
                   value={field.value}
                   onChange={handleCountryChange}
-                  options={countries.map((country) => ({
-                    value: country.code,
-                    label: country.name,
-                    hint: `${country.currency} · ${country.timezone}`,
-                  }))}
+                  // Every ISO country, not just the ones with a pre-fill.
+                  options={allCountries.map((country) => {
+                    const preset = findCountry(country.code);
+                    return {
+                      value: country.code,
+                      label: country.name,
+                      hint: preset ? `${preset.currency} · ${preset.timezone}` : undefined,
+                    };
+                  })}
                   required
                 />
               )}
@@ -228,7 +229,11 @@ export default function OnboardingScreen() {
                   label={t('onboarding.fields.currency')}
                   value={field.value}
                   onChange={field.onChange}
-                  options={commonCurrencies.map((code) => ({ value: code, label: code }))}
+                  options={allCurrencies.map((currency) => ({
+                    value: currency.code,
+                    label: currency.code,
+                    hint: currency.name,
+                  }))}
                   hint={t('onboarding.hints.currency')}
                   required
                 />
@@ -243,7 +248,8 @@ export default function OnboardingScreen() {
                   label={t('onboarding.fields.timezone')}
                   value={field.value}
                   onChange={field.onChange}
-                  options={commonTimezones.map((zone) => ({ value: zone, label: zone }))}
+                  // The country's own zones first, then every other IANA zone.
+                  options={timezoneOptions.map((zone) => ({ value: zone, label: zone }))}
                   hint={t('onboarding.hints.timezone')}
                   required
                 />
