@@ -104,6 +104,10 @@ Routes: `/` redirects to `/today`. Tabs = Today, Calendar, Clients, More. Servic
 
 Back behaviour: `useOverlayDismiss` closes the off-canvas sidebar, dialogs and drawers on Android hardware back and on Escape (web) before the route pops. iOS swipe-back is the Stack default and stays on.
 
+**Screens inside the bottom tabs must pass `edges={['top']}` to `Screen`.** The tab bar already sits in the bottom inset and adds its own padding; keeping the default `['top','bottom']` pads it twice — barely visible on iOS, but a ~48px dead gap on Android with 3-button navigation.
+
+**Android navigation bar naming is counter-intuitive and the TypeScript doc is wrong.** For both `expo-navigation-bar`'s plugin and its runtime `setStyle`, `'dark'` means *dark buttons on a light bar* (`windowLightNavigationBar=true`) — confirmed in `NavigationBarModule.kt` (`val hasLightBackground = style == "dark"`). The published `NavigationBarStyle` doc comment says the opposite. Our light screens therefore use `'dark'`. It only takes effect with button navigation and `enforceContrast: false`.
+
 ## Root providers (app/_layout.tsx, outer → inner)
 
 GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProvider → QueryClientProvider → **ToastProvider** (+ `ServiceWorkerUpdater`) → StatusBar(dark) + Stack (headerShown false, background colour). Also: `useAppFocusManager()`, `useOnlineManager()`, `useTabletOrientation()`, `useSupabaseAutoRefresh()`, `applyDirection()`, `registerServiceWorker()`.

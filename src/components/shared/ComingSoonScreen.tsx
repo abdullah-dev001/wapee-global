@@ -18,8 +18,9 @@ export type ComingSoonScreenProps = {
  */
 export function ComingSoonScreen({ title, icon, phase }: ComingSoonScreenProps) {
   const { t } = useTranslation();
+  // Inside the bottom tabs, so the tab bar owns the bottom inset.
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <PageContainer title={title}>
         <EmptyState
           icon={icon}

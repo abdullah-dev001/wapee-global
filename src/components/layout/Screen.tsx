@@ -12,7 +12,14 @@ export type ScreenProps = {
   children: ReactNode;
   /** Scrolls the content (default). `false` for screens that manage their own list. */
   scroll?: boolean;
-  /** Which edges get safe-area padding. Default top + bottom. */
+  /**
+   * Which edges get safe-area padding. Default top + bottom.
+   *
+   * **Pass `['top']` on any screen inside the bottom tabs.** The tab bar already
+   * sits in the bottom inset and adds its own padding, so keeping 'bottom' here
+   * pads it twice: barely visible on iOS, but a ~48px dead gap on Android with
+   * 3-button navigation.
+   */
   edges?: readonly Edge[];
   /** Screen background. Default `background`. */
   background?: ColorToken;
@@ -57,7 +64,12 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const backgroundColor = theme.colors[background];
 
-  // Android: match the nav bar buttons to the screen. Light background -> dark buttons.
+  // Android navigation bar buttons, matched to the screen.
+  // 'dark' = dark buttons on a light bar. Verified in the native source
+  // (NavigationBarModule.kt: `val hasLightBackground = style == "dark"`),
+  // because the TypeScript doc comment for setStyle describes it the other
+  // way round. Takes effect only with button navigation and the plugin's
+  // enforceContrast: false, which app.config.ts sets.
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     NavigationBar.setStyle(statusBarStyle === 'light' ? 'light' : 'dark');

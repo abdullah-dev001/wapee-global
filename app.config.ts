@@ -69,6 +69,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         backgroundColor: PRIMARY,
       },
     ],
+    // 'dark' = dark buttons on a light bar (windowLightNavigationBar=true),
+    // which suits our light screens. enforceContrast must be false for
+    // Screen's runtime setStyle to take effect.
     ['expo-navigation-bar', { style: 'dark', enforceContrast: false }],
     'expo-notifications',
   ],

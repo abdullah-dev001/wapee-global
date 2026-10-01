@@ -18,7 +18,7 @@ export default function MoreScreen() {
   const { t } = useTranslation();
 
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <PageContainer title={t('nav.more')}>
         <Card noPadding>
           {secondaryNavItems.map((item, index) => (

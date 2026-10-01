@@ -149,6 +149,16 @@ Rules: routes in `app/` stay thin. Business logic lives in `features/`. No file 
 | Desktop web | ≥1024 sidebar layout, hover, keyboard focus |
 If you could not check a target, say so in the task report.
 
+**Android cannot be run on this machine (no emulator, no storage for Android Studio).** Until the user says otherwise, every UI task must end with a written **Android code review** of the changed files, and the report must list the result. Check by reading the code:
+- All bottom spacing (tab bar, sticky buttons, sheets, FABs, toasts) uses `insets.bottom`; nothing assumes 0 on Android.
+- Layout works with edge-to-edge and a 3-button nav bar (about 48px inset), gesture nav, and no nav bar.
+- Hardware back is handled (overlays close first, root tab behaviour, unsaved-form confirm) via the shared hook.
+- Keyboard: focused input is never covered; sticky submit moves above the keyboard.
+- Text uses the per-weight DM Sans font names (no `fontWeight` that makes Android fall back to the system font); no clipped text with large font scale.
+- No iOS-only or web-only API is called without a `Platform` guard; no `boxShadow`/hover-only logic leaking to native; shadows go through `shadow()` (elevation on Android).
+- Any new native module is listed, because it needs a rebuild.
+Do not claim "works on Android". Say "reviewed in code, not run". When the user can run an Android build (real phone via EAS build, or an emulator later), the Android column of the matrix gets tested for real.
+
 ### PWA (required)
 - Web build must be installable: `manifest.json` (name from brand config, `display: "standalone"`, `theme_color: "#024751"`, `background_color: "#f8fafb"`, all icon sizes incl. maskable + apple-touch-icon), service worker registered.
 - Service worker caches **app shell and static assets only**. Never cache Supabase API responses or private files in the service worker (private data). Data caching is TanStack Query's job.
