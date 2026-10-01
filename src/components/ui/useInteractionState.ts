@@ -37,7 +37,18 @@ export function useInteractionState(disabled = false): {
     () => ({
       onHoverIn: () => setHovered(true),
       onHoverOut: () => setHovered(false),
-      onFocus: () => setFocused(true),
+      onFocus: () => {
+        // Web: show the ring only for keyboard focus, never after a mouse click.
+        // `:focus-visible` is the browser's own answer to that question. React
+        // Native Web's synthetic event does not carry the DOM node, so read the
+        // focused element directly.
+        if (isWeb && typeof document !== 'undefined') {
+          const active = document.activeElement;
+          setFocused(active?.matches(':focus-visible') ?? true);
+          return;
+        }
+        setFocused(true);
+      },
       onBlur: () => setFocused(false),
       onPressIn: () => setPressed(true),
       onPressOut: () => setPressed(false),

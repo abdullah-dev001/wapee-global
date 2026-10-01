@@ -22,5 +22,33 @@
   },
   "dev": {
     "envMissing": "Supabase keys are missing. Copy .env.example to .env and fill it in. Backend calls are disabled."
+  },
+  "nav": {
+    "today": "Today",
+    "calendar": "Calendar",
+    "clients": "Clients",
+    "services": "Services",
+    "staff": "Staff",
+    "invoices": "Invoices",
+    "reports": "Reports",
+    "reviews": "Reviews",
+    "settings": "Settings",
+    "more": "More",
+    "logout": "Sign out",
+    "account": "Account",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "screens": {
+    "comingSoon": "Coming in phase {{phase}}",
+    "comingSoonBody": "This screen is not built yet. It arrives in phase {{phase}} of the build plan."
+  },
+  "pwa": {
+    "installTitle": "Install {{appName}}",
+    "installBody": "Add it to your home screen for a full-screen app and faster access.",
+    "installAction": "Install",
+    "installIosBody": "Tap the Share button, then “Add to Home Screen”.",
+    "updateTitle": "Update available",
+    "updateAction": "Reload"
   }
 }

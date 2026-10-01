@@ -4,7 +4,7 @@ Status: in progress · Phase: 0 · Last updated: 2026-10-01
 
 ## What it is
 
-Project setup every feature builds on: Expo app, theme, providers, env, data layer, i18n, PWA, and the base UI primitives. No real screens, shell or layout component yet.
+Project setup every feature builds on: Expo app, theme, providers, env, data layer, i18n, PWA, the base UI primitives and the responsive app shell. No feature screens yet (every route is a "coming in phase N" placeholder).
 
 ## Stack (installed with `npx expo install`)
 
@@ -38,7 +38,6 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | assets/images/                                                                                                           | Native icon, adaptive icon fg/monochrome, splash icon, favicon (placeholders)               |
 | scripts/generate-web-manifest.mjs                                                                                        | Writes public/manifest.json from brand.ts (gitignored output)                               |
 | src/components/ui/ | Base UI primitives (see "UI components") + barrel `index.ts` |
-| src/config/reservedSlugs.ts | Slugs a business may not take; `isReservedSlug()`, slug pattern + length |
 | src/lib/device/useTabletOrientation.ts | Android: release the portrait lock on tablet-sized screens |
 | src/lib/query/useOnlineManager.ts | NetInfo -> TanStack `onlineManager` (native) |
 | app/_gallery.tsx · src/dev/ComponentGallery.tsx | DEV-ONLY gallery at `/_gallery`; stripped from production builds; DELETE both when real screens exist |
@@ -83,11 +82,31 @@ Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
 - Not built yet: Select, Checkbox/Radio, Segmented control, Pagination, DataTable, SearchInput, PhoneInput, DatePicker, TimeSlotPicker, MoneyInput, Avatar, Collapsible, StepWizard, FormAlert, StatCard.
+- `useInteractionState` shows the focus ring only when the browser reports `:focus-visible`, so a mouse click leaves no ring while keyboard tabbing does.
 
+
+## Layout & shell (`src/components/layout`)
+
+| Component | Role |
+|---|---|
+| `Screen` | Base of every screen: safe-area insets, status bar style, Android nav-bar button style, keyboard avoidance (`KeyboardAwareScrollView` + `KeyboardStickyView` footer), scroll, pull-to-refresh. Adds **no** page padding. |
+| `PageContainer` | Page padding (24 / 16 mobile), optional max width, title + subtitle + count pill + actions. The page title lives here, never in the header. |
+| `AppShell` | Picks the layout by `useBreakpoint()`: mobile = no chrome (tabs come from the Tabs layout); tablet = header + off-canvas sidebar (Escape / Android back / scrim close it); desktop = fixed 240px sidebar + 64px header. |
+| `Sidebar` | Teal 240px, lime active pill, items from `config/navigation`. Tablet variant shows a close button and closes on navigate. |
+| `Header` | 64px surface bar: business name + user-menu placeholder; hamburger on tablet only. |
+| `BottomTabBar` | Our own bar passed to Expo Router's `Tabs` via `tabBar`, so routing/history/state restoration stay native while the bar looks identical on Android, iOS and mobile web. Always adds `insets.bottom`; 44px targets; tab labels capped at `maxFontSizeMultiplier` 1.3. |
+| `InstallHint` | Web-only dismissible "Install app" bar; iOS Safari shows "Share -> Add to Home Screen". Dismissal stored in localStorage. |
+| `ServiceWorkerUpdater` | Registers the SW and shows the "Update available" toast with a Reload action. |
+
+Navigation is driven entirely by **`src/config/navigation.ts`**: `navItems` (id, route, icon, `permission`, `feature`, `phase`, `primary`). The sidebar, the bottom tabs and the More screen all read it, so gating (`can()`, `useFeature()`) can be added in one place later. `permission`/`feature` are declared but **not enforced yet** — no auth or plans exist in Phase 0.
+
+Routes: `/` redirects to `/today`. Tabs = Today, Calendar, Clients, More. Services, Staff, Invoices, Reports, Reviews and Settings are registered with `href: null` (reachable from More and the sidebar, never shown as a tab).
+
+Back behaviour: `useOverlayDismiss` closes the off-canvas sidebar, dialogs and drawers on Android hardware back and on Escape (web) before the route pops. iOS swipe-back is the Stack default and stays on.
 
 ## Root providers (app/_layout.tsx, outer → inner)
 
-GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProvider → QueryClientProvider → **ToastProvider** → StatusBar(dark) + Stack (headerShown false, background colour). Also: `useAppFocusManager()`, `useOnlineManager()`, `useTabletOrientation()`, `useSupabaseAutoRefresh()`, `applyDirection()`, `registerServiceWorker()`.
+GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProvider → QueryClientProvider → **ToastProvider** (+ `ServiceWorkerUpdater`) → StatusBar(dark) + Stack (headerShown false, background colour). Also: `useAppFocusManager()`, `useOnlineManager()`, `useTabletOrientation()`, `useSupabaseAutoRefresh()`, `applyDirection()`, `registerServiceWorker()`.
 
 ## Env
 
@@ -130,13 +149,15 @@ start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings
 ## Known limits / TODO
 
 - Placeholder URLs (see Env). Placeholder icons.
-- No `Screen`/`PageContainer`, app shell, bottom tabs or sidebar yet (next task).
-- The gallery (`app/_gallery.tsx` + `src/dev/ComponentGallery.tsx`) and `src/components/shared/PlaceholderScreen.tsx` are temporary; delete them once real screens exist.
+- The gallery (`app/_gallery.tsx` + `src/dev/ComponentGallery.tsx`), `ComingSoonScreen` and `PlaceholderScreen` are temporary; delete them as real screens land. The gallery is reachable from More in dev.
+- Header user menu and both Sign out buttons are placeholders (Phase 1).
+- Tablet/desktop have no bottom tabs by design; the Tabs navigator still owns routing there, with the bar hidden.
 - Toast look is Wapee's own design: DESIGN_GUIDE §12.23 has no toast (it only reserves z-index 70).
 - Android not verified (no emulator on this machine).
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
 
+- 2026-10-01: Responsive shell (Screen, PageContainer, AppShell, Sidebar, Header, BottomTabBar), navigation config, app routes, PWA install hint + update toast.
 - 2026-10-01: Base UI components (Button, Input, Card, Badge, Skeleton, Spinner, EmptyState, Toggle, Tabs, Dialog, Drawer, Toast) + dev gallery; reserved slugs; NetInfo online manager; tablet orientation.
 - 2026-10-01: Phase 0 initial setup (project, libs, theme, providers, env, query, supabase client, i18n, PWA basics, placeholder routes).
