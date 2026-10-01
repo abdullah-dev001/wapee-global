@@ -5,6 +5,7 @@ export { Dialog, type DialogAction, type DialogProps } from './Dialog';
 export { Drawer, type DrawerProps } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { Input, type InputProps } from './Input';
+export { Select, type SelectOption, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps } from './Skeleton';
 export { Spinner, type SpinnerProps } from './Spinner';
 export { Tabs, type TabItem, type TabsProps } from './Tabs';

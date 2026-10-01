@@ -9,6 +9,8 @@ export type FormFieldProps<TValues extends FieldValues> = Omit<
 > & {
   control: Control<TValues>;
   name: FieldPath<TValues>;
+  /** Side effect on every keystroke, after the form value is updated. */
+  onValueChange?: (value: string) => void;
 };
 
 /**
@@ -21,6 +23,7 @@ export type FormFieldProps<TValues extends FieldValues> = Omit<
 export function FormField<TValues extends FieldValues>({
   control,
   name,
+  onValueChange,
   ...inputProps
 }: FormFieldProps<TValues>) {
   const { t } = useTranslation();
@@ -40,7 +43,10 @@ export function FormField<TValues extends FieldValues>({
     <Input
       {...inputProps}
       value={field.value ?? ''}
-      onChangeText={field.onChange}
+      onChangeText={(text) => {
+        field.onChange(text);
+        onValueChange?.(text);
+      }}
       onBlur={field.onBlur}
       error={error}
     />

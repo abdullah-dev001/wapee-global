@@ -10,3 +10,4 @@ Shared files:
 | Feature | File | Status | Phase | Summary |
 | ------- | ---- | ------ | ----- | ------- |
 | Auth | auth.md | in progress | 1 | Login, signup, verify, password reset, session + route guard |
+| Onboarding | onboarding.md | in progress | 1 | Business creation wizard, signup RPC, 14-day trial |

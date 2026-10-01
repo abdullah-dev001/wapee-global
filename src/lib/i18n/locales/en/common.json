@@ -113,5 +113,70 @@
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"
+  },
+  "onboarding": {
+    "title": "Set up your business",
+    "subtitle": "This takes a minute. You can change everything later.",
+    "step": "Step {{current}} of {{total}}",
+    "steps": {
+      "business": "Your business",
+      "location": "Location and currency",
+      "branch": "Your first location"
+    },
+    "fields": {
+      "name": "Business name",
+      "slug": "Your booking address",
+      "industry": "What do you do?",
+      "country": "Country",
+      "currency": "Currency",
+      "timezone": "Timezone",
+      "language": "Language",
+      "branchName": "Location name"
+    },
+    "placeholders": {
+      "name": "Nova Hair Studio",
+      "slug": "nova-hair",
+      "branchName": "Main salon"
+    },
+    "hints": {
+      "slug": "Customers will book at {{siteUrl}}/{{slug}}",
+      "branchName": "Leave blank to use your business name.",
+      "currency": "Used on every invoice. Pick carefully: changing it later does not convert existing amounts.",
+      "timezone": "All appointment times use this."
+    },
+    "slug": {
+      "checking": "Checking…",
+      "available": "Available",
+      "taken": "Already taken"
+    },
+    "industries": {
+      "salon": "Salon or barber",
+      "clinic": "Clinic or medical",
+      "spa": "Spa or wellness",
+      "dental": "Dental",
+      "physio": "Physiotherapy",
+      "pet": "Pet grooming or vet",
+      "fitness": "Fitness or coaching",
+      "consultant": "Consultant or professional",
+      "tattoo": "Tattoo or piercing",
+      "other": "Something else"
+    },
+    "actions": {
+      "back": "Back",
+      "continue": "Continue",
+      "create": "Create business"
+    },
+    "errors": {
+      "nameRequired": "Enter your business name",
+      "slugTooShort": "Use at least 3 characters",
+      "slugTooLong": "That is too long",
+      "slugFormat": "Use lowercase letters, numbers and hyphens only",
+      "slugReserved": "That address is reserved. Please pick another.",
+      "slugTaken": "That address is already taken",
+      "countryRequired": "Pick your country",
+      "currencyRequired": "Pick a currency",
+      "timezoneRequired": "Pick a timezone"
+    },
+    "creating": "Creating your business…"
   }
 }

@@ -474,6 +474,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_business_with_owner: {
+        Args: {
+          p_branch_name?: string
+          p_country_code: string
+          p_currency: string
+          p_industry?: string
+          p_language?: string
+          p_name: string
+          p_slug: string
+          p_timezone: string
+        }
+        Returns: string
+      }
       has_permission: {
         Args: {
           p_branch_id: string
@@ -483,8 +496,20 @@ export type Database = {
         Returns: boolean
       }
       is_member: { Args: { p_business_id: string }; Returns: boolean }
+      is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
+      write_audit_log: {
+        Args: {
+          p_action: string
+          p_after?: Json
+          p_before?: Json
+          p_business_id: string
+          p_entity_id?: string
+          p_entity_type?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       business_plan: "solo" | "team" | "business"
