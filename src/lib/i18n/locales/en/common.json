@@ -50,5 +50,68 @@
     "installIosBody": "Tap the Share button, then “Add to Home Screen”.",
     "updateTitle": "Update available",
     "updateAction": "Reload"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your {{appName}} account",
+      "submit": "Sign in",
+      "noAccount": "New to {{appName}}?",
+      "createAccount": "Create an account",
+      "forgot": "Forgot password?"
+    },
+    "signup": {
+      "title": "Create your account",
+      "subtitle": "Start your 14-day free trial. No card needed.",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "We'll email you a link to choose a new password.",
+      "submit": "Send reset link",
+      "sent": "Check your email",
+      "sentBody": "If an account exists for {{email}}, a reset link is on its way.",
+      "backToLogin": "Back to sign in"
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "subtitle": "Pick something you haven't used before.",
+      "submit": "Save password",
+      "done": "Password updated",
+      "doneBody": "You can now sign in with your new password."
+    },
+    "verify": {
+      "title": "Confirm your email",
+      "subtitle": "We sent a link to {{email}}. Open it to finish setting up your account.",
+      "resend": "Resend email",
+      "resent": "Sent. Check your inbox.",
+      "wrongEmail": "Wrong email? Sign out and start again.",
+      "checking": "Checking your link…"
+    },
+    "fields": {
+      "fullName": "Your name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password"
+    },
+    "placeholders": {
+      "fullName": "Jane Cooper",
+      "email": "name@example.com",
+      "password": "At least 8 characters"
+    },
+    "errors": {
+      "nameRequired": "Enter your name",
+      "emailRequired": "Enter your email",
+      "emailInvalid": "Enter a valid email address",
+      "passwordRequired": "Enter your password",
+      "passwordTooShort": "Use at least 8 characters",
+      "passwordTooLong": "That password is too long",
+      "passwordsDoNotMatch": "Both passwords must match",
+      "generic": "Something went wrong. Please try again."
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   }
 }
