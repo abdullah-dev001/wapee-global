@@ -1,0 +1,12 @@
+node_modules
+dist
+ios
+android
+.expo
+package-lock.json
+docs
+CLAUDE.md
+supabase/.temp
+supabase/.branches
+src/lib/supabase/database.types.ts
+context

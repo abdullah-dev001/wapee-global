@@ -1,0 +1,2 @@
+-- Dev seed data only. Runs on `supabase db reset` (local stack).
+-- Never put production data or real customer data here.

@@ -1,0 +1,26 @@
+{
+  "app": {
+    "tagline": "Appointments made simple"
+  },
+  "actions": {
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close"
+  },
+  "routes": {
+    "auth": "Sign in",
+    "app": "Dashboard",
+    "public": "Business page: {{slug}}",
+    "portal": "Client portal",
+    "admin": "Super admin",
+    "notFound": "Page not found"
+  },
+  "placeholder": {
+    "description": "{{appName}} · placeholder screen",
+    "goHome": "Go to home"
+  },
+  "dev": {
+    "envMissing": "Supabase keys are missing. Copy .env.example to .env and fill it in. Backend calls are disabled."
+  }
+}
