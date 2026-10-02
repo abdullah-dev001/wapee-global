@@ -15,7 +15,7 @@ to every feature.
 - **Nobody may grant a permission they do not hold.** The only exemption is the founding Owner — the first role assignment in a brand-new business — because the signing-up user holds nothing at that moment.
 - A business always keeps at least one active Owner.
 - Enforced in three places (CLAUDE.md §7): RLS, Edge Function / RPC, and the UI. Hiding a button is never the boundary.
-- **An inactive business (trial over) fails every check except `settings.business` and `settings.billing`**, so a locked-out owner can still reach billing. Mirrors the `businesses` RLS policies, which are deliberately not gated on `business_is_active()`.
+- **An inactive business (trial over) fails every check except `settings.business` and `settings.billing`**, so a locked-out owner can still reach billing (product doc decision 12, updated 2026-10-02). Mirrors the `businesses` RLS policies, which are deliberately not gated on `business_is_active()`. See [billing.md](billing.md).
 - **A business with no plan (`plan is null`) is on trial and passes plan gating.** The super admin assigns a plan by hand (product doc §10), so null must not be read as the cheapest tier.
 - **Super admin passes every check**, including on an inactive business.
 

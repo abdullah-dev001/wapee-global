@@ -3,16 +3,17 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
-- **Phase 1 — complete.** Full schema (11 tables, RLS on all, 46 permissions, 4 system roles, guard triggers); auth screens + session + route guard; onboarding wizard + `create_business_with_owner`; branch-owned country/currency/timezone/tax with per-branch invoice series; `usePermission`/`useFeature` with nav and route gating; invite flow (one-time 7-day link); trial lock screen. vitest added (`npm test`, 25 tests). A few small follow-ups are listed below.
+- **Phase 1 — complete and accepted.** Full schema (11 tables, RLS on all, 46 permissions, 4 system roles, guard triggers); auth screens + session + route guard; onboarding wizard + `create_business_with_owner`; branch-owned country/currency/timezone/tax with per-branch invoice series; `usePermission`/`useFeature` with nav and route gating; invite flow (one-time 7-day link); trial lock screen + 3-day warning banner. Manager seed corrected to doc §9 (39 permissions). vitest added (`npm test`, **34 tests**).
 - Verified on web (375/768/1280) and the iOS simulator. 30+ SQL security assertions pass against the live database. Advisors clean except the item below.
+- Test data from Phase 1 has been cleaned up: **4 users and 3 businesses remain** (`Nova Hair Studio`, `Buenos Clinic`, `Rosario Clinic 19481`). No test users left.
 
 ## Next, in order
-1. **Phase 2** — services and staff (see `docs/Wapee_Build_Plan.md`).
+1. **Phase 2** — catalogue and schedule: service categories, services, staff profiles, working hours, breaks, time off, branch hours, holidays, resources (see `docs/Wapee_Build_Plan.md`).
 2. **Small follow-ups left from Phase 1**, any order:
-   - **Manager holds `settings.business` in the seed** but product doc §9 grants only booking settings. One-row fix, deliberately skipped; see `context/roles.md`.
-   - **No "trial ends in N days" banner** — the i18n keys exist, nothing renders them, so the lock arrives unannounced (`context/billing.md`).
    - **Members UI gaps**: change a role, remove a member, revoke/resend an invite (`context/members.md`).
-   - **`supabase/tests/04_invite_flow.sql` has never run** (no Docker).
+   - **`supabase/tests/04_invite_flow.sql` has never run** (no Docker). The same ground is covered by REST checks.
+   - **`enforce_last_owner` has no "business is being deleted" exemption** — see Traps and `context/_database.md`.
+   - **No `/billing` route yet** — the trial banner and the lock's allow-list both point at `/settings` until Phase 8.
 
 ## Open items
 - **Leaked-password protection is OFF.** Dashboard → Authentication → enable the HaveIBeenPwned check. Do this before real users.

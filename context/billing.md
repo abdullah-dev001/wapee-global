@@ -15,15 +15,13 @@ a plan assigned. A super admin is unaffected and can work inside the business.
 - No plan self-service: there is no checkout. The locked screen offers "Contact us" (mailto) and Sign out, until Phase 8.
 - Same screen for `suspended` as for an expired trial, with different wording.
 
-### Deviation from the product doc, agreed with the user
-Product doc decision 12 and §6 say an ended trial means **"no access to anything
-until a plan is assigned"**. Taken literally that locks Settings too, which would
-leave an owner unable to reach billing and unable to pay. The user's instruction
-for this task was explicit: *"settings/billing stay reachable, everything else is
-blocked"*. That is what is built, and it matches the `businesses` RLS policies,
-which were already written ungated on `business_is_active()`. **The doc wording
-should be updated** so code and doc agree (CLAUDE.md asks that they never disagree
-silently).
+### Doc history
+Decision 12 originally read "no access to anything until a plan is assigned",
+which taken literally also locked Settings and left an owner unable to pay. The
+user confirmed the intent, and **the product doc was updated on 2026-10-02** —
+decision 12, §5 and §10 now all state that Settings, Billing and the mobile More
+menu stay reachable, nothing is deleted, and super admin is unaffected. Code and
+doc agree; there is no outstanding deviation.
 
 ## Files
 | Path | Purpose |
@@ -106,8 +104,8 @@ bundle are verified.
 - No `/billing` route exists yet — it is in the allowed list ready for Phase 8. Today the owner reaches Settings only.
 - `brand.supportEmail` is `support@wapee.com`, a **placeholder** like the domains.
 - No plan self-service, no checkout, no invoice history (Phase 8, super admin assigns plans by hand).
-- The product doc wording needs the update described above.
 
 ## Changelog
+- 2026-10-02: Product doc decision 12 / §5 / §10 updated to match what is built (Settings + Billing + More stay reachable).
 - 2026-10-02: Trial banner added (last 3 days, Owner only, stronger on the last day) with `ConsumedInsets` so the mobile inset is not applied twice.
 - 2026-10-02: Trial lock built: `ActiveBusinessGate`, `TrialEndedScreen`, allowed-route list + tests, `RouteGuard` now checks active-business before permission.

@@ -22,7 +22,7 @@ Companion file: DESIGN_GUIDE.md (extracted from the earlier Wapee web app). Sect
 | 9 | **Languages:** i18n + RTL engine built from day one; any language = one new translation file. No special focus on any one language. Launch base language English. | Decided |
 | 10 | **Launch countries:** all countries (international). | Decided |
 | 11 | **Storage:** unlimited for now; per-plan limits can be added later. | Decided |
-| 12 | **Trial ends = business becomes inactive**, no access to anything until a plan is assigned. | Decided |
+| 12 | **Trial ends = business becomes inactive.** Everything is locked except **Settings, Billing and the mobile More menu**, so the owner can still see their account and get a plan assigned. Nothing is deleted. Super admin is unaffected. | Decided |
 | 13 | **Calendar:** day/week/list, one column per staff, visible slots, **no drag and drop**. Reschedule via form. | Decided |
 | 14 | **Website:** one single page per business, dynamic data. SEO kept basic; revisit later if needed. | Decided |
 | 15 | **Booking stays simple:** no multi-service-per-booking, no recurring appointments, no staff-specific price/duration. | Decided |
@@ -115,7 +115,7 @@ Surfaces: business app (iOS/Android/web); super admin (same app, platform flag);
 
 Super admin: platform-level flag (never a business role); mandatory 2FA; every action on a business audit-logged.
 Super admin screens: businesses list/detail (plan, add-ons, status, usage); subscription status (manual); SMS balances; logged support view; platform settings (plans, add-on prices, SMS country rates, industry presets).
-**Trial ends: business becomes inactive, no access to anything until super admin activates a plan.**
+**Trial ends: business becomes inactive until a super admin activates a plan.** Everything is locked except **Settings, Billing and the mobile More menu** — an owner who cannot reach their own billing could never get the business running again. Data is hidden, never deleted. A super admin is unaffected and can work inside an inactive business to assign the plan.
 
 ## 6. Core features (every plan)
 ### 6.1 Booking form
@@ -217,7 +217,7 @@ Three plans per location capped by staff bands; 14-day trial; no free plan; add-
 (Custom domain: skipped. Waitlist: removed.)
 
 Prices (to review after real data): Solo ~$15/mo, Team ~$39/mo, Business ~$79/mo per location, add-ons ~$8-15/mo, annual discount 17-20%.
-Trial: 14 days; after it ends business is inactive. Subscription collection method is decided last; until then super admin assigns plan/status manually. Fact: Stripe does not support businesses registered in Pakistan; usual route is a company in a supported country.
+Trial: 14 days; after it ends the business is inactive (Settings and Billing stay reachable — decision 12). The owner is warned in the app for the last 3 days. Subscription collection method is decided last; until then super admin assigns plan/status manually. Fact: Stripe does not support businesses registered in Pakistan; usual route is a company in a supported country.
 
 ## 11. Data model and business rules
 Every tenant row has business_id (and branch_id where relevant); RLS restricts to the user's businesses. Tables (Recommendation):
