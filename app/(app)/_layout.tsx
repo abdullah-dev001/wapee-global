@@ -14,7 +14,6 @@ import { useBreakpoint } from '@/lib/theme';
 export default function AppLayout() {
   const { t } = useTranslation();
   const { isMobile } = useBreakpoint();
-
   return (
     <AppShell>
       <InstallHint />
@@ -22,6 +21,13 @@ export default function AppLayout() {
         tabBar={isMobile ? (props) => <BottomTabBar {...props} /> : () => null}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: 'transparent' } }}
       >
+        {/*
+         * Every screen stays registered whatever the permissions hold, or Expo
+         * Router would lose the route and a typed URL would 404 instead of being
+         * refused. Gating happens in two honest places instead: `BottomTabBar`
+         * and `Sidebar` drop what the member may not open, and each screen's
+         * `RouteGuard` refuses it.
+         */}
         {primaryNavItems.map((item) => (
           <Tabs.Screen
             key={item.id}

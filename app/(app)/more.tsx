@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
-import { Card, Text } from '@/components/ui';
+import { Card, Skeleton, Text } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
-import { navLabelKey, secondaryNavItems, type NavItem } from '@/config/navigation';
+import { navLabelKey, type NavItem } from '@/config/navigation';
+import { useSignOut } from '@/features/auth';
+import { useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
 /**
@@ -16,15 +18,27 @@ import { focusRing, theme } from '@/lib/theme';
  */
 export default function MoreScreen() {
   const { t } = useTranslation();
+  // Only the destinations this member may open (CLAUDE.md §7).
+  const { secondary, isPending } = useVisibleNav();
 
   return (
     <Screen edges={['top']}>
       <PageContainer title={t('nav.more')}>
-        <Card noPadding>
-          {secondaryNavItems.map((item, index) => (
-            <MoreRow key={item.id} item={item} isLast={index === secondaryNavItems.length - 1} />
-          ))}
-        </Card>
+        {isPending ? (
+          <Card noPadding>
+            {[0, 1, 2].map((row) => (
+              <View key={row} style={styles.rowSkeleton}>
+                <Skeleton height={20} radius="sm" />
+              </View>
+            ))}
+          </Card>
+        ) : secondary.length > 0 ? (
+          <Card noPadding>
+            {secondary.map((item, index) => (
+              <MoreRow key={item.id} item={item} isLast={index === secondary.length - 1} />
+            ))}
+          </Card>
+        ) : null}
 
         {__DEV__ ? <DevGalleryRow /> : null}
 
@@ -90,11 +104,13 @@ function DevGalleryRow() {
 function SignOutRow() {
   const { t } = useTranslation();
   const { handlers, showHover, showFocusRing } = useInteractionState(false);
+  const signOut = useSignOut();
   return (
     <Card noPadding>
       <Pressable
         {...handlers}
-        // TODO(phase 1): sign out through Supabase auth and clear the query cache.
+        onPress={() => signOut.mutate()}
+        disabled={signOut.isPending}
         accessibilityRole="button"
         style={[
           styles.row,
@@ -123,6 +139,13 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing[14],
     paddingHorizontal: theme.spacing[16],
     minHeight: theme.layout.minTouchTarget,
+  },
+  rowSkeleton: {
+    paddingVertical: theme.spacing[14],
+    paddingHorizontal: theme.spacing[16],
+    // Matches `row`, so the list does not jump when the real rows arrive.
+    minHeight: theme.layout.minTouchTarget,
+    justifyContent: 'center',
   },
   rowDivider: {
     borderBottomWidth: theme.borderWidth.hairline,

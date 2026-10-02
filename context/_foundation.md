@@ -31,6 +31,8 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | src/lib/query/                                                                                                           | queryClient, staleTimes, createQueryKeys(), useAppFocusManager()                            |
 | src/lib/supabase/                                                                                                        | client (`supabase`, `getSupabase()`), auth storage, auto refresh, **generated** database.types.ts |
 | src/lib/i18n/                                                                                                            | i18next instance, resources, typed keys, RTL helpers                                        |
+| src/lib/permissions/                                                                                                     | `can()`, `usePermission`, `useFeature`, `useVisibleNav`, current-scope store (see roles.md)  |
+| src/config/permissions.ts                                                                                                | 46-permission catalogue mirroring the table: `PermissionKey`, `minPlan`, `addon`, plan order |
 | src/lib/time/index.ts · src/lib/money/index.ts                                                                           | SKELETONS: typed signatures, bodies throw `notImplemented()`                                |
 | src/lib/notImplemented.ts                                                                                                | Throw helper for skeletons                                                                  |
 | src/lib/pwa/registerServiceWorker.ts                                                                                     | Registers /sw.js (web + production only), update hook                                       |
@@ -101,7 +103,7 @@ Conventions:
 | `InstallHint` | Web-only dismissible "Install app" bar; iOS Safari shows "Share -> Add to Home Screen". Dismissal stored in localStorage. |
 | `ServiceWorkerUpdater` | Registers the SW and shows the "Update available" toast with a Reload action. |
 
-Navigation is driven entirely by **`src/config/navigation.ts`**: `navItems` (id, route, icon, `permission`, `feature`, `phase`, `primary`). The sidebar, the bottom tabs and the More screen all read it, so gating (`can()`, `useFeature()`) can be added in one place later. `permission`/`feature` are declared but **not enforced yet** — no auth or plans exist in Phase 0.
+Navigation is driven entirely by **`src/config/navigation.ts`**: `navItems` (id, route, icon, `permission`, `phase`, `primary`). The sidebar, the bottom tabs and the More screen all read it through **`useVisibleNav()`**, so gating lives in one place. `permission` is typed `PermissionKey`, and plan/add-on gating comes from that key's catalogue entry (there is no separate `feature` field). **Gating is live** — see `context/roles.md`. Hiding is not the boundary: every `(app)` screen is wrapped in `RouteGuard`, which refuses a typed URL, and RLS refuses the data.
 
 Routes: `/` redirects to `/today`. Tabs = Today, Calendar, Clients, More. Services, Staff, Invoices, Reports, Reviews and Settings are registered with `href: null` (reachable from More and the sidebar, never shown as a tab).
 
@@ -157,7 +159,8 @@ start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings
 
 - Placeholder URLs (see Env). Placeholder icons.
 - The gallery (`app/_gallery.tsx` + `src/dev/ComponentGallery.tsx`), `ComingSoonScreen` and `PlaceholderScreen` are temporary; delete them as real screens land. The gallery is reachable from More in dev.
-- Header user menu and both Sign out buttons are placeholders (Phase 1).
+- Header user menu is still a placeholder. Both Sign out buttons are now wired to `useSignOut()`.
+- No business/branch switcher UI yet; `useScopeSelection` supports one (see roles.md).
 - Tablet/desktop have no bottom tabs by design; the Tabs navigator still owns routing there, with the bar hidden.
 - Toast look is Wapee's own design: DESIGN_GUIDE §12.23 has no toast (it only reserves z-index 70).
 - Android not verified (no emulator on this machine).
@@ -165,6 +168,7 @@ start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings
 
 ## Changelog
 
+- 2026-10-02: `src/lib/permissions/` added and wired into navigation (`useVisibleNav`, `RouteGuard`); nav `feature` field dropped; sign out wired. See roles.md.
 - 2026-10-01: Responsive shell (Screen, PageContainer, AppShell, Sidebar, Header, BottomTabBar), navigation config, app routes, PWA install hint + update toast.
 - 2026-10-01: Base UI components (Button, Input, Card, Badge, Skeleton, Spinner, EmptyState, Toggle, Tabs, Dialog, Drawer, Toast) + dev gallery; reserved slugs; NetInfo online manager; tablet orientation.
 - 2026-10-01: Phase 0 initial setup (project, libs, theme, providers, env, query, supabase client, i18n, PWA basics, placeholder routes).

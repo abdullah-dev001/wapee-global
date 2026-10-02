@@ -43,10 +43,13 @@ source of truth for locale and money:
 | `member_branch_ids(business_id)` | branches the caller holds a branch role in |
 | `has_permission(business_id, branch_id, perm)` | permission held, honouring scope |
 | `can(business_id, branch_id, perm)` | `business_is_active()` **AND** `has_permission()` — **use this for operational policies** |
+| `my_grants(business_id)` | SETOF (permission, scope, branch_id): the caller's own grants, in one round trip. **For UI gating only** — `usePermission()` reads it instead of calling `has_permission()` once per question. Not a boundary. |
 
 All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE; trigger functions have none at all.
 
 **Trial expiry needs no cron.** `business_is_active()` compares `trial_ends_at` to `now()` at query time, so access stops the second the trial ends.
+
+**`businesses.plan` is nullable and null during the trial** — the super admin assigns a plan by hand (product doc §10). Null therefore means "everything included", **not** the cheapest tier; `hasFeature()` treats it that way. Do not add a `solo` default.
 
 ## RLS policies (every table, 10/10)
 - `profiles`: read/update own row; super admin reads all. Guard trigger blocks changing `is_super_admin`, `id`, `email`.
@@ -93,6 +96,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | `20261002094000_fix_role_guard_allow_first_owner.sql` | Narrowed escalation guard for the founding Owner |
 | `20261002120000_branch_owns_locale_and_tax.sql` | **Branch owns country/currency/timezone/tax**; invoice series per branch; business columns renamed `default_*` |
 | `20261002123000_lock_down_new_functions.sql` | Revoked anon EXECUTE on `suggest_invoice_prefix` |
+| `20261002140000_my_grants.sql` | `my_grants(business_id)` for UI permission caching; EXECUTE to `authenticated` only |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -101,5 +105,6 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 - Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
 
 ## Changelog
+- 2026-10-02: Added `my_grants()` for UI permission caching. Verified it agrees with `has_permission()` on all 46 permissions and leaks nothing to non-members or anon.
 - 2026-10-02: **Branch now owns country, currency, timezone and tax** (decisions 23–25). Invoice numbering is per branch with a unique prefix. Business keeps `default_*` for pre-fill only. CLI linked; migration history repaired; pending performance migration applied.
 - 2026-10-02: Phase 1 schema: 10 tables, 46 permissions, 4 roles, all RLS + guards, advisors clean, 21 security tests passing.

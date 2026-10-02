@@ -10,13 +10,16 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 
+import { type PermissionKey } from './permissions';
+
 /**
  * THE single source of navigation. The sidebar, the mobile bottom tabs and the
  * "More" screen all read this file, so adding a destination or gating one later
  * never means touching a layout component.
  *
- * Gating is declared here but not enforced yet (no auth or plans exist in Phase 0):
- * `permission` and `feature` are read by the shell once `can()` / `useFeature()` land.
+ * Gating is live: `useVisibleNav()` filters this list with `can()`, and
+ * `RouteGuard` blocks a route a user types directly. Hiding is never the
+ * boundary — RLS is (CLAUDE.md §7).
  */
 
 /** Route under the (app) group. Keep in step with the files in app/(app)/. */
@@ -50,10 +53,12 @@ export type NavItem = {
   id: NavId;
   route: AppRoute;
   icon: LucideIcon;
-  /** Permission needed to see it (product doc §9). Undefined = everyone. */
-  permission?: string;
-  /** Plan feature or add-on needed (product doc §8). Undefined = every plan. */
-  feature?: string;
+  /**
+   * Permission needed to see it (product doc §9). Undefined = every member.
+   * Plan and add-on gating comes from this key's catalogue entry, so there is no
+   * separate `feature` field to keep in step.
+   */
+  permission?: PermissionKey;
   /** Build phase that fills this screen in; shown by the placeholder for now. */
   phase: number;
   /** Shown in the mobile bottom tab bar. Exactly three, plus "More". */

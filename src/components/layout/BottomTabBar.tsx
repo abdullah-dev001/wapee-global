@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { navLabelKey, primaryNavItems } from '@/config/navigation';
+import { useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
 /**
@@ -41,6 +42,7 @@ const labelKeyByName: Record<string, NavLabelKey> = {
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { isRouteAllowed, isPending } = useVisibleNav();
 
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
@@ -49,6 +51,9 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         const Icon = iconByName[route.name];
         const labelKey = labelKeyByName[route.name];
         if (!Icon || !labelKey) return null;
+        // A tab the member may not open is dropped from the bar. The screen stays
+        // registered (routing must survive), and its RouteGuard refuses it.
+        if (!isPending && !isRouteAllowed(`/${route.name}`)) return null;
 
         return (
           <TabButton

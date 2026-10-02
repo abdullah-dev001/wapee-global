@@ -1,10 +1,11 @@
 # Roles & permissions
-Status: **database done, app side not started** · Phase: 1 · Last updated: 2026-10-02
+Status: **database done · app gating done · invite flow + trial screen next** · Phase: 1 · Last updated: 2026-10-02
 
 ## What it does
 Who may do what, per business and per branch. The database half is built and
-tested; the app half (`usePermission`, `useFeature`, nav gating, the invite
-flow) is the next task.
+tested. The app half now reads the member's permission set once per business and
+uses it to hide and block navigation; `usePermission` / `useFeature` are available
+to every feature.
 
 ## Business rules
 - Permission = `area.action` + scope (**own / branch / all**), product doc §9.
@@ -14,39 +15,79 @@ flow) is the next task.
 - **Nobody may grant a permission they do not hold.** The only exemption is the founding Owner — the first role assignment in a brand-new business — because the signing-up user holds nothing at that moment.
 - A business always keeps at least one active Owner.
 - Enforced in three places (CLAUDE.md §7): RLS, Edge Function / RPC, and the UI. Hiding a button is never the boundary.
+- **An inactive business (trial over) fails every check except `settings.business` and `settings.billing`**, so a locked-out owner can still reach billing. Mirrors the `businesses` RLS policies, which are deliberately not gated on `business_is_active()`.
+- **A business with no plan (`plan is null`) is on trial and passes plan gating.** The super admin assigns a plan by hand (product doc §10), so null must not be read as the cheapest tier.
+- **Super admin passes every check**, including on an inactive business.
 
-## Database (built)
-| Object | Purpose |
+## Files
+| Path | Purpose |
 |---|---|
-| `permissions` | 46-row catalogue, `min_plan` and `addon` for Phase 8 gating |
-| `roles`, `role_permissions` | Role definitions and their grants with scope |
-| `member_role_assignments` | member × role × branch |
-| `has_permission(business, branch, perm)` | Scope-aware check |
-| `can(business, branch, perm)` | `business_is_active()` AND `has_permission()` — use this for operational policies |
-| `enforce_role_assignment_guard` | Escalation guard + founding-Owner exemption |
-| `enforce_last_owner` | Blocks removing the final Owner |
+| src/config/permissions.ts | The 46-permission catalogue mirroring the table: `PermissionKey` type, `minPlan`, `addon`, `PLAN_ORDER`, `planAtLeast()` |
+| src/lib/permissions/can.ts | Pure logic: `hasPermission()`, `hasFeature()`, `can()`, `ALWAYS_ALLOWED_WHEN_INACTIVE` |
+| src/lib/permissions/types.ts | `Grant`, `GrantSet`, `PermissionScope` |
+| src/lib/permissions/useGrants.ts | `my_grants()` query, `useGrantSet()`, `isBusinessActive()`, `grantKeys` |
+| src/lib/permissions/usePermission.ts | `usePermission()`, `useFeature()` |
+| src/lib/permissions/useCurrentScope.ts | Zustand selection store, `useCurrentScope()`, `useMyProfile()` |
+| src/lib/permissions/useVisibleNav.ts | `useVisibleNav()` (filtered nav + `isRouteAllowed`), `useFallbackRoute()` |
+| src/features/auth/components/RouteGuard.tsx | Blocks a disallowed route, including a typed URL |
+| src/config/navigation.ts | `NavItem.permission` is now typed `PermissionKey`; the old `feature` field is gone |
 
-Tests: `supabase/tests/02_role_assignment_guard.sql` (9 assertions, all verified
-against the live database).
+## Database
+- RPC: **`my_grants(p_business_id)` → (permission, scope, branch_id)** — the caller's own grants for one business, in one round trip. `SECURITY DEFINER`, `STABLE`, `search_path = ''`, EXECUTE to `authenticated` only. **UI gating only; RLS stays the boundary.**
+- Everything else as before: `has_permission()`, `can()`, `enforce_role_assignment_guard`, `enforce_last_owner`.
+- Migrations: `20261002140000_my_grants.sql`.
 
-## Not built yet — this is the next task
-1. `usePermission('invoices.discount')` and `useFeature('commission')` hooks, reading the signed-in member's grants once per session and caching them in TanStack Query.
-2. Wire both into `src/config/navigation.ts`: each `NavItem` already declares `permission` and `feature`, but **nothing reads them yet** — every item is visible to everyone.
-3. Invite flow: `users.invite`, hashed token, accept screen.
-4. Trial lock screen: `AuthGate` needs an inactive-business branch.
+## Data & caching
+- `grantKeys.forBusiness(businessId)`, `staleTime` = `staticLong` (10 min). Product doc §9 wants the set cached per session; **a role change must invalidate this key.**
+- `useMyProfile()` → `['profile','me',userId]`, `staleTime` static (5 min). Supplies `is_super_admin` and `default_business_id`.
+- Business status/plan/trial come from `useMyBusinesses()` (`staleTime` list, 30 s), so a trial ending is noticed within 30 s and immediately on any refetch.
+- The current business/branch is **client-only state in Zustand** (`useScopeSelection`), never server data. It initialises from `profiles.default_business_id`, else the first business, and the branch from `is_primary`. A stale selection (business left or deleted) resets to that default.
 
 ## Permissions & gating
-`min_plan` and `addon` are stored but **not enforced**; plan gating lands in
-Phase 8. Treat `useFeature` as a stub that always returns true until then.
+- `usePermission(key, branchId?)` → `{ allowed, isPending, blockedByPlan, blockedByTrial }`. Default branch is `null` = "anywhere", which is what a menu item or route guard wants.
+- `useFeature(key)` → plan/add-on only, for upgrade prompts.
+- **Plan tiers are enforced for real** from `businesses.plan` (`commission.*` and `reports.view_advanced` need Team).
+- **Add-ons are not enforced yet**: no `business_addons` table until Phase 8, so an add-on counts as switched ON. `can()`/`hasFeature()` already accept an `AddonState`, so Phase 8 only has to supply it.
+- While the set is loading everything is denied, and the UI shows skeletons rather than an empty menu — nothing flashes into view and then vanishes.
+
+## UI
+- `Sidebar`, `BottomTabBar` and the mobile `More` screen all render only what `useVisibleNav()` returns; skeleton rows while pending.
+- `/today` and `/more` carry no permission, so the bottom bar always has at least two tabs and can never collapse.
+- **Every `(app)` screen is wrapped in `RouteGuard`**, which renders a `Lock` empty state for a route the member may not open. It does not redirect, so the URL and the back button still behave.
+- Every `Tabs.Screen` stays registered whatever the permissions — unregistering would make a direct URL 404 instead of being refused.
+- Sign out in the sidebar and in More is now wired to `useSignOut()` (was a placeholder).
 
 ## i18n
-Role names are seeded in English in the database. Translating them needs a
-`roles.<key>` namespace in the app rather than reading `roles.name`.
+Namespace `common`, keys `permissions.noAccess.*`. Role names are still seeded in
+English in the database; translating them needs a `roles.<key>` namespace rather
+than reading `roles.name`.
+
+## Verification (2026-10-02)
+`my_grants()` checked against the live database:
+- Agrees with `has_permission()` for **all 46 permissions** for an Owner (SQL cross-check, zero mismatches).
+- Returns **0 rows** for a non-member and for `anon`.
+
+The real `can()` / `hasFeature()` / `navItems` run against real grant rows pulled
+from the database — **24 assertions, all passing**: per-role nav for Owner /
+Receptionist / Staff, all three scope rules (branch match, branch mismatch,
+"anywhere", `all` ignores branch, null branch covers any), inactive business
+(blocks operational areas, allows settings + billing, nav collapses to
+Today + Settings), plan tiers (solo/team/business/null), add-on on and off, super
+admin, and the empty set denying everything.
+
+Not run on a device: **no JS test runner is installed**, so these assertions were
+executed from the scratchpad rather than committed as a suite — see TODO below.
 
 ## Known limits / TODO
-- No UI for assigning roles, no members list, no invite screen.
+- **No JS test runner in the repo** (jest/vitest is a new dependency → needs your OK). The permission logic is pure and deserves committed unit tests; today's run was scratchpad-only and is not repeatable in CI.
+- **A role change must invalidate `grantKeys.forBusiness(id)`.** No screen changes roles yet, so nothing does it; the members UI must.
+- No business/branch switcher UI yet. The store supports it (`setBusiness`, `setBranch`); only the header control is missing.
+- Add-on gating is a documented stub until Phase 8.
+- `Manager` holds `settings.business` in the seed, so it sees Settings. Product doc §9 gives Manager "Booking settings" only — worth re-checking the seeded grant.
+- No UI for assigning roles, no members list, no invite screen (next task).
 - Custom roles are schema-ready but have no screens (Phase 9).
 - Super admin 2FA deferred to Phase 8 with the admin screens (agreed).
 
 ## Changelog
+- 2026-10-02: App gating built — `my_grants()` RPC, `can()`, `usePermission`, `useFeature`, current-scope store, `useVisibleNav`, `RouteGuard` on every `(app)` screen, sign out wired. Nav `feature` field dropped in favour of the catalogue's `minPlan`/`addon`.
 - 2026-10-02: Database half complete (catalogue, roles, grants, guards, tests). App half not started.

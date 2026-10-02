@@ -179,5 +179,11 @@
     },
     "creating": "Creating your business…",
     "locationIntro": "These settings belong to this location. If you add more locations later, each one can have its own country, currency and timezone."
+  },
+  "permissions": {
+    "noAccess": {
+      "title": "You do not have access to this page",
+      "description": "Your role does not include this area. Ask an owner or manager if you need it."
+    }
   }
 }

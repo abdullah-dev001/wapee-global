@@ -533,6 +533,14 @@ export type Database = {
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
+      my_grants: {
+        Args: { p_business_id: string }
+        Returns: {
+          branch_id: string
+          permission: string
+          scope: Database["public"]["Enums"]["permission_scope"]
+        }[]
+      }
       suggest_invoice_prefix: {
         Args: { p_business_id: string; p_name: string }
         Returns: string

@@ -12,4 +12,4 @@ Shared files:
 | ------- | ---- | ------ | ----- | ------- |
 | Auth | auth.md | done (Phase 1 scope) | 1 | Login, signup, verify, password reset, session + route guard |
 | Onboarding | onboarding.md | done (Phase 1 scope) | 1 | Business creation wizard, signup RPC, 14-day trial, branch-owned locale |
-| Roles & permissions | roles.md | database done, app side next | 1 | Catalogue, 4 system roles, scope-aware checks, escalation guards |
+| Roles & permissions | roles.md | DB + app gating done | 1 | Catalogue, 4 system roles, scope-aware checks, `usePermission`/`useFeature`, nav + route gating |

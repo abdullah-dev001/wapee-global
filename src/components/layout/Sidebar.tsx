@@ -7,8 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { brand } from '@/config/brand';
-import { navItems, navLabelKey, type NavItem } from '@/config/navigation';
+import { navLabelKey, type NavItem } from '@/config/navigation';
+import { useSignOut } from '@/features/auth';
+import { useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
+
+import { Skeleton } from '../ui/Skeleton';
 
 export type SidebarProps = {
   /** Called after a nav item is tapped, so the overlay variant can close itself. */
@@ -25,6 +29,8 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  // Only the destinations this member may actually open (CLAUDE.md §7).
+  const { items, isPending } = useVisibleNav();
 
   return (
     <View style={[styles.sidebar, { paddingTop: insets.top }]}>
@@ -53,14 +59,21 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
         contentContainerStyle={styles.navContent}
         showsVerticalScrollIndicator={false}
       >
-        {navItems.map((item) => (
-          <SidebarItem
-            key={item.id}
-            item={item}
-            active={pathname.startsWith(item.route)}
-            onNavigate={onNavigate}
-          />
-        ))}
+        {isPending
+          ? // Placeholders, so the menu never shows items that vanish a frame later.
+            [0, 1, 2, 3, 4].map((row) => (
+              <View key={row} style={styles.itemSkeleton}>
+                <Skeleton height={20} radius="sm" />
+              </View>
+            ))
+          : items.map((item) => (
+              <SidebarItem
+                key={item.id}
+                item={item}
+                active={pathname.startsWith(item.route)}
+                onNavigate={onNavigate}
+              />
+            ))}
       </ScrollView>
 
       <View style={[styles.account, { paddingBottom: theme.spacing[12] + insets.bottom }]}>
@@ -117,12 +130,14 @@ function SidebarItem({
 function SidebarLogout() {
   const { t } = useTranslation();
   const { handlers, showHover, showFocusRing } = useInteractionState(false);
+  const signOut = useSignOut();
   const color = showHover ? theme.colors.textOnPrimary : theme.colors.sidebarText;
 
   return (
     <Pressable
       {...handlers}
-      // TODO(phase 1): sign out through Supabase auth and clear the query cache.
+      onPress={() => signOut.mutate()}
+      disabled={signOut.isPending}
       accessibilityRole="button"
       style={[
         styles.item,
@@ -167,6 +182,13 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing[8],
     paddingBottom: theme.spacing[12],
     gap: theme.spacing[2],
+  },
+  itemSkeleton: {
+    paddingVertical: theme.spacing[10],
+    paddingHorizontal: theme.spacing[14],
+    // Matches `item`, so the menu does not jump when the real rows arrive.
+    minHeight: theme.layout.minTouchTarget,
+    justifyContent: 'center',
   },
   item: {
     flexDirection: 'row',
