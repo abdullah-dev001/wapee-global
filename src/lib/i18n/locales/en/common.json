@@ -7,7 +7,12 @@
     "cancel": "Cancel",
     "save": "Save",
     "close": "Close",
-    "done": "Done"
+    "done": "Done",
+    "search": "Search",
+    "clear": "Clear",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete"
   },
   "routes": {
     "auth": "Sign in",
@@ -255,6 +260,120 @@
       "days": "Your trial ends in {{count}} days.",
       "today": "Your trial ends today.",
       "action": "Contact us"
+    }
+  },
+  "schedule": {
+    "open": "Open",
+    "closed": "Closed",
+    "from": "From",
+    "to": "To",
+    "addInterval": "Add another time",
+    "removeInterval": "Remove this time",
+    "startDate": "From",
+    "endDate": "To",
+    "dateFormatHint": "Use the format YYYY-MM-DD, for example 2026-12-25."
+  },
+  "services": {
+    "title": "Services",
+    "create": "Add service",
+    "saved": "Service saved",
+    "deleted": "Service deleted",
+    "uncategorised": "Uncategorised",
+    "noBuffer": "No gap",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "noPrice": "No price set",
+    "inactive": "Hidden",
+    "notBookableOnline": "Not online",
+    "empty": {
+      "title": "No services yet",
+      "description": "Add what you sell so customers can book it."
+    },
+    "emptySearch": {
+      "title": "No services found",
+      "description": "Try a different search."
+    },
+    "error": {
+      "title": "Could not load services"
+    },
+    "deleteConfirm": {
+      "title": "Delete this service?",
+      "message": "It will be hidden from new bookings. Past appointments and invoices keep it.",
+      "confirm": "Delete"
+    },
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "e.g. Haircut",
+      "category": "Category",
+      "categoryHint": "Optional. Groups services on the booking page.",
+      "duration": "Duration",
+      "price": "Price",
+      "priceHint": "In {{currency}}, at this branch.",
+      "buffer": "Gap after",
+      "bufferHint": "Clean-up time before the next booking.",
+      "description": "Description",
+      "staff": "Who performs this",
+      "isActive": "Active",
+      "isBookableOnline": "Bookable online"
+    },
+    "errors": {
+      "nameRequired": "Enter a name",
+      "nameTooLong": "That name is too long",
+      "descriptionTooLong": "That description is too long",
+      "durationTooShort": "A service must be at least 5 minutes",
+      "durationTooLong": "A service cannot be longer than a day",
+      "bufferInvalid": "The gap cannot be negative",
+      "bufferTooLong": "That gap is too long",
+      "priceInvalid": "A price cannot be negative",
+      "categoryNameRequired": "Enter a category name",
+      "categoryNameTooLong": "That category name is too long"
+    },
+    "categories": {
+      "title": "Categories",
+      "create": "Add category",
+      "saved": "Category added"
+    }
+  },
+  "staff": {
+    "title": "Staff",
+    "create": "Add staff",
+    "saved": "Staff saved",
+    "noLogin": "No app access",
+    "inactive": "Inactive",
+    "empty": {
+      "title": "No staff yet",
+      "description": "Add the people who provide your services."
+    },
+    "emptySearch": {
+      "title": "No staff found",
+      "description": "Try a different search."
+    },
+    "error": {
+      "title": "Could not load staff"
+    },
+    "deleteConfirm": {
+      "title": "Remove this staff member?",
+      "message": "They will be hidden from new bookings. Their past appointments stay.",
+      "confirm": "Remove"
+    },
+    "fields": {
+      "displayName": "Name",
+      "displayNamePlaceholder": "e.g. Ayesha",
+      "jobTitle": "Job title",
+      "jobTitlePlaceholder": "e.g. Senior stylist",
+      "email": "Email",
+      "emailHint": "For your records. It does not create an app login.",
+      "phone": "Phone",
+      "branches": "Works at",
+      "services": "Services they provide",
+      "isActive": "Active",
+      "isBookableOnline": "Bookable online"
+    },
+    "errors": {
+      "nameRequired": "Enter a name",
+      "nameTooLong": "That name is too long",
+      "jobTitleTooLong": "That job title is too long",
+      "phoneTooLong": "That phone number is too long"
     }
   }
 }

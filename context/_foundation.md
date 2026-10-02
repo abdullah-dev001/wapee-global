@@ -34,7 +34,8 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | src/lib/i18n/                                                                                                            | i18next instance, resources, typed keys, RTL helpers                                        |
 | src/lib/permissions/                                                                                                     | `can()`, `usePermission`, `useFeature`, `useVisibleNav`, current-scope store (see roles.md)  |
 | src/config/permissions.ts                                                                                                | 46-permission catalogue mirroring the table: `PermissionKey`, `minPlan`, `addon`, plan order |
-| src/lib/time/index.ts · src/lib/money/index.ts                                                                           | SKELETONS: typed signatures, bodies throw `notImplemented()`                                |
+| src/lib/time/index.ts | Partly implemented: `formatMinuteOfDay`, `parseMinuteOfDay`, `formatDuration`. The timezone helpers are still skeletons. |
+| src/lib/money/index.ts | Partly implemented: `money`, `currencyExponent`, `parseMajorToMinor`, `formatMoney`, `formatMinorAsMajor`. Arithmetic helpers still skeletons. |
 | src/lib/notImplemented.ts                                                                                                | Throw helper for skeletons                                                                  |
 | src/lib/pwa/registerServiceWorker.ts                                                                                     | Registers /sw.js (web + production only), update hook                                       |
 | public/sw.js                                                                                                             | Service worker stub (shell + static only)                                                   |
@@ -42,6 +43,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | assets/images/                                                                                                           | Native icon, adaptive icon fg/monochrome, splash icon, favicon (placeholders)               |
 | scripts/generate-web-manifest.mjs                                                                                        | Writes public/manifest.json from brand.ts (gitignored output)                               |
 | src/components/ui/ | Base UI primitives (see "UI components") + barrel `index.ts` |
+| src/components/shared/ | Reusable composites + barrel `index.ts`: `FormField`, `MoneyInput`, `SearchInput`, `TimePicker`, `DayHoursRow`, `DateRangePicker` |
 | src/lib/device/useTabletOrientation.ts | Android: release the portrait lock on tablet-sized screens |
 | src/lib/query/useOnlineManager.ts | NetInfo -> TanStack `onlineManager` (native) |
 | app/_gallery.tsx · src/dev/ComponentGallery.tsx | DEV-ONLY gallery at `/_gallery`; stripped from production builds; DELETE both when real screens exist |
@@ -87,11 +89,22 @@ Shared internals: `useInteractionState()` (hover/focus/pressed; hover and focus 
 Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
-- Not built yet: Checkbox/Radio, Segmented control, Pagination, DataTable, SearchInput, PhoneInput, DatePicker, TimeSlotPicker, MoneyInput, Avatar, Collapsible, StepWizard, FormAlert, StatCard.
+- Not built yet: Checkbox/Radio, Segmented control, Pagination, DataTable, PhoneInput, TimeSlotPicker, Avatar, Collapsible, StepWizard, FormAlert, StatCard.
 - **Forms must use `useWatch({ control, name })`, never `watch()`** — `watch()` returns a fresh function each render and the React Compiler lint refuses it (`react-hooks/incompatible-library`).
 - `useInteractionState` shows the focus ring only when the browser reports `:focus-visible`, so a mouse click leaves no ring while keyboard tabbing does.
 - `useOverlayDismiss` holds `onDismiss` in a ref. Passing it an inline arrow used to re-run its effect every render ("Maximum update depth exceeded") once several overlays were mounted; the ref makes any caller safe.
 
+
+## Shared composites (`src/components/shared`, import from `@/components/shared`)
+
+| Component | Notes |
+|---|---|
+| `FormField` | Bridges react-hook-form to `Input`; translates i18n-key error messages. |
+| `MoneyInput` | Stores **integer minor units**, never floats. Takes the **branch** currency and the locale; all parsing is in `lib/money`. Holds the raw text locally so a half-typed "12." is not reformatted mid-edit. |
+| `SearchInput` | Debounced 300 ms, minimum 2 characters, reports only the debounced term so it can go straight into a query key (CLAUDE.md §6). |
+| `TimePicker` | Minutes-from-midnight on a 15-minute step, built on `Select`. **No native date/time module**: it would need a rebuild, looks different per platform and has no web build. An off-step stored value stays selectable. |
+| `DayHoursRow` | One weekday: open/closed toggle + interval list, so a split shift is two rows. Validates nothing itself — the DB holds the guarantees. |
+| `DateRangePicker` | Calendar **dates**, not instants. Web gets `<input type="date">`; native accepts typed `YYYY-MM-DD`. **A native calendar is still to do** (needs a library — ask first). |
 
 ## Layout & shell (`src/components/layout`)
 
@@ -173,6 +186,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 
 ## Changelog
 
+- 2026-10-02: Shared composites (MoneyInput, SearchInput, TimePicker, DayHoursRow, DateRangePicker) + `components/shared/index.ts`; money and minute-of-day helpers implemented with 31 tests.
 - 2026-10-02: `ErrorState` primitive; vitest + `npm test`; expo-clipboard (needs a rebuild).
 - 2026-10-02: `src/lib/permissions/` added and wired into navigation (`useVisibleNav`, `RouteGuard`); nav `feature` field dropped; sign out wired. See roles.md.
 - 2026-10-01: Responsive shell (Screen, PageContainer, AppShell, Sidebar, Header, BottomTabBar), navigation config, app routes, PWA install hint + update toast.

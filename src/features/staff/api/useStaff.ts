@@ -1,0 +1,189 @@
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+
+import { useSession } from '@/features/auth';
+import { createQueryKeys, staleTimes } from '@/lib/query';
+import { getSupabase } from '@/lib/supabase';
+
+import { type StaffValues } from '../schemas/staff.schemas';
+
+export const staffKeys = createQueryKeys('staff');
+
+export type StaffListItem = {
+  id: string;
+  displayName: string;
+  jobTitle: string | null;
+  email: string | null;
+  phone: string | null;
+  isActive: boolean;
+  isBookableOnline: boolean;
+  /** Null when this staff member has no app login — the common case. */
+  memberId: string | null;
+  branchIds: string[];
+  serviceIds: string[];
+};
+
+/**
+ * The team, optionally limited to one branch.
+ *
+ * A staff member need not have a login (`member_id` is nullable), so this reads
+ * `staff_profiles` and not `business_members` — see context/staff.md.
+ */
+export function useStaff(
+  businessId: string | null,
+  branchId: string | null,
+  options: { search?: string; includeInactive?: boolean } = {},
+): UseQueryResult<StaffListItem[], Error> {
+  const { isAuthenticated } = useSession();
+  const { search = '', includeInactive = true } = options;
+
+  return useQuery({
+    queryKey: staffKeys.list({
+      businessId: businessId ?? 'none',
+      branchId,
+      search,
+      filters: { includeInactive },
+    }),
+    enabled: isAuthenticated && Boolean(businessId),
+    staleTime: staleTimes.static,
+    queryFn: async () => {
+      let query = getSupabase()
+        .from('staff_profiles')
+        .select(
+          'id, display_name, job_title, email, phone, is_active, is_bookable_online, member_id, sort_order, staff_branches(branch_id), service_staff(service_id)',
+        )
+        .eq('business_id', businessId ?? '')
+        .is('deleted_at', null);
+
+      if (search) query = query.ilike('display_name', `%${search}%`);
+      if (!includeInactive) query = query.eq('is_active', true);
+
+      const { data, error } = await query.order('sort_order').order('display_name');
+      if (error) throw new Error(error.message);
+
+      const rows = (data ?? []).map((row) => ({
+        id: row.id,
+        displayName: row.display_name,
+        jobTitle: row.job_title,
+        email: row.email,
+        phone: row.phone,
+        isActive: row.is_active,
+        isBookableOnline: row.is_bookable_online,
+        memberId: row.member_id,
+        branchIds: (row.staff_branches ?? []).map((entry) => entry.branch_id),
+        serviceIds: (row.service_staff ?? []).map((entry) => entry.service_id),
+      }));
+
+      // Filtering by branch in JS is safe here: a team is tens of rows, and the
+      // branch list arrives in the same round trip. A server-side filter would
+      // need a join that hides staff with no branch assigned yet.
+      return branchId
+        ? rows.filter((row) => row.branchIds.length === 0 || row.branchIds.includes(branchId))
+        : rows;
+    },
+  });
+}
+
+function invalidateStaff(
+  queryClient: ReturnType<typeof useQueryClient>,
+  businessId: string | null,
+) {
+  void queryClient.invalidateQueries({
+    queryKey: staffKeys.scope({ businessId: businessId ?? 'none' }),
+  });
+}
+
+/** Creates or updates a staff profile, its branches and its services. */
+export function useSaveStaff(businessId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<string, Error, StaffValues & { id?: string }>({
+    mutationFn: async (values) => {
+      if (!businessId) throw new Error('No business selected');
+      const supabase = getSupabase();
+
+      const fields = {
+        business_id: businessId,
+        display_name: values.displayName,
+        job_title: values.jobTitle ?? null,
+        email: values.email ?? null,
+        phone: values.phone ?? null,
+        is_active: values.isActive,
+        is_bookable_online: values.isBookableOnline,
+      };
+
+      let staffId = values.id;
+      if (staffId) {
+        const { error } = await supabase.from('staff_profiles').update(fields).eq('id', staffId);
+        if (error) throw new Error(error.message);
+      } else {
+        const { data, error } = await supabase
+          .from('staff_profiles')
+          .insert(fields)
+          .select('id')
+          .single();
+        if (error) throw new Error(error.message);
+        staffId = data.id;
+      }
+
+      // Branch and service links are plain joins with no history, so replacing
+      // them wholesale is simpler and safer than diffing.
+      const { error: clearBranches } = await supabase
+        .from('staff_branches')
+        .delete()
+        .eq('staff_id', staffId);
+      if (clearBranches) throw new Error(clearBranches.message);
+
+      if (values.branchIds.length > 0) {
+        const { error } = await supabase.from('staff_branches').insert(
+          values.branchIds.map((branchId) => ({
+            staff_id: staffId,
+            branch_id: branchId,
+            business_id: businessId,
+          })),
+        );
+        if (error) throw new Error(error.message);
+      }
+
+      const { error: clearServices } = await supabase
+        .from('service_staff')
+        .delete()
+        .eq('staff_id', staffId);
+      if (clearServices) throw new Error(clearServices.message);
+
+      if (values.serviceIds.length > 0) {
+        const { error } = await supabase.from('service_staff').insert(
+          values.serviceIds.map((serviceId) => ({
+            staff_id: staffId,
+            service_id: serviceId,
+            business_id: businessId,
+          })),
+        );
+        if (error) throw new Error(error.message);
+      }
+
+      return staffId;
+    },
+    onSuccess: () => {
+      invalidateStaff(queryClient, businessId);
+      // A service's staff list changed too.
+      void queryClient.invalidateQueries({ queryKey: ['services'] });
+    },
+  });
+}
+
+/** Soft-deletes a staff profile, keeping their history intact. */
+export function useDeleteStaff(businessId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<undefined, Error, string>({
+    mutationFn: async (staffId) => {
+      const { error } = await getSupabase()
+        .from('staff_profiles')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', staffId);
+      if (error) throw new Error(error.message);
+      return undefined;
+    },
+    onSuccess: () => invalidateStaff(queryClient, businessId),
+  });
+}
