@@ -73,7 +73,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | Role | Grants | Scope |
 |---|---|---|
 | Owner | 46 (all) | all |
-| Manager | 41 — no billing, roles.manage, website.publish, commission.manage_rules, sms.buy_credits | branch |
+| Manager | 39 — no billing, roles.manage, website.publish, **website.edit**, **settings.business**, commission.manage_rules, sms.buy_credits. Keeps `settings.booking` (doc §9: "Booking settings"). | branch |
 | Receptionist | 20 — no discounts, credit notes, revenue reports, staff management, settings | branch |
 | Staff | 10 — own appointments, own schedule, own commission | own |
 
@@ -102,6 +102,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | `20261002161000_invite_grants_lockdown.sql` | Revoked anon EXECUTE on `invite_member` / `accept_invite` (Supabase grants new functions to anon by default) |
 | `20261002162000_fix_invite_member_ambiguous_column.sql` | **Fixed 42702**: OUT column `member_id` collided with `member_role_assignments.member_id`; OUT columns now `out_*` |
 | `20261002163000_fix_invite_rate_limit.sql` | **Fixed the throttle**: raising rolled back the attempt counter, so failures now RETURN NULL |
+| `20261002170000_fix_manager_settings_grants.sql` | **Seed fix**: Manager no longer holds `settings.business` or `website.edit` (doc §9 grants booking settings only). Manager 41 → 39. |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -110,6 +111,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 - Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
 
 ## Changelog
+- 2026-10-02: Manager seed corrected to 39 permissions (booking settings only, per doc §9).
 - 2026-10-02: Added `my_grants()` for UI permission caching. Verified it agrees with `has_permission()` on all 46 permissions and leaks nothing to non-members or anon.
 - 2026-10-02: **Branch now owns country, currency, timezone and tax** (decisions 23–25). Invoice numbering is per branch with a unique prefix. Business keeps `default_*` for pre-fill only. CLI linked; migration history repaired; pending performance migration applied.
 - 2026-10-02: Phase 1 schema: 10 tables, 46 permissions, 4 roles, all RLS + guards, advisors clean, 21 security tests passing.

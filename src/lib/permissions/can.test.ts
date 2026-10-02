@@ -73,6 +73,58 @@ const OWNER = grantsFor(
   'all',
 );
 
+/**
+ * Manager: 39 permissions at `branch` scope.
+ *
+ * Note what is NOT here: `settings.business` and `website.edit`. Product doc §9
+ * gives Manager "Booking settings" only, so Manager holds `settings.booking` and
+ * cannot open the Settings screen (migration 20261002170000).
+ */
+const MANAGER = grantsFor(
+  [
+    'appointments.approve',
+    'appointments.cancel',
+    'appointments.create',
+    'appointments.edit',
+    'appointments.view',
+    'calendar.view_all_staff',
+    'clients.create',
+    'clients.edit',
+    'clients.export',
+    'clients.view',
+    'clients.view_contact',
+    'clients.view_sensitive',
+    'commission.view_all',
+    'commission.view_own',
+    'files.upload',
+    'files.view',
+    'forms.manage',
+    'inventory.adjust',
+    'inventory.view',
+    'invoices.create',
+    'invoices.credit_note',
+    'invoices.discount',
+    'invoices.view',
+    'packages.deduct_session',
+    'packages.reverse_session',
+    'packages.sell',
+    'reports.view_advanced',
+    'reports.view_basic',
+    'reports.view_revenue',
+    'reviews.feature_on_website',
+    'reviews.reply',
+    'reviews.view',
+    'services.manage',
+    'settings.booking',
+    'sms.send',
+    'staff.manage',
+    'staff.manage_schedule',
+    'staff.view',
+    'users.invite',
+  ],
+  'branch',
+);
+
 /** Receptionist: 20 permissions at `branch` scope. */
 const RECEPTIONIST = grantsFor(
   [
@@ -139,8 +191,19 @@ function visibleNav(set: GrantSet): string[] {
 describe('seeded role fixtures match the database', () => {
   it('has the documented permission counts', () => {
     expect(OWNER).toHaveLength(46);
+    expect(MANAGER).toHaveLength(39);
     expect(RECEPTIONIST).toHaveLength(20);
     expect(STAFF).toHaveLength(10);
+  });
+
+  it('gives Manager booking settings but not business settings or the website', () => {
+    // The exact row from product doc §9: "Website and settings | Yes | Booking
+    // settings | No | No". The seed once granted all three to Manager.
+    const manager = makeSet(MANAGER);
+    expect(can(manager, 'settings.booking')).toBe(true);
+    expect(can(manager, 'settings.business')).toBe(false);
+    expect(can(manager, 'website.edit')).toBe(false);
+    expect(can(manager, 'settings.billing')).toBe(false);
   });
 });
 
@@ -157,6 +220,22 @@ describe('navigation per role', () => {
       'reports',
       'reviews',
       'settings',
+    ]);
+  });
+
+  it('gives a manager everything except settings', () => {
+    // Product doc §9: Manager gets "Booking settings", not business settings, so
+    // the Settings screen is Owner-only (migration 20261002170000).
+    expect(visibleNav(makeSet(MANAGER))).toEqual([
+      'today',
+      'calendar',
+      'clients',
+      'services',
+      'staff',
+      'members',
+      'invoices',
+      'reports',
+      'reviews',
     ]);
   });
 

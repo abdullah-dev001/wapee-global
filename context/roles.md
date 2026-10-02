@@ -10,7 +10,7 @@ to every feature.
 ## Business rules
 - Permission = `area.action` + scope (**own / branch / all**), product doc §9.
 - A member holds a role **per branch**; `branch_id = null` means every branch.
-- Four system roles, seeded and undeletable: Owner (46 perms, `all`), Manager (41, `branch`), Receptionist (20, `branch`), Staff (10, `own`).
+- Four system roles, seeded and undeletable: Owner (46 perms, `all`), **Manager (39, `branch`)**, Receptionist (20, `branch`), Staff (10, `own`).
 - Custom roles (Phase 9) carry a `business_id`; system roles have `business_id IS NULL` and cannot be edited by tenants.
 - **Nobody may grant a permission they do not hold.** The only exemption is the founding Owner — the first role assignment in a brand-new business — because the signing-up user holds nothing at that moment.
 - A business always keeps at least one active Owner.
@@ -83,7 +83,7 @@ executed from the scratchpad rather than committed as a suite — see TODO below
 - **A role change must invalidate `grantKeys.forBusiness(id)`** (for the members UI task). Accepting an invite already does it; nothing else changes roles yet, so nothing else needs to. Any future change-role screen must, or the UI keeps showing the old permissions for up to 10 minutes.
 - No business/branch switcher UI yet. The store supports it (`setBusiness`, `setBranch`); only the header control is missing.
 - Add-on gating is a documented stub until Phase 8.
-- **`Manager` holds `settings.business` in the seed, so Manager sees the Settings screen. Product doc §9 line 196 gives Manager "Booking settings" only, so this is a seed bug.** The fix is a one-row delete from `role_permissions`; it was written and then deliberately skipped (2026-10-02) to keep it out of the invite work. Revisit as its own task.
+
 - Members list and invite flow are built (see [members.md](members.md)). Still missing: change a member's role, remove a member, revoke or resend an invite.
 - Custom roles are schema-ready but have no screens (Phase 9).
 - Super admin 2FA deferred to Phase 8 with the admin screens (agreed).
