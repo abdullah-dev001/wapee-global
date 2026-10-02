@@ -6,6 +6,8 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboa
 import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
 import { theme } from '@/lib/theme';
+
+import { useConsumedInsets } from './ConsumedInsets';
 import { type ColorToken } from '@/lib/theme/colors';
 
 export type ScreenProps = {
@@ -62,6 +64,7 @@ export function Screen({
   testID,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const consumed = useConsumedInsets();
   const backgroundColor = theme.colors[background];
 
   // Android navigation bar buttons, matched to the screen.
@@ -75,7 +78,8 @@ export function Screen({
     NavigationBar.setStyle(statusBarStyle === 'light' ? 'light' : 'dark');
   }, [statusBarStyle]);
 
-  const padTop = edges.includes('top') ? insets.top : 0;
+  // A bar above us (the trial banner on mobile) may already carry the top inset.
+  const padTop = edges.includes('top') && !consumed.top ? insets.top : 0;
   const padBottom = edges.includes('bottom') ? insets.bottom : 0;
   const padStart = edges.includes('left') ? insets.left : 0;
   const padEnd = edges.includes('right') ? insets.right : 0;

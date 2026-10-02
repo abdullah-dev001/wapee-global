@@ -31,6 +31,10 @@ silently).
 | src/features/billing/components/ActiveBusinessGate.tsx | Decides lock vs render; used inside `RouteGuard` |
 | src/features/billing/components/TrialEndedScreen.tsx | The lock screen (contact + sign out) |
 | src/features/billing/inactiveRoutes.ts | `ROUTES_ALLOWED_WHEN_INACTIVE`, `isRouteAllowedWhenInactive()` — split out so it is unit-testable |
+| src/features/billing/components/TrialBanner.tsx | "Trial ends in N days" bar, in `AppShell` for all breakpoints |
+| src/features/billing/trialCountdown.ts | `trialCountdown()`, `TRIAL_WARNING_DAYS` — the countdown arithmetic, unit tested |
+| src/features/billing/useTrialBannerVisible.ts | One visibility rule, shared by the banner and the shell |
+| src/components/layout/ConsumedInsets.tsx | Lets the shell tell `Screen` the top inset is already taken |
 | src/features/billing/inactiveRoutes.test.ts | 5 tests pinning the allowed-route list |
 | src/features/auth/components/RouteGuard.tsx | Now `ActiveBusinessGate` → `PermissionGuard` |
 | src/config/brand.ts | `supportEmail` (PLACEHOLDER) |
@@ -59,9 +63,24 @@ screen-level half of the same rule.
 - `Screen edges={['top']}` because it renders inside the bottom tabs.
 - While the grant set loads the gate renders through rather than flashing a lock screen.
 
+## Trial banner
+- Shows in the **last 3 days** of a trial (`TRIAL_WARNING_DAYS`), and only to
+  someone holding **`settings.billing`** — Owner-only in practice (doc §9), since
+  nagging a receptionist about billing they cannot reach is noise.
+- Warning tint normally; **error tint on the last day**.
+- Tapping it goes to `/settings` (there is no `/billing` route yet).
+- Days are counted in whole days from the exact instant, so 30 hours left reads
+  "ends tomorrow" and anything under 24 hours reads "ends today". That errs
+  towards warning sooner.
+- Lives in `AppShell`, so one copy covers mobile, tablet and desktop.
+- **Inset handling:** on mobile the banner is the topmost bar (there is no
+  `Header`), so it carries `insets.top` itself. Every tab screen also passes
+  `edges={['top']}`, which would double the gap, so `AppShell` wraps its children
+  in `ConsumedInsetsProvider top` and `Screen` skips its own top padding while the
+  banner is up. On tablet/desktop the `Header` already consumed the inset.
+
 ## i18n
-Namespace `common`, keys `billing.locked.*`. `billing.trialBanner.*` keys are
-added but **not used yet** — see TODO.
+Namespace `common`, keys `billing.locked.*` and `billing.trialBanner.*`.
 
 ## Verification (2026-10-02)
 Verified against the live database by expiring a real test business's trial, as
@@ -71,7 +90,10 @@ its owner over the REST API — 4 checks, all passing:
 - `my_grants()` still returns all 46 Owner grants, so the UI can render Settings
 - `invite_member()` is refused, since `can()` includes `business_is_active()`
 
-Route rules covered by 5 unit tests; the whole suite is 25 tests. The trial-lock
+Route rules covered by 5 unit tests and the countdown by 7 more (every boundary:
+4 days, exactly 3, 30 hours, 23 hours, already over, not-on-trial, malformed
+input). The SQL equivalent of the countdown was cross-checked against the live
+database and agrees. The whole suite is 34 tests. The trial-lock
 branch of `can()` is covered by the permission tests (operational blocked,
 settings/billing allowed, nav collapses to Today + Settings).
 The test business's trial was restored afterwards.
@@ -81,11 +103,11 @@ session, so the lock screen's appearance is unconfirmed. The logic, routes and
 bundle are verified.
 
 ## Known limits / TODO
-- **No "trial ends in N days" banner yet.** The i18n keys exist (`billing.trialBanner.*`) but nothing renders them, so the lock arrives with no warning. Worth adding before real users.
 - No `/billing` route exists yet — it is in the allowed list ready for Phase 8. Today the owner reaches Settings only.
 - `brand.supportEmail` is `support@wapee.com`, a **placeholder** like the domains.
 - No plan self-service, no checkout, no invoice history (Phase 8, super admin assigns plans by hand).
 - The product doc wording needs the update described above.
 
 ## Changelog
+- 2026-10-02: Trial banner added (last 3 days, Owner only, stronger on the last day) with `ConsumedInsets` so the mobile inset is not applied twice.
 - 2026-10-02: Trial lock built: `ActiveBusinessGate`, `TrialEndedScreen`, allowed-route list + tests, `RouteGuard` now checks active-business before permission.

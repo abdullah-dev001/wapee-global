@@ -1,5 +1,6 @@
 export { AppShell, type AppShellProps } from './AppShell';
 export { BottomTabBar } from './BottomTabBar';
+export { ConsumedInsetsProvider, useConsumedInsets, type ConsumedInsets } from './ConsumedInsets';
 export { Header, type HeaderProps } from './Header';
 export { InstallHint } from './InstallHint';
 export { PageContainer, type PageContainerProps } from './PageContainer';

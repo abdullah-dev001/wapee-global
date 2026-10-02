@@ -99,6 +99,7 @@ Conventions:
 |---|---|
 | `Screen` | Base of every screen: safe-area insets, status bar style, Android nav-bar button style, keyboard avoidance (`KeyboardAwareScrollView` + `KeyboardStickyView` footer), scroll, pull-to-refresh. Adds **no** page padding. |
 | `PageContainer` | Page padding (24 / 16 mobile), optional max width, title + subtitle + count pill + actions. The page title lives here, never in the header. |
+| `ConsumedInsetsProvider` / `useConsumedInsets` | Lets a bar above `Screen` (the trial banner on mobile) claim the top inset so `Screen` does not add it twice. |
 | `AppShell` | Picks the layout by `useBreakpoint()`: mobile = no chrome (tabs come from the Tabs layout); tablet = header + off-canvas sidebar (Escape / Android back / scrim close it); desktop = fixed 240px sidebar + 64px header. |
 | `Sidebar` | Teal 240px, lime active pill, items from `config/navigation`. Tablet variant shows a close button and closes on navigate. |
 | `Header` | 64px surface bar: business name + user-menu placeholder; hamburger on tablet only. |

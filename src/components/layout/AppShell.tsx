@@ -2,8 +2,11 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
+import { TrialBanner } from '@/features/billing/components/TrialBanner';
+import { useTrialBannerVisible } from '@/features/billing/useTrialBannerVisible';
 import { shadow, theme, useBreakpoint } from '@/lib/theme';
 
+import { ConsumedInsetsProvider } from './ConsumedInsets';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
@@ -19,6 +22,7 @@ export type AppShellProps = {
  */
 export function AppShell({ children }: AppShellProps) {
   const { isMobile, isDesktop } = useBreakpoint();
+  const bannerVisible = useTrialBannerVisible();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -26,7 +30,14 @@ export function AppShell({ children }: AppShellProps) {
   useOverlayDismiss(menuOpen, closeMenu);
 
   if (isMobile) {
-    return <View style={styles.root}>{children}</View>;
+    // The banner is the topmost bar here, so it carries the status-bar inset and
+    // the screens below must not add it again.
+    return (
+      <View style={styles.root}>
+        <TrialBanner />
+        <ConsumedInsetsProvider top={bannerVisible}>{children}</ConsumedInsetsProvider>
+      </View>
+    );
   }
 
   if (isDesktop) {
@@ -37,6 +48,7 @@ export function AppShell({ children }: AppShellProps) {
         </View>
         <View style={styles.main}>
           <Header />
+          <TrialBanner />
           <View style={styles.content}>{children}</View>
         </View>
       </View>
@@ -47,6 +59,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <View style={styles.root}>
       <Header onOpenMenu={() => setMenuOpen(true)} />
+      <TrialBanner />
       <View style={styles.content}>{children}</View>
 
       <Modal
