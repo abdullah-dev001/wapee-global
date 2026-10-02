@@ -1,5 +1,5 @@
 import { Check, ChevronDown } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -53,9 +53,13 @@ export function Select<TValue extends string = string>({
   testID,
 }: SelectProps<TValue>) {
   const [open, setOpen] = useState(false);
+  // Stable identity: useOverlayDismiss keeps onDismiss in its effect deps, so a
+  // fresh arrow each render would tear the effect down and re-run it forever
+  // ("Maximum update depth exceeded"), especially with several Selects mounted.
+  const close = useCallback(() => setOpen(false), []);
   const insets = useSafeAreaInsets();
   const { handlers, showFocusRing } = useInteractionState(disabled);
-  useOverlayDismiss(open, () => setOpen(false));
+  useOverlayDismiss(open, close);
 
   const selected = useMemo(
     () => options.find((option) => option.value === value),
@@ -119,15 +123,11 @@ export function Select<TValue extends string = string>({
         visible={open}
         transparent
         animationType="slide"
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={close}
         statusBarTranslucent
       >
         <View style={styles.overlay}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setOpen(false)}
-            accessibilityLabel="Close"
-          />
+          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close" />
           <View style={[styles.sheet, shadow('lg'), { paddingBottom: insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <Text variant="dialogTitle">{title ?? label ?? ''}</Text>

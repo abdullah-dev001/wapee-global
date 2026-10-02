@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       audit_logs: {
@@ -69,40 +94,55 @@ export type Database = {
         Row: {
           address: string | null
           business_id: string
+          country_code: string
           created_at: string
-          currency: string | null
+          currency: string
           deleted_at: string | null
           id: string
+          invoice_next_no: number
+          invoice_prefix: string
           is_primary: boolean
           name: string
           phone: string | null
-          timezone: string | null
+          tax_number: string | null
+          tax_rate_bp: number
+          timezone: string
           updated_at: string
         }
         Insert: {
           address?: string | null
           business_id: string
+          country_code: string
           created_at?: string
-          currency?: string | null
+          currency: string
           deleted_at?: string | null
           id?: string
+          invoice_next_no?: number
+          invoice_prefix: string
           is_primary?: boolean
           name: string
           phone?: string | null
-          timezone?: string | null
+          tax_number?: string | null
+          tax_rate_bp?: number
+          timezone: string
           updated_at?: string
         }
         Update: {
           address?: string | null
           business_id?: string
+          country_code?: string
           created_at?: string
-          currency?: string | null
+          currency?: string
           deleted_at?: string | null
           id?: string
+          invoice_next_no?: number
+          invoice_prefix?: string
           is_primary?: boolean
           name?: string
           phone?: string | null
-          timezone?: string | null
+          tax_number?: string | null
+          tax_rate_bp?: number
+          timezone?: string
           updated_at?: string
         }
         Relationships: [
@@ -184,10 +224,11 @@ export type Database = {
       }
       businesses: {
         Row: {
-          country_code: string
           created_at: string
           created_by: string | null
-          currency: string
+          default_country_code: string | null
+          default_currency: string | null
+          default_timezone: string | null
           deleted_at: string | null
           id: string
           industry: string | null
@@ -197,17 +238,15 @@ export type Database = {
           plan_activated_at: string | null
           slug: string
           status: Database["public"]["Enums"]["business_status"]
-          tax_number: string | null
-          tax_rate_bp: number
-          timezone: string
           trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
-          country_code: string
           created_at?: string
           created_by?: string | null
-          currency: string
+          default_country_code?: string | null
+          default_currency?: string | null
+          default_timezone?: string | null
           deleted_at?: string | null
           id?: string
           industry?: string | null
@@ -217,17 +256,15 @@ export type Database = {
           plan_activated_at?: string | null
           slug: string
           status?: Database["public"]["Enums"]["business_status"]
-          tax_number?: string | null
-          tax_rate_bp?: number
-          timezone: string
           trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
-          country_code?: string
           created_at?: string
           created_by?: string | null
-          currency?: string
+          default_country_code?: string | null
+          default_currency?: string | null
+          default_timezone?: string | null
           deleted_at?: string | null
           id?: string
           industry?: string | null
@@ -237,9 +274,6 @@ export type Database = {
           plan_activated_at?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["business_status"]
-          tax_number?: string | null
-          tax_rate_bp?: number
-          timezone?: string
           trial_ends_at?: string | null
           updated_at?: string
         }
@@ -499,6 +533,10 @@ export type Database = {
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
+      suggest_invoice_prefix: {
+        Args: { p_business_id: string; p_name: string }
+        Returns: string
+      }
       write_audit_log: {
         Args: {
           p_action: string
@@ -641,6 +679,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       business_plan: ["solo", "team", "business"],

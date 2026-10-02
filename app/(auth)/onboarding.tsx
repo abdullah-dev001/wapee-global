@@ -71,7 +71,37 @@ export default function OnboardingScreen() {
   // which React Compiler cannot memoize (it skips the whole component).
   const slug = useWatch({ control, name: 'slug' });
   const countryCode = useWatch({ control, name: 'countryCode' });
-  const timezoneOptions = useMemo(() => timezoneOptionsFor(countryCode), [countryCode]);
+
+  // These lists are large (280 / 162 / 418 entries). Building them inline in
+  // JSX hands Select a brand-new array on every render, which re-renders Select,
+  // which renders again: "Maximum update depth exceeded". Memoise all three.
+  const countryOptions = useMemo(
+    () =>
+      allCountries.map((country) => {
+        const preset = findCountry(country.code);
+        return {
+          value: country.code,
+          label: country.name,
+          hint: preset ? `${preset.currency} · ${preset.timezone}` : undefined,
+        };
+      }),
+    [],
+  );
+
+  const currencyOptions = useMemo(
+    () =>
+      allCurrencies.map((currency) => ({
+        value: currency.code,
+        label: currency.code,
+        hint: currency.name,
+      })),
+    [],
+  );
+
+  const timezoneOptions = useMemo(
+    () => timezoneOptionsFor(countryCode).map((zone) => ({ value: zone, label: zone })),
+    [countryCode],
+  );
 
   // Both of these used to be effects watching form values, which looped:
   // setValue re-rendered, the watched value looked "new", the effect ran again.
@@ -199,6 +229,22 @@ export default function OnboardingScreen() {
           </>
         ) : (
           <>
+            <View style={styles.sectionHeader}>
+              <Text variant="cardTitle">{t('onboarding.steps.location')}</Text>
+              <Text variant="helper" color="textSecondary">
+                {t('onboarding.locationIntro')}
+              </Text>
+            </View>
+
+            <FormField
+              control={control}
+              name="branchName"
+              label={t('onboarding.fields.branchName')}
+              placeholder={t('onboarding.placeholders.branchName')}
+              hint={t('onboarding.hints.branchName')}
+              returnKeyType="next"
+            />
+
             <Controller
               control={control}
               name="countryCode"
@@ -207,15 +253,9 @@ export default function OnboardingScreen() {
                   label={t('onboarding.fields.country')}
                   value={field.value}
                   onChange={handleCountryChange}
+                  hint={t('onboarding.hints.country')}
                   // Every ISO country, not just the ones with a pre-fill.
-                  options={allCountries.map((country) => {
-                    const preset = findCountry(country.code);
-                    return {
-                      value: country.code,
-                      label: country.name,
-                      hint: preset ? `${preset.currency} · ${preset.timezone}` : undefined,
-                    };
-                  })}
+                  options={countryOptions}
                   required
                 />
               )}
@@ -229,11 +269,7 @@ export default function OnboardingScreen() {
                   label={t('onboarding.fields.currency')}
                   value={field.value}
                   onChange={field.onChange}
-                  options={allCurrencies.map((currency) => ({
-                    value: currency.code,
-                    label: currency.code,
-                    hint: currency.name,
-                  }))}
+                  options={currencyOptions}
                   hint={t('onboarding.hints.currency')}
                   required
                 />
@@ -249,21 +285,11 @@ export default function OnboardingScreen() {
                   value={field.value}
                   onChange={field.onChange}
                   // The country's own zones first, then every other IANA zone.
-                  options={timezoneOptions.map((zone) => ({ value: zone, label: zone }))}
+                  options={timezoneOptions}
                   hint={t('onboarding.hints.timezone')}
                   required
                 />
               )}
-            />
-
-            <FormField
-              control={control}
-              name="branchName"
-              label={t('onboarding.fields.branchName')}
-              placeholder={t('onboarding.placeholders.branchName')}
-              hint={t('onboarding.hints.branchName')}
-              returnKeyType="go"
-              onSubmitEditing={onSubmit}
             />
 
             <View style={styles.actions}>
@@ -290,6 +316,7 @@ const styles = StyleSheet.create({
     borderWidth: theme.borderWidth.hairline,
     borderColor: theme.colors.error,
   },
+  sectionHeader: { gap: theme.spacing[4] },
   actions: { flexDirection: 'row', gap: theme.spacing[8], alignItems: 'center' },
   grow: { flex: 1 },
 });

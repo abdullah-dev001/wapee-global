@@ -242,7 +242,9 @@ overlay rgba(0,0,0,0.5)
 - Money: integer **minor units** (`amount_minor bigint`) + `currency` (ISO 4217). Never floats.
 - **No double-booking** enforced in Postgres with exclusion constraints (staff + time range; resource + time range).
 - Financial records (invoices, payments, commission, session usage) are **immutable**: corrections via credit notes / reversal rows.
-- Invoice numbers sequential per business with no gaps (done in DB).
+- **Country, currency, timezone, address and tax settings belong to the BRANCH** (one business can have branches in different countries). The business only keeps `default_*` values to pre-fill new branches. Slot maths, reminders and "today" always use the branch timezone. A branch's currency cannot change once it has any invoice or payment.
+- Invoice numbers: `<branch prefix>-<number>`, **sequential per branch with no gaps** (done in DB). Branch prefix is unique within the business and cannot change after the first invoice.
+- Reports and combined views never add amounts of different currencies: group by currency (no conversion at launch).
 - Audit log rows for: role changes, financial actions, soft deletes, super admin access.
 - Index every foreign key and every column used in filters/sorting. Use `pg_trgm` index for text search.
 - Complex reads/writes that need atomicity or heavy joins → Postgres function (RPC) or Edge Function, not chained client calls.

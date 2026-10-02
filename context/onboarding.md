@@ -10,7 +10,9 @@ location. Creating it starts the 14-day trial and makes them Owner.
 - **One business per self-serve signup.** `create_business_with_owner` refuses a second (the owner can still be invited into others).
 - Slug must pass format, length, the reserved list and uniqueness. Checked live in the form **and** enforced by the DB (`is_slug_available`, the reserved-slug trigger, CHECK constraints).
 - The slug is suggested from the business name until the owner edits it; after that it is left alone.
+- **Country, currency and timezone belong to the FIRST BRANCH**, not the business (decision 23). Step 2 is "Your first location" and says so, because other locations can differ.
 - **Any country in the world can be chosen** (280 ISO countries), with **162 currencies** and **418 IANA timezones**. The 37-row table in `countries.ts` only PRE-FILLS currency and timezone; it never limits the choices. A country not in the table gets no pre-fill and the owner picks both.
+- The branch gets an **invoice prefix** derived from the location name (first 3 letters, uppercased, suffixed on collision), unique within the business.
 - Multi-timezone countries (US, Canada, Brazil, Australia, Mexico, Indonesia, Russia) list their main zones first in the picker, with every other zone below.
 - Currency is hard to change later (invoices), so the form warns about it.
 - Trial = 14 days, `status = 'trialing'`, `plan = null`. The trial gets Business-level features (agreed); the real plan is assigned by super admin.
@@ -31,7 +33,8 @@ location. Creating it starts the 14-day trial and makes them Owner.
 
 ## Database
 - RPC `create_business_with_owner(name, slug, country, currency, timezone, language, industry, branch_name) -> uuid`
-  One transaction: business + first branch + Owner membership + role assignment + `default_business_id` + audit row. Any failure rolls back everything.
+  One transaction: business + first branch (**which owns country/currency/timezone and gets an invoice prefix**) + Owner membership + role assignment + `default_business_id` + audit row. The same locale values are copied to the business `default_*` columns to pre-fill a second location. Any failure rolls back everything.
+- RPC `suggest_invoice_prefix(business_id, name) -> text` — a short unique prefix from a location name.
 - RPC `is_slug_available(slug) -> boolean` — format, reserved list and uniqueness in one call.
 - RPC `write_audit_log(...)` — the only way to write `audit_logs` (no INSERT policy).
 - Migrations: `20261002093000_create_business_with_owner.sql`, `20261002094000_fix_role_guard_allow_first_owner.sql`
@@ -56,7 +59,9 @@ Namespace `common`, key `onboarding.*`.
 - Industry presets (starter custom fields, terminology, website template) are **not** built; only the industry key is stored. Preset content is defined by the owner outside development (product doc §3).
 - Country/currency/timezone lists are a **build-time snapshot** of Node's ICU data, because **Hermes has no `Intl.Locale` or `Intl.supportedValuesOf`** (verified on device — they exist in Node and browsers but are `undefined` on native). Re-run `node scripts/generate-locale-data.mjs` after a Node upgrade. Names are English-only for now; translating them needs a per-language snapshot.
 - No business switcher yet; `default_business_id` is set but nothing reads it for switching.
+- Adding a SECOND location is not built yet (Phase 9 multi-branch UI); the schema already supports it.
 
 ## Changelog
+- 2026-10-02: Step 2 is now "Your first location": the branch owns country, currency and timezone. Fixed a render loop in `Select` (an inline `onDismiss` re-ran `useOverlayDismiss`'s effect every render); the hook now holds the callback in a ref so any caller is safe.
 - 2026-10-02: Country/currency/timezone selects now use the full ICU lists (280/162/418); the table only pre-fills. Multi-zone countries show their main zones first.
 - 2026-10-02: Signup RPC + two-step wizard. Verified end to end on web: gate redirects to onboarding, slug suggestion and live availability work, business created with 1 branch and 1 member, trial ends in 14 days, owner then lands in the app.

@@ -120,8 +120,7 @@
     "step": "Step {{current}} of {{total}}",
     "steps": {
       "business": "Your business",
-      "location": "Location and currency",
-      "branch": "Your first location"
+      "location": "Your first location"
     },
     "fields": {
       "name": "Business name",
@@ -141,8 +140,9 @@
     "hints": {
       "slug": "Customers will book at {{siteUrl}}/{{slug}}",
       "branchName": "Leave blank to use your business name.",
-      "currency": "Used on every invoice. Pick carefully: changing it later does not convert existing amounts.",
-      "timezone": "All appointment times use this."
+      "currency": "Used on this location's invoices. It cannot change once invoices exist.",
+      "timezone": "Appointment times at this location use this.",
+      "country": "Sets tax rules and SMS rates for this location."
     },
     "slug": {
       "checking": "Checking…",
@@ -177,6 +177,7 @@
       "currencyRequired": "Pick a currency",
       "timezoneRequired": "Pick a timezone"
     },
-    "creating": "Creating your business…"
+    "creating": "Creating your business…",
+    "locationIntro": "These settings belong to this location. If you add more locations later, each one can have its own country, currency and timezone."
   }
 }

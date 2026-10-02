@@ -4,7 +4,8 @@
  *
  * Rules:
  * - The DB stores `timestamptz` in UTC; the app passes ISO strings (`UtcIso`).
- * - Business / branch timezone is an IANA name (`IanaTimeZone`), e.g. "Asia/Karachi".
+ * - The **branch** owns the timezone (IANA, e.g. "Asia/Karachi"). A business can
+ *   have branches in different countries, so there is no single business zone.
  * - Wall-clock values (what a person sees on a clock in that zone) are `LocalDate` / `LocalTime`.
  * - Display formatting uses the business locale via Intl.
  *
@@ -30,7 +31,11 @@ export function nowUtc(): UtcIso {
   return notImplemented('nowUtc');
 }
 
-/** Device timezone (IANA). Used only as a default before the business timezone is known. */
+/**
+ * Device timezone (IANA). Used only to pre-fill a form before the BRANCH
+ * timezone is known. Never use it for slot maths, reminders or "today":
+ * those always take the branch timezone (product doc decision 23).
+ */
 export function getDeviceTimeZone(): IanaTimeZone {
   return notImplemented('getDeviceTimeZone');
 }

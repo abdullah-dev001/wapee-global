@@ -11,8 +11,8 @@ Status: in progress · Phase: 1 · Last updated: 2026-10-02
 | Table | Key columns | Notes |
 |---|---|---|
 | `profiles` | id→auth.users, email, full_name, **is_super_admin**, default_business_id, locale | 1:1 with auth.users via trigger. `is_super_admin` set **only by hand in SQL**. |
-| `businesses` | name, **slug** (citext unique), country_code, currency, timezone, language, tax_number, tax_rate_bp, **plan**, **status**, **trial_ends_at**, plan_activated_at | Tenant root. `tax_rate_bp` = basis points (2000 = 20%). |
-| `branches` | business_id, name, is_primary, **timezone**, **currency**, address, phone | One per business until Phase 9. timezone/currency override the business — **multi-branch adds no columns**. |
+| `businesses` | name, **slug** (citext unique), industry, language, **plan**, **status**, **trial_ends_at**, plan_activated_at, `default_country_code`, `default_currency`, `default_timezone` (all nullable) | Tenant root. The `default_*` columns are **PRE-FILL ONLY** for a new branch — never read them for tax, SMS rates, slots or reporting. |
+| `branches` | business_id, name, is_primary, **country_code**, **currency**, **timezone** (all NOT NULL), address, phone, **tax_number**, **tax_rate_bp**, **invoice_prefix**, **invoice_next_no** | **Owns country, currency, timezone and tax** (decision 23). A business can have branches in different countries. `tax_rate_bp` = basis points (2000 = 20%). |
 | `business_members` | business_id, user_id, status, invited_email, **invite_token_hash**, invite_expires_at, invited_by, joined_at | One user ↔ many businesses. Only the token *hash* is stored. |
 | `roles` | business_id (**null = system role**), key, name, is_system | 4 system roles; custom roles (Phase 9) carry a business_id. |
 | `role_permissions` | role_id, permission→permissions.key, **scope** | scope = own / branch / all. |
@@ -22,6 +22,17 @@ Status: in progress · Phase: 1 · Last updated: 2026-10-02
 | `reserved_slugs` | slug | 112 rows, mirrors `src/config/reservedSlugs.ts`. Readable by anon so signup can check availability. |
 
 Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (solo/team/business), `member_status` (invited/active/disabled), `permission_scope` (own/branch/all).
+
+## Branch-owned settings (decisions 23–25)
+A business can have branches in different countries, so the **branch** is the
+source of truth for locale and money:
+
+- **Timezone:** slot calculation, reminders and "today" use `branch.timezone`. There is no business timezone. `src/lib/time/` already takes an explicit zone on every function, so nothing assumes one per business.
+- **Currency:** belongs to the branch. **Locked once the branch has an invoice or payment** — the trigger currently only audits the change; the hard block lands in Phase 5 when `invoices` and `invoice_payments` exist (TODO in `enforce_branch_currency_lock`).
+- **Tax:** `tax_number` and `tax_rate_bp` are per branch, because tax is a property of the location.
+- **Invoice numbering:** per branch, `prefix-000123`, gapless within the branch (decision 24, replaces the old per-business rule). `invoice_prefix` is required, unique within the business, and locked once numbering has started. `suggest_invoice_prefix()` derives one from the location name (first 3 letters, uppercased, suffixed if it collides).
+- **Reports must never add different currencies** (decision 25). Group by currency and show separate totals ("£2,400 · Rs 180,000"). No conversion at launch: that needs dated exchange rates, and a wrong rate silently corrupts financial reports. Revisit with multi-branch in Phase 9.
+- **SMS credits and rates depend on the BRANCH country**, not the business (§8.4, Appendix B). A message from a UK branch and one from a Pakistani branch cost different amounts. Note for Phase 6.
 
 ## RLS helpers
 | Function | Returns |
@@ -77,13 +88,18 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | `20261001190000_phase1_rls_policies.sql` | every policy + the role/owner guard triggers |
 | `20261001190500_fix_rls_and_function_grants.sql` | **fixed: RLS was missing on `business_members`**; revoked EXECUTE on trigger fns |
 | `20261002080000_perf_rls_initplan_and_indexes.sql` | `(select auth.uid())` initplan fix, 2 FK indexes |
-| `20261002080500_perf_split_for_all_policies.sql` | **NOT APPLIED** — see below |
+| `20261002080500_perf_split_for_all_policies.sql` | Split FOR ALL policies — **applied 2026-10-02 via `supabase db push`** |
+| `20261002093000_create_business_with_owner.sql` | Signup RPC, `is_slug_available`, `write_audit_log` |
+| `20261002094000_fix_role_guard_allow_first_owner.sql` | Narrowed escalation guard for the founding Owner |
+| `20261002120000_branch_owns_locale_and_tax.sql` | **Branch owns country/currency/timezone/tax**; invoice series per branch; business columns renamed `default_*` |
+| `20261002123000_lock_down_new_functions.sql` | Revoked anon EXECUTE on `suggest_invoice_prefix` |
 
 ## Known limits / TODO
-- **`20261002080500_perf_split_for_all_policies.sql` is not applied.** Three tables (`roles`, `role_permissions`, `member_role_assignments`) have a `FOR ALL` write policy that also covers SELECT, so each read evaluates two permissive policies. The file splits them into INSERT/UPDATE/DELETE. It needs `DROP POLICY`, which the connector refuses; apply it with `supabase db push` once the CLI is signed in to the right account, or paste it into the SQL editor. **Rules are unchanged — this is performance only.**
-- The CLI cannot link this project, so `supabase test db` cannot run the pgTAP file; the same assertions were executed through the connector instead.
-- No signup RPC yet (`create_business_with_owner`) — next step.
+- **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
+- **Leaked-password protection is OFF** (security advisor). It is a dashboard setting: Authentication → Policies → enable "Check against HaveIBeenPwned". Worth turning on before real users.
+- Phase 5 must add the hard currency lock (block the change when invoices/payments exist) and the gapless per-branch numbering that consumes `invoice_next_no`.
 - Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
 
 ## Changelog
+- 2026-10-02: **Branch now owns country, currency, timezone and tax** (decisions 23–25). Invoice numbering is per branch with a unique prefix. Business keeps `default_*` for pre-fill only. CLI linked; migration history repaired; pending performance migration applied.
 - 2026-10-02: Phase 1 schema: 10 tables, 46 permissions, 4 roles, all RLS + guards, advisors clean, 21 security tests passing.

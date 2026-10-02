@@ -33,6 +33,9 @@ Companion file: DESIGN_GUIDE.md (extracted from the earlier Wapee web app). Sect
 | 20 | **Apple/Google store policy review** postponed until before store submission. | Deferred |
 | 21 | **Timezone/DST and DB-level no-double-booking** must be correct from the very start. | Decided |
 | 22 | Final pricing, add-on prices and SMS rates treated as set (see section 10); still re-check after real data. | Decided |
+| 23 | **Country, currency, timezone, address and tax settings live on the branch**, not the business (branches can be in different countries). Business keeps only default_* values to pre-fill new branches. A branch currency is locked once it has an invoice or payment. | Decided |
+| 24 | **Invoice numbers are sequential per branch** (`prefix-000123`, no gaps), not per business. Replaces the earlier per-business rule. | Decided |
+| 25 | **Reports never add different currencies.** Combined views show separate totals per currency; no conversion at launch. | Decided |
 
 ---
 ## 1. Product summary
@@ -135,7 +138,7 @@ UX: sensible default, one-line explanation, live preview of customer booking pag
 - Services: name, category, duration, price, which staff, which custom fields.
 - Staff and schedule: working hours, breaks, time off, services offered.
 - Clients: profile, contact, notes, visit and invoice history.
-- Invoices: line items, discounts (reason required), **tax/VAT (tax %, business tax number, sequential invoice numbering)**, manual payment (cash, card, bank transfer), status paid/partial/pending, printable, credit notes.
+- Invoices: line items, discounts (reason required), **tax/VAT (tax % and tax number set per branch, invoice numbers sequential per branch with a branch prefix)**, manual payment (cash, card, bank transfer), status paid/partial/pending, printable, credit notes.
 - Notifications: email (Resend) confirmed, reminder, rescheduled, cancelled; **push** to business users (new booking, cancellation, reminder); SMS per section 8.4.
 - Basic reports: today and this month (revenue, appointments, top services).
 - Reviews, website, currency/timezone/language per business (per branch with Multi-branch).
@@ -219,7 +222,7 @@ Trial: 14 days; after it ends business is inactive. Subscription collection meth
 ## 11. Data model and business rules
 Every tenant row has business_id (and branch_id where relevant); RLS restricts to the user's businesses. Tables (Recommendation):
 - Platform: profiles (is_super_admin), plans, addons, business_subscriptions, business_addons, industry_presets, sms_country_rates, audit_logs
-- Business: businesses (currency, timezone, language, industry, terminology, tax settings), branches, business_members, roles, role_permissions, member_role_assignments
+- Business: businesses (name, slug, language, industry, terminology, plan/trial/status, default_country/default_currency/default_timezone for pre-fill only), branches (country, currency, timezone, address, tax number, tax rate, invoice prefix and counter), business_members, roles, role_permissions, member_role_assignments
 - Catalogue: service_categories, services, service_staff, resources, service_resources
 - Schedule: staff_working_hours, staff_breaks, staff_time_off, branch_hours
 - Booking form: booking_settings, custom_fields, custom_field_services, form_versions
@@ -229,7 +232,7 @@ Every tenant row has business_id (and branch_id where relevant); RLS restricts t
 - Growth: reviews, review_requests, sms_credit_ledger, messages, push_tokens
 - Website: websites, website_sections, widget_keys (domains table deferred)
 
-Rules: soft delete only; financial records immutable (fix via credit notes/reversals); discounts need a reason; invoice items store price at sale time; **no double-booking enforced in Postgres** (exclusion constraint on staff + time range, and resource + time range when rooms on); session usage cannot exceed purchased + bonus or pass expiry, undo within 10 min by creator, owner reverses any time, reversals are new rows; commission computed when invoice becomes paid and stored permanently; **timestamps stored in UTC, slots computed in business/branch timezone including DST**; money as integers in minor units with currency code; custom field answers stored with form version; invoice numbers sequential per business with no gaps.
+Rules: soft delete only; financial records immutable (fix via credit notes/reversals); discounts need a reason; invoice items store price at sale time; **no double-booking enforced in Postgres** (exclusion constraint on staff + time range, and resource + time range when rooms on); session usage cannot exceed purchased + bonus or pass expiry, undo within 10 min by creator, owner reverses any time, reversals are new rows; commission computed when invoice becomes paid and stored permanently; **timestamps stored in UTC, slots computed in business/branch timezone including DST**; money as integers in minor units with currency code; custom field answers stored with form version; invoice numbers sequential per branch (prefix + number) with no gaps; country, currency, timezone and tax settings come from the branch, and slots/reminders use the branch timezone.
 
 ## 12. Design system
 New Wapee uses the exact visual language of the earlier Wapee web app. Full guide: DESIGN_GUIDE.md.

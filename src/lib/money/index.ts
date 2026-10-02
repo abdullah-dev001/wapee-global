@@ -6,6 +6,9 @@
  *   ISO 4217 currency code. Never floats.
  * - Minor-unit exponent comes from the currency (USD 2, JPY 0, KWD 3), never assumed.
  * - Formatting uses Intl.NumberFormat with the business locale.
+ * - Currency belongs to the **branch**, not the business (decision 23), and
+ *   reports must never add amounts in different currencies (decision 25):
+ *   group by currency and show separate totals.
  * - Arithmetic only between amounts of the same currency.
  *
  * SKELETON: signatures only. Implement each helper in the task that first needs it.

@@ -8,24 +8,29 @@ import { type Database } from '@/lib/supabase/database.types';
 import { type OnboardingValues } from '../schemas/onboarding.schemas';
 
 type BusinessRow = Database['public']['Tables']['businesses']['Row'];
+type BranchRow = Database['public']['Tables']['branches']['Row'];
 
 export const businessKeys = createQueryKeys('businesses');
 
 /** Keys for the "which businesses am I in" lookup, which has no business scope yet. */
 const myBusinessesKey = ['businesses', 'mine'] as const;
 
+/**
+ * A business the user belongs to, with its primary branch.
+ *
+ * Country, currency and timezone belong to the BRANCH (product doc decision 23),
+ * so they are read from there and never from the business. The business keeps
+ * `default_*` copies only to pre-fill a new branch.
+ */
 export type MyBusiness = Pick<
   BusinessRow,
-  | 'id'
-  | 'name'
-  | 'slug'
-  | 'status'
-  | 'plan'
-  | 'trial_ends_at'
-  | 'currency'
-  | 'timezone'
-  | 'language'
->;
+  'id' | 'name' | 'slug' | 'status' | 'plan' | 'trial_ends_at' | 'language'
+> & {
+  branches: Pick<
+    BranchRow,
+    'id' | 'name' | 'is_primary' | 'country_code' | 'currency' | 'timezone' | 'invoice_prefix'
+  >[];
+};
 
 /**
  * Every business the signed-in user is an active member of.
@@ -42,7 +47,10 @@ export function useMyBusinesses(): UseQueryResult<MyBusiness[], Error> {
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('businesses')
-        .select('id, name, slug, status, plan, trial_ends_at, currency, timezone, language')
+        .select(
+          'id, name, slug, status, plan, trial_ends_at, language,' +
+            ' branches(id, name, is_primary, country_code, currency, timezone, invoice_prefix)',
+        )
         .is('deleted_at', null)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
