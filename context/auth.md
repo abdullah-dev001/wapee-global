@@ -54,10 +54,19 @@ to know while developing:
 
 ## Redirect URLs
 `redirectTo()` in `useAuthMutations.ts` builds them: `Linking.createURL(path)` on
-native (`wapee://`), `window.location.origin + path` on web. Every URL used must
-also be listed in the Supabase dashboard under **Authentication → URL Configuration
-→ Redirect URLs**, otherwise the link bounces. Currently needed: `/verify`,
-`/reset-password`.
+native, `window.location.origin + path` on web. Every URL must also be listed in
+the dashboard under **Authentication → URL Configuration → Redirect URLs**, or
+the link bounces.
+
+**Native URLs have THREE slashes** — `createURL` inserts an empty host. Printed
+from the running app, not assumed:
+
+| Platform | Verify | Reset |
+|---|---|---|
+| Native | `wapee:///verify` | `wapee:///reset-password` |
+| Local web | `http://localhost:8090/verify` | `http://localhost:8090/reset-password` |
+
+All four are configured in the dashboard. Add the real domain's two paths at launch.
 
 ## Data & caching
 No queries yet; auth is all mutations. The session comes from Supabase's own
@@ -82,6 +91,7 @@ display text and can be reused server-side.
 - No trial-expired lock screen yet → trial step.
 - Super admin 2FA is deferred to Phase 8 with the admin screens (agreed).
 - Sign out buttons in the sidebar and More screen are still placeholders; they get wired to `useSignOut()` in the roles step.
+- `AuthGate` has no inactive-business branch yet; the trial lock screen adds it.
 
 ## Changelog
 - 2026-10-02: Auth screens, session provider and route guard. Verified end to end on web (signup → verify → login → session persists) and on iOS.

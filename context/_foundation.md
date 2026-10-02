@@ -4,7 +4,7 @@ Status: in progress · Phase: 0 · Last updated: 2026-10-01
 
 ## What it is
 
-Project setup every feature builds on: Expo app, theme, providers, env, data layer, i18n, PWA, the base UI primitives and the responsive app shell. No feature screens yet (every route is a "coming in phase N" placeholder).
+Project setup every feature builds on: Expo app, theme, providers, env, data layer, i18n, PWA, the base UI primitives and the responsive app shell. Auth and onboarding are built (see auth.md, onboarding.md); the remaining `(app)` routes are still "coming in phase N" placeholders.
 
 ## Stack (installed with `npx expo install`)
 
@@ -14,6 +14,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 - Dev: eslint 9 (flat) + eslint-config-expo + typescript-eslint (strict) + prettier + eslint-config-prettier.
 - **Development build required** (keyboard-controller etc.); Expo Go not supported.
 - Not installed yet: charts lib (ask), expo-haptics, expo-device.
+- Env: `.env` exists locally (gitignored) with the real Supabase URL and publishable key, so the app talks to the live dev project.
 
 ## Files
 
@@ -28,7 +29,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | src/config/env.ts                                                                                                        | zod-validated public env; `env`, `isSupabaseConfigured`, `missingEnvKeys`, `warnAboutEnv()` |
 | src/lib/theme/                                                                                                           | colors, typography, tokens, shadow(), useBreakpoint(), fonts, `theme` object                |
 | src/lib/query/                                                                                                           | queryClient, staleTimes, createQueryKeys(), useAppFocusManager()                            |
-| src/lib/supabase/                                                                                                        | client (`supabase`, `getSupabase()`), auth storage, auto refresh, placeholder types         |
+| src/lib/supabase/                                                                                                        | client (`supabase`, `getSupabase()`), auth storage, auto refresh, **generated** database.types.ts |
 | src/lib/i18n/                                                                                                            | i18next instance, resources, typed keys, RTL helpers                                        |
 | src/lib/time/index.ts · src/lib/money/index.ts                                                                           | SKELETONS: typed signatures, bodies throw `notImplemented()`                                |
 | src/lib/notImplemented.ts                                                                                                | Throw helper for skeletons                                                                  |
@@ -71,6 +72,7 @@ Specs come from DESIGN_GUIDE §12 + CLAUDE.md §5. Every component works on iOS,
 | `Spinner` | `size`, `color`, `trackColor` | 600ms rotation. Buttons and small inline waits only. |
 | `EmptyState` | `title`, `description`, `icon`, `action`, `compact` | Every list needs one (empty vs no-results). |
 | `Toggle` | `value`, `onValueChange`, `label`, `disabled` | 36×20 track, 14px thumb, animated 180ms. |
+| `Select` | `options`, `value`, `onChange`, `label`, `hint`, `error`, `required` | Sheet-based picker, same on all platforms. Handles long lists (418 timezones) with FlatList. |
 | `Tabs` | `items`, `value`, `onChange` | Underline style; strip scrolls horizontally. Generic over the value type. |
 | `Dialog` | `open`, `onClose`, `title`, `message`, `confirm`, `cancelLabel`, `busy` | Centred, max 416px. Escape / Android back / scrim tap close it (`busy` blocks). |
 | `Drawer` | `open`, `onClose`, `title`, `subtitle`, `footer` | 480px from the end edge; full-screen sheet on mobile. Footer pinned above the safe area. |
@@ -81,8 +83,9 @@ Shared internals: `useInteractionState()` (hover/focus/pressed; hover and focus 
 Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
-- Not built yet: Select, Checkbox/Radio, Segmented control, Pagination, DataTable, SearchInput, PhoneInput, DatePicker, TimeSlotPicker, MoneyInput, Avatar, Collapsible, StepWizard, FormAlert, StatCard.
+- Not built yet: Checkbox/Radio, Segmented control, Pagination, DataTable, SearchInput, PhoneInput, DatePicker, TimeSlotPicker, MoneyInput, Avatar, Collapsible, StepWizard, FormAlert, StatCard.
 - `useInteractionState` shows the focus ring only when the browser reports `:focus-visible`, so a mouse click leaves no ring while keyboard tabbing does.
+- `useOverlayDismiss` holds `onDismiss` in a ref. Passing it an inline arrow used to re-run its effect every render ("Maximum update depth exceeded") once several overlays were mounted; the ref makes any caller safe.
 
 
 ## Layout & shell (`src/components/layout`)

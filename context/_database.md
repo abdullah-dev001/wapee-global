@@ -74,7 +74,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | Staff | 10 — own appointments, own schedule, own commission | own |
 
 ## Verification (2026-10-02)
-21 security checks run against the live database, all passing: tenant isolation (owner A / owner B / staff / anon), cross-tenant writes affect 0 rows, staff cannot reach invoices/billing/roles, expired trial locks operational data but not settings, and all four escalation guards hold. Test file: `supabase/tests/01_rls_tenant_isolation.sql` (pgTAP; must be run through the SQL editor until the CLI can link).
+21 security checks run against the live database, all passing: tenant isolation (owner A / owner B / staff / anon), cross-tenant writes affect 0 rows, staff cannot reach invoices/billing/roles, expired trial locks operational data but not settings, and all four escalation guards hold. Test files: `supabase/tests/01_rls_tenant_isolation.sql`, `02_role_assignment_guard.sql`, `03_branch_locale_and_invoice_series.sql` (pgTAP).
 
 **Advisors:** security = clean (0 errors). The 6 remaining SECURITY DEFINER warnings are intentional — those helpers only ever report on the caller's own access and `usePermission()` needs them. Performance = clean except the item below.
 
