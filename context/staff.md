@@ -1,5 +1,5 @@
 # Staff
-Status: schema done · UI next · Phase: 2 · Last updated: 2026-10-02
+Status: done (Phase 2 scope) · Phase: 2 · Last updated: 2026-10-02
 
 ## What it does
 The people who perform services. A staff member is a profile, not necessarily an
@@ -26,6 +26,11 @@ Also records which branches they work at and which services they perform.
 |---|---|
 | supabase/migrations/20261002181000_staff_and_schedule.sql | Tables, RLS, guards, `is_own_staff_profile()` |
 | supabase/tests/05_catalogue_and_schedule.sql | pgTAP (see Verification) |
+| app/(app)/staff.tsx | List + create/edit drawer + schedule drawer + remove dialog |
+| src/features/staff/api/useStaff.ts | `useStaff`, `useSaveStaff`, `useDeleteStaff` |
+| src/features/staff/components/StaffForm.tsx | Create/edit, branch and service assignment |
+| src/features/staff/components/StaffList.tsx | Rows with status badges |
+| src/features/staff/schemas/staff.schemas.ts | zod; limits mirror the DB CHECKs |
 
 ## Database
 | Table | Key columns |
@@ -44,8 +49,17 @@ Also records which branches they work at and which services they perform.
   [schedule.md](schedule.md).
 
 ## Data & caching
-Not built yet. Planned: `staffKeys.list({businessId, branchId})`, staleTime
-`static`.
+- `staffKeys.list({ businessId, branchId, search, filters })`, staleTime `static`.
+- `useSaveStaff` replaces the branch and service links wholesale rather than
+  diffing them: both are plain joins with no history, so replacing is simpler and
+  cannot leave a half-updated set. It also invalidates the service queries,
+  because a service's staff list changed too.
+- **Branch filtering happens in JS**, not on the server: a team is tens of rows
+  and the branch list arrives in the same round trip, while a server-side join
+  would hide staff who have no branch assigned yet.
+- `useSaveStaff` is **not atomic** (profile, then branches, then services). A
+  failure part-way leaves a recoverable state, not a corrupt one; an RPC would be
+  tidier.
 
 ## Permissions & gating
 - `staff.view` to see the team (the nav item uses it).
@@ -54,8 +68,19 @@ Not built yet. Planned: `staffKeys.list({businessId, branchId})`, staleTime
 - Editing one's *own* profile is deliberately **not** covered: a "my profile"
   screen is a Phase 4 concern and `staff.manage` should not imply it.
 
+## UI
+- Card list with a **"No app access" badge** when `member_id` is null, so an owner
+  can see at a glance who can actually open the app.
+- Create/edit in a `Drawer`; a second drawer opens that person's weekly schedule
+  ([schedule.md](schedule.md)).
+- The schedule button appears for anyone with `staff.manage_schedule`, which is
+  wider than editing the profile, because Staff may edit their **own** hours.
+- The email field is labelled as a contact detail and says explicitly that it does
+  not create a login.
+- Remove is a soft delete behind a `Dialog` that says history is kept.
+
 ## i18n
-Namespace `common`, keys `staff.*` (added with the UI).
+Namespace `common`, keys `staff.*`.
 
 ## Verification (2026-10-02)
 Against the live database, in rolled-back transactions:
@@ -63,13 +88,22 @@ Against the live database, in rolled-back transactions:
 - **10 RLS assertions** passing, including: a Staff member cannot add a staff
   profile, cannot add a service, cannot set branch hours, but can read the team;
   an Owner can do all of it. Full list in [schedule.md](schedule.md).
+- **8 client-path assertions through the real REST API** as a signed-in owner:
+  staff created with `member_id` null · branch assigned · a split shift plus a
+  second day saved through the delete-then-insert path · **an overlapping shift
+  refused (23P01)** · **an overnight shift refused (23514)** · the exact SELECT the
+  schedule hook runs returns the rows in order · time off booked · overlapping
+  time off refused.
 
 ## Known limits / TODO
-- **No UI yet** — staff list, profile, services offered, branch assignment.
-- No link from the invite flow to a staff profile: inviting someone creates a
-  `business_member` but no `staff_profile`. Deciding whether that should be
-  automatic is a UI-stage question ([members.md](members.md)).
+- **Inviting someone does not create a staff profile**, and creating a staff
+  profile does not invite them — they are separate on purpose (most staff need no
+  login), but there is no "give this person app access" button linking the two.
+  Worth adding: it is the obvious next question an owner asks.
+- No reordering (`sort_order` exists but nothing sets it).
+- `useSaveStaff` is not atomic (see above).
 - No avatar/photo (needs the files add-on, Phase 8).
 
 ## Changelog
+- 2026-10-02: Staff UI: list with no-login badge, create/edit drawer, branch and service assignment, soft delete, schedule drawer.
 - 2026-10-02: Staff schema: profiles with optional member_id, branch assignment, service assignment, RLS, Own-scope helper.

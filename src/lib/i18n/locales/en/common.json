@@ -271,7 +271,36 @@
     "removeInterval": "Remove this time",
     "startDate": "From",
     "endDate": "To",
-    "dateFormatHint": "Use the format YYYY-MM-DD, for example 2026-12-25."
+    "dateFormatHint": "Use the format YYYY-MM-DD, for example 2026-12-25.",
+    "title": "Schedule",
+    "workingHours": "Working hours",
+    "breaks": "Breaks",
+    "breaksHint": "Breaks sit inside the working day, like a lunch hour.",
+    "saved": "Schedule saved",
+    "timeOff": "Time off",
+    "addTimeOff": "Add time off",
+    "timeOffSaved": "Time off added",
+    "timeOffEmpty": {
+      "title": "No time off booked",
+      "description": "Holidays and days away will show here."
+    },
+    "timeOffReason": "Reason",
+    "timeOffReasonPlaceholder": "Optional, e.g. Holiday",
+    "staffMember": "Staff member",
+    "cancelTimeOff": "Cancel this time off",
+    "branchHours": "Opening hours",
+    "branchHoursHint": "When this branch is open. Staff hours sit inside these.",
+    "holidays": "Holidays and closures",
+    "addHoliday": "Add closure",
+    "holidayName": "Name",
+    "holidayNamePlaceholder": "e.g. Christmas Day",
+    "holidaysEmpty": {
+      "title": "No closures",
+      "description": "Add days the branch is shut."
+    },
+    "error": {
+      "title": "Could not load the schedule"
+    }
   },
   "services": {
     "title": "Services",
