@@ -1300,6 +1300,18 @@ export type Database = {
           scope: Database["public"]["Enums"]["permission_scope"]
         }[]
       }
+      replace_branch_hours: {
+        Args: { p_branch_id: string; p_intervals: Json }
+        Returns: number
+      }
+      replace_staff_breaks: {
+        Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
+        Returns: number
+      }
+      replace_staff_working_hours: {
+        Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
+        Returns: number
+      }
       suggest_invoice_prefix: {
         Args: { p_business_id: string; p_name: string }
         Returns: string

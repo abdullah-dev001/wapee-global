@@ -86,45 +86,44 @@ export type SaveScheduleInput = {
 };
 
 /**
- * Replaces a person's week at one branch: delete, then insert.
+ * Replaces a person's week at one branch, **in one transaction**.
  *
- * Replace rather than diff because the exclusion constraints make an in-place
- * edit order-dependent — moving 09:00–17:00 to 10:00–18:00 would briefly overlap
- * itself and be refused. Deleting first sidesteps that entirely.
+ * The work happens in the `replace_staff_working_hours` /
+ * `replace_staff_breaks` RPCs, so either the whole week is replaced or nothing
+ * changes. The client used to DELETE then INSERT as two requests, which could
+ * leave the week empty if the insert failed (migration 20261002190000).
  *
- * **Not transactional**: a failed insert leaves the week empty, which is visible
- * and re-editable but not ideal. An RPC doing both in one transaction is the
- * right fix and is noted in context/schedule.md.
+ * The RPCs are SECURITY INVOKER, so RLS still applies, and they re-check the
+ * permission themselves to return a clear error instead of a silent no-op.
  */
 export function useSaveStaffSchedule(businessId: string | null, branchId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation<undefined, Error, SaveScheduleInput>({
+  return useMutation<number, Error, SaveScheduleInput>({
     mutationFn: async ({ staffId, intervals, table }) => {
       if (!businessId || !branchId) throw new Error('No branch selected');
-      const supabase = getSupabase();
 
-      const { error: clearError } = await supabase
-        .from(table)
-        .delete()
-        .eq('staff_id', staffId)
-        .eq('branch_id', branchId);
-      if (clearError) throw new Error(clearError.message);
+      const payload = intervals.map((interval) => ({
+        day_of_week: interval.dayOfWeek,
+        start_minute: interval.startMinute,
+        end_minute: interval.endMinute,
+      }));
 
-      if (intervals.length > 0) {
-        const { error } = await supabase.from(table).insert(
-          intervals.map((interval) => ({
-            staff_id: staffId,
-            branch_id: branchId,
-            business_id: businessId,
-            day_of_week: interval.dayOfWeek,
-            start_minute: interval.startMinute,
-            end_minute: interval.endMinute,
-          })),
-        );
-        if (error) throw new Error(error.message);
-      }
-      return undefined;
+      const { data, error } =
+        table === 'staff_working_hours'
+          ? await getSupabase().rpc('replace_staff_working_hours', {
+              p_staff_id: staffId,
+              p_branch_id: branchId,
+              p_intervals: payload,
+            })
+          : await getSupabase().rpc('replace_staff_breaks', {
+              p_staff_id: staffId,
+              p_branch_id: branchId,
+              p_intervals: payload,
+            });
+
+      if (error) throw new Error(error.message);
+      return data ?? 0;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({

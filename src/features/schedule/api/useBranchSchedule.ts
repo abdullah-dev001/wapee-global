@@ -73,42 +73,35 @@ export function useBranchSchedule(
 }
 
 /**
- * Replaces the branch's whole week. Delete then insert, for the same reason as
- * the staff schedule: an in-place edit would transiently overlap itself and the
- * exclusion constraint would refuse it. **Not transactional** — see
- * context/schedule.md.
+ * Replaces the branch's whole week, **in one transaction**.
+ *
+ * Runs through the `replace_branch_hours` RPC for the same reason as the staff
+ * schedule: a two-request delete-then-insert could leave the week empty if the
+ * insert failed (migration 20261002190000). SECURITY INVOKER, so RLS applies,
+ * and the RPC re-checks `settings.business` to give a clear error.
  */
 export function useSaveBranchHours(businessId: string | null, branchId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation<
-    undefined,
+    number,
     Error,
     { intervals: { dayOfWeek: number; startMinute: MinuteOfDay; endMinute: MinuteOfDay }[] }
   >({
     mutationFn: async ({ intervals }) => {
       if (!businessId || !branchId) throw new Error('No branch selected');
-      const supabase = getSupabase();
 
-      const { error: clearError } = await supabase
-        .from('branch_hours')
-        .delete()
-        .eq('branch_id', branchId);
-      if (clearError) throw new Error(clearError.message);
+      const { data, error } = await getSupabase().rpc('replace_branch_hours', {
+        p_branch_id: branchId,
+        p_intervals: intervals.map((interval) => ({
+          day_of_week: interval.dayOfWeek,
+          start_minute: interval.startMinute,
+          end_minute: interval.endMinute,
+        })),
+      });
 
-      if (intervals.length > 0) {
-        const { error } = await supabase.from('branch_hours').insert(
-          intervals.map((interval) => ({
-            branch_id: branchId,
-            business_id: businessId,
-            day_of_week: interval.dayOfWeek,
-            start_minute: interval.startMinute,
-            end_minute: interval.endMinute,
-          })),
-        );
-        if (error) throw new Error(error.message);
-      }
-      return undefined;
+      if (error) throw new Error(error.message);
+      return data ?? 0;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({

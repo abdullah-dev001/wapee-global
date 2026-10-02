@@ -10,7 +10,7 @@
 -- installed; the plan count below is therefore unverified.
 
 begin;
-select plan(20);
+select plan(23);
 
 create temporary table t (k text primary key, v uuid) on commit drop;
 
@@ -220,6 +220,36 @@ select throws_ok(
   format('insert into public.staff_profiles (business_id, display_name) values (%L, ''Sneaky'')',
     (select v from t where k='biz_a')),
   '42501', null, 'a Staff member cannot add a staff profile (needs staff.manage)');
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- 8. The replace-a-week RPCs are transactional
+-- ---------------------------------------------------------------------------
+-- The whole point: a payload the constraints refuse must leave the PREVIOUS week
+-- intact, not an empty one (migration 20261002190000).
+select set_config('request.jwt.claims',
+  json_build_object('sub',(select v from t where k='owner_a'),'role','authenticated')::text, true);
+set local role authenticated;
+
+select is(
+  public.replace_staff_working_hours(
+    (select v from t where k='staff_a'), (select v from t where k='branch_a'),
+    '[{"day_of_week":1,"start_minute":540,"end_minute":1020}]'::jsonb),
+  1, 'the RPC replaces a week and reports the row count');
+
+select throws_ok(
+  format($q$select public.replace_staff_working_hours(%L, %L,
+    '[{"day_of_week":2,"start_minute":540,"end_minute":1020},
+      {"day_of_week":2,"start_minute":600,"end_minute":700}]'::jsonb)$q$,
+    (select v from t where k='staff_a'), (select v from t where k='branch_a')),
+  '23P01', null, 'a self-overlapping payload is refused');
+
+select is(
+  (select count(*)::int from public.staff_working_hours
+   where staff_id = (select v from t where k='staff_a')
+     and branch_id = (select v from t where k='branch_a')),
+  1, 'the refused call rolled back: the previous week is still there');
+
 reset role;
 
 select * from finish();

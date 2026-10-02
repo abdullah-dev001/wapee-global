@@ -73,6 +73,14 @@ source of truth for locale and money:
 | `my_grants(business_id)` | SETOF (permission, scope, branch_id): the caller's own grants, in one round trip. **For UI gating only** — `usePermission()` reads it instead of calling `has_permission()` once per question. Not a boundary. |
 | `is_own_staff_profile(staff_id)` | True when that staff profile is the caller's. **Implements the `own` scope** for schedule rows: `has_permission()` can say "you hold this at own scope" but not "this row is yours". |
 
+**Schedule writes go through RPCs, not direct table writes.**
+`replace_staff_working_hours(staff, branch, jsonb)`,
+`replace_staff_breaks(...)` and `replace_branch_hours(branch, jsonb)` clear and
+re-insert a week in one transaction. They are **SECURITY INVOKER** so RLS applies
+as usual, and each re-checks the permission to return a clear `42501` rather than
+a silent no-op. Note they are the only functions in the project that are *not*
+SECURITY DEFINER — deliberately, because the policies should stay the boundary.
+
 All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE; trigger functions have none at all.
 
 **Trial expiry needs no cron.** `business_is_active()` compares `trial_ends_at` to `now()` at query time, so access stops the second the trial ends.
@@ -139,6 +147,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | `20261002180000_catalogue.sql` | Phase 2 catalogue: categories, services, per-branch prices, resources, RLS, tenant guard |
 | `20261002181000_staff_and_schedule.sql` | Phase 2 staff + schedule: profiles, branch/service assignment, hours, breaks, time off, branch hours, closures, 5 exclusion constraints, `is_own_staff_profile()` |
 | `20261002182000_catalogue_fk_indexes.sql` | Indexes for the 5 FKs the performance advisor flagged |
+| `20261002190000_replace_schedule_rpcs.sql` | `replace_staff_working_hours`, `replace_staff_breaks`, `replace_branch_hours` — replacing a week is now ONE transaction. SECURITY INVOKER, so RLS still applies. |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -147,6 +156,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 - Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
 
 ## Changelog
+- 2026-10-02: Schedule writes made transactional via three replace RPCs (11 assertions, incl. rollback-on-bad-payload).
 - 2026-10-02: **Phase 2 schema** — 13 tables (catalogue, staff, schedule), 5 exclusion constraints, Own-scope RLS. 22 assertions verified against the live database; advisors clean.
 - 2026-10-02: Manager seed corrected to 39 permissions (booking settings only, per doc §9).
 - 2026-10-02: Added `my_grants()` for UI permission caching. Verified it agrees with `has_permission()` on all 46 permissions and leaks nothing to non-members or anon.

@@ -41,6 +41,7 @@ what the Phase 3 slot engine reads to decide what a customer may book.
 | src/lib/time/minuteOfDay.test.ts | 12 tests incl. the 24:00 boundary |
 | supabase/tests/05_catalogue_and_schedule.sql | pgTAP (see Verification) |
 | app/(app)/schedule.tsx | Branch hours · time off · holidays · rooms (tabs) |
+| supabase/migrations/20261002190000_replace_schedule_rpcs.sql | The three transactional replace RPCs |
 | src/features/schedule/api/useSchedule.ts | Staff hours/breaks + time off hooks |
 | src/features/schedule/api/useBranchSchedule.ts | Branch hours, closures, resources |
 | src/features/schedule/components/StaffScheduleEditor.tsx | One person's week (opened from the Staff screen) |
@@ -79,15 +80,25 @@ Exclusion constraints (5): `staff_working_hours`, `staff_breaks`, `branch_hours`
   staleTime `static` — a timetable changes rarely.
 - The slot engine (Phase 3) will read these in Postgres, not through these hooks.
 
-### Saving replaces the week (delete, then insert)
-Both `useSaveStaffSchedule` and `useSaveBranchHours` delete the branch's rows and
-re-insert them, rather than diffing. **The exclusion constraints make an in-place
-edit order-dependent**: moving 09:00–17:00 to 10:00–18:00 would transiently
-overlap itself and be refused. Deleting first sidesteps that entirely.
+### Saving a week is one transaction (RPC)
+`useSaveStaffSchedule` and `useSaveBranchHours` call
+**`replace_staff_working_hours` / `replace_staff_breaks` / `replace_branch_hours`**.
+A function body is one transaction, so either the whole week is replaced or
+nothing changes.
 
-**Not transactional**: a failed insert leaves the week empty. That is visible and
-re-editable rather than silently wrong, but an RPC doing both in one transaction
-is the correct fix — worth doing before the booking engine depends on this data.
+Each RPC still clears the rows and re-inserts them rather than diffing, because
+**the exclusion constraints make an in-place edit order-dependent**: moving
+09:00–17:00 to 10:00–18:00 would transiently overlap itself and be refused.
+Inside one transaction that clearing is invisible to everyone else.
+
+They are **SECURITY INVOKER**, so RLS still applies to every row — the policies
+remain the boundary. Each also re-checks the permission at the top (same rule as
+the policy: `staff.manage`, or `staff.manage_schedule` plus
+`is_own_staff_profile`), so a caller without it gets a clear `42501` instead of a
+silent "0 rows changed", and nothing is deleted before the refusal.
+
+Fixed 2026-10-02 (migration `20261002190000`). Before this the client sent a
+DELETE and an INSERT as two requests, and a failed insert left the week empty.
 
 ### Dates must be formatted in UTC
 `branch_closures` stores calendar `date`s and the time-off editor sends UTC
@@ -135,10 +146,19 @@ own time off · cannot book another's · cannot add a staff profile · cannot ad
 service · *can* read the team list · cannot set branch hours · Owner may set any
 staff member's hours · Owner may set branch hours.
 
+**11 RPC assertions, all passing** (2026-10-02, after the transactional fix):
+the RPC replaces a week and reports the count · replacing again leaves no
+duplicates · **a self-overlapping payload is refused and the previous week
+survives** · an overnight payload likewise · an empty array clears the week ·
+breaks keep their label · branch hours replaced · an unknown branch refused ·
+Staff may replace their OWN hours · another member's refused with a clear 42501 ·
+Staff cannot change branch hours. Also confirmed through the real REST API as an
+owner: 2 rows inserted, then a bad payload refused with 23P01 leaving both rows
+in place.
+
 Advisors: security 0 errors, performance 0 warnings.
 
 ## Known limits / TODO
-- **Saving a week is not transactional** (see above). The highest-value fix here.
 - **`DateRangePicker` has no visual calendar on native** — web gets
   `<input type="date">`, native accepts typed `YYYY-MM-DD`. A real month grid
   needs either a library (ask first) or hand-building one.

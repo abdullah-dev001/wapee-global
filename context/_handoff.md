@@ -11,7 +11,6 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 ## Next, in order
 1. **Phase 3** — booking engine: booking settings, booking form with custom fields, the slot calculation engine, DB-level no-double-booking, public booking page (see `docs/Wapee_Build_Plan.md`).
 2. **Highest-value follow-ups from Phase 2**, any order:
-   - **Saving a week of hours is not transactional** (delete-then-insert; a failed insert leaves the week empty). An RPC should do both in one transaction **before the booking engine depends on this data** — `context/schedule.md`.
    - **`DateRangePicker` has no visual calendar on native** (web uses `<input type="date">`). Needs a library — ask first.
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -35,7 +34,7 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 - **PKR and JPY have NO minor unit** (and KWD/BHD have three). `currencyExponent()` reads it from `Intl`; assuming 2 would be a 100x pricing error in a launch market.
 - **Non-ASCII digits** (Arabic-Indic "١٢٣", Persian) must be mapped by codepoint — neither `Number()` nor `normalize('NFKD')` converts them, and a `[0-9]` filter deletes them.
 - **`Drawer` already owns a ScrollView**; nesting another breaks scrolling on Android.
-- **Saving a schedule must delete then insert**, never edit in place: the exclusion constraints refuse an edit that transiently overlaps itself.
+- **Saving a schedule must delete then insert**, never edit in place: the exclusion constraints refuse an edit that transiently overlaps itself. This now happens inside an RPC (`replace_staff_working_hours` and friends) so it is one transaction — **do not go back to writing those tables directly from the client.**
 - **`delete from businesses` is refused while the business has an Owner.** `enforce_last_owner` is a BEFORE DELETE trigger on `member_role_assignments` and the cascade trips it. Disable it for the transaction (`alter table ... disable trigger member_role_assignments_last_owner`) and re-enable before commit. See `context/_database.md`.
 - **The Supabase connector refuses destructive SQL** (DELETE/DROP/auth.users writes) even with the user's approval. Use `supabase db query --linked -f file.sql`, which goes through the Management API and does work. Note `supabase db query` without `--linked` targets the *local* database, which is not running here.
 - **Hermes has no `Intl.Locale` and no `Intl.supportedValuesOf`.** They work in Node and browsers and are `undefined` on device. Country/currency/timezone lists are a build-time snapshot: `node scripts/generate-locale-data.mjs`.
