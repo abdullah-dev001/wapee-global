@@ -30,17 +30,23 @@ select is(
   'handle_new_user creates a profile for every new auth user'
 );
 
-insert into public.businesses (id, name, slug, country_code, currency, timezone, trial_ends_at, created_by)
+-- Locale lives on the BRANCH (decision 23); the business keeps default_* only
+-- to pre-fill a new branch.
+insert into public.businesses (id, name, slug, default_country_code, default_currency,
+                               default_timezone, trial_ends_at, created_by)
 values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'Salon A', 'salon-a', 'GB', 'GBP', 'Europe/London',
    now() + interval '14 days', '11111111-1111-1111-1111-111111111111'),
   ('bbbbbbbb-0000-0000-0000-000000000002', 'Clinic B', 'clinic-b', 'PK', 'PKR', 'Asia/Karachi',
    now() + interval '14 days', '33333333-3333-3333-3333-333333333333');
 
-insert into public.branches (id, business_id, name, is_primary)
+insert into public.branches (id, business_id, name, is_primary,
+                             country_code, currency, timezone, invoice_prefix)
 values
-  ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'Main', true),
-  ('bbbbbbbb-1111-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000002', 'Main', true);
+  ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'Main', true,
+   'GB', 'GBP', 'Europe/London', 'SAL'),
+  ('bbbbbbbb-1111-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000002', 'Main', true,
+   'PK', 'PKR', 'Asia/Karachi', 'CLI');
 
 insert into public.business_members (id, business_id, user_id, status, joined_at)
 values
