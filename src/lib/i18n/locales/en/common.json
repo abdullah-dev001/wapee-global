@@ -44,7 +44,8 @@
     "account": "Account",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "members": "Team"
+    "members": "Team",
+    "schedule": "Schedule"
   },
   "screens": {
     "comingSoon": "Coming in phase {{phase}}",
@@ -300,6 +301,15 @@
     },
     "error": {
       "title": "Could not load the schedule"
+    },
+    "resources": "Rooms",
+    "resourcesHint": "Rooms, chairs or bays. These are saved now but do not affect bookings until the booking engine arrives.",
+    "addResource": "Add room",
+    "resourceName": "Name",
+    "resourceNamePlaceholder": "e.g. Room 1",
+    "resourcesEmpty": {
+      "title": "No rooms yet",
+      "description": "Add rooms, chairs or bays if bookings need one."
     }
   },
   "services": {

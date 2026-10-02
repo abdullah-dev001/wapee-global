@@ -3,13 +3,19 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
+- **Phase 2 — complete.** Catalogue and schedule: 13 tables with 5 exclusion constraints and Own-scope RLS; services UI (per-branch prices, server-side search); staff UI (login optional, branch + service assignment); schedule UI (per-person weeks, branch hours, time off, holidays, rooms). Five shared components built with **no new dependency**: MoneyInput, SearchInput, TimePicker, DayHoursRow, DateRangePicker. `lib/money` and `lib/time` partly implemented (75 unit tests).
 - **Phase 1 — complete and accepted.** Full schema (11 tables, RLS on all, 46 permissions, 4 system roles, guard triggers); auth screens + session + route guard; onboarding wizard + `create_business_with_owner`; branch-owned country/currency/timezone/tax with per-branch invoice series; `usePermission`/`useFeature` with nav and route gating; invite flow (one-time 7-day link); trial lock screen + 3-day warning banner. Manager seed corrected to doc §9 (39 permissions). vitest added (`npm test`, **34 tests**).
 - Verified on web (375/768/1280) and the iOS simulator. 30+ SQL security assertions pass against the live database. Advisors clean except the item below.
 - Test data from Phase 1 has been cleaned up: **4 users and 3 businesses remain** (`Nova Hair Studio`, `Buenos Clinic`, `Rosario Clinic 19481`). No test users left.
 
 ## Next, in order
-1. **Phase 2** — catalogue and schedule: service categories, services, staff profiles, working hours, breaks, time off, branch hours, holidays, resources (see `docs/Wapee_Build_Plan.md`).
-2. **Small follow-ups left from Phase 1**, any order:
+1. **Phase 3** — booking engine: booking settings, booking form with custom fields, the slot calculation engine, DB-level no-double-booking, public booking page (see `docs/Wapee_Build_Plan.md`).
+2. **Highest-value follow-ups from Phase 2**, any order:
+   - **Saving a week of hours is not transactional** (delete-then-insert; a failed insert leaves the week empty). An RPC should do both in one transaction **before the booking engine depends on this data** — `context/schedule.md`.
+   - **`DateRangePicker` has no visual calendar on native** (web uses `<input type="date">`). Needs a library — ask first.
+   - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
+   - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
+3. **Small follow-ups left from Phase 1**, any order:
    - **Members UI gaps**: change a role, remove a member, revoke/resend an invite (`context/members.md`).
    - **`supabase/tests/04_invite_flow.sql` has never run** (no Docker). The same ground is covered by REST checks.
    - **`enforce_last_owner` has no "business is being deleted" exemption** — see Traps and `context/_database.md`.
@@ -24,6 +30,12 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **Postgres has no range type over `time`.** Recurring hours are stored as `day_of_week` + minutes from local midnight (`int4range` for the overlap constraints). `lib/time` converts to "HH:MM".
+- **`Intl.DateTimeFormat` needs `timeZone: 'UTC'`** whenever formatting a calendar date or a UTC-midnight instant, or a device west of Greenwich shows the previous day. Bit both the weekday names and the closure list.
+- **PKR and JPY have NO minor unit** (and KWD/BHD have three). `currencyExponent()` reads it from `Intl`; assuming 2 would be a 100x pricing error in a launch market.
+- **Non-ASCII digits** (Arabic-Indic "١٢٣", Persian) must be mapped by codepoint — neither `Number()` nor `normalize('NFKD')` converts them, and a `[0-9]` filter deletes them.
+- **`Drawer` already owns a ScrollView**; nesting another breaks scrolling on Android.
+- **Saving a schedule must delete then insert**, never edit in place: the exclusion constraints refuse an edit that transiently overlaps itself.
 - **`delete from businesses` is refused while the business has an Owner.** `enforce_last_owner` is a BEFORE DELETE trigger on `member_role_assignments` and the cascade trips it. Disable it for the transaction (`alter table ... disable trigger member_role_assignments_last_owner`) and re-enable before commit. See `context/_database.md`.
 - **The Supabase connector refuses destructive SQL** (DELETE/DROP/auth.users writes) even with the user's approval. Use `supabase db query --linked -f file.sql`, which goes through the Management API and does work. Note `supabase db query` without `--linked` targets the *local* database, which is not running here.
 - **Hermes has no `Intl.Locale` and no `Intl.supportedValuesOf`.** They work in Node and browsers and are `undefined` on device. Country/currency/timezone lists are a build-time snapshot: `node scripts/generate-locale-data.mjs`.

@@ -1,5 +1,5 @@
 # Schedule
-Status: schema done · UI next · Phase: 2 · Last updated: 2026-10-02
+Status: done (Phase 2 scope) · Phase: 2 · Last updated: 2026-10-02
 
 ## What it does
 When people and places are available: recurring weekly hours per staff per branch,
@@ -40,6 +40,14 @@ what the Phase 3 slot engine reads to decide what a customer may book.
 | src/lib/time/index.ts | `MinuteOfDay`, `formatMinuteOfDay`, `parseMinuteOfDay`, `formatDuration` |
 | src/lib/time/minuteOfDay.test.ts | 12 tests incl. the 24:00 boundary |
 | supabase/tests/05_catalogue_and_schedule.sql | pgTAP (see Verification) |
+| app/(app)/schedule.tsx | Branch hours · time off · holidays · rooms (tabs) |
+| src/features/schedule/api/useSchedule.ts | Staff hours/breaks + time off hooks |
+| src/features/schedule/api/useBranchSchedule.ts | Branch hours, closures, resources |
+| src/features/schedule/components/StaffScheduleEditor.tsx | One person's week (opened from the Staff screen) |
+| src/features/schedule/components/BranchHoursEditor.tsx | Branch opening hours |
+| src/features/schedule/components/TimeOffList.tsx | Upcoming time off + add form |
+| src/features/schedule/components/ClosuresList.tsx | Holidays, and the rooms list |
+| src/features/schedule/weekdays.ts (+ test) | Locale weekday names and week start |
 
 ## Database
 | Table | Key columns |
@@ -66,17 +74,49 @@ Exclusion constraints (5): `staff_working_hours`, `staff_breaks`, `branch_hours`
   location, not of a person.
 
 ## Data & caching
-Not built yet. Planned: `scheduleKeys.staff({businessId, branchId, staffId})`,
-staleTime `static`; the slot engine (Phase 3) will read these through its own RPC
-rather than the client.
+- `scheduleKeys.detail({ businessId, branchId }, staffId)` for one person's week;
+  `branchScheduleKeys.detail(...)` for the branch; `resourceKeys.list(...)`. All
+  staleTime `static` — a timetable changes rarely.
+- The slot engine (Phase 3) will read these in Postgres, not through these hooks.
+
+### Saving replaces the week (delete, then insert)
+Both `useSaveStaffSchedule` and `useSaveBranchHours` delete the branch's rows and
+re-insert them, rather than diffing. **The exclusion constraints make an in-place
+edit order-dependent**: moving 09:00–17:00 to 10:00–18:00 would transiently
+overlap itself and be refused. Deleting first sidesteps that entirely.
+
+**Not transactional**: a failed insert leaves the week empty. That is visible and
+re-editable rather than silently wrong, but an RPC doing both in one transaction
+is the correct fix — worth doing before the booking engine depends on this data.
+
+### Dates must be formatted in UTC
+`branch_closures` stores calendar `date`s and the time-off editor sends UTC
+midnights, so every `Intl.DateTimeFormat` here passes `timeZone: 'UTC'`. Without
+it a closure on 25 December renders as the 24th for anyone west of Greenwich.
+`weekdayNames()` does the same for its reference dates.
 
 ## Permissions & gating
 `staff.manage_schedule` (Own for Staff, Branch for Manager, All for Owner) and
 `staff.manage`. Branch hours/closures need `settings.business`, which after the
 2026-10-02 seed fix is **Owner-only** ([roles.md](roles.md)).
 
+## UI
+- **Per-person hours live on the Staff screen** (a drawer next to the person),
+  because that is where you look for them. `/schedule` is about the branch.
+- `/schedule` has four tabs: opening hours · time off · holidays · rooms.
+- The whole week is edited locally and saved in one action, for the reason above.
+- A weekday with no interval is closed; `DayHoursRow`'s toggle expresses that.
+- Time off is entered as whole days: the stored end is the **start of the day
+  after** the last day off, and the list subtracts a day to show the real last
+  day. Getting that wrong would make a one-day absence cover nothing.
+- The rooms tab says plainly that resources do not affect bookings yet.
+- Branch hours and closures are read-only without `settings.business`
+  (Owner-only after the seed fix); the editor disables rather than hides, so a
+  manager can still see the hours.
+
 ## i18n
-Namespace `common`, keys `schedule.*` (added with the UI).
+Namespace `common`, keys `schedule.*`. Weekday names come from `Intl`, not from
+translation files, so every language is covered without translation work.
 
 ## Verification (2026-10-02)
 Against the **live database**, inside rolled-back transactions. Not inferred — each
@@ -98,7 +138,15 @@ staff member's hours · Owner may set branch hours.
 Advisors: security 0 errors, performance 0 warnings.
 
 ## Known limits / TODO
-- **No UI yet** — weekly hours editor, breaks, time off, branch hours, holidays.
+- **Saving a week is not transactional** (see above). The highest-value fix here.
+- **`DateRangePicker` has no visual calendar on native** — web gets
+  `<input type="date">`, native accepts typed `YYYY-MM-DD`. A real month grid
+  needs either a library (ask first) or hand-building one.
+- Time off is always whole days; no half-day or specific-hours absence, and
+  `is_all_day` is always written true.
+- Resources have no capacity editor (always 1) and no service linking UI; the
+  `service_resources` table is ready for Phase 3.
+- A break outside the working day is still accepted (see below).
 - **`supabase/tests/05_catalogue_and_schedule.sql` has never run as a suite** (no
   Docker), so its `plan(20)` count is unverified even though the assertions were
   checked individually.
@@ -109,4 +157,5 @@ Advisors: security 0 errors, performance 0 warnings.
 - Time off has no approval workflow (deliberate, see Business rules).
 
 ## Changelog
+- 2026-10-02: Schedule UI: per-person week editor (from the Staff screen), branch hours, time off, holidays, rooms. Locale weekday names from Intl with a timezone-shift guard.
 - 2026-10-02: Schedule schema: working hours, breaks, time off, branch hours, closures; 5 exclusion constraints; Own-scope RLS; minute-of-day helpers + tests.

@@ -1,4 +1,5 @@
 import {
+  CalendarClock,
   CalendarDays,
   LayoutDashboard,
   Package,
@@ -31,6 +32,7 @@ export type AppRoute =
   | '/services'
   | '/staff'
   | '/members'
+  | '/schedule'
   | '/invoices'
   | '/reports'
   | '/reviews'
@@ -45,6 +47,7 @@ export type NavId =
   | 'services'
   | 'staff'
   | 'members'
+  | 'schedule'
   | 'invoices'
   | 'reports'
   | 'reviews'
@@ -92,6 +95,15 @@ export const navItems: readonly NavItem[] = [
   { id: 'services', route: '/services', icon: Scissors, permission: 'services.manage', phase: 2 },
   { id: 'staff', route: '/staff', icon: Users, permission: 'staff.view', phase: 2 },
   { id: 'members', route: '/members', icon: UserCog, permission: 'staff.view', phase: 1 },
+  {
+    id: 'schedule',
+    route: '/schedule',
+    icon: CalendarClock,
+    // Branch hours need settings.business to EDIT, but anyone who can see the
+    // team can read the schedule, and Staff manage their own time off here.
+    permission: 'staff.view',
+    phase: 2,
+  },
   { id: 'invoices', route: '/invoices', icon: Receipt, permission: 'invoices.view', phase: 5 },
   { id: 'reports', route: '/reports', icon: Package, permission: 'reports.view_basic', phase: 5 },
   { id: 'reviews', route: '/reviews', icon: Star, permission: 'reviews.view', phase: 7 },

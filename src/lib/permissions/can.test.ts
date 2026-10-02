@@ -216,6 +216,7 @@ describe('navigation per role', () => {
       'services',
       'staff',
       'members',
+      'schedule',
       'invoices',
       'reports',
       'reviews',
@@ -233,6 +234,7 @@ describe('navigation per role', () => {
       'services',
       'staff',
       'members',
+      'schedule',
       'invoices',
       'reports',
       'reviews',
@@ -246,6 +248,7 @@ describe('navigation per role', () => {
       'clients',
       'staff',
       'members',
+      'schedule',
       'invoices',
       'reviews',
     ]);
@@ -258,6 +261,7 @@ describe('navigation per role', () => {
       'clients',
       'staff',
       'members',
+      'schedule',
       'reviews',
     ]);
   });

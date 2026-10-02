@@ -19,3 +19,4 @@ export const Settings = Icon;
 export const Star = Icon;
 export const Users = Icon;
 export const UserCog = Icon;
+export const CalendarClock = Icon;
