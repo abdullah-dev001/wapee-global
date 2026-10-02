@@ -287,6 +287,27 @@ export type Database = {
           },
         ]
       }
+      invite_accept_attempts: {
+        Row: {
+          attempts: number
+          first_attempt_at: string
+          last_attempt_at: string
+          token_hash: string
+        }
+        Insert: {
+          attempts?: number
+          first_attempt_at?: string
+          last_attempt_at?: string
+          token_hash: string
+        }
+        Update: {
+          attempts?: number
+          first_attempt_at?: string
+          last_attempt_at?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
       member_role_assignments: {
         Row: {
           branch_id: string | null
@@ -499,6 +520,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invite: { Args: { p_token: string }; Returns: string }
       business_is_active: { Args: { p_business_id: string }; Returns: boolean }
       can: {
         Args: {
@@ -528,6 +550,27 @@ export type Database = {
           p_permission: string
         }
         Returns: boolean
+      }
+      invite_member: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_email: string
+          p_role_id: string
+        }
+        Returns: {
+          out_expires_at: string
+          out_member_id: string
+          out_token: string
+        }[]
+      }
+      invite_preview: {
+        Args: { p_token: string }
+        Returns: {
+          business_name: string
+          expires_at: string
+          invited_email: string
+        }[]
       }
       is_member: { Args: { p_business_id: string }; Returns: boolean }
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }

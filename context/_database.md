@@ -6,7 +6,7 @@ Status: in progress · Phase: 1 · Last updated: 2026-10-02
 - Applied through the **Supabase connector** (`apply_migration`). The local CLI is signed in to a different account and cannot link this project, so `supabase db push` and `supabase test db` are unavailable. Every migration file in `supabase/migrations/` matches what was applied.
 - Extensions: `citext`, `pg_trgm`, `btree_gist` (ready for Phase 3 no-double-booking), `pgtap`, `uuid-ossp`, `pgcrypto`.
 
-## Tables (10)
+## Tables (11)
 
 | Table | Key columns | Notes |
 |---|---|---|
@@ -20,6 +20,7 @@ Status: in progress · Phase: 1 · Last updated: 2026-10-02
 | `permissions` | key, area, min_plan, addon | 46-row catalogue from product doc §9. Read-only to the app. |
 | `audit_logs` | business_id, actor_user_id, action, entity_type, entity_id, before/after jsonb | **Append-only**: no INSERT/UPDATE/DELETE policy exists. |
 | `reserved_slugs` | slug | 112 rows, mirrors `src/config/reservedSlugs.ts`. Readable by anon so signup can check availability. |
+| `invite_accept_attempts` | token_hash, attempts, first/last_attempt_at | Rate limit for `accept_invite()`. RLS on with **no policy**: only the SECURITY DEFINER function touches it. |
 
 Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (solo/team/business), `member_status` (invited/active/disabled), `permission_scope` (own/branch/all).
 
@@ -97,6 +98,10 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | `20261002120000_branch_owns_locale_and_tax.sql` | **Branch owns country/currency/timezone/tax**; invoice series per branch; business columns renamed `default_*` |
 | `20261002123000_lock_down_new_functions.sql` | Revoked anon EXECUTE on `suggest_invoice_prefix` |
 | `20261002140000_my_grants.sql` | `my_grants(business_id)` for UI permission caching; EXECUTE to `authenticated` only |
+| `20261002160000_invite_flow.sql` | `invite_member`, `accept_invite`, `invite_preview`, `invite_accept_attempts`, 7-day invite default |
+| `20261002161000_invite_grants_lockdown.sql` | Revoked anon EXECUTE on `invite_member` / `accept_invite` (Supabase grants new functions to anon by default) |
+| `20261002162000_fix_invite_member_ambiguous_column.sql` | **Fixed 42702**: OUT column `member_id` collided with `member_role_assignments.member_id`; OUT columns now `out_*` |
+| `20261002163000_fix_invite_rate_limit.sql` | **Fixed the throttle**: raising rolled back the attempt counter, so failures now RETURN NULL |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.

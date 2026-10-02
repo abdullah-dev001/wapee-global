@@ -6,6 +6,7 @@ import {
   Scissors,
   Settings,
   Star,
+  UserCog,
   Users,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -29,6 +30,7 @@ export type AppRoute =
   | '/clients'
   | '/services'
   | '/staff'
+  | '/members'
   | '/invoices'
   | '/reports'
   | '/reviews'
@@ -42,6 +44,7 @@ export type NavId =
   | 'clients'
   | 'services'
   | 'staff'
+  | 'members'
   | 'invoices'
   | 'reports'
   | 'reviews'
@@ -88,6 +91,7 @@ export const navItems: readonly NavItem[] = [
   },
   { id: 'services', route: '/services', icon: Scissors, permission: 'services.manage', phase: 2 },
   { id: 'staff', route: '/staff', icon: Users, permission: 'staff.view', phase: 2 },
+  { id: 'members', route: '/members', icon: UserCog, permission: 'staff.view', phase: 1 },
   { id: 'invoices', route: '/invoices', icon: Receipt, permission: 'invoices.view', phase: 5 },
   { id: 'reports', route: '/reports', icon: Package, permission: 'reports.view_basic', phase: 5 },
   { id: 'reviews', route: '/reviews', icon: Star, permission: 'reviews.view', phase: 7 },

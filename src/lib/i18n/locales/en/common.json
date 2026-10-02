@@ -6,7 +6,8 @@
     "retry": "Try again",
     "cancel": "Cancel",
     "save": "Save",
-    "close": "Close"
+    "close": "Close",
+    "done": "Done"
   },
   "routes": {
     "auth": "Sign in",
@@ -37,7 +38,8 @@
     "logout": "Sign out",
     "account": "Account",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "members": "Team"
   },
   "screens": {
     "comingSoon": "Coming in phase {{phase}}",
@@ -184,6 +186,59 @@
     "noAccess": {
       "title": "You do not have access to this page",
       "description": "Your role does not include this area. Ask an owner or manager if you need it."
+    }
+  },
+  "common": {
+    "loading": "Loading…"
+  },
+  "members": {
+    "title": "Team",
+    "unknown": "Unknown",
+    "status": {
+      "active": "Active",
+      "invited": "Invited",
+      "expired": "Expired",
+      "disabled": "Disabled"
+    },
+    "empty": {
+      "title": "No team members yet",
+      "description": "Invite the people who work with you so they can take bookings."
+    },
+    "error": {
+      "title": "Could not load the team"
+    },
+    "errors": {
+      "roleRequired": "Choose a role"
+    },
+    "invite": {
+      "action": "Invite",
+      "title": "Invite someone",
+      "subtitle": "They get a link that works for 7 days.",
+      "email": "Email",
+      "emailPlaceholder": "name@example.com",
+      "role": "Role",
+      "rolePlaceholder": "Choose a role",
+      "roleHint": "You can only grant permissions you have yourself.",
+      "branch": "Branch",
+      "allBranches": "All branches",
+      "submit": "Create invite link",
+      "linkReady": "Invite link ready",
+      "linkOnce": "Copy it now and send it to them. It is shown only once and works for 7 days.",
+      "copy": "Copy link",
+      "copied": "Link copied"
+    },
+    "accept": {
+      "title": "Join the team",
+      "invalid": "That invite link is not valid. It may have expired or already been used. Ask for a new one.",
+      "joinAs": "You have been invited to join {{business}} as {{email}}.",
+      "join": "Join",
+      "joined": "You have joined",
+      "createFor": "You have been invited to join {{business}}. Create your account for {{email}} to continue.",
+      "createAndJoin": "Create account and join",
+      "confirmEmail": "Check your email to confirm your address, then open the invite link again.",
+      "wrongAccount": "This invite is for {{invited}}. Sign out and sign in with that address to accept it.",
+      "switchAccount": "Sign out",
+      "backToLogin": "Go to sign in"
     }
   }
 }

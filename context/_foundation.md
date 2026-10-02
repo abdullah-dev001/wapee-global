@@ -14,6 +14,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 - Dev: eslint 9 (flat) + eslint-config-expo + typescript-eslint (strict) + prettier + eslint-config-prettier.
 - **Development build required** (keyboard-controller etc.); Expo Go not supported.
 - Not installed yet: charts lib (ask), expo-haptics, expo-device.
+- **expo-clipboard** (added 2026-10-02 for the one-time invite link) and **vitest** (dev, unit tests for pure logic). expo-clipboard is native: the dev build needs a rebuild.
 - Env: `.env` exists locally (gitignored) with the real Supabase URL and publishable key, so the app talks to the live dev project.
 
 ## Files
@@ -73,6 +74,7 @@ Specs come from DESIGN_GUIDE §12 + CLAUDE.md §5. Every component works on iOS,
 | `Skeleton` | `width`, `height`, `radius` | Pulse 1→0.45→1 over 1.4s. Lists use these, never a spinner. |
 | `Spinner` | `size`, `color`, `trackColor` | 600ms rotation. Buttons and small inline waits only. |
 | `EmptyState` | `title`, `description`, `icon`, `action`, `compact` | Every list needs one (empty vs no-results). |
+| `ErrorState` | `title`, `description`, `icon`, `onRetry`+`retryLabel`, `compact` | Failed query, with retry. `onRetry` and `retryLabel` travel together so it never invents text. |
 | `Toggle` | `value`, `onValueChange`, `label`, `disabled` | 36×20 track, 14px thumb, animated 180ms. |
 | `Select` | `options`, `value`, `onChange`, `label`, `hint`, `error`, `required` | Sheet-based picker, same on all platforms. Handles long lists (418 timezones) with FlatList. |
 | `Tabs` | `items`, `value`, `onChange` | Underline style; strip scrolls horizontally. Generic over the value type. |
@@ -86,6 +88,7 @@ Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
 - Not built yet: Checkbox/Radio, Segmented control, Pagination, DataTable, SearchInput, PhoneInput, DatePicker, TimeSlotPicker, MoneyInput, Avatar, Collapsible, StepWizard, FormAlert, StatCard.
+- **Forms must use `useWatch({ control, name })`, never `watch()`** — `watch()` returns a fresh function each render and the React Compiler lint refuses it (`react-hooks/incompatible-library`).
 - `useInteractionState` shows the focus ring only when the browser reports `:focus-visible`, so a mouse click leaves no ring while keyboard tabbing does.
 - `useOverlayDismiss` holds `onDismiss` in a ref. Passing it an inline arrow used to re-run its effect every render ("Maximum update depth exceeded") once several overlays were mounted; the ref makes any caller safe.
 
@@ -152,7 +155,8 @@ GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProv
 
 ## Scripts
 
-start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings), typecheck, format, format:check, build:web, manifest.
+start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings), typecheck, **test** (`vitest run`), **test:watch**, format, format:check, build:web, manifest.
+Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN renderer); `vitest.config.mts` stubs `lucide-react-native` so `config/navigation.ts` can be imported in Node.
 `build:web` runs `generate-web-manifest` + `strip-dev-routes` first and restores the dev routes after, so `/_gallery` never ships (Metro does not tree-shake a `__DEV__` branch, so the route file must be absent at build time).
 
 ## Known limits / TODO
@@ -168,6 +172,7 @@ start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings
 
 ## Changelog
 
+- 2026-10-02: `ErrorState` primitive; vitest + `npm test`; expo-clipboard (needs a rebuild).
 - 2026-10-02: `src/lib/permissions/` added and wired into navigation (`useVisibleNav`, `RouteGuard`); nav `feature` field dropped; sign out wired. See roles.md.
 - 2026-10-01: Responsive shell (Screen, PageContainer, AppShell, Sidebar, Header, BottomTabBar), navigation config, app routes, PWA install hint + update toast.
 - 2026-10-01: Base UI components (Button, Input, Card, Badge, Skeleton, Spinner, EmptyState, Toggle, Tabs, Dialog, Drawer, Toast) + dev gallery; reserved slugs; NetInfo online manager; tablet orientation.

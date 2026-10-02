@@ -18,3 +18,4 @@ export const Scissors = Icon;
 export const Settings = Icon;
 export const Star = Icon;
 export const Users = Icon;
+export const UserCog = Icon;

@@ -4,6 +4,7 @@ export { Card, type CardProps } from './Card';
 export { Dialog, type DialogAction, type DialogProps } from './Dialog';
 export { Drawer, type DrawerProps } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Input, type InputProps } from './Input';
 export { Select, type SelectOption, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps } from './Skeleton';

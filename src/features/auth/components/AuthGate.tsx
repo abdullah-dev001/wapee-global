@@ -15,6 +15,12 @@ const PUBLIC_GROUPS = new Set(['(auth)', '(public)']);
 const VERIFY_ROUTE = 'verify';
 /** Where a verified user with no business goes. */
 const ONBOARDING_ROUTE = 'onboarding';
+/**
+ * The invite screen. An invited person arrives here with no account and no
+ * business, so it must be reachable while signed out AND must not be redirected
+ * to onboarding — accepting the invite is what gives them a business.
+ */
+const ACCEPT_INVITE_ROUTE = 'accept-invite';
 
 /**
  * Decides where a user belongs (CLAUDE.md §4, §7):
@@ -37,6 +43,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const path = segments as readonly string[];
   const onVerifyScreen = path.includes(VERIFY_ROUTE);
   const onOnboardingScreen = path.includes(ONBOARDING_ROUTE);
+  const onAcceptInviteScreen = path.includes(ACCEPT_INVITE_ROUTE);
 
   // Without Supabase keys there is no auth at all; let the app render so the
   // dev warning and the gallery stay reachable.
@@ -66,8 +73,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
     }
 
     const hasBusiness = (businesses.data?.length ?? 0) > 0;
-    if (!hasBusiness && !onOnboardingScreen) return <Redirect href="/onboarding" />;
-    if (hasBusiness && isAuthGroup) return <Redirect href="/" />;
+    // Accepting an invite is how an invited person gets their first business, so
+    // that screen is never redirected to onboarding or away from (auth).
+    if (!hasBusiness && !onOnboardingScreen && !onAcceptInviteScreen) {
+      return <Redirect href="/onboarding" />;
+    }
+    if (hasBusiness && isAuthGroup && !onAcceptInviteScreen) return <Redirect href="/" />;
   }
 
   return <>{children}</>;

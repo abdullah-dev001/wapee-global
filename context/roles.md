@@ -80,14 +80,15 @@ executed from the scratchpad rather than committed as a suite — see TODO below
 
 ## Known limits / TODO
 - **No JS test runner in the repo** (jest/vitest is a new dependency → needs your OK). The permission logic is pure and deserves committed unit tests; today's run was scratchpad-only and is not repeatable in CI.
-- **A role change must invalidate `grantKeys.forBusiness(id)`.** No screen changes roles yet, so nothing does it; the members UI must.
+- **A role change must invalidate `grantKeys.forBusiness(id)`** (for the members UI task). Accepting an invite already does it; nothing else changes roles yet, so nothing else needs to. Any future change-role screen must, or the UI keeps showing the old permissions for up to 10 minutes.
 - No business/branch switcher UI yet. The store supports it (`setBusiness`, `setBranch`); only the header control is missing.
 - Add-on gating is a documented stub until Phase 8.
-- `Manager` holds `settings.business` in the seed, so it sees Settings. Product doc §9 gives Manager "Booking settings" only — worth re-checking the seeded grant.
-- No UI for assigning roles, no members list, no invite screen (next task).
+- **`Manager` holds `settings.business` in the seed, so Manager sees the Settings screen. Product doc §9 line 196 gives Manager "Booking settings" only, so this is a seed bug.** The fix is a one-row delete from `role_permissions`; it was written and then deliberately skipped (2026-10-02) to keep it out of the invite work. Revisit as its own task.
+- Members list and invite flow are built (see [members.md](members.md)). Still missing: change a member's role, remove a member, revoke or resend an invite.
 - Custom roles are schema-ready but have no screens (Phase 9).
 - Super admin 2FA deferred to Phase 8 with the admin screens (agreed).
 
 ## Changelog
+- 2026-10-02: Invite flow added (see members.md); the escalation guard was verified to block a Manager inviting an Owner.
 - 2026-10-02: App gating built — `my_grants()` RPC, `can()`, `usePermission`, `useFeature`, current-scope store, `useVisibleNav`, `RouteGuard` on every `(app)` screen, sign out wired. Nav `feature` field dropped in favour of the catalogue's `minPlan`/`addon`.
 - 2026-10-02: Database half complete (catalogue, roles, grants, guards, tests). App half not started.
