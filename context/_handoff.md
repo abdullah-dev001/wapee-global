@@ -1,5 +1,5 @@
 # Handoff
-Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
+Last updated: 2026-10-03 · Branch: `dev` · All work is pushed.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
@@ -8,8 +8,10 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 - Verified on web (375/768/1280) and the iOS simulator. 30+ SQL security assertions pass against the live database. Advisors clean except the item below.
 - Test data from Phase 1 has been cleaned up: **4 users and 3 businesses remain** (`Nova Hair Studio`, `Buenos Clinic`, `Rosario Clinic 19481`). No test users left.
 
+- **Phase 3 steps 1–3 done** (DB only, no UI): booking_settings per branch, custom fields + immutable form versions, clients/appointments/answers/manage tokens with 2 exclusion constraints, and the DST-correct slot engine (`service_role` only). **147 SQL assertions passing.** See `context/booking-engine.md` and `context/booking-settings.md`.
+
 ## Next, in order
-1. **Phase 3** — booking engine: booking settings, booking form with custom fields, the slot calculation engine, DB-level no-double-booking, public booking page (see `docs/Wapee_Build_Plan.md`).
+1. **Phase 3 steps 4–7**: booking settings UI with live preview → public booking page `(public)/[slug]` → guest manage link → rate limiting. **Step 5 needs the first Edge Functions of the project** (`get_slots`, `create_booking`).
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -28,6 +30,14 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **`anon` has NO table privileges any more** (2026-10-03). Supabase's bootstrap had granted all 31 tables to anon since Phase 1; RLS was the only thing stopping it. A new table needs **no** anon grant. The single exception is `select on reserved_slugs`.
+- **Postgres resolves an ambiguous local time (DST fall-back) to the SECOND, standard-time occurrence.** London `2027-10-31 01:00` local = `01:00Z` (GMT), not `00:00Z` (BST). The hour is therefore offered ONCE, which is what we want. Do not "fix" this to offer it twice.
+- **`get_free_slots` is `service_role` only** — not even an Owner can call it. That is deliberate: it does no permission check because it is pure maths. Phase 4's dashboard must call it through a permission-checked wrapper, never directly.
+- **`has_permission()` IGNORES the `own` scope.** It answers "do you hold this anywhere relevant to this branch", so it returns true for a Staff member on *anyone's* row. Narrowing to Own needs `has_permission_at_branch_scope()` **plus** a row check (`is_own_staff_profile()`). Forgetting the second half silently gives Staff the whole branch.
+- **An exclusion constraint cannot express "at most N overlap".** Group bookings (`people_per_slot` > 1) and `resources.capacity` > 1 have **no DB guarantee**; they need a counted check under `pg_advisory_xact_lock` in `create_booking`. 1:1 booking is fully guaranteed.
+- **`select ... into` on an enum column needs an enum variable.** `get_free_slots` assigned `slot_interval` into an `integer` and every call failed `22P02` until the fix migration. The `case` that maps the enum to minutes runs *after* the assignment.
+- **The Phase 1 guards fire for `postgres` too.** A SQL test fixture must `alter table public.businesses disable trigger businesses_enforce_guard` to set a trial date, and must `act_as` the Owner before inserting `member_role_assignments` (or `enforce_role_assignment_guard` refuses: "you cannot grant what you do not have").
+- **A SQL test's temp tables need grants.** Assertions that run `set local role authenticated` cannot read `pg_temp` tables without `grant usage on schema <real temp schema>` — and `GRANT` does not accept the `pg_temp` alias, so resolve `pg_my_temp_schema()` first.
 - **Postgres has no range type over `time`.** Recurring hours are stored as `day_of_week` + minutes from local midnight (`int4range` for the overlap constraints). `lib/time` converts to "HH:MM".
 - **`Calendar` (shared month grid) is the one date picker** — no library, works on all three platforms, RTL-ready, and Phase 3's booking page reuses it via `disabledDates`.
 - **`Intl.DateTimeFormat` needs `timeZone: 'UTC'`** whenever formatting a calendar date or a UTC-midnight instant, or a device west of Greenwich shows the previous day. Bit both the weekday names and the closure list.

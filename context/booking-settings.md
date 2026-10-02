@@ -1,0 +1,141 @@
+# Booking settings & booking form
+
+Status: DB done (no UI yet) · Phase: 3 · Last updated: 2026-10-03
+
+## What it does
+
+Holds how online booking behaves for a branch (doc §6.2) and what the booking
+form asks (doc §6.1). One `booking_settings` row **per branch**, created
+automatically when the branch is created. Custom fields are per business, with
+an immutable snapshot (`form_versions`) so an old booking's answers always keep
+the labels, types and options the customer actually saw.
+
+The settings UI with live preview is **step 4** of Phase 3 and is not built yet.
+
+## Business rules
+
+- **Settings are per BRANCH, not per business.** Every value in doc §6.2 is
+  operational, and operations are per location (matches decision 23: the branch
+  owns country/currency/timezone).
+- **Defaults are exactly doc §6.2**, written as column DEFAULTs:
+  staff choice `optional`, slot display `only_available`, confirmation `auto`,
+  show prices on, slot interval 15 min, buffer 0, minimum notice 60 min,
+  booking window 30 days, customer can cancel (24h cutoff), rooms off,
+  people per slot 1. `online_booking_enabled` defaults to true.
+- A new branch gets its row from an **AFTER INSERT trigger on `branches`**, so
+  every path (signup RPC, a future "add branch" screen, a seed script) is
+  covered. Existing branches were backfilled.
+- **Editing needs `settings.booking`** (Owner and Manager hold it; doc §9).
+  Every member can READ it, because the calendar and the preview need it.
+- **Exactly five custom field types** (doc §6.1): short_text, long_text,
+  dropdown, yes_no, number. An enum, so a sixth cannot appear by typo.
+- A dropdown needs **2–50 non-empty options**; no other type may have any.
+- **`is_sensitive` can only escalate.** Turning it on also marks every
+  existing answer sensitive (old answers were given under the same promise);
+  turning it off is refused by a trigger.
+- **A field's type is frozen once answers exist.** Deactivate it and add a new
+  field instead.
+- **A new form version is created in the DB**, in the same transaction, whenever
+  the field set changes — not one per booking. An unchanged save reuses the
+  existing version (matched by a sha256 digest of the snapshot), so a no-op edit
+  does not inflate the version number.
+- Every business has a **version 1 (the empty form)** so a booking made before
+  any custom field exists still has a snapshot to point at.
+- `form_versions` rows are **immutable**: UPDATE and DELETE are refused by a
+  trigger, and no write policy exists for anyone, including the Owner.
+
+## Files
+
+| Path | Purpose |
+|---|---|
+| supabase/migrations/20261003090000_booking_settings_and_form.sql | all four tables, enums, RLS, triggers, backfill |
+| supabase/tests/06_booking_form_and_slot_engine.sql | form versioning, sensitivity, dropdown shape (part of 93 assertions) |
+| supabase/tests/07_booking_rls_per_role.sql | who may read/write settings and fields (part of 54 assertions) |
+
+No app code yet.
+
+## Database
+
+Tables:
+
+- `booking_settings` → business_id, **branch_id (unique)**, online_booking_enabled,
+  staff_choice, slot_display, confirmation, show_prices, slot_interval,
+  buffer_minutes, minimum_notice_minutes, booking_window_days,
+  customer_can_cancel, cancel_cutoff_hours, use_resources, people_per_slot
+- `custom_fields` → business_id, label, field_type, help_text, is_required,
+  is_sensitive, applies_to_all_services, options text[], is_active, sort_order
+- `custom_field_services` → custom_field_id, service_id, business_id (PK of the first two)
+- `form_versions` → business_id, version, **fields jsonb**, fields_hash
+  (unique per business on both `version` and `fields_hash`)
+
+Enums: `custom_field_type`, `staff_choice_mode`, `slot_display_mode`,
+`booking_confirmation_mode`, `slot_interval_mode`.
+
+RLS:
+
+| Table | Read | Write |
+|---|---|---|
+| `booking_settings` | any member | UPDATE only, `settings.booking`. No INSERT/DELETE policy — the trigger owns the lifecycle. |
+| `custom_fields` | any member | `settings.booking` |
+| `custom_field_services` | any member | `settings.booking` |
+| `form_versions` | any member | **nobody** (DB-created only, like `audit_logs`) |
+
+`anon` has no grant and no policy on any of them.
+
+Functions:
+
+- `build_form_fields_snapshot(business_id) → jsonb` — the active field set in
+  snapshot shape, ordered so the digest is deterministic.
+- `ensure_form_version(business_id) → uuid` — returns the version matching the
+  current field set, creating it if new. Serialised with
+  `pg_advisory_xact_lock` so two concurrent edits cannot race on `max(version)+1`.
+- `create_default_booking_settings()`, `create_initial_form_version()`,
+  `touch_form_version()`, `enforce_custom_field_guard()`,
+  `escalate_sensitive_answers()`, tenant guards — all triggers, no EXECUTE for
+  anon or authenticated.
+
+Migrations: `20261003090000_booking_settings_and_form.sql`,
+plus the two `created_by` indexes added in `20261003100000_clients_and_appointments.sql`.
+
+## Data & caching
+
+Not wired yet (no UI). When built: settings are `staleTimes.static` (5–10 min)
+— they change rarely and every booking screen reads them.
+
+## Permissions & gating
+
+- `settings.booking` to edit settings and the form. Owner + Manager (doc §9).
+- Reading needs only membership.
+- No plan or add-on gate: booking is core (doc §6).
+
+## UI
+
+Not built. Step 4 of Phase 3: settings screen with a **live preview of the
+customer booking page beside it** (doc §6.2 UX requirement), advanced section
+collapsed by default.
+
+## i18n
+
+Namespace not created yet. Will be `booking` (settings + public page share it).
+
+## Known limits / TODO
+
+- **`people_per_slot` is per BRANCH, not per service** (doc §6.2 defines it that
+  way). A branch therefore cannot have 1:1 haircuts and a 10-person class at the
+  same time. Noted as a product limitation; revisit if a real customer needs it.
+- **Changing `people_per_slot` with existing bookings is not guarded.** Going
+  from 1 to 3 leaves old rows with `is_exclusive = true`, so they keep blocking
+  their slot (safe). Going from 3 to 1 leaves several non-exclusive bookings in
+  one slot, which the exclusion constraint will not retroactively refuse
+  (already-booked customers keep their place) — but the slot then reads as
+  overbooked. **Open question for the user when the settings UI is built.**
+- `custom_fields` has no per-branch scope. Doc §6.1 describes one form per
+  business; a per-branch form would also multiply versions.
+- `buffer_minutes` exists on both `booking_settings` (branch default) and
+  `services` (per-service). The engine uses the service value when it is > 0,
+  else the branch default. Worth stating plainly in the settings UI.
+
+## Changelog
+
+- 2026-10-03: Tables, enums, RLS, auto-create trigger, backfill, form
+  versioning with digest-based dedupe and sensitivity escalation.

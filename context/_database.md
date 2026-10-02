@@ -1,12 +1,12 @@
 # Database
-Status: in progress · Phase: 1 · Last updated: 2026-10-02
+Status: in progress · Phase: 3 · Last updated: 2026-10-03
 
 ## Project
 - Supabase project **Wapee Global Development**, ref `rfuovquhultjydtswtqf`, Postgres 17, region ap-south-1.
 - Applied through the **Supabase connector** (`apply_migration`). The local CLI is signed in to a different account and cannot link this project, so `supabase db push` and `supabase test db` are unavailable. Every migration file in `supabase/migrations/` matches what was applied.
 - Extensions: `citext`, `pg_trgm`, `btree_gist` (ready for Phase 3 no-double-booking), `pgtap`, `uuid-ossp`, `pgcrypto`.
 
-## Tables (24)
+## Tables (32)
 
 | Table | Key columns | Notes |
 |---|---|---|
@@ -36,8 +36,19 @@ Status: in progress · Phase: 1 · Last updated: 2026-10-02
 | `staff_time_off` | staff_id, branch_id (nullable), starts_at/ends_at | Real instants (UTC). **No approval workflow** (doc defines none). |
 | `branch_hours` | branch_id, day_of_week, start_minute/end_minute | A weekday with no row is closed. |
 | `branch_closures` | branch_id, starts_on/ends_on (date), name | Holidays. **Inclusive** date range. |
+| **Phase 3 — booking settings & form** | | |
+| `booking_settings` | business_id, **branch_id (unique)**, online_booking_enabled, staff_choice, slot_display, confirmation, show_prices, slot_interval, buffer_minutes, minimum_notice_minutes, booking_window_days, customer_can_cancel, cancel_cutoff_hours, use_resources, people_per_slot | **ONE ROW PER BRANCH**, created by an AFTER INSERT trigger on `branches`. Defaults are exactly doc §6.2. Editing needs `settings.booking`. |
+| `custom_fields` | business_id, label, field_type, help_text, is_required, **is_sensitive**, applies_to_all_services, options text[], is_active, sort_order | Extra booking-form questions, per BUSINESS. Exactly 5 types. `is_sensitive` can only escalate. |
+| `custom_field_services` | custom_field_id, service_id, business_id | Only read when `applies_to_all_services` is false. |
+| `form_versions` | business_id, version, **fields jsonb**, fields_hash | **IMMUTABLE** snapshot of the whole field set. Created by a trigger when the set changes, NOT per booking. No write policy for anyone. |
+| **Phase 3 — bookings** | | |
+| `clients` | business_id, full_name, **phone_e164**, email, notes, first_branch_id, source | Belongs to the BUSINESS, not the branch. Unique `(business_id, phone_e164)` among live rows. |
+| `appointments` | business_id, branch_id, client_id, service_id, staff_id, resource_id, **starts_at/ends_at**, duration_minutes, buffer_minutes, status, source, **form_version_id**, **is_exclusive**, price_minor, cancelled_at | UTC instants; slots computed in the branch timezone. duration/buffer/price are snapshots. **No DELETE policy** — soft delete or cancel. |
+| `appointment_field_values` | business_id, appointment_id, custom_field_id, form_version_id, value, **is_sensitive** | One row per answer, so the sensitive gate can be per field. |
+| `booking_manage_tokens` | business_id, appointment_id, **token_hash**, expires_at, revoked_at, last_used_at | Guest cancel/reschedule. Only the sha256 HASH is stored. One live token per appointment. |
 
 Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (solo/team/business), `member_status` (invited/active/disabled), `permission_scope` (own/branch/all).
+Phase 3 adds: `appointment_status` (pending/confirmed/completed/cancelled/no_show), `booking_source` (online/dashboard/walk_in/portal), `custom_field_type` (short_text/long_text/dropdown/yes_no/number), `staff_choice_mode`, `slot_display_mode`, `booking_confirmation_mode`, `slot_interval_mode`.
 
 ## Branch-owned settings (decisions 23–25)
 A business can have branches in different countries, so the **branch** is the
@@ -61,6 +72,42 @@ source of truth for locale and money:
   These are DB guarantees, not UI validation.
 - **Price is per branch** (`service_branches`), because currency is branch-level.
 
+## Phase 3: no double-booking, and where the guarantee is weaker
+**Two GiST exclusion constraints on `appointments`** (doc §6.2, §11):
+`appointments_no_staff_double_booking` (staff_id + tstzrange) and
+`appointments_no_resource_double_booking` (resource_id + tstzrange). Both carry
+the partial predicate:
+
+```
+status not in ('cancelled','no_show') and deleted_at is null and is_exclusive
+```
+
+- **`pending` HOLDS the slot**, so two customers cannot both await approval on
+  one time. Only `cancelled` and `no_show` release it.
+- **The constraints use the real `starts_at`/`ends_at`, not start..end+buffer.**
+  The buffer is a scheduling courtesy, not a physical conflict: the slot engine
+  hides buffered slots and the booking RPC re-checks it, but a receptionist
+  deliberately overriding a buffer in Phase 4 must not be refused by a database
+  constraint.
+- **`is_exclusive`** is true when `people_per_slot` was 1 at booking time, so a
+  group class is not refused by the constraint.
+
+**THE WEAKER GUARANTEE — read this before building `create_booking`.**
+A Postgres exclusion constraint can express "no two rows overlap". It **cannot**
+express "at most N rows overlap". So for `people_per_slot > 1`, and for a
+`resources.capacity > 1`, there is **no DB-level guarantee**: the booking RPC
+must do a counted check under
+
+```
+pg_advisory_xact_lock(branch_id, service_id, staff_id, starts_at)
+```
+
+so two concurrent group bookings serialise instead of both reading "2 seats
+left". **That lock does not exist yet** — it lands with `create_booking`
+(step 5). Until then, group capacity is enforced by nothing. 1:1 booking, which
+is the default and the overwhelming majority of real use, IS fully guaranteed by
+the DB.
+
 ## RLS helpers
 | Function | Returns |
 |---|---|
@@ -71,6 +118,7 @@ source of truth for locale and money:
 | `has_permission(business_id, branch_id, perm)` | permission held, honouring scope |
 | `can(business_id, branch_id, perm)` | `business_is_active()` **AND** `has_permission()` — **use this for operational policies** |
 | `my_grants(business_id)` | SETOF (permission, scope, branch_id): the caller's own grants, in one round trip. **For UI gating only** — `usePermission()` reads it instead of calling `has_permission()` once per question. Not a boundary. |
+| `has_permission_at_branch_scope(business_id, branch_id, perm)` | Permission held at **branch or all** scope — **`own` does NOT count**. `has_permission()` deliberately ignores `own` (it answers "do you hold this anywhere relevant"), so this is the other half: it lets a policy separate "sees the whole branch" from "sees only their own rows". Used by the `appointments` and `clients` policies. |
 | `is_own_staff_profile(staff_id)` | True when that staff profile is the caller's. **Implements the `own` scope** for schedule rows: `has_permission()` can say "you hold this at own scope" but not "this row is yours". |
 
 **Schedule writes go through RPCs, not direct table writes.**
@@ -82,6 +130,18 @@ a silent no-op. Note they are the only functions in the project that are *not*
 SECURITY DEFINER — deliberately, because the policies should stay the boundary.
 
 All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE; trigger functions have none at all.
+
+**`anon` now has NO table privileges either (2026-10-03).** Supabase's bootstrap
+had run `grant all on all tables in schema public to anon`, so all 31 tables
+granted anon SELECT/INSERT/UPDATE/DELETE/TRUNCATE going back to Phase 1. Nothing
+was exposed — RLS is on everywhere and anon has no policy anywhere — but a
+single over-broad policy in a later phase would have silently published a table.
+`20261003113000_revoke_anon_table_grants.sql` revokes the lot and sets default
+privileges, keeping **one** deliberate exception: `select on reserved_slugs`
+(signup checks a slug before the user has an account). **A new table needs no
+anon grant.** If a future feature genuinely needs an anon read, grant SELECT on
+that one table explicitly, with the policy, in the same migration, and say why
+it is safe to publish.
 
 **Trial expiry needs no cron.** `business_is_active()` compares `trial_ends_at` to `now()` at query time, so access stops the second the trial ends.
 
@@ -96,6 +156,14 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 - `member_role_assignments`: read = member; write = `roles.manage`.
 - `permissions`, `reserved_slugs`: read-only catalogues.
 - `audit_logs`: read = super admin or `settings.business`. **No write policy at all.**
+- **Phase 3:**
+  - `booking_settings`: read = member; UPDATE = `settings.booking`. **No INSERT/DELETE policy** — the trigger on `branches` owns the row's lifecycle.
+  - `custom_fields` / `custom_field_services`: read = member; write = `settings.booking`.
+  - `form_versions`: read = member; **no write policy for anyone**, including the Owner (like `audit_logs`). Rows come only from the SECURITY DEFINER trigger, and an immutability trigger refuses UPDATE/DELETE.
+  - `clients`: read = `clients.view`, **narrowed at `own` scope to clients the caller has an appointment with** (the Phase 1 seed grants Staff `clients.view` at own scope meaning "their own clients"); create = `clients.create`; edit = `clients.edit`. **No DELETE policy** (soft delete).
+  - `appointments`: read/create/edit = `appointments.view`/`.create`/`.edit`, each **narrowed at `own` scope to the caller's own appointments**. **No DELETE policy** — cancel or soft-delete.
+  - `appointment_field_values`: read = can see the appointment **AND** (not sensitive **OR** `clients.view_sensitive`) — doc §6.1.
+  - `booking_manage_tokens`: read = `appointments.view` on the appointment; **no write policy** (RPC only).
 
 ## Guard triggers (rules RLS alone cannot express)
 - `enforce_profile_guard` — no self-promotion to super admin.
@@ -109,6 +177,13 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
   it has an Owner. Soft delete (`deleted_at`) is the intended path, so this is not
   urgent, but a cleanup or a GDPR erase has to disable the trigger for the
   transaction. Worth adding a "the business is going too" exemption.
+- **Phase 3 guards:**
+  - `enforce_custom_field_guard` — **`is_sensitive` can only escalate** (clearing it would retroactively expose answers given under a stricter promise), and a field's **type is frozen once answers exist**.
+  - `escalate_sensitive_answers` — marking a field sensitive marks **every existing answer** sensitive too, old ones included.
+  - `enforce_form_version_immutable` — `form_versions` rows refuse UPDATE and DELETE.
+  - `create_default_booking_settings` / `create_initial_form_version` — a new branch gets its settings row, a new business gets form version 1 (the empty form), from triggers rather than from the signup RPC, so every creation path is covered.
+  - `touch_form_version` — any change to the field set creates a new version **in the same transaction**, so a booking can never reference a stale snapshot. An unchanged set is deduped by a sha256 digest.
+  - Tenant guards on all four new tables (`enforce_appointment_tenant`, `enforce_field_value_tenant`, `enforce_manage_token_tenant`, `enforce_booking_settings_tenant`, `enforce_custom_field_service_tenant`): RLS checks the caller, these check the data.
 
 ## Default roles (product doc §9)
 | Role | Grants | Scope |
@@ -117,6 +192,37 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | Manager | 39 — no billing, roles.manage, website.publish, **website.edit**, **settings.business**, commission.manage_rules, sms.buy_credits. Keeps `settings.booking` (doc §9: "Booking settings"). | branch |
 | Receptionist | 20 — no discounts, credit notes, revenue reports, staff management, settings | branch |
 | Staff | 10 — own appointments, own schedule, own commission | own |
+
+## Verification (2026-10-03, Phase 3)
+**147 assertions passing** against the live database, run as plain SQL inside
+rolled-back transactions (`supabase db query --linked -f ...`):
+
+- `supabase/tests/06_booking_form_and_slot_engine.sql` — **93 passing**. Slot
+  generation; three timezones (Europe/London, America/New_York, **Asia/Karachi
+  = no DST**); **DST spring-forward (23-hour day) and fall-back (25-hour day)**,
+  including a branch open across the repeated hour, which yields 6 distinct
+  instants and not 7; breaks; closures; time off; existing bookings; `pending`
+  holding the slot; `cancelled`/`no_show` freeing it; the exclusion constraint
+  **refusing an overlapping booking**; a **group booking NOT being refused**;
+  buffer; slot interval (15/30/60/service length); booking window; minimum
+  notice; `online_booking_enabled`; resources and `capacity`; people-per-slot
+  seat counting; a branch with no hours yielding nothing; staff eligibility;
+  the "Any staff" least-loaded rule; form versioning, dedupe and immutability;
+  sensitivity escalation; client identity; tenant guards; and the grants.
+- `supabase/tests/07_booking_rls_per_role.sql` — **54 passing**. Owner,
+  manager, receptionist, **staff at Own scope**, another business, and **anon
+  refused outright on all 8 tables**. Also: the sensitive-answer gate (a
+  receptionist sees the non-sensitive answer and not the sensitive one),
+  soft-delete-only appointments, form versions unwritable even by the Owner,
+  manage tokens RPC-only, **even an Owner cannot call `get_free_slots`**, and an
+  expired trial hiding operational data while leaving booking settings
+  reachable.
+
+**Advisors after Phase 3:** security = **0 errors**. One new warning,
+`has_permission_at_branch_scope` executable by `authenticated` — intentional,
+same family as the 6 pre-existing permission helpers (it only ever reports on
+the caller's own access). Performance = no unindexed FKs; the long
+"unused index" list is expected noise on an empty dev database.
 
 ## Verification (2026-10-02)
 21 security checks run against the live database, all passing: tenant isolation (owner A / owner B / staff / anon), cross-tenant writes affect 0 rows, staff cannot reach invoices/billing/roles, expired trial locks operational data but not settings, and all four escalation guards hold. Test files: `supabase/tests/01_rls_tenant_isolation.sql`, `02_role_assignment_guard.sql`, `03_branch_locale_and_invoice_series.sql` (pgTAP).
@@ -148,14 +254,34 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | `20261002181000_staff_and_schedule.sql` | Phase 2 staff + schedule: profiles, branch/service assignment, hours, breaks, time off, branch hours, closures, 5 exclusion constraints, `is_own_staff_profile()` |
 | `20261002182000_catalogue_fk_indexes.sql` | Indexes for the 5 FKs the performance advisor flagged |
 | `20261002190000_replace_schedule_rpcs.sql` | `replace_staff_working_hours`, `replace_staff_breaks`, `replace_branch_hours` — replacing a week is now ONE transaction. SECURITY INVOKER, so RLS still applies. |
+| `20261003090000_booking_settings_and_form.sql` | Phase 3 part 1: booking_settings (one row per branch, doc §6.2 defaults, auto-create trigger + backfill), custom_fields, custom_field_services, form_versions with digest-deduped immutable snapshots, 5 enums, RLS |
+| `20261003100000_clients_and_appointments.sql` | Phase 3 part 2: clients, appointments, appointment_field_values, booking_manage_tokens, **2 exclusion constraints**, `has_permission_at_branch_scope()`, `normalise_phone_e164()`, sensitivity escalation, RLS, the 2 FK indexes the advisor flagged on part 1 |
+| `20261003110000_slot_engine.sql` | Phase 3 part 3: `free_slot` type, `get_free_slots()`, `pick_staff_for_slot()` — **service_role only** |
+| `20261003112000_fix_slot_interval_cast.sql` | **Fixed 22P02**: `get_free_slots` assigned the `slot_interval` ENUM into an integer variable, so every call failed. Enum and minute count now have separate variables. |
+| `20261003113000_revoke_anon_table_grants.sql` | **Revoked anon's table privileges project-wide** (Supabase's bootstrap had granted all 31 tables to anon since Phase 1). Keeps `select on reserved_slugs`. |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
 - **Leaked-password protection is OFF** (security advisor). It is a dashboard setting: Authentication → Policies → enable "Check against HaveIBeenPwned". Worth turning on before real users.
 - Phase 5 must add the hard currency lock (block the change when invoices/payments exist) and the gapless per-branch numbering that consumes `invoice_next_no`.
 - Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
+- **Group capacity has no DB guarantee.** `people_per_slot > 1` and
+  `resources.capacity > 1` need a counted check under
+  `pg_advisory_xact_lock(branch, service, staff, starts_at)` inside
+  `create_booking`, which **does not exist yet** (Phase 3 step 5). See the
+  "weaker guarantee" section above. 1:1 booking IS fully guaranteed.
+- **Changing `people_per_slot` with existing bookings is not guarded.** 3 → 1
+  leaves several non-exclusive rows in one slot that the constraint will not
+  retroactively refuse. Open question for the user when the settings UI lands.
+- **No Edge Functions exist yet.** `get_free_slots` is `service_role`-only, so
+  until `get_slots` / `create_booking` are deployed nothing can reach it — by
+  design, not an oversight.
 
 ## Changelog
+- 2026-10-03: **Revoked anon's table privileges project-wide.** Supabase's bootstrap had granted all 31 tables to anon since Phase 1; RLS was the only thing holding the line. One exception kept: `select on reserved_slugs`.
+- 2026-10-03: **Phase 3 slot engine** — `get_free_slots()` and `pick_staff_for_slot()`, service_role only, DST-correct in three timezones. 93 assertions.
+- 2026-10-03: **Phase 3 bookings schema** — clients, appointments, answers, manage tokens; 2 exclusion constraints (no double-booking); `has_permission_at_branch_scope()` for Own-scope narrowing. 54 RLS assertions.
+- 2026-10-03: **Phase 3 booking settings and form** — booking_settings per branch with doc §6.2 defaults, custom fields, immutable digest-deduped form versions.
 - 2026-10-02: Schedule writes made transactional via three replace RPCs (11 assertions, incl. rollback-on-bad-payload).
 - 2026-10-02: **Phase 2 schema** — 13 tables (catalogue, staff, schedule), 5 exclusion constraints, Own-scope RLS. 22 assertions verified against the live database; advisors clean.
 - 2026-10-02: Manager seed corrected to 39 permissions (booking settings only, per doc §9).

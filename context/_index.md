@@ -18,3 +18,5 @@ Shared files:
 | Services (catalogue) | services.md | done (Phase 2 scope) | 2 | Categories, services, per-branch prices, resources |
 | Staff | staff.md | done (Phase 2 scope) | 2 | Staff profiles (login optional), branch + service assignment |
 | Schedule | schedule.md | done (Phase 2 scope) | 2 | Working hours, breaks, time off, branch hours, holidays, rooms |
+| Booking settings & form | booking-settings.md | DB done, no UI | 3 | Per-branch booking settings (doc §6.2), custom fields, immutable form versions |
+| Booking engine | booking-engine.md | DB + slot engine done, no UI | 3 | Clients, appointments, no-double-booking, DST-correct slot engine, guest manage tokens |

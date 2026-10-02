@@ -39,6 +39,209 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_field_values: {
+        Row: {
+          appointment_id: string
+          business_id: string
+          created_at: string
+          custom_field_id: string
+          form_version_id: string
+          id: string
+          is_sensitive: boolean
+          value: string | null
+        }
+        Insert: {
+          appointment_id: string
+          business_id: string
+          created_at?: string
+          custom_field_id: string
+          form_version_id: string
+          id?: string
+          is_sensitive?: boolean
+          value?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          business_id?: string
+          created_at?: string
+          custom_field_id?: string
+          form_version_id?: string
+          id?: string
+          is_sensitive?: boolean
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_field_values_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_field_values_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_field_values_custom_field_id_fkey"
+            columns: ["custom_field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_field_values_form_version_id_fkey"
+            columns: ["form_version_id"]
+            isOneToOne: false
+            referencedRelation: "form_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          branch_id: string
+          buffer_minutes: number
+          business_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by_guest: boolean
+          client_id: string
+          client_notes: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          duration_minutes: number
+          ends_at: string
+          form_version_id: string
+          id: string
+          internal_notes: string | null
+          is_exclusive: boolean
+          price_minor: number | null
+          resource_id: string | null
+          service_id: string
+          source: Database["public"]["Enums"]["booking_source"]
+          staff_id: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          buffer_minutes?: number
+          business_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by_guest?: boolean
+          client_id: string
+          client_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          duration_minutes: number
+          ends_at: string
+          form_version_id: string
+          id?: string
+          internal_notes?: string | null
+          is_exclusive?: boolean
+          price_minor?: number | null
+          resource_id?: string | null
+          service_id: string
+          source?: Database["public"]["Enums"]["booking_source"]
+          staff_id?: string | null
+          starts_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          buffer_minutes?: number
+          business_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by_guest?: boolean
+          client_id?: string
+          client_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          duration_minutes?: number
+          ends_at?: string
+          form_version_id?: string
+          id?: string
+          internal_notes?: string | null
+          is_exclusive?: boolean
+          price_minor?: number | null
+          resource_id?: string | null
+          service_id?: string
+          source?: Database["public"]["Enums"]["booking_source"]
+          staff_id?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_form_version_id_fkey"
+            columns: ["form_version_id"]
+            isOneToOne: false
+            referencedRelation: "form_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -86,6 +289,155 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_manage_tokens: {
+        Row: {
+          appointment_id: string
+          business_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          last_used_at: string | null
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          appointment_id: string
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          appointment_id?: string
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_manage_tokens_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_manage_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_manage_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_settings: {
+        Row: {
+          booking_window_days: number
+          branch_id: string
+          buffer_minutes: number
+          business_id: string
+          cancel_cutoff_hours: number
+          confirmation: Database["public"]["Enums"]["booking_confirmation_mode"]
+          created_at: string
+          created_by: string | null
+          customer_can_cancel: boolean
+          deleted_at: string | null
+          id: string
+          minimum_notice_minutes: number
+          online_booking_enabled: boolean
+          people_per_slot: number
+          show_prices: boolean
+          slot_display: Database["public"]["Enums"]["slot_display_mode"]
+          slot_interval: Database["public"]["Enums"]["slot_interval_mode"]
+          staff_choice: Database["public"]["Enums"]["staff_choice_mode"]
+          updated_at: string
+          use_resources: boolean
+        }
+        Insert: {
+          booking_window_days?: number
+          branch_id: string
+          buffer_minutes?: number
+          business_id: string
+          cancel_cutoff_hours?: number
+          confirmation?: Database["public"]["Enums"]["booking_confirmation_mode"]
+          created_at?: string
+          created_by?: string | null
+          customer_can_cancel?: boolean
+          deleted_at?: string | null
+          id?: string
+          minimum_notice_minutes?: number
+          online_booking_enabled?: boolean
+          people_per_slot?: number
+          show_prices?: boolean
+          slot_display?: Database["public"]["Enums"]["slot_display_mode"]
+          slot_interval?: Database["public"]["Enums"]["slot_interval_mode"]
+          staff_choice?: Database["public"]["Enums"]["staff_choice_mode"]
+          updated_at?: string
+          use_resources?: boolean
+        }
+        Update: {
+          booking_window_days?: number
+          branch_id?: string
+          buffer_minutes?: number
+          business_id?: string
+          cancel_cutoff_hours?: number
+          confirmation?: Database["public"]["Enums"]["booking_confirmation_mode"]
+          created_at?: string
+          created_by?: string | null
+          customer_can_cancel?: boolean
+          deleted_at?: string | null
+          id?: string
+          minimum_notice_minutes?: number
+          online_booking_enabled?: boolean
+          people_per_slot?: number
+          show_prices?: boolean
+          slot_display?: Database["public"]["Enums"]["slot_display_mode"]
+          slot_interval?: Database["public"]["Enums"]["slot_interval_mode"]
+          staff_choice?: Database["public"]["Enums"]["staff_choice_mode"]
+          updated_at?: string
+          use_resources?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -379,6 +731,220 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          first_branch_id: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone_e164: string
+          source: Database["public"]["Enums"]["booking_source"]
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          first_branch_id?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone_e164: string
+          source?: Database["public"]["Enums"]["booking_source"]
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          first_branch_id?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone_e164?: string
+          source?: Database["public"]["Enums"]["booking_source"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_first_branch_id_fkey"
+            columns: ["first_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_field_services: {
+        Row: {
+          business_id: string
+          created_at: string
+          custom_field_id: string
+          service_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          custom_field_id: string
+          service_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          custom_field_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_field_services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_field_services_custom_field_id_fkey"
+            columns: ["custom_field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_field_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_fields: {
+        Row: {
+          applies_to_all_services: boolean
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          field_type: Database["public"]["Enums"]["custom_field_type"]
+          help_text: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          is_sensitive: boolean
+          label: string
+          options: string[] | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          applies_to_all_services?: boolean
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          field_type: Database["public"]["Enums"]["custom_field_type"]
+          help_text?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          is_sensitive?: boolean
+          label: string
+          options?: string[] | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          applies_to_all_services?: boolean
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          field_type?: Database["public"]["Enums"]["custom_field_type"]
+          help_text?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          is_sensitive?: boolean
+          label?: string
+          options?: string[] | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_fields_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_fields_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_versions: {
+        Row: {
+          business_id: string
+          created_at: string
+          fields: Json
+          fields_hash: string
+          id: string
+          version: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          fields: Json
+          fields_hash: string
+          id?: string
+          version: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          fields?: Json
+          fields_hash?: string
+          id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_versions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1236,6 +1802,10 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      build_form_fields_snapshot: {
+        Args: { p_business_id: string }
+        Returns: Json
+      }
       business_is_active: { Args: { p_business_id: string }; Returns: boolean }
       can: {
         Args: {
@@ -1258,7 +1828,33 @@ export type Database = {
         }
         Returns: string
       }
+      ensure_form_version: { Args: { p_business_id: string }; Returns: string }
+      get_free_slots: {
+        Args: {
+          p_branch_id: string
+          p_from_date?: string
+          p_ignore_notice?: boolean
+          p_service_id: string
+          p_staff_id?: string
+          p_to_date?: string
+        }
+        Returns: Database["public"]["CompositeTypes"]["free_slot"][]
+        SetofOptions: {
+          from: "*"
+          to: "free_slot"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_permission: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_permission: string
+        }
+        Returns: boolean
+      }
+      has_permission_at_branch_scope: {
         Args: {
           p_branch_id: string
           p_business_id: string
@@ -1300,6 +1896,19 @@ export type Database = {
           scope: Database["public"]["Enums"]["permission_scope"]
         }[]
       }
+      normalise_phone_e164: {
+        Args: { p_default_dial_code?: string; p_input: string }
+        Returns: string
+      }
+      pick_staff_for_slot: {
+        Args: {
+          p_branch_id: string
+          p_ends_at: string
+          p_service_id: string
+          p_starts_at: string
+        }
+        Returns: string
+      }
       replace_branch_hours: {
         Args: { p_branch_id: string; p_intervals: Json }
         Returns: number
@@ -1329,13 +1938,38 @@ export type Database = {
       }
     }
     Enums: {
+      appointment_status:
+        | "pending"
+        | "confirmed"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+      booking_confirmation_mode: "auto" | "manual"
+      booking_source: "online" | "dashboard" | "walk_in" | "portal"
       business_plan: "solo" | "team" | "business"
       business_status: "trialing" | "active" | "inactive" | "suspended"
+      custom_field_type:
+        | "short_text"
+        | "long_text"
+        | "dropdown"
+        | "yes_no"
+        | "number"
       member_status: "invited" | "active" | "disabled"
       permission_scope: "own" | "branch" | "all"
+      slot_display_mode: "only_available" | "all_greyed"
+      slot_interval_mode: "min_15" | "min_30" | "min_60" | "service_length"
+      staff_choice_mode: "hidden" | "optional" | "required"
     }
     CompositeTypes: {
-      [_ in never]: never
+      free_slot: {
+        starts_at: string | null
+        ends_at: string | null
+        local_date: string | null
+        local_minute: number | null
+        staff_id: string | null
+        resource_id: string | null
+        seats_left: number | null
+      }
     }
   }
 }
@@ -1463,10 +2097,29 @@ export const Constants = {
   },
   public: {
     Enums: {
+      appointment_status: [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+      booking_confirmation_mode: ["auto", "manual"],
+      booking_source: ["online", "dashboard", "walk_in", "portal"],
       business_plan: ["solo", "team", "business"],
       business_status: ["trialing", "active", "inactive", "suspended"],
+      custom_field_type: [
+        "short_text",
+        "long_text",
+        "dropdown",
+        "yes_no",
+        "number",
+      ],
       member_status: ["invited", "active", "disabled"],
       permission_scope: ["own", "branch", "all"],
+      slot_display_mode: ["only_available", "all_greyed"],
+      slot_interval_mode: ["min_15", "min_30", "min_60", "service_length"],
+      staff_choice_mode: ["hidden", "optional", "required"],
     },
   },
 } as const
