@@ -22,6 +22,11 @@ export const brand = {
   bundleId: 'com.wapee.app',
   /** Short description used in the web manifest and meta tags. */
   description: 'Appointment booking for salons, clinics, barbers and more.',
+  /**
+   * Where a customer writes for help — e.g. an inactive business asking to have
+   * a plan assigned. PLACEHOLDER until the real domain and mailbox exist.
+   */
+  supportEmail: 'support@wapee.com',
   urls: {
     /** Dashboard / PWA origin. Placeholder until a domain is bought. */
     app: urlFromEnv(process.env.EXPO_PUBLIC_APP_URL, DEFAULT_APP_URL),

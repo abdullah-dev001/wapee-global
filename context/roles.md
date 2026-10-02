@@ -53,7 +53,7 @@ to every feature.
 ## UI
 - `Sidebar`, `BottomTabBar` and the mobile `More` screen all render only what `useVisibleNav()` returns; skeleton rows while pending.
 - `/today` and `/more` carry no permission, so the bottom bar always has at least two tabs and can never collapse.
-- **Every `(app)` screen is wrapped in `RouteGuard`**, which renders a `Lock` empty state for a route the member may not open. It does not redirect, so the URL and the back button still behave.
+- **Every `(app)` screen is wrapped in `RouteGuard`**, which first applies the trial lock ([billing.md](billing.md)) and then renders a `Lock` empty state for a route the member may not open. It does not redirect, so the URL and the back button still behave.
 - Every `Tabs.Screen` stays registered whatever the permissions — unregistering would make a direct URL 404 instead of being refused.
 - Sign out in the sidebar and in More is now wired to `useSignOut()` (was a placeholder).
 

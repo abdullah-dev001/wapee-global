@@ -6,19 +6,32 @@ import { StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
 import { EmptyState, Skeleton } from '@/components/ui';
+import { ActiveBusinessGate } from '@/features/billing/components/ActiveBusinessGate';
 import { useVisibleNav } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 /**
- * Blocks a route the signed-in member may not open, including one typed straight
- * into the address bar or restored from history. Hiding the menu item is not
- * enough (CLAUDE.md §4, §7).
+ * Guards one `(app)` screen, in two steps:
  *
- * It renders a "no access" screen rather than redirecting, so the URL stays put
- * and the back button still works. The data behind the screen is protected by
- * RLS either way; this only avoids a wall of failed queries.
+ * 1. **Business active?** An ended trial locks everything except settings and
+ *    billing (`ActiveBusinessGate`).
+ * 2. **Permission held?** Blocks a route the member may not open, including one
+ *    typed straight into the address bar or restored from history. Hiding the
+ *    menu item is not enough (CLAUDE.md §4, §7).
+ *
+ * Both render a screen rather than redirecting, so the URL stays put and the
+ * back button still works. The data behind the screen is protected by RLS either
+ * way; this only avoids a wall of failed queries.
  */
 export function RouteGuard({ children }: { children: ReactNode }) {
+  return (
+    <ActiveBusinessGate>
+      <PermissionGuard>{children}</PermissionGuard>
+    </ActiveBusinessGate>
+  );
+}
+
+function PermissionGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { isRouteAllowed, isPending } = useVisibleNav();
 

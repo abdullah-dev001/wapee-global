@@ -240,5 +240,21 @@
       "switchAccount": "Sign out",
       "backToLogin": "Go to sign in"
     }
+  },
+  "billing": {
+    "locked": {
+      "title": "Your trial has ended",
+      "trialEnded": "Your 14-day trial is over, so this business is paused. Get in touch and we will set up a plan for you.",
+      "suspended": "This business has been paused. Get in touch and we will help you sort it out.",
+      "dataSafe": "Nothing has been deleted. Your bookings, clients and invoices are all still here.",
+      "contact": "Contact us",
+      "emailSubject": "Activate a plan for {{business}}"
+    },
+    "trialBanner": {
+      "oneDay": "Your trial ends tomorrow.",
+      "days": "Your trial ends in {{count}} days.",
+      "today": "Your trial ends today.",
+      "action": "Contact us"
+    }
   }
 }

@@ -7,7 +7,7 @@ import { PageContainer, Screen } from '@/components/layout';
 import { Card, Skeleton, Text } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { navLabelKey, type NavItem } from '@/config/navigation';
-import { useSignOut } from '@/features/auth';
+import { RouteGuard, useSignOut } from '@/features/auth';
 import { useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
@@ -22,31 +22,33 @@ export default function MoreScreen() {
   const { secondary, isPending } = useVisibleNav();
 
   return (
-    <Screen edges={['top']}>
-      <PageContainer title={t('nav.more')}>
-        {isPending ? (
-          <Card noPadding>
-            {[0, 1, 2].map((row) => (
-              <View key={row} style={styles.rowSkeleton}>
-                <Skeleton height={20} radius="sm" />
-              </View>
-            ))}
-          </Card>
-        ) : secondary.length > 0 ? (
-          <Card noPadding>
-            {secondary.map((item, index) => (
-              <MoreRow key={item.id} item={item} isLast={index === secondary.length - 1} />
-            ))}
-          </Card>
-        ) : null}
+    <RouteGuard>
+      <Screen edges={['top']}>
+        <PageContainer title={t('nav.more')}>
+          {isPending ? (
+            <Card noPadding>
+              {[0, 1, 2].map((row) => (
+                <View key={row} style={styles.rowSkeleton}>
+                  <Skeleton height={20} radius="sm" />
+                </View>
+              ))}
+            </Card>
+          ) : secondary.length > 0 ? (
+            <Card noPadding>
+              {secondary.map((item, index) => (
+                <MoreRow key={item.id} item={item} isLast={index === secondary.length - 1} />
+              ))}
+            </Card>
+          ) : null}
 
-        {__DEV__ ? <DevGalleryRow /> : null}
+          {__DEV__ ? <DevGalleryRow /> : null}
 
-        <View style={styles.signOut}>
-          <SignOutRow />
-        </View>
-      </PageContainer>
-    </Screen>
+          <View style={styles.signOut}>
+            <SignOutRow />
+          </View>
+        </PageContainer>
+      </Screen>
+    </RouteGuard>
   );
 }
 

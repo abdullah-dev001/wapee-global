@@ -36,6 +36,7 @@ land in comes from `profiles.default_business_id` (switcher arrives with onboard
 | Signed out, private route | `/login` |
 | Signed in, email not verified | `/verify` |
 | Signed in + verified, on an `(auth)` screen | `/` |
+| Business inactive (trial over) | operational screens show the lock screen; `/settings`, `/billing`, `/more` still open — see [billing.md](billing.md). Applied by `RouteGuard`, not `AuthGate`. |
 | On `/accept-invite` | always rendered — not redirected to onboarding or away from `(auth)`, because accepting is how an invited user gets their first business |
 | No Supabase keys configured | renders through, so the dev warning and gallery still work |
 
@@ -92,9 +93,9 @@ display text and can be reused server-side.
 - No trial-expired lock screen yet → trial step.
 - Super admin 2FA is deferred to Phase 8 with the admin screens (agreed).
 - Sign out buttons in the sidebar and More screen are still placeholders; they get wired to `useSignOut()` in the roles step.
-- `AuthGate` has no inactive-business branch yet; the trial lock screen adds it.
 - **Creating an `auth.users` row by hand needs `''`, not NULL, in `confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`.** GoTrue scans those columns as non-nullable strings, so a hand-made user fails sign-in with a 500 "Database error querying schema". Found 2026-10-02 with a SQL-inserted test user. Prefer the real `/auth/v1/signup` endpoint.
 
 ## Changelog
+- 2026-10-02: Trial lock wired into `RouteGuard` (see billing.md).
 - 2026-10-02: `/accept-invite` added to the gate's always-allowed routes (see members.md).
 - 2026-10-02: Auth screens, session provider and route guard. Verified end to end on web (signup → verify → login → session persists) and on iOS.

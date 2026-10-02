@@ -3,17 +3,21 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
-- **Phase 1 so far:** full schema (10 tables, RLS on all, 46 permissions, 4 system roles, guard triggers), auth screens + session + route guard, onboarding wizard + `create_business_with_owner`, branch-owned country/currency/timezone/tax, per-branch invoice series.
+- **Phase 1 — complete.** Full schema (11 tables, RLS on all, 46 permissions, 4 system roles, guard triggers); auth screens + session + route guard; onboarding wizard + `create_business_with_owner`; branch-owned country/currency/timezone/tax with per-branch invoice series; `usePermission`/`useFeature` with nav and route gating; invite flow (one-time 7-day link); trial lock screen. vitest added (`npm test`, 25 tests). A few small follow-ups are listed below.
 - Verified on web (375/768/1280) and the iOS simulator. 30+ SQL security assertions pass against the live database. Advisors clean except the item below.
 
 ## Next, in order
-1. **`usePermission` / `useFeature` wired into `src/config/navigation.ts`.** Each `NavItem` already declares `permission` and `feature`; nothing reads them yet, so every item is visible to everyone. See `context/roles.md`.
-2. **Invite flow** — `users.invite`, hashed token, accept screen. Schema is ready (`business_members.invite_token_hash`, `invite_expires_at`).
-3. **Trial lock screen** — `AuthGate` needs an inactive-business branch; `business_is_active()` already returns false the moment a trial expires.
+1. **Phase 2** — services and staff (see `docs/Wapee_Build_Plan.md`).
+2. **Small follow-ups left from Phase 1**, any order:
+   - **Manager holds `settings.business` in the seed** but product doc §9 grants only booking settings. One-row fix, deliberately skipped; see `context/roles.md`.
+   - **No "trial ends in N days" banner** — the i18n keys exist, nothing renders them, so the lock arrives unannounced (`context/billing.md`).
+   - **Members UI gaps**: change a role, remove a member, revoke/resend an invite (`context/members.md`).
+   - **`supabase/tests/04_invite_flow.sql` has never run** (no Docker).
 
 ## Open items
 - **Leaked-password protection is OFF.** Dashboard → Authentication → enable the HaveIBeenPwned check. Do this before real users.
 - **`supabase test db` needs Docker**, not installed. The pgTAP files in `supabase/tests/` are verified by running their assertions through the Supabase connector instead. Docker (or the DB password for `psql`) would let them run as a suite.
+- **`expo-clipboard` was added** (invite link copy button), so the dev build needs a rebuild: `npm run ios`.
 - **Android has never been run** — no emulator on this machine. Every UI task ends with a written Android code review instead (CLAUDE.md §4). Test on a real device via EAS build when possible.
 - **Email is Supabase's built-in sender**: rate-limited, and it only delivers to project team members. Confirm test users with SQL (see `context/auth.md`). Resend replaces it in Phase 6.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
@@ -25,7 +29,13 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 - **Check the fix is in the served bundle before judging a test.** A `CI=1` dev server does not hot-reload, so a passing-looking failure may be stale code. Restart with `--clear` after edits.
 - **Never pass an inline arrow where a hook keeps the callback in its effect deps.** `Select` did this with `useOverlayDismiss` and caused "Maximum update depth exceeded". The hook now holds it in a ref; prefer `useCallback` at call sites anyway.
 - **Screens inside the bottom tabs must pass `edges={['top']}` to `Screen`**, or the bottom inset is applied twice (~48px dead space on Android 3-button nav).
-- The Supabase **connector refuses `DROP`**; use `supabase db push` for anything destructive.
+- The Supabase **connector refuses `DROP`**; use `supabase db push` for anything destructive. It also refuses writes to `auth.users` and fixture-creating test blocks, so SQL suites that need users cannot be run through it.
+- **A `raise exception` rolls back everything in the function, including a rate-limit counter you just incremented.** `accept_invite()` therefore RETURNS NULL on failure. Remember this for any future throttle.
+- **A hand-inserted `auth.users` row needs `''`, not NULL**, in `confirmation_token`, `recovery_token`, `email_change_token_new` and `email_change`, or sign-in fails with a 500 "Database error querying schema". Prefer the real `/auth/v1/signup` endpoint.
+- **A Supabase embedded `select()` must be ONE string literal**, not a concatenation, or supabase-js infers `GenericStringError` instead of the row type. Name the constraint when a table has two FKs to the same table (`profiles!business_members_user_id_fkey(...)`).
+- **PL/pgSQL: a `returns table (x ...)` OUT column shadows any table column of the same name** for the whole body (42702). Prefix OUT columns (`out_member_id`) or qualify every reference.
+- **Forms use `useWatch({ control, name })`, never `watch()`** — the React Compiler lint rejects `watch()`.
+- **Supabase grants EXECUTE on a new public function to `anon` by default.** `revoke ... from public` does not undo it; revoke from `anon` explicitly.
 
 ## Commands
 ```sh
@@ -39,7 +49,7 @@ supabase migration list     # local vs remote history
 supabase gen types typescript --linked > src/lib/supabase/database.types.ts
 node scripts/generate-locale-data.mjs          # refresh country/currency/timezone lists
 
-npm run typecheck && npm run lint && npx prettier --check .
+npm run typecheck && npm run lint && npm test && npx prettier --check .
 ```
 
 Supabase project: `rfuovquhultjydtswtqf` (Wapee Global Development).
