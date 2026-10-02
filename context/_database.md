@@ -6,7 +6,7 @@ Status: in progress · Phase: 1 · Last updated: 2026-10-02
 - Applied through the **Supabase connector** (`apply_migration`). The local CLI is signed in to a different account and cannot link this project, so `supabase db push` and `supabase test db` are unavailable. Every migration file in `supabase/migrations/` matches what was applied.
 - Extensions: `citext`, `pg_trgm`, `btree_gist` (ready for Phase 3 no-double-booking), `pgtap`, `uuid-ossp`, `pgcrypto`.
 
-## Tables (11)
+## Tables (24)
 
 | Table | Key columns | Notes |
 |---|---|---|
@@ -21,6 +21,21 @@ Status: in progress · Phase: 1 · Last updated: 2026-10-02
 | `audit_logs` | business_id, actor_user_id, action, entity_type, entity_id, before/after jsonb | **Append-only**: no INSERT/UPDATE/DELETE policy exists. |
 | `reserved_slugs` | slug | 112 rows, mirrors `src/config/reservedSlugs.ts`. Readable by anon so signup can check availability. |
 | `invite_accept_attempts` | token_hash, attempts, first/last_attempt_at | Rate limit for `accept_invite()`. RLS on with **no policy**: only the SECURITY DEFINER function touches it. |
+| **Phase 2 — catalogue** | | |
+| `service_categories` | business_id, name, sort_order | Optional grouping; a service may have none. |
+| `services` | business_id, category_id (nullable), name, **duration_minutes**, buffer_minutes, is_active | Duration per service; **no** per-staff duration or price (doc §6.3). |
+| `service_branches` | service_id, branch_id, **price_minor**, enabled | **Price lives here**, per branch. Currency is read from `branches.currency`, never stored (decision 23, doc §8.2). |
+| `resources` | business_id, branch_id, name, capacity | Rooms/chairs/bays. Consumed by the Phase 3 slot engine. |
+| `service_resources` | service_id, resource_id | Which resource a service needs. |
+| **Phase 2 — staff & schedule** | | |
+| `staff_profiles` | business_id, **member_id (nullable)**, display_name, is_active | A staff member need not have a login (doc §10 counts staff, not seats). |
+| `staff_branches` | staff_id, branch_id | Assignable before any hours exist. |
+| `service_staff` | service_id, staff_id | Who performs what. |
+| `staff_working_hours` | staff_id, branch_id, day_of_week, **start_minute/end_minute** | Weekday + local minutes, never timestamps, so DST cannot move a shift. |
+| `staff_breaks` | same shape + label | Recurring gap inside the day. |
+| `staff_time_off` | staff_id, branch_id (nullable), starts_at/ends_at | Real instants (UTC). **No approval workflow** (doc defines none). |
+| `branch_hours` | branch_id, day_of_week, start_minute/end_minute | A weekday with no row is closed. |
+| `branch_closures` | branch_id, starts_on/ends_on (date), name | Holidays. **Inclusive** date range. |
 
 Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (solo/team/business), `member_status` (invited/active/disabled), `permission_scope` (own/branch/all).
 
@@ -35,6 +50,17 @@ source of truth for locale and money:
 - **Reports must never add different currencies** (decision 25). Group by currency and show separate totals ("£2,400 · Rs 180,000"). No conversion at launch: that needs dated exchange rates, and a wrong rate silently corrupts financial reports. Revisit with multi-branch in Phase 9.
 - **SMS credits and rates depend on the BRANCH country**, not the business (§8.4, Appendix B). A message from a UK branch and one from a Pakistani branch cost different amounts. Note for Phase 6.
 
+## Phase 2 representation choices
+- **Recurring hours are `day_of_week` + minutes from local midnight**, not `time`
+  and not `timestamptz`. Postgres has **no range type over `time`**, and the
+  no-overlap exclusion constraints need one; `int4range` over minutes is exact and
+  GiST-indexable. `lib/time` converts to "HH:MM" for the UI.
+- **5 exclusion constraints** guarantee no overlapping intervals:
+  `staff_working_hours`, `staff_breaks`, `branch_hours` (int4range),
+  `staff_time_off` (tstzrange), `branch_closures` (daterange, inclusive).
+  These are DB guarantees, not UI validation.
+- **Price is per branch** (`service_branches`), because currency is branch-level.
+
 ## RLS helpers
 | Function | Returns |
 |---|---|
@@ -45,6 +71,7 @@ source of truth for locale and money:
 | `has_permission(business_id, branch_id, perm)` | permission held, honouring scope |
 | `can(business_id, branch_id, perm)` | `business_is_active()` **AND** `has_permission()` — **use this for operational policies** |
 | `my_grants(business_id)` | SETOF (permission, scope, branch_id): the caller's own grants, in one round trip. **For UI gating only** — `usePermission()` reads it instead of calling `has_permission()` once per question. Not a boundary. |
+| `is_own_staff_profile(staff_id)` | True when that staff profile is the caller's. **Implements the `own` scope** for schedule rows: `has_permission()` can say "you hold this at own scope" but not "this row is yours". |
 
 All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE; trigger functions have none at all.
 
@@ -109,6 +136,9 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 | `20261002162000_fix_invite_member_ambiguous_column.sql` | **Fixed 42702**: OUT column `member_id` collided with `member_role_assignments.member_id`; OUT columns now `out_*` |
 | `20261002163000_fix_invite_rate_limit.sql` | **Fixed the throttle**: raising rolled back the attempt counter, so failures now RETURN NULL |
 | `20261002170000_fix_manager_settings_grants.sql` | **Seed fix**: Manager no longer holds `settings.business` or `website.edit` (doc §9 grants booking settings only). Manager 41 → 39. |
+| `20261002180000_catalogue.sql` | Phase 2 catalogue: categories, services, per-branch prices, resources, RLS, tenant guard |
+| `20261002181000_staff_and_schedule.sql` | Phase 2 staff + schedule: profiles, branch/service assignment, hours, breaks, time off, branch hours, closures, 5 exclusion constraints, `is_own_staff_profile()` |
+| `20261002182000_catalogue_fk_indexes.sql` | Indexes for the 5 FKs the performance advisor flagged |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -117,6 +147,7 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 - Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
 
 ## Changelog
+- 2026-10-02: **Phase 2 schema** — 13 tables (catalogue, staff, schedule), 5 exclusion constraints, Own-scope RLS. 22 assertions verified against the live database; advisors clean.
 - 2026-10-02: Manager seed corrected to 39 permissions (booking settings only, per doc §9).
 - 2026-10-02: Added `my_grants()` for UI permission caching. Verified it agrees with `has_permission()` on all 46 permissions and leaks nothing to non-members or anon.
 - 2026-10-02: **Branch now owns country, currency, timezone and tax** (decisions 23–25). Invoice numbering is per branch with a unique prefix. Business keeps `default_*` for pre-fill only. CLI linked; migration history repaired; pending performance migration applied.

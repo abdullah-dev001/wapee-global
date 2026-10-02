@@ -90,6 +90,102 @@ export type Database = {
           },
         ]
       }
+      branch_closures: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          ends_on: string
+          id: string
+          name: string
+          starts_on: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          ends_on: string
+          id?: string
+          name: string
+          starts_on: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          ends_on?: string
+          id?: string
+          name?: string
+          starts_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_closures_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_closures_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branch_hours: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          start_minute: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          start_minute: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          start_minute?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_hours_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_hours_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -444,6 +540,57 @@ export type Database = {
         }
         Relationships: []
       }
+      resources: {
+        Row: {
+          branch_id: string
+          business_id: string
+          capacity: number
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          capacity?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          capacity?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resources_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           permission: string
@@ -515,6 +662,574 @@ export type Database = {
           },
         ]
       }
+      service_branches: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          price_minor: number
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          price_minor: number
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          price_minor?: number
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_branches_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_branches_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_branches_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_categories: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_categories_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_resources: {
+        Row: {
+          business_id: string
+          created_at: string
+          resource_id: string
+          service_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          resource_id: string
+          service_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          resource_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_resources_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_resources_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_staff: {
+        Row: {
+          business_id: string
+          created_at: string
+          service_id: string
+          staff_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          service_id: string
+          staff_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          service_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_staff_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_staff_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_staff_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          buffer_minutes: number
+          business_id: string
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          is_bookable_online: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          buffer_minutes?: number
+          business_id: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          is_active?: boolean
+          is_bookable_online?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          buffer_minutes?: number
+          business_id?: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          is_bookable_online?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_branches: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          staff_id: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          staff_id: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_branches_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_branches_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_branches_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_breaks: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          label: string | null
+          staff_id: string
+          start_minute: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          label?: string | null
+          staff_id: string
+          start_minute: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          label?: string | null
+          staff_id?: string
+          start_minute?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_breaks_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_breaks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_breaks_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_profiles: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          display_name: string
+          email: string | null
+          id: string
+          is_active: boolean
+          is_bookable_online: boolean
+          job_title: string | null
+          member_id: string | null
+          phone: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          display_name: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_bookable_online?: boolean
+          job_title?: string | null
+          member_id?: string | null
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          display_name?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_bookable_online?: boolean
+          job_title?: string | null
+          member_id?: string | null
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_profiles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_profiles_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "business_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_time_off: {
+        Row: {
+          branch_id: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          id: string
+          is_all_day: boolean
+          reason: string | null
+          staff_id: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          id?: string
+          is_all_day?: boolean
+          reason?: string | null
+          staff_id: string
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          is_all_day?: boolean
+          reason?: string | null
+          staff_id?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_time_off_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_time_off_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_time_off_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_time_off_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_working_hours: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          staff_id: string
+          start_minute: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          staff_id: string
+          start_minute: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          staff_id?: string
+          start_minute?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_working_hours_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_working_hours_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_working_hours_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -573,6 +1288,7 @@ export type Database = {
         }[]
       }
       is_member: { Args: { p_business_id: string }; Returns: boolean }
+      is_own_staff_profile: { Args: { p_staff_id: string }; Returns: boolean }
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }

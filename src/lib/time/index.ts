@@ -26,6 +26,48 @@ export type LocalTime = string;
 
 export type DateFormatStyle = 'short' | 'medium' | 'long' | 'full';
 
+/**
+ * Minutes from local midnight, 0–1440. The schedule tables store recurring hours
+ * this way rather than as `time`, because Postgres has no range type over `time`
+ * and the no-overlap exclusion constraints need one (see the Phase 2 migration).
+ * 540 = 09:00, 1440 = end of day.
+ */
+export type MinuteOfDay = number;
+
+/** Minutes in a day. `end_minute` may equal this; `start_minute` may not. */
+export const MINUTES_PER_DAY = 1440;
+
+/**
+ * "HH:MM" (24h) for a minute offset. Always zero-padded, so it sorts and compares
+ * as a string and round-trips through `parseMinuteOfDay`.
+ *
+ * This is a DATA format, not a display format: it is what `<input type="time">`
+ * and the schedule rows use. Use `formatTime` for something a customer reads.
+ */
+export function formatMinuteOfDay(minutes: MinuteOfDay): LocalTime {
+  const clamped = Math.max(0, Math.min(MINUTES_PER_DAY, Math.round(minutes)));
+  const hours = Math.floor(clamped / 60);
+  const mins = clamped % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+/**
+ * Parses "HH:MM" (or "H:MM") into minutes from midnight. Returns null for
+ * anything that is not a real time, so a caller must handle bad input rather
+ * than silently getting 0.
+ */
+export function parseMinuteOfDay(value: string): MinuteOfDay | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const mins = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(mins)) return null;
+  if (hours > 24 || mins > 59) return null;
+  const total = hours * 60 + mins;
+  if (total > MINUTES_PER_DAY) return null;
+  return total;
+}
+
 /** Current instant as a UTC ISO string. */
 export function nowUtc(): UtcIso {
   return notImplemented('nowUtc');
@@ -102,9 +144,34 @@ export function formatDateTime(
   return notImplemented('formatDateTime');
 }
 
-/** Formats a duration in minutes for display, e.g. "1 h 30 min" (locale-aware). */
-export function formatDuration(_minutes: number, _locale: LocaleTag): string {
-  return notImplemented('formatDuration');
+/**
+ * Formats a duration in minutes for display, e.g. "1 h 30 min".
+ *
+ * `Intl.DurationFormat` is not in Hermes (and is new even in browsers), so this
+ * builds the string from `Intl.NumberFormat` units, which are widely supported.
+ * Falls back to a plain "90 min" if the runtime lacks the unit style.
+ */
+export function formatDuration(minutes: number, locale: LocaleTag): string {
+  const total = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(total / 60);
+  const mins = total % 60;
+
+  const unit = (value: number, which: 'hour' | 'minute') => {
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'unit',
+        unit: which,
+        unitDisplay: 'short',
+      }).format(value);
+    } catch {
+      // Older runtime with no unit style: good enough, and never throws.
+      return `${value} ${which === 'hour' ? 'h' : 'min'}`;
+    }
+  };
+
+  if (hours === 0) return unit(mins, 'minute');
+  if (mins === 0) return unit(hours, 'hour');
+  return `${unit(hours, 'hour')} ${unit(mins, 'minute')}`;
 }
 
 /** Relative time such as "in 2 hours" / "3 days ago" (Intl.RelativeTimeFormat). */
