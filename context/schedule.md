@@ -49,6 +49,7 @@ what the Phase 3 slot engine reads to decide what a customer may book.
 | src/features/schedule/components/TimeOffList.tsx | Upcoming time off + add form |
 | src/features/schedule/components/ClosuresList.tsx | Holidays, and the rooms list |
 | src/features/schedule/weekdays.ts (+ test) | Locale weekday names and week start |
+| src/components/shared/Calendar.tsx · calendarGrid.ts (+ test) | Month grid used by `DateRangePicker` on native (see _foundation.md) |
 
 ## Database
 | Table | Key columns |
@@ -120,6 +121,9 @@ it a closure on 25 December renders as the 24th for anyone west of Greenwich.
 - Time off is entered as whole days: the stored end is the **start of the day
   after** the last day off, and the list subtracts a day to show the real last
   day. Getting that wrong would make a one-day absence cover nothing.
+- On native both date pickers show the shared `Calendar` month grid. Time off
+  passes `minDate = todayInZone(branch timezone)` so it cannot start in the past;
+  a **closure has no past floor**, because one can be recorded after the fact.
 - The rooms tab says plainly that resources do not affect bookings yet.
 - Branch hours and closures are read-only without `settings.business`
   (Owner-only after the seed fix); the editor disables rather than hides, so a
@@ -159,9 +163,6 @@ in place.
 Advisors: security 0 errors, performance 0 warnings.
 
 ## Known limits / TODO
-- **`DateRangePicker` has no visual calendar on native** — web gets
-  `<input type="date">`, native accepts typed `YYYY-MM-DD`. A real month grid
-  needs either a library (ask first) or hand-building one.
 - Time off is always whole days; no half-day or specific-hours absence, and
   `is_all_day` is always written true.
 - Resources have no capacity editor (always 1) and no service linking UI; the

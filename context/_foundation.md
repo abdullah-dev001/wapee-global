@@ -34,7 +34,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | src/lib/i18n/                                                                                                            | i18next instance, resources, typed keys, RTL helpers                                        |
 | src/lib/permissions/                                                                                                     | `can()`, `usePermission`, `useFeature`, `useVisibleNav`, current-scope store (see roles.md)  |
 | src/config/permissions.ts                                                                                                | 46-permission catalogue mirroring the table: `PermissionKey`, `minPlan`, `addon`, plan order |
-| src/lib/time/index.ts | Partly implemented: `formatMinuteOfDay`, `parseMinuteOfDay`, `formatDuration`. The timezone helpers are still skeletons. |
+| src/lib/time/index.ts | Partly implemented: `formatMinuteOfDay`, `parseMinuteOfDay`, `formatDuration`, `todayInZone`, `dateInZone`, `parseLocalDate`, `toLocalDate`, `addDaysToLocalDate`, `daysInMonth`, `weekdayOfLocalDate`. `zonedToUtc`/`utcToZoned`/`dayRangeUtc` are still skeletons (Phase 3 slot engine). |
 | src/lib/money/index.ts | Partly implemented: `money`, `currencyExponent`, `parseMajorToMinor`, `formatMoney`, `formatMinorAsMajor`. Arithmetic helpers still skeletons. |
 | src/lib/notImplemented.ts                                                                                                | Throw helper for skeletons                                                                  |
 | src/lib/pwa/registerServiceWorker.ts                                                                                     | Registers /sw.js (web + production only), update hook                                       |
@@ -104,7 +104,8 @@ Conventions:
 | `SearchInput` | Debounced 300 ms, minimum 2 characters, reports only the debounced term so it can go straight into a query key (CLAUDE.md §6). |
 | `TimePicker` | Minutes-from-midnight on a 15-minute step, built on `Select`. **No native date/time module**: it would need a rebuild, looks different per platform and has no web build. An off-step stored value stays selectable. |
 | `DayHoursRow` | One weekday: open/closed toggle + interval list, so a split shift is two rows. Validates nothing itself — the DB holds the guarantees. |
-| `DateRangePicker` | Calendar **dates**, not instants. Web gets `<input type="date">`; native accepts typed `YYYY-MM-DD`. **A native calendar is still to do** (needs a library — ask first). |
+| `Calendar` | **Month grid, hand-built, no dependency.** "Today" comes from the **branch timezone** (decision 23). RTL-ready via `row-reverse` + swapped arrows (not `I18nManager`, which needs a native reload). Weekday/month names from `Intl`. Supports `minDate`/`maxDate`, `disabledDates` and a selected range. **Reused by the Phase 3 public booking page.** Grid maths is a pure module (`calendarGrid.ts`) with 20 tests. |
+| `DateRangePicker` | Calendar **dates**, not instants. Web keeps `<input type="date">` (browser calendar, keyboard, locale formatting for free); **native renders `Calendar`**. Tap picks start, then end; tapping below the start restarts the range. |
 
 ## Layout & shell (`src/components/layout`)
 
@@ -186,6 +187,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 
 ## Changelog
 
+- 2026-10-02: `Calendar` month grid (+ pure `calendarGrid` module, 20 tests) used by `DateRangePicker` on native; calendar-date helpers in `lib/time` (18 tests incl. date line, DST and leap years). Gallery shows all of them.
 - 2026-10-02: Shared composites (MoneyInput, SearchInput, TimePicker, DayHoursRow, DateRangePicker) + `components/shared/index.ts`; money and minute-of-day helpers implemented with 31 tests.
 - 2026-10-02: `ErrorState` primitive; vitest + `npm test`; expo-clipboard (needs a rebuild).
 - 2026-10-02: `src/lib/permissions/` added and wired into navigation (`useVisibleNav`, `RouteGuard`); nav `feature` field dropped; sign out wired. See roles.md.

@@ -109,9 +109,85 @@ export function dayRangeUtc(_date: LocalDate, _zone: IanaTimeZone): { start: Utc
   return notImplemented('dayRangeUtc');
 }
 
-/** "Today" as a calendar date in `zone`. */
-export function todayInZone(_zone: IanaTimeZone): LocalDate {
-  return notImplemented('todayInZone');
+/**
+ * "Today" as a calendar date in `zone`.
+ *
+ * Built from `Intl` parts rather than from a UTC offset, so it is correct across
+ * the date line and on DST days. The branch timezone decides what "today" means
+ * (product doc decision 23) — never the device.
+ */
+export function todayInZone(zone: IanaTimeZone, now: Date = new Date()): LocalDate {
+  return dateInZone(now, zone);
+}
+
+/** The calendar date an instant falls on, as seen in `zone`. */
+export function dateInZone(instant: Date, zone: IanaTimeZone): LocalDate {
+  // `en-CA` formats as YYYY-MM-DD, but the parts are read explicitly so the
+  // result cannot depend on a locale's ordering.
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: zone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant);
+
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+/** Splits "YYYY-MM-DD" into numbers. Returns null if it is not a real date. */
+export function parseLocalDate(
+  value: LocalDate,
+): { year: number; month: number; day: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  // Rejects 2026-02-30, which would otherwise roll into March.
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (
+    probe.getUTCFullYear() !== year ||
+    probe.getUTCMonth() !== month - 1 ||
+    probe.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return { year, month, day };
+}
+
+/** Builds "YYYY-MM-DD" from parts, zero-padded. */
+export function toLocalDate(year: number, month: number, day: number): LocalDate {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/**
+ * Adds whole days to a calendar date.
+ *
+ * Pure calendar arithmetic through UTC, with no timezone involved: adding a day
+ * to a date must never be affected by DST, because "the 26th" is the 26th
+ * whatever the clocks did.
+ */
+export function addDaysToLocalDate(value: LocalDate, days: number): LocalDate {
+  const parsed = parseLocalDate(value);
+  if (!parsed) return value;
+  const probe = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day));
+  probe.setUTCDate(probe.getUTCDate() + days);
+  return toLocalDate(probe.getUTCFullYear(), probe.getUTCMonth() + 1, probe.getUTCDate());
+}
+
+/** Days in a month. `month` is 1-12. */
+export function daysInMonth(year: number, month: number): number {
+  // Day 0 of the next month is the last day of this one.
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/** Weekday of a calendar date, 0 = Sunday .. 6 = Saturday. */
+export function weekdayOfLocalDate(value: LocalDate): number {
+  const parsed = parseLocalDate(value);
+  if (!parsed) return 0;
+  return new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day)).getUTCDay();
 }
 
 /** Adds minutes to a UTC instant (absolute time, not wall-clock). */

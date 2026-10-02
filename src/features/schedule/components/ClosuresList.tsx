@@ -32,7 +32,8 @@ import {
 export function ClosuresList() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const { businessId, branchId } = useCurrentScope();
+  const { businessId, branchId, business } = useCurrentScope();
+  const branchTimeZone = business?.branches.find((entry) => entry.id === branchId)?.timezone;
   const schedule = useBranchSchedule(businessId, branchId);
   const save = useSaveClosure(businessId, branchId);
   const remove = useDeleteClosure(businessId);
@@ -132,6 +133,8 @@ export function ClosuresList() {
             endDate={range.endDate}
             onChange={setRange}
             required
+            // No past floor: a closure can be recorded after the fact.
+            timeZone={branchTimeZone}
           />
 
           <Button

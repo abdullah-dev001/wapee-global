@@ -1,3 +1,4 @@
+export { Calendar, type CalendarProps } from './Calendar';
 export { ComingSoonScreen } from './ComingSoonScreen';
 export { DateRangePicker, type DateRangePickerProps } from './DateRangePicker';
 export { DayHoursRow, type DayHoursRowProps, type DayInterval } from './DayHoursRow';

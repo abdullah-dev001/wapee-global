@@ -11,7 +11,6 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 ## Next, in order
 1. **Phase 3** — booking engine: booking settings, booking form with custom fields, the slot calculation engine, DB-level no-double-booking, public booking page (see `docs/Wapee_Build_Plan.md`).
 2. **Highest-value follow-ups from Phase 2**, any order:
-   - **`DateRangePicker` has no visual calendar on native** (web uses `<input type="date">`). Needs a library — ask first.
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
 3. **Small follow-ups left from Phase 1**, any order:
@@ -30,6 +29,7 @@ Last updated: 2026-10-02 · Branch: `dev` · All work is pushed.
 
 ## Traps to remember
 - **Postgres has no range type over `time`.** Recurring hours are stored as `day_of_week` + minutes from local midnight (`int4range` for the overlap constraints). `lib/time` converts to "HH:MM".
+- **`Calendar` (shared month grid) is the one date picker** — no library, works on all three platforms, RTL-ready, and Phase 3's booking page reuses it via `disabledDates`.
 - **`Intl.DateTimeFormat` needs `timeZone: 'UTC'`** whenever formatting a calendar date or a UTC-midnight instant, or a device west of Greenwich shows the previous day. Bit both the weekday names and the closure list.
 - **PKR and JPY have NO minor unit** (and KWD/BHD have three). `currencyExponent()` reads it from `Intl`; assuming 2 would be a 100x pricing error in a launch market.
 - **Non-ASCII digits** (Arabic-Indic "١٢٣", Persian) must be mapped by codepoint — neither `Number()` nor `normalize('NFKD')` converts them, and a `[0-9]` filter deletes them.

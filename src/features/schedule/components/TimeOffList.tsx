@@ -20,7 +20,7 @@ import {
 import { useStaff } from '@/features/staff/api/useStaff';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
-import { type LocalDate } from '@/lib/time';
+import { todayInZone, type LocalDate } from '@/lib/time';
 
 import { useDeleteTimeOff, useSaveTimeOff, useTimeOff } from '../api/useSchedule';
 
@@ -28,7 +28,9 @@ import { useDeleteTimeOff, useSaveTimeOff, useTimeOff } from '../api/useSchedule
 export function TimeOffList() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const { businessId, branchId } = useCurrentScope();
+  const { businessId, branchId, business } = useCurrentScope();
+  // The branch owns the timezone, so it decides what "today" means.
+  const branchTimeZone = business?.branches.find((entry) => entry.id === branchId)?.timezone;
   const timeOff = useTimeOff(businessId);
   const staff = useStaff(businessId, branchId);
   const save = useSaveTimeOff(businessId);
@@ -165,6 +167,10 @@ export function TimeOffList() {
             endDate={range.endDate}
             onChange={setRange}
             required
+            // Time off is always in the future, and "today" is the BRANCH's
+            // today (decision 23).
+            minDate={branchTimeZone ? todayInZone(branchTimeZone) : undefined}
+            timeZone={branchTimeZone}
           />
 
           {/* Plain state, not react-hook-form: this form has three fields. */}

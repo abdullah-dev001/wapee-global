@@ -12,7 +12,10 @@
     "clear": "Clear",
     "add": "Add",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "change": "Change",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
   },
   "routes": {
     "auth": "Sign in",
