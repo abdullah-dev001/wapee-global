@@ -68,6 +68,12 @@ All are `SECURITY DEFINER`, `STABLE`, `search_path = ''`. `anon` has no EXECUTE;
 - `enforce_business_guard` — a tenant cannot change its own `plan`, `status` or trial dates.
 - `enforce_role_assignment_guard` — **you cannot grant a permission you do not hold.**
 - `enforce_last_owner` — a business always keeps ≥1 active Owner.
+  **Gap:** it is a `BEFORE DELETE` trigger on `member_role_assignments` with no
+  exemption for the business itself being deleted, so `delete from businesses`
+  cascades into it and is refused — a business row can never be hard-deleted while
+  it has an Owner. Soft delete (`deleted_at`) is the intended path, so this is not
+  urgent, but a cleanup or a GDPR erase has to disable the trigger for the
+  transaction. Worth adding a "the business is going too" exemption.
 
 ## Default roles (product doc §9)
 | Role | Grants | Scope |
