@@ -69,7 +69,8 @@
     "manifest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-web-manifest.mjs",
     "postbuild:web": "node scripts/strip-dev-routes.mjs --restore",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "smoke:public": "node scripts/smoke-public.mjs"
   },
   "private": true
 }
