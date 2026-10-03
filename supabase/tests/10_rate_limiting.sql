@@ -110,9 +110,9 @@ end $$;
 -- The real configured limits are present and sane.
 select pg_temp.chk('create_booking has a per-phone daily cap of 5',
   (select max_attempts from public.rate_limit_rules where endpoint='create_booking' and scope='key'), 5);
-select pg_temp.chk('create_booking has a per-business daily cap of 200',
+select pg_temp.chk('create_booking has a per-business daily cap of 120',
   (select max_attempts from public.rate_limit_rules
-   where endpoint='create_booking' and scope='biz' and window_seconds=86400), 200);
+   where endpoint='create_booking' and scope='biz' and window_seconds=86400), 120);
 select pg_temp.chk('both daily caps use a 24h window',
   (select count(*)::int from public.rate_limit_rules
    where endpoint='create_booking' and scope in ('key','biz') and window_seconds=86400), 2);
@@ -127,12 +127,18 @@ select pg_temp.chk('both daily caps use a 24h window',
 select pg_temp.chk('create_booking has a per-business HOURLY cap of 30',
   (select max_attempts from public.rate_limit_rules
    where endpoint='create_booking' and scope='biz' and window_seconds=3600), 30);
-select pg_temp.chk('and still the daily cap of 200',
+select pg_temp.chk('and still the daily cap of 120',
   (select max_attempts from public.rate_limit_rules
-   where endpoint='create_booking' and scope='biz' and window_seconds=86400), 200);
+   where endpoint='create_booking' and scope='biz' and window_seconds=86400), 120);
 select pg_temp.chk('two business rules now coexist',
   (select count(*)::int from public.rate_limit_rules
    where endpoint='create_booking' and scope='biz'), 2);
+-- A daily cap below the hourly one would make the hourly rule unreachable.
+select pg_temp.chk('the hourly cap does not exceed the daily cap',
+  (select (select max_attempts from public.rate_limit_rules
+           where endpoint='create_booking' and scope='biz' and window_seconds=3600)
+       <= (select max_attempts from public.rate_limit_rules
+           where endpoint='create_booking' and scope='biz' and window_seconds=86400)), true);
 select pg_temp.chk('the HOURLY rule is evaluated first (shortest window)',
   (select window_seconds from public.rate_limit_rules
    where endpoint='create_booking' and scope='biz' order by window_seconds asc limit 1), 3600);

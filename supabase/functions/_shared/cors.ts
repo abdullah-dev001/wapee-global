@@ -24,13 +24,31 @@ function allowedOrigins(): string[] {
       .map((o) => o.trim().replace(/\/+$/, ''))
       .filter(Boolean);
   }
-  // Placeholder defaults, matching src/config/brand.ts. Localhost is included so
-  // `npm run web` can exercise the real endpoints during development.
+  // Placeholder defaults, matching src/config/brand.ts. The real production
+  // domain is a Phase 12 item and must be set via PUBLIC_SITE_ORIGINS — these
+  // are only a fallback so development works out of the box.
+  //
+  // The localhost entries cover the ports Expo actually uses:
+  //   8081  `npm run web` (Metro's default)
+  //   8082  the port Metro picks when 8081 is taken
+  //   8090  the explicit port in context/_handoff.md's commands
+  //   8092  the dev-server port for an installed native build
+  //   19006 the legacy `expo start --web` port, still seen in older tooling
+  // 127.0.0.1 is listed alongside localhost because a browser treats them as
+  // different origins and some setups resolve to one and not the other.
   return [
     'https://wapee.site',
     'https://app.wapee.com',
     'http://localhost:8081',
+    'http://localhost:8082',
     'http://localhost:8090',
+    'http://localhost:8092',
+    'http://localhost:19006',
+    'http://127.0.0.1:8081',
+    'http://127.0.0.1:8082',
+    'http://127.0.0.1:8090',
+    'http://127.0.0.1:8092',
+    'http://127.0.0.1:19006',
   ];
 }
 

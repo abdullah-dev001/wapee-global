@@ -1047,6 +1047,57 @@ begin
   values ('and its form versions went with it', v_left = 0, 'rows left: ' || v_left);
 end $$;
 
+
+-- ---------------------------------------------------------------------------
+-- 17. require_client_email (the one toggleable default field, doc §6.1)
+-- ---------------------------------------------------------------------------
+-- NOTE: a REQUIRED custom field (f_req) exists by this point in the suite, so
+-- every booking below must answer it or it fails with missing_answer before the
+-- email rules are reached.
+do $$
+declare r jsonb; v_answers jsonb;
+begin
+  v_answers := jsonb_build_array(
+    jsonb_build_object('custom_field_id', pg_temp.id('f_req'), 'value', 'none'));
+
+  -- Default is OPTIONAL: no email still books, and a malformed one is dropped
+  -- rather than being fatal.
+  r := public.create_booking(pg_temp.id('br'), pg_temp.id('svc'), pg_temp.slot(600, 12),
+    pg_temp.id('ann'), 'No Email', '07700 955001', null, null, v_answers);
+  perform pg_temp.chk('email optional by default: a booking with no email succeeds', r->>'ok', 'true');
+
+  r := public.create_booking(pg_temp.id('br'), pg_temp.id('svc'), pg_temp.slot(660, 12),
+    pg_temp.id('ann'), 'Bad Email', '07700 955002', 'not-an-email', null, v_answers);
+  perform pg_temp.chk('a malformed email is dropped while optional', r->>'ok', 'true');
+  perform pg_temp.chk('and nothing was stored for it',
+    (select email::text from public.clients where phone_e164 = '+447700955002'), null::text);
+
+  -- Turn it on.
+  update public.booking_settings set require_client_email = true where branch_id = pg_temp.id('br');
+
+  r := public.create_booking(pg_temp.id('br'), pg_temp.id('svc'), pg_temp.slot(720, 12),
+    pg_temp.id('ann'), 'Needs Email', '07700 955003', null, null, v_answers);
+  perform pg_temp.chk('with the flag on, a MISSING email is refused', r->>'code', 'email_required');
+
+  r := public.create_booking(pg_temp.id('br'), pg_temp.id('svc'), pg_temp.slot(720, 12),
+    pg_temp.id('ann'), 'Needs Email', '07700 955003', 'also-not-an-email', null, v_answers);
+  perform pg_temp.chk('and a MALFORMED one is refused too, not silently dropped',
+    r->>'code', 'email_required');
+
+  -- A DIFFERENT number, so this is a fresh client rather than the one the two
+  -- refusals above were for.
+  r := public.create_booking(pg_temp.id('br'), pg_temp.id('svc'), pg_temp.slot(780, 12),
+    pg_temp.id('ann'), 'Has Email', '07700 955004', 'real@example.com', null, v_answers);
+  perform pg_temp.chk('a valid email succeeds', r->>'ok', 'true');
+  perform pg_temp.chk('and is stored',
+    (select email::text from public.clients where phone_e164 = '+447700955004'), 'real@example.com');
+  -- The refused attempts left NO client row: the email check runs before any write.
+  perform pg_temp.chk('a refused booking leaves no client row',
+    (select count(*)::int from public.clients where phone_e164 = '+447700955003'), 0);
+
+  update public.booking_settings set require_client_email = false where branch_id = pg_temp.id('br');
+end $$;
+
 -- ---------------------------------------------------------------------------
 -- Results
 -- ---------------------------------------------------------------------------

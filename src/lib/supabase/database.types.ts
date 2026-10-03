@@ -373,6 +373,7 @@ export type Database = {
           minimum_notice_minutes: number
           online_booking_enabled: boolean
           people_per_slot: number
+          require_client_email: boolean
           show_prices: boolean
           slot_display: Database["public"]["Enums"]["slot_display_mode"]
           slot_interval: Database["public"]["Enums"]["slot_interval_mode"]
@@ -395,6 +396,7 @@ export type Database = {
           minimum_notice_minutes?: number
           online_booking_enabled?: boolean
           people_per_slot?: number
+          require_client_email?: boolean
           show_prices?: boolean
           slot_display?: Database["public"]["Enums"]["slot_display_mode"]
           slot_interval?: Database["public"]["Enums"]["slot_interval_mode"]
@@ -417,6 +419,7 @@ export type Database = {
           minimum_notice_minutes?: number
           online_booking_enabled?: boolean
           people_per_slot?: number
+          require_client_email?: boolean
           show_prices?: boolean
           slot_display?: Database["public"]["Enums"]["slot_display_mode"]
           slot_interval?: Database["public"]["Enums"]["slot_interval_mode"]
