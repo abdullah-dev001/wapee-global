@@ -385,6 +385,29 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Public booking endpoints (Phase 3).
+#
+# `verify_jwt = false` because the customer booking a haircut has NO account and
+# sends no Authorization header. These two functions are deliberately the public
+# surface of the product, and they carry their own protection:
+#   * the slug is the only business identifier a caller may send; the branch is
+#     always re-derived from it, so no business_id can be forged
+#   * `anon` has no table privileges and no policy on any booking table, and
+#     `get_free_slots` / `create_booking` are granted to service_role only, so
+#     these functions are the only path to the data
+#   * every failure is mapped to a small set of public reasons that cannot be
+#     used to tell "no such slug" from "trial expired" (see _shared/response.ts)
+#   * rate limiting and bot protection land in step 7 at the seam already called
+#     at the top of both handlers (_shared/rateLimit.ts)
+#
+# Pinned here so a later `supabase functions deploy` without the flag cannot
+# silently turn JWT verification on and break the public page.
+[functions.get_slots]
+verify_jwt = false
+
+[functions.create_booking]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
