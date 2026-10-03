@@ -72,7 +72,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
       p_new_token: token,
     });
 
-    if (error) throw error;
+    if (error) {
+      // An ANON-key caller (a valid JWT, but `role: anon`) has no EXECUTE on this
+      // RPC, so Postgres refuses before the function's own not_signed_in branch
+      // is reached. That refusal is correct and is the real boundary — but it
+      // arrives as a privilege error, and reporting it as a 500 would tell the
+      // caller "something broke here" instead of "you may not do this".
+      //
+      // 42501 = insufficient_privilege. PostgREST also surfaces a missing
+      // function as 42883/PGRST202 when the role cannot see it at all.
+      const code = (error as { code?: string }).code;
+      if (code === '42501' || code === '42883' || code === 'PGRST202') {
+        return jsonError(req, 'not_bookable');
+      }
+      throw error;
+    }
 
     const r = data as Record<string, unknown> | null;
 
