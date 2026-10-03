@@ -433,8 +433,14 @@
       "phoneHint": "So we can confirm your booking.",
       "email": "Email",
       "notes": "Anything we should know?",
-      "numberPlaceholder": "0"
-    }
+      "numberPlaceholder": "0",
+      "service": "Service",
+      "staff": "Who you will see",
+      "time": "Date and time",
+      "details": "Your details"
+    },
+    "confirmAuto": "The customer is told their booking is confirmed straight away.",
+    "confirmManual": "The customer is told their request was sent and is waiting for you to confirm."
   },
   "bookingSettings": {
     "title": "Booking settings",
