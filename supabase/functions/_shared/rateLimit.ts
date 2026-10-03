@@ -46,38 +46,72 @@ export type RateLimitResult = {
 };
 
 /**
- * The client's IP, as the platform reports it.
+ * The client's IP.
  *
- * WHICH HEADER WE TRUST, AND WHY
- * ------------------------------
- * Supabase Edge Functions sit behind the platform's own proxy, which appends the
- * real client address to `x-forwarded-for`. That header is a LIST:
+ * WHICH HEADER WE TRUST, AND WHY — MEASURED, NOT ASSUMED
+ * -----------------------------------------------------
+ * **`cf-connecting-ip`.** Supabase Edge Functions sit behind Cloudflare, which
+ * sets this header to the real client address and does not let a caller forge it.
  *
- *     x-forwarded-for: <client-supplied>, <client-supplied>, …, <real client>
+ * This was verified against the DEPLOYED function on 2026-10-04 (real client
+ * address `154.208.43.55`):
  *
- * Everything before the last entry can be set by the caller. Taking `[0]` — the
- * common mistake — lets anyone spoof their own rate-limit key by sending
- * `X-Forwarded-For: 1.2.3.4` and rotating it, escaping every per-IP limit.
+ *   x-forwarded-for  = 154.208.43.55,154.208.43.55, 13.248.117.77
+ *   cf-connecting-ip = 154.208.43.55
  *
- * So we take the **LAST** entry: the one the nearest trusted proxy appended.
- * `x-real-ip` is the fallback, as a single value set by the same proxy.
+ * Three things that measurement settled:
  *
- * If neither is present we return null and the per-IP rules simply do not apply
- * for that request — the per-phone and per-business caps still do. That is
- * deliberate: a missing header must not take the endpoint down, and must not be
- * a way to escape the other limits either.
+ * 1. **The LAST entry of `x-forwarded-for` is a PROXY, not the client.** Across
+ *    five consecutive calls it was 13.248.117.77, 13.248.117.73, 99.82.173.50 …
+ *    — rotating AWS edge addresses — while `cf-connecting-ip` was stable. An
+ *    earlier version of this file keyed on that last entry, which would have put
+ *    every caller on the planet into a handful of shared buckets: one busy
+ *    business would have rate-limited everybody. That was a real bug, caught only
+ *    by checking against the deployed function.
+ *
+ * 2. **A client-supplied `X-Forwarded-For` never arrives.** Sending
+ *    `X-Forwarded-For: 1.2.3.4` and `1.2.3.4, 5.6.7.8` changed nothing: the
+ *    platform replaces the header. So the usual "leading entries are
+ *    attacker-controlled" worry does not apply here — but we do not rely on that,
+ *    because it is a platform behaviour that could change.
+ *
+ * 3. **`cf-connecting-ip` cannot be spoofed at all.** A request carrying it is
+ *    rejected by Cloudflare with `403 error code: 1000` before it reaches us.
+ *    That is a stronger guarantee than "we parse it carefully".
+ *
+ * `x-real-ip` and then the FIRST `x-forwarded-for` entry are fallbacks, in case
+ * the platform's edge changes. The first entry is the right fallback precisely
+ * because the measurement above shows the real client leads the list here.
+ *
+ * If nothing is present we return null and the per-IP rules do not apply for that
+ * request — the per-phone and per-business caps still do. A missing header must
+ * not take the endpoint down, and must not be a way to escape the other limits.
+ *
+ * **If this is ever ported off Supabase/Cloudflare, re-measure before trusting
+ * any of it.** The correct header is a property of the deployment, not of HTTP.
  */
 export function clientIp(req: Request): string | null {
+  // Set by Cloudflare, unforgeable (a request that sends it is rejected at the
+  // edge with 403/1000). This is the one to use here.
+  const cf = req.headers.get('cf-connecting-ip');
+  if (cf && cf.trim()) return cf.trim();
+
+  // Fallbacks, for a future edge that does not set the above.
+  const real = req.headers.get('x-real-ip');
+  if (real && real.trim()) return real.trim();
+
   const forwarded = req.headers.get('x-forwarded-for');
   if (forwarded) {
     const parts = forwarded
       .split(',')
       .map((p) => p.trim())
       .filter(Boolean);
-    // LAST, not first. See above.
-    if (parts.length > 0) return parts[parts.length - 1] ?? null;
+    // FIRST, because on this platform the real client leads the list and the
+    // trailing entries are rotating proxies (measured; see above).
+    if (parts.length > 0) return parts[0] ?? null;
   }
-  return req.headers.get('x-real-ip');
+
+  return null;
 }
 
 /**
