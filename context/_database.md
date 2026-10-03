@@ -103,10 +103,23 @@ pg_advisory_xact_lock(branch_id, service_id, staff_id, starts_at)
 ```
 
 so two concurrent group bookings serialise instead of both reading "2 seats
-left". **That lock does not exist yet** — it lands with `create_booking`
-(step 5). Until then, group capacity is enforced by nothing. 1:1 booking, which
-is the default and the overwhelming majority of real use, IS fully guaranteed by
-the DB.
+left". **That lock now exists**, in `create_booking` (20261003160000):
+`pg_advisory_xact_lock(hashtext('booking:'||branch||':'||service), hashtext(starts_at))`.
+Everything after it — the slot re-check, the group count, the resource count and
+the insert — runs serialised per slot, while two different slots never contend.
+
+1:1 booking, the default and the overwhelming majority of real use, IS fully
+guaranteed by the DB and needs no lock.
+
+**Resource capacity was broken and is fixed.** The resource constraint originally
+keyed off `is_exclusive` (a people_per_slot concept), so a `capacity: 2` room
+could still hold only one booking: the engine offered the slot and the constraint
+then refused it, telling the customer "that slot just went" when it had not.
+It now keys off **`resource_is_exclusive`**, a generated column
+(`resource_id is not null and resource_capacity_at_booking <= 1`), where
+`resource_capacity_at_booking` is snapshotted at write time and defaults to 1 —
+i.e. to the stricter behaviour. So capacity 1 is a hard DB guarantee and
+capacity > 1 is the counted check, same as group bookings.
 
 ## RLS helpers
 | Function | Returns |
@@ -120,6 +133,17 @@ the DB.
 | `my_grants(business_id)` | SETOF (permission, scope, branch_id): the caller's own grants, in one round trip. **For UI gating only** — `usePermission()` reads it instead of calling `has_permission()` once per question. Not a boundary. |
 | `has_permission_at_branch_scope(business_id, branch_id, perm)` | Permission held at **branch or all** scope — **`own` does NOT count**. `has_permission()` deliberately ignores `own` (it answers "do you hold this anywhere relevant"), so this is the other half: it lets a policy separate "sees the whole branch" from "sees only their own rows". Used by the `appointments` and `clients` policies. |
 | `is_own_staff_profile(staff_id)` | True when that staff profile is the caller's. **Implements the `own` scope** for schedule rows: `has_permission()` can say "you hold this at own scope" but not "this row is yours". |
+
+**Phase 3 RPCs.**
+`create_booking(...)` → jsonb: the whole public booking write in one transaction,
+**`service_role` only**. Returns `{ok:false,code}` for every expected failure and
+never raises — a raise would roll back step 7's rate-limit counter (the
+`accept_invite` lesson).
+`save_booking_settings(branch, jsonb)` → jsonb: SECURITY INVOKER, only the keys
+present change, blocks a `people_per_slot` downgrade that a future slot already
+exceeds.
+`branch_is_bookable(branch)` → jsonb `{bookable, reasons[]}`.
+`get_free_slots(...)` / `pick_staff_for_slot(...)`: `service_role` only.
 
 **Schedule writes go through RPCs, not direct table writes.**
 `replace_staff_working_hours(staff, branch, jsonb)`,
@@ -177,6 +201,16 @@ it is safe to publish.
   it has an Owner. Soft delete (`deleted_at`) is the intended path, so this is not
   urgent, but a cleanup or a GDPR erase has to disable the trigger for the
   transaction. Worth adding a "the business is going too" exemption.
+
+  **This is a recurring family of bug, now seen three times:** a guard or
+  bookkeeping trigger written for a tenant action also fires for the cascade that
+  is deleting the tenant. `enforce_form_version_immutable` refused the cascade
+  (fixed 20261003140000) and `touch_form_version` tried to CREATE a version for a
+  business already gone (fixed 20261003210000); `enforce_last_owner` is the one
+  still outstanding. **Any new trigger on a tenant-owned table should be checked
+  against `delete from businesses`** — `supabase/tests/08_create_booking.sql`
+  now asserts that a business with bookings, answers and form versions can be
+  hard-deleted.
 - **Phase 3 guards:**
   - `enforce_custom_field_guard` — **`is_sensitive` can only escalate** (clearing it would retroactively expose answers given under a stricter promise), and a field's **type is frozen once answers exist**.
   - `escalate_sensitive_answers` — marking a field sensitive marks **every existing answer** sensitive too, old ones included.
@@ -194,7 +228,7 @@ it is safe to publish.
 | Staff | 10 — own appointments, own schedule, own commission | own |
 
 ## Verification (2026-10-03, Phase 3)
-**147 assertions passing** against the live database, run as plain SQL inside
+**287 assertions passing** against the live database, run as plain SQL inside
 rolled-back transactions (`supabase db query --linked -f ...`):
 
 - `supabase/tests/06_booking_form_and_slot_engine.sql` — **93 passing**. Slot
@@ -218,10 +252,26 @@ rolled-back transactions (`supabase db query --linked -f ...`):
   expired trial hiding operational data while leaving booking settings
   reachable.
 
-**Advisors after Phase 3:** security = **0 errors**. One new warning,
-`has_permission_at_branch_scope` executable by `authenticated` — intentional,
-same family as the 6 pre-existing permission helpers (it only ever reports on
-the caller's own access). Performance = no unindexed FKs; the long
+- `supabase/tests/08_create_booking.sql` — **126 passing**. The success path and
+  the whole response contract; every rejection path; manual confirmation creating
+  a PENDING booking that still gets a token and still holds the slot; all five
+  field types validated against the snapshot; group and resource capacity filling
+  and freeing; `staff_choice = hidden` ignoring a supplied staff id; grants;
+  `include_booked`; `save_booking_settings` with the downgrade guard;
+  `branch_is_bookable`; and **a business with bookings, answers and form versions
+  can still be hard-deleted**.
+- `supabase/tests/09_booking_concurrency.sql` — **14 passing**. The advisory-lock
+  keys (same slot → same key, different instant → different key, and two
+  spellings of one instant → the same key), the 1:1 constraint proved without the
+  RPC, and the counted checks at every seat count. **It cannot execute two
+  concurrent backends** — see the limitation in `context/booking-engine.md`.
+
+**Advisors after Phase 3:** security = **0 errors**. Two intentional new
+warnings: `has_permission_at_branch_scope` and `branch_is_bookable` executable by
+`authenticated` — same family as the 6 pre-existing permission helpers (they only
+report on the caller's own access). `create_booking`, `get_free_slots` and
+`pick_staff_for_slot` do NOT appear: they are `service_role` only and are not
+even visible to anon over REST (404). Performance = no unindexed FKs; the long
 "unused index" list is expected noise on an empty dev database.
 
 ## Verification (2026-10-02)
@@ -259,6 +309,13 @@ the caller's own access). Performance = no unindexed FKs; the long
 | `20261003110000_slot_engine.sql` | Phase 3 part 3: `free_slot` type, `get_free_slots()`, `pick_staff_for_slot()` — **service_role only** |
 | `20261003112000_fix_slot_interval_cast.sql` | **Fixed 22P02**: `get_free_slots` assigned the `slot_interval` ENUM into an integer variable, so every call failed. Enum and minute count now have separate variables. |
 | `20261003113000_revoke_anon_table_grants.sql` | **Revoked anon's table privileges project-wide** (Supabase's bootstrap had granted all 31 tables to anon since Phase 1). Keeps `select on reserved_slugs`. |
+| `20261003140000_form_version_cascade_fix.sql` | **Fixed**: the form-version immutability trigger refused the cascade from `delete from businesses`, making a business undeletable. UPDATE still refused always; DELETE only when the parent is already gone. |
+| `20261003150000_slots_include_booked.sql` | `get_free_slots` gains `p_include_booked`; `free_slot` gains `available` (doc §6.2 `all_greyed`). Occupancy moved from WHERE filters to one `is_available` expression. |
+| `20261003160000_create_booking.sql` | **`create_booking`** — the public booking write, one transaction, service_role only |
+| `20261003170000_save_booking_settings.sql` | `save_booking_settings` (+ people_per_slot downgrade guard) and `branch_is_bookable` |
+| `20261003180000_fix_resource_capacity.sql` | **Fixed**: a resource with `capacity` > 1 was unusable. Adds `resource_capacity_at_booking` + generated `resource_is_exclusive` and re-keys the resource constraint. |
+| `20261003190000_fix_booking_answers_and_capacity.sql` | **Fixed**: `create_booking` inserted RAW answers, discarding normalisation (a yes_no "TRUE" stayed "TRUE"), and did not snapshot the resource capacity. |
+| `20261003210000_form_version_trigger_cascade_fix.sql` | **Fixed**: `touch_form_version` tried to CREATE a form version during the business-delete cascade (23503). No-ops when the business is gone. |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -278,6 +335,9 @@ the caller's own access). Performance = no unindexed FKs; the long
   design, not an oversight.
 
 ## Changelog
+- 2026-10-03: `create_booking`, `save_booking_settings` (+ people_per_slot guard), `branch_is_bookable`, `include_booked`. 287 assertions total.
+- 2026-10-03: **Fixed: resource `capacity` > 1 was unusable** — the constraint had no notion of capacity. Now a generated `resource_is_exclusive` from a snapshotted capacity.
+- 2026-10-03: **Fixed two cascade bugs** that made a business undeletable (form-version immutability refusing the cascade; `touch_form_version` creating a version for a deleted business). Named as a recurring family under Guard triggers.
 - 2026-10-03: **Revoked anon's table privileges project-wide.** Supabase's bootstrap had granted all 31 tables to anon since Phase 1; RLS was the only thing holding the line. One exception kept: `select on reserved_slugs`.
 - 2026-10-03: **Phase 3 slot engine** — `get_free_slots()` and `pick_staff_for_slot()`, service_role only, DST-correct in three timezones. 93 assertions.
 - 2026-10-03: **Phase 3 bookings schema** — clients, appointments, answers, manage tokens; 2 exclusion constraints (no double-booking); `has_permission_at_branch_scope()` for Own-scope narrowing. 54 RLS assertions.

@@ -8,10 +8,10 @@ Last updated: 2026-10-03 · Branch: `dev` · All work is pushed.
 - Verified on web (375/768/1280) and the iOS simulator. 30+ SQL security assertions pass against the live database. Advisors clean except the item below.
 - Test data from Phase 1 has been cleaned up: **4 users and 3 businesses remain** (`Nova Hair Studio`, `Buenos Clinic`, `Rosario Clinic 19481`). No test users left.
 
-- **Phase 3 steps 1–3 done** (DB only, no UI): booking_settings per branch, custom fields + immutable form versions, clients/appointments/answers/manage tokens with 2 exclusion constraints, and the DST-correct slot engine (`service_role` only). **147 SQL assertions passing.** See `context/booking-engine.md` and `context/booking-settings.md`.
+- **Phase 3 backend is COMPLETE** (no UI): booking_settings per branch, custom fields + immutable form versions, clients/appointments/answers/manage tokens with 2 exclusion constraints, the DST-correct slot engine, **`create_booking` (one transaction, service_role only)**, `save_booking_settings` with the people_per_slot guard, `branch_is_bookable()`, and **two deployed Edge Functions** (`get_slots`, `create_booking`) verified end-to-end as an anonymous caller. **287 SQL assertions passing.** See `context/booking-engine.md`, `context/booking-public-api.md`, `context/booking-settings.md`.
 
 ## Next, in order
-1. **Phase 3 steps 4–7**: booking settings UI with live preview → public booking page `(public)/[slug]` → guest manage link → rate limiting. **Step 5 needs the first Edge Functions of the project** (`get_slots`, `create_booking`).
+1. **Phase 3 UI + steps 6–7**: booking settings screen with live preview → public booking page `(public)/[slug]` (service → staff → slot → form → confirmation; reuses the shared `Calendar`, needs a new `TimeSlotPicker`) → guest manage link endpoints → **rate limiting (the seam is already called in `_shared/rateLimit.ts`; the endpoints are UNTHROTTLED until then)**.
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -30,6 +30,14 @@ Last updated: 2026-10-03 · Branch: `dev` · All work is pushed.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **`create_booking` must never `raise` for an expected failure.** It returns `{ok:false,code}` because step 7's rate-limit counter will live inside it, and a raise rolls the increment back — the same bug `accept_invite` had. Same rule for any future public RPC.
+- **An exclusion constraint cannot express "at most N overlap."** Group bookings (`people_per_slot` > 1) and `resources.capacity` > 1 are guaranteed only by a counted check under `pg_advisory_xact_lock` inside `create_booking`. 1:1 IS a hard DB guarantee. Do not "simplify" the lock away.
+- **A guard trigger on a tenant table also fires for `delete from businesses`.** This has now broken a business delete three times (form-version immutability, `touch_form_version`, and `enforce_last_owner` which is still outstanding). **Test every new trigger against deleting the business** — `supabase/tests/08` asserts it.
+- **`dblink` must NOT be installed on this project.** `dblink_connect(text)` is executable by `anon`/`authenticated` and owned by a superuser role, so `postgres` cannot revoke it — installing it hands the API roles a connection primitive that cannot be locked down. Tried, caught by an assertion in the migration, reverted. True parallel tests need CI with a real connection string instead.
+- **`select ... into` from an enum column needs an enum variable, not an int.** Cost a `22P02` in `get_free_slots` and would have again in `create_booking`.
+- **Validation that normalises a value must be the thing that gets inserted.** `create_booking` validated answers into a cleaned variable and then inserted the RAW jsonb, silently throwing every normalisation away (a yes_no "TRUE" stayed "TRUE"). Caught only because a test asserted the stored value, not the return code.
+- **The public Edge Functions are deployed with `verify_jwt = false`** and that is pinned in `supabase/config.toml`. A customer has no account. Do not "fix" it.
+- **A public failure must not be distinguishable.** `resolveBranch` returns null identically for an unknown slug, a lapsed trial and booking switched off, and `_shared/response.ts` maps internal codes to a small public set. Adding a helpful new error message is how slug enumeration gets reintroduced.
 - **`anon` has NO table privileges any more** (2026-10-03). Supabase's bootstrap had granted all 31 tables to anon since Phase 1; RLS was the only thing stopping it. A new table needs **no** anon grant. The single exception is `select on reserved_slugs`.
 - **Postgres resolves an ambiguous local time (DST fall-back) to the SECOND, standard-time occurrence.** London `2027-10-31 01:00` local = `01:00Z` (GMT), not `00:00Z` (BST). The hour is therefore offered ONCE, which is what we want. Do not "fix" this to offer it twice.
 - **`get_free_slots` is `service_role` only** — not even an Owner can call it. That is deliberate: it does no permission check because it is pure maths. Phase 4's dashboard must call it through a permission-checked wrapper, never directly.

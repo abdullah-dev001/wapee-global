@@ -27,6 +27,19 @@ The settings UI with live preview is **step 4** of Phase 3 and is not built yet.
   covered. Existing branches were backfilled.
 - **Editing needs `settings.booking`** (Owner and Manager hold it; doc §9).
   Every member can READ it, because the calendar and the preview need it.
+- **Writes go through `save_booking_settings(branch, settings jsonb)`**, not a
+  direct UPDATE. Only the keys present change, so the UI can save one section at
+  a time. SECURITY INVOKER, so RLS is still the boundary.
+- **Lowering `people_per_slot` is blocked when a FUTURE slot already holds more
+  bookings than the new limit** (user decision, 2026-10-03). Old rows are never
+  touched — a customer who has a place keeps it. Past slots never block, because
+  they cannot be fixed and would freeze the setting forever. The refusal returns
+  the offending slot so the UI can say which one.
+- **`branch_is_bookable(branch)`** answers "may the booking link be shown as
+  active?" and lists every unmet reason: `booking_disabled`, `no_branch_hours`,
+  `no_bookable_service`, `no_bookable_staff`, `no_staffed_service`. The settings
+  screen must show these as warnings and must not present the booking link as
+  active until they clear (user decision, 2026-10-03).
 - **Exactly five custom field types** (doc §6.1): short_text, long_text,
   dropdown, yes_no, number. An enum, so a sixth cannot appear by typo.
 - A dropdown needs **2–50 non-empty options**; no other type may have any.
@@ -51,6 +64,8 @@ The settings UI with live preview is **step 4** of Phase 3 and is not built yet.
 | supabase/migrations/20261003090000_booking_settings_and_form.sql | all four tables, enums, RLS, triggers, backfill |
 | supabase/tests/06_booking_form_and_slot_engine.sql | form versioning, sensitivity, dropdown shape (part of 93 assertions) |
 | supabase/tests/07_booking_rls_per_role.sql | who may read/write settings and fields (part of 54 assertions) |
+| supabase/migrations/20261003170000_save_booking_settings.sql | `save_booking_settings()` + the people_per_slot guard + `branch_is_bookable()` |
+| supabase/tests/08_create_booking.sql | the guard, `branch_is_bookable`, and answer validation (part of 126) |
 
 No app code yet.
 
@@ -123,12 +138,11 @@ Namespace not created yet. Will be `booking` (settings + public page share it).
 - **`people_per_slot` is per BRANCH, not per service** (doc §6.2 defines it that
   way). A branch therefore cannot have 1:1 haircuts and a 10-person class at the
   same time. Noted as a product limitation; revisit if a real customer needs it.
-- **Changing `people_per_slot` with existing bookings is not guarded.** Going
-  from 1 to 3 leaves old rows with `is_exclusive = true`, so they keep blocking
-  their slot (safe). Going from 3 to 1 leaves several non-exclusive bookings in
-  one slot, which the exclusion constraint will not retroactively refuse
-  (already-booked customers keep their place) — but the slot then reads as
-  overbooked. **Open question for the user when the settings UI is built.**
+- **Changing `people_per_slot` downward is now guarded** (see Business rules).
+  Going from 1 to 3 is always allowed. Old rows are never rewritten, so a slot
+  booked under the old limit keeps its bookings and reads as over the new limit
+  until those appointments pass — accepted deliberately: the alternative is
+  cancelling someone's booking because a setting changed.
 - `custom_fields` has no per-branch scope. Doc §6.1 describes one form per
   business; a per-branch form would also multiply versions.
 - `buffer_minutes` exists on both `booking_settings` (branch default) and
@@ -137,5 +151,7 @@ Namespace not created yet. Will be `booking` (settings + public page share it).
 
 ## Changelog
 
+- 2026-10-03: `save_booking_settings()` with the people_per_slot downgrade guard,
+  and `branch_is_bookable()` for the "don't show the link yet" rule.
 - 2026-10-03: Tables, enums, RLS, auto-create trigger, backfill, form
   versioning with digest-based dedupe and sensitivity escalation.

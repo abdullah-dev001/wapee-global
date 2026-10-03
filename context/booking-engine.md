@@ -1,6 +1,6 @@
 # Booking engine (slots, clients, appointments)
 
-Status: DB + slot engine done (no UI, no Edge Functions yet) · Phase: 3 · Last updated: 2026-10-03
+Status: backend complete (no UI) · Phase: 3 · Last updated: 2026-10-03
 
 ## What it does
 
@@ -10,8 +10,13 @@ and `get_free_slots()` — one function that turns branch hours, staff hours,
 breaks, time off, existing bookings, buffer, notice, window, interval, resources
 and people-per-slot into a list of bookable slots, correct across DST.
 
-Steps 4–7 of Phase 3 (settings UI, public booking page, guest manage link, rate
-limiting) are **not built**. There are no Edge Functions yet.
+**The whole booking backend works end-to-end**: two deployed Edge Functions
+(`get_slots`, `create_booking`) are the public surface, and `create_booking` is
+one SECURITY DEFINER RPC doing the entire write in one transaction.
+
+Not built: the **UI** (settings screen, public booking page) and **step 6**
+(guest manage link endpoints) and **step 7** (rate limiting — the seam exists and
+is already called).
 
 ## Business rules
 
@@ -49,6 +54,26 @@ limiting) are **not built**. There are no Edge Functions yet.
   (`pick_staff_for_slot()`.)
 - Appointments are **soft-deleted or cancelled, never removed** — there is no
   DELETE policy for anyone.
+- **A pending booking still gets a manage token**, so a customer can withdraw a
+  request they are waiting on.
+- **Resource capacity now works.** `resource_is_exclusive` (generated from
+  `resource_capacity_at_booking <= 1`) drives the resource exclusion constraint,
+  so a capacity-2 room genuinely holds two bookings while capacity-1 stays a hard
+  DB guarantee. `resource_capacity_at_booking` is a snapshot and defaults to 1,
+  i.e. to the stricter behaviour.
+- **`create_booking` returns a structured result and NEVER raises** for an
+  expected failure: `{ok:true,...}` or `{ok:false, code, field_id?}`. A RAISE
+  would roll back step 7's rate-limit counter — the exact bug `accept_invite`
+  had. A genuinely unexpected error still raises, loudly.
+- **Answers are validated against the form SNAPSHOT**, not the live fields, so a
+  field edited mid-booking cannot change the verdict. Type rules: `number` must
+  match `^-?[0-9]+(\.[0-9]+)?$`, `yes_no` must be true/false (stored
+  lowercase), a `dropdown` value must be one of the snapshot's options.
+- **An answer for a field that does not apply to the chosen service is
+  REJECTED**, not silently dropped: it means the client and server disagree
+  about the form.
+- **A booking made with `staff_choice = 'hidden'` ignores any staff_id sent**,
+  rather than honouring a tampered or stale request.
 - **Guest manage tokens:** ≥128-bit random, only the **sha256 hash** stored,
   scoped to one appointment, expiring at the appointment end, revoked on cancel
   or when a resend issues a replacement. One live token per appointment
@@ -64,8 +89,23 @@ limiting) are **not built**. There are no Edge Functions yet.
 | supabase/migrations/20261003113000_revoke_anon_table_grants.sql | took anon's table privileges away project-wide |
 | supabase/tests/06_booking_form_and_slot_engine.sql | 93 assertions: slots, DST, constraints, form versions |
 | supabase/tests/07_booking_rls_per_role.sql | 54 assertions: RLS per role incl. anon |
+| supabase/migrations/20261003150000_slots_include_booked.sql | `include_booked` + the `available` flag (doc §6.2 all_greyed) |
+| supabase/migrations/20261003160000_create_booking.sql | the booking RPC |
+| supabase/migrations/20261003170000_save_booking_settings.sql | settings RPC + the people_per_slot guard + `branch_is_bookable()` |
+| supabase/migrations/20261003180000_fix_resource_capacity.sql | fix: a capacity > 1 resource was unusable |
+| supabase/migrations/20261003190000_fix_booking_answers_and_capacity.sql | fix: answer normalisation was discarded; capacity not snapshotted |
+| supabase/migrations/20261003140000_form_version_cascade_fix.sql | fix: immutability trigger blocked deleting a business |
+| supabase/migrations/20261003210000_form_version_trigger_cascade_fix.sql | fix: the cascade tried to CREATE a form version |
+| supabase/functions/get_slots/index.ts | public slots endpoint (zod, slug → business) |
+| supabase/functions/create_booking/index.ts | public booking endpoint; generates the manage token |
+| supabase/functions/_shared/supabase.ts | service-role client + `resolveBranch(slug)` |
+| supabase/functions/_shared/response.ts | RPC code → public reason mapping; one response shape |
+| supabase/functions/_shared/cors.ts | origin allow-list (not `*`) |
+| supabase/functions/_shared/rateLimit.ts | **the step-7 seam**, already called by both endpoints |
+| supabase/tests/08_create_booking.sql | 126 assertions |
+| supabase/tests/09_booking_concurrency.sql | 14 assertions: lock keys, constraint, counted checks |
 
-No app code yet.
+No app code yet (no UI).
 
 ## Database
 
@@ -115,9 +155,39 @@ Functions:
   hold this at branch or all scope (NOT own)?". `has_permission()` deliberately
   ignores `own`, so this is the other half that lets a policy separate "sees the
   whole branch" from "sees only their own rows".
+- **`create_booking(branch, service, starts_at, staff, name, phone, email,
+  notes, answers, manage_token) → jsonb`** — the whole write in one transaction.
+  `service_role` only. Order of operations: branch/business/settings → service →
+  client details → window and notice → answers against the snapshot → **advisory
+  lock** → staff → **re-check through `get_free_slots` itself** → group count →
+  resource count → client upsert → appointment → answers → manage token.
+  Re-checking by *calling the engine* rather than repeating its SQL is what keeps
+  the two from ever disagreeing about what "free" means.
+  Codes: `business_inactive`, `booking_disabled`, `unknown_service`,
+  `service_unavailable`, `invalid_phone`, `invalid_name`, `slot_unavailable`,
+  `slot_taken`, `outside_window`, `too_soon`, `no_staff`, `staff_unavailable`,
+  `no_resource`, `missing_answer`, `invalid_answer`, `unknown_field`,
+  `too_many_answers`.
+- **`save_booking_settings(branch, settings jsonb) → jsonb`** — only the keys
+  present change. **SECURITY INVOKER** (like the Phase 2 schedule RPCs), so RLS
+  stays the boundary; the explicit `can()` check only turns a silent zero-row
+  update into a clear `forbidden`. Blocks a `people_per_slot` DOWNGRADE when a
+  **future** slot already holds more bookings than the new limit, returning the
+  offending slot (`local_date`, `local_minute`, `booked`, `new_limit`,
+  `service_name`, `staff_name`) so the UI can explain rather than dead-end.
+  Never rewrites existing appointments. `authenticated` may call it.
+- **`branch_is_bookable(branch) → jsonb`** — `{bookable, reasons[]}` with every
+  unmet requirement (`booking_disabled`, `no_branch_hours`,
+  `no_bookable_service`, `no_bookable_staff`, `no_staffed_service`). The settings
+  screen, the website block and the public page all use it so they agree.
 
 Type: `free_slot` = (starts_at, ends_at, local_date, local_minute, staff_id,
 resource_id, seats_left).
+
+## Public API
+
+The two deployed Edge Functions are the only way in from the internet. They have
+their own file: **[booking-public-api.md](booking-public-api.md)**.
 
 ## Timezone and DST
 
@@ -130,19 +200,14 @@ The one expression that matters:
 The date loop runs over **local dates in the branch timezone**, never UTC days,
 so "Tuesday" means Tuesday where the shop is.
 
-- **Spring forward** (London 2027-03-28 01:00→02:00): the missing local hour is
-  mapped forward by Postgres rather than failing. No slot is duplicated, and the
-  day simply has one hour less of real time. *Verified: the two 09:00 slots on
-  27 and 28 March are **23 hours** apart.*
-- **Fall back** (London 2027-10-31 02:00→01:00): the repeated local hour is
-  resolved by Postgres to the **SECOND (standard-time) occurrence** — `01:00`
-  local = `01:00Z` (GMT), not `00:00Z` (BST). Either way the hour is offered
-  **once, not twice**, which is the honest answer: offering it twice would let
-  two customers book "01:30" and arrive an hour apart. *Verified: the two 09:00
-  slots on 30 and 31 October are **25 hours** apart; a branch open 00:00–06:00
-  on the fall-back day yields 6 distinct instants, not 7.*
-- **Asia/Karachi has no DST** and is verified to keep the same offset in June
-  and January.
+| Case | Behaviour | Verified by |
+|---|---|---|
+| Spring forward (London 2027-03-28) | The missing local hour is mapped forward; no slot duplicated. The two 09:00 slots on 27 and 28 March are **23 h** apart. | test 06 |
+| Fall back (London 2027-10-31) | The repeated local hour resolves to the **SECOND (standard-time)** occurrence: 01:00 local = 01:00Z (GMT), not 00:00Z (BST). Offered **once**, not twice. The two 09:00 slots on 30/31 Oct are **25 h** apart; a branch open 00:00–06:00 yields 6 distinct instants, not 7. | test 06 |
+| No DST (Asia/Karachi) | Same offset in June and January. | test 06 |
+
+Offering a repeated hour twice would let two customers book "01:30" and arrive an
+hour apart, so once is the honest answer.
 
 ## Data & caching
 
@@ -171,32 +236,52 @@ Namespace not created yet (`booking`).
 
 ## Known limits / TODO
 
-- **No Edge Functions yet.** `get_slots` and `create_booking` are step 5. Until
-  they exist, nothing can reach the engine: it is `service_role`-only on
-  purpose.
-- **Group capacity (`people_per_slot` > 1) is a WEAKER guarantee than 1:1.**
-  The exclusion constraint cannot express "at most N", so the booking RPC must
-  do a counted check under `pg_advisory_xact_lock(branch, service, staff,
-  starts_at)`. That lock does not exist yet — it lands with `create_booking`.
-  Documented in `_database.md`.
-- **A resource with `capacity` > 1 is not covered by the exclusion constraint**
-  either (one row per booking would block the second customer). The engine
-  counts concurrent use correctly; the booking RPC must re-check it under the
-  same lock.
+- **Group capacity and resource capacity > 1 are a WEAKER guarantee than 1:1.**
+  An exclusion constraint cannot express "at most N overlap", so both rely on a
+  counted check inside `create_booking` under
+  `pg_advisory_xact_lock(hash(branch:service), hash(starts_at))`. 1:1 bookings —
+  the default and the overwhelming majority — ARE a hard DB guarantee.
+- **The races are not proved by a true parallel test.** `supabase/tests/09`
+  proves the lock keys, the constraint, and the counted arithmetic at every seat
+  count, which together imply correctness under serialisation; it cannot execute
+  two concurrent backends. There is no service-role key on this machine and no DB
+  password for psql, and **`dblink` was tried and rejected**: on this project
+  `dblink_connect(text)` is executable by `anon`/`authenticated` and is owned by a
+  superuser role, so `postgres` cannot revoke it — installing it would have handed
+  the API roles a connection primitive that could not be locked down. **Needs CI
+  with a real connection string.**
 - **No overnight shifts** (inherited from Phase 2: `end_minute > start_minute`).
   A branch open past midnight needs two rows on consecutive days.
-- **A branch with no `branch_hours` rows has NO slots**, silently (the Phase 2
-  rule is "a weekday with no row is closed"). The settings/onboarding UI must
-  tell the owner to set opening hours — otherwise the booking page looks broken.
-  **Decided this session: return nothing, no reason code.**
+- **A branch with no `branch_hours` rows has NO slots**, silently. `branch_is_bookable()`
+  now reports that as `no_branch_hours`, and the settings UI must show the warning
+  and not present the booking link as active (user decision, 2026-10-03).
 - `appointments.staff_id` is nullable in the schema but the booking RPC always
   resolves one. It stays nullable for a future "no particular staff" business.
-- The slot engine does not yet expose `slot_display = 'all_greyed'` (doc §6.2
-  offers "all slots with booked ones greyed"). It returns only free slots; the
-  greyed variant needs a second query or a flag. **Step 5 decision.**
+- **`normalise_phone_e164` has a 42-country dialling-code table inside
+  `create_booking`.** It covers the launch markets but is not exhaustive; a
+  national-format number from a country not in the list falls back to "prepend
+  nothing", which usually fails validation and returns `invalid_phone`. The real
+  fix is the client-side `PhoneInput` always sending E.164 (step 5), which makes
+  the table a fallback rather than the primary path.
+- **`buffer_minutes` lives on both `booking_settings` (branch default) and
+  `services`.** The engine and the RPC agree (service value when > 0, else the
+  branch default), but the settings UI must state this plainly or an owner will
+  be surprised.
 
 ## Changelog
 
+- 2026-10-03: `create_booking` RPC (one transaction, service_role only) +
+  `save_booking_settings` with the people_per_slot downgrade guard +
+  `branch_is_bookable()`. 126 assertions.
+- 2026-10-03: `include_booked` + the `available` flag, for doc §6.2 `all_greyed`.
+- 2026-10-03: **Fixed: a resource with `capacity` > 1 was unusable** — the
+  exclusion constraint had no notion of capacity, so the engine offered a slot the
+  constraint then refused. Now driven by a generated `resource_is_exclusive`.
+- 2026-10-03: **Fixed: `create_booking` discarded answer normalisation** (a
+  yes_no "TRUE" was stored unchanged) and did not snapshot the resource capacity.
+- 2026-10-03: **Fixed two cascade bugs** that made a business undeletable: the
+  form-version immutability trigger refused the cascade, and `touch_form_version`
+  tried to create a version for a business already gone.
 - 2026-10-03: Slot engine (`get_free_slots`, `pick_staff_for_slot`, `free_slot`
   type), service_role-only. 93 assertions incl. DST in three zones.
 - 2026-10-03: clients, appointments, answers, manage tokens; 2 exclusion

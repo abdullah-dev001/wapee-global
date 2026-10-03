@@ -121,7 +121,9 @@ export type Database = {
           internal_notes: string | null
           is_exclusive: boolean
           price_minor: number | null
+          resource_capacity_at_booking: number
           resource_id: string | null
+          resource_is_exclusive: boolean | null
           service_id: string
           source: Database["public"]["Enums"]["booking_source"]
           staff_id: string | null
@@ -148,7 +150,9 @@ export type Database = {
           internal_notes?: string | null
           is_exclusive?: boolean
           price_minor?: number | null
+          resource_capacity_at_booking?: number
           resource_id?: string | null
+          resource_is_exclusive?: boolean | null
           service_id: string
           source?: Database["public"]["Enums"]["booking_source"]
           staff_id?: string | null
@@ -175,7 +179,9 @@ export type Database = {
           internal_notes?: string | null
           is_exclusive?: boolean
           price_minor?: number | null
+          resource_capacity_at_booking?: number
           resource_id?: string | null
+          resource_is_exclusive?: boolean | null
           service_id?: string
           source?: Database["public"]["Enums"]["booking_source"]
           staff_id?: string | null
@@ -1802,6 +1808,7 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
       build_form_fields_snapshot: {
         Args: { p_business_id: string }
         Returns: Json
@@ -1814,6 +1821,21 @@ export type Database = {
           p_permission: string
         }
         Returns: boolean
+      }
+      create_booking: {
+        Args: {
+          p_answers?: Json
+          p_branch_id: string
+          p_client_email?: string
+          p_client_name: string
+          p_client_notes?: string
+          p_client_phone: string
+          p_manage_token?: string
+          p_service_id: string
+          p_staff_id: string
+          p_starts_at: string
+        }
+        Returns: Json
       }
       create_business_with_owner: {
         Args: {
@@ -1834,6 +1856,7 @@ export type Database = {
           p_branch_id: string
           p_from_date?: string
           p_ignore_notice?: boolean
+          p_include_booked?: boolean
           p_service_id: string
           p_staff_id?: string
           p_to_date?: string
@@ -1921,6 +1944,10 @@ export type Database = {
         Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
         Returns: number
       }
+      save_booking_settings: {
+        Args: { p_branch_id: string; p_settings: Json }
+        Returns: Json
+      }
       suggest_invoice_prefix: {
         Args: { p_business_id: string; p_name: string }
         Returns: string
@@ -1969,6 +1996,7 @@ export type Database = {
         staff_id: string | null
         resource_id: string | null
         seats_left: number | null
+        available: boolean | null
       }
     }
   }
