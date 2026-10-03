@@ -111,10 +111,73 @@ end $$;
 select pg_temp.chk('create_booking has a per-phone daily cap of 5',
   (select max_attempts from public.rate_limit_rules where endpoint='create_booking' and scope='key'), 5);
 select pg_temp.chk('create_booking has a per-business daily cap of 200',
-  (select max_attempts from public.rate_limit_rules where endpoint='create_booking' and scope='biz'), 200);
+  (select max_attempts from public.rate_limit_rules
+   where endpoint='create_booking' and scope='biz' and window_seconds=86400), 200);
 select pg_temp.chk('both daily caps use a 24h window',
   (select count(*)::int from public.rate_limit_rules
    where endpoint='create_booking' and scope in ('key','biz') and window_seconds=86400), 2);
+
+
+-- ---------------------------------------------------------------------------
+-- The per-business HOURLY cap, alongside the daily one
+-- ---------------------------------------------------------------------------
+-- Two rules on the same (endpoint, scope) with different windows. The shorter
+-- window must be evaluated first, or a burst would be reported against the daily
+-- window and the retry hint would be a day instead of an hour.
+select pg_temp.chk('create_booking has a per-business HOURLY cap of 30',
+  (select max_attempts from public.rate_limit_rules
+   where endpoint='create_booking' and scope='biz' and window_seconds=3600), 30);
+select pg_temp.chk('and still the daily cap of 200',
+  (select max_attempts from public.rate_limit_rules
+   where endpoint='create_booking' and scope='biz' and window_seconds=86400), 200);
+select pg_temp.chk('two business rules now coexist',
+  (select count(*)::int from public.rate_limit_rules
+   where endpoint='create_booking' and scope='biz'), 2);
+select pg_temp.chk('the HOURLY rule is evaluated first (shortest window)',
+  (select window_seconds from public.rate_limit_rules
+   where endpoint='create_booking' and scope='biz' order by window_seconds asc limit 1), 3600);
+
+-- The hourly cap actually bites before the daily one, and reports the hourly
+-- retry hint rather than a day.
+do $$
+declare r jsonb; i int; v_biz uuid := gen_random_uuid();
+begin
+  insert into public.rate_limit_rules (endpoint, scope, window_seconds, max_attempts, note)
+  values ('test_two_windows', 'biz', 3600, 2, 'hourly'),
+         ('test_two_windows', 'biz', 86400, 10, 'daily');
+
+  for i in 1..2 loop
+    r := public.check_rate_limit('test_two_windows', repeat('e',64), 'ph', v_biz);
+    perform pg_temp.chk(format('two-window attempt %s allowed', i), r->>'allowed', 'true');
+  end loop;
+
+  r := public.check_rate_limit('test_two_windows', repeat('e',64), 'ph', v_biz);
+  perform pg_temp.chk('the HOURLY cap bites before the daily one', r->>'allowed', 'false');
+  perform pg_temp.chk('and it is the biz scope', r->>'scope', 'biz');
+  -- The hint must be <= an hour, proving it came from the 3600s window.
+  perform pg_temp.chk('the retry hint comes from the HOURLY window, not the daily',
+    (r->>'retry_after_seconds')::int <= 3600, true);
+end $$;
+
+-- A business under the hourly cap but over the daily one is still blocked, so
+-- the daily rule is not dead code.
+do $$
+declare r jsonb; v_biz uuid := gen_random_uuid();
+begin
+  insert into public.rate_limit_rules (endpoint, scope, window_seconds, max_attempts, note)
+  values ('test_daily_only', 'biz', 3600, 100, 'hourly, generous'),
+         ('test_daily_only', 'biz', 86400, 2, 'daily, tight');
+
+  -- Two attempts an hour apart: well under the hourly cap, at the daily cap.
+  insert into public.public_request_attempts (endpoint, ip_hash, key_hash, outcome, created_at)
+  values ('test_daily_only', repeat('f',64), v_biz::text, 'allowed', now() - interval '5 hours'),
+         ('test_daily_only', repeat('f',64), v_biz::text, 'allowed', now() - interval '3 hours');
+
+  r := public.check_rate_limit('test_daily_only', repeat('f',64), 'ph', v_biz);
+  perform pg_temp.chk('the DAILY cap still bites when the hourly one is clear', r->>'allowed', 'false');
+  perform pg_temp.chk('and the hint is longer than an hour',
+    (r->>'retry_after_seconds')::int > 3600, true);
+end $$;
 
 -- Retention.
 do $$
