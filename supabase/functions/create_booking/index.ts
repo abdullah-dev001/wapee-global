@@ -38,6 +38,8 @@ import { handlePreflight } from '../_shared/cors.ts';
 import { jsonError, jsonOk, logUnexpected, toPublicCode } from '../_shared/response.ts';
 import { resolveBranch, serviceClient } from '../_shared/supabase.ts';
 import { checkRateLimit } from '../_shared/rateLimit.ts';
+import { honeypotTripped, verifyStartToken } from '../_shared/startToken.ts';
+import { BOT_PROTECTION } from '../_shared/config.ts';
 
 const RequestSchema = z
   .object({
@@ -81,8 +83,14 @@ const RequestSchema = z
       .max(100)
       .optional()
       .default([]),
+    // Bot protection. The start token came from get_slots; the honeypot field is
+    // hidden on the form and must stay empty.
+    start_token: z.string().max(400).nullish(),
+    [BOT_PROTECTION.honeypotField]: z.string().max(200).nullish(),
   })
-  .strict();
+  // NOT .strict() any more: the honeypot field name is configurable, and a
+  // strict schema would reject the very field we want bots to fill in.
+  .passthrough();
 
 /** 32 bytes of CSPRNG as hex: 256 bits, well above the 128-bit floor. */
 function generateManageToken(): string {
@@ -114,18 +122,59 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const input = parsed.data;
     slug = input.slug;
 
-    // After parsing, so the per-phone cap can be keyed (step 7), but before any
-    // database work.
-    const limit = await checkRateLimit(req, 'create_booking', {
-      slug: input.slug,
+    const db = serviceClient();
+
+    // --- Rate limit FIRST, before any other work -------------------------
+    // Keyed by IP and by phone. The per-business cap needs the business id, so
+    // it is applied in a second call once the slug is resolved (below) — the
+    // per-IP and per-phone caps already bound how often we get that far.
+    const limit = await checkRateLimit(req, db, 'create_booking', {
       phone: input.client.phone,
     });
-    if (!limit.allowed) return jsonError(req, 'rate_limited');
+    if (!limit.allowed) {
+      return jsonError(req, 'rate_limited', { retryAfterSeconds: limit.retryAfterSeconds });
+    }
 
-    const db = serviceClient();
+    // --- Bot protection --------------------------------------------------
+    // The honeypot first: it is free, and a filled honeypot means we should not
+    // spend a database round trip on this request at all.
+    //
+    // A tripped honeypot returns the SAME generic failure as a bad start token.
+    // Telling a bot "you fell for the honeypot" is free tuning information for
+    // whoever wrote it.
+    if (honeypotTripped(input as unknown as Record<string, unknown>)) {
+      console.warn(JSON.stringify({ endpoint: 'create_booking', slug, bot: 'honeypot' }));
+      return jsonError(req, 'bad_request');
+    }
+
+    const startCheck = await verifyStartToken(input.start_token, input.slug);
+    if (!startCheck.ok) {
+      console.warn(
+        JSON.stringify({
+          endpoint: 'create_booking',
+          slug,
+          bot: `start_token:${startCheck.reason}`,
+        }),
+      );
+      // 'too_fast' is a distinct public code so the page can say "that was
+      // quick — please try again" rather than showing a dead end; everything
+      // else is a generic bad_request.
+      return jsonError(req, startCheck.reason === 'too_fast' ? 'too_fast' : 'bad_request');
+    }
 
     const branch = await resolveBranch(db, input.slug, input.branch_id ?? null);
     if (!branch) return jsonError(req, 'not_bookable');
+
+    // --- The per-business daily cap --------------------------------------
+    // Separate call, because it needs the resolved business id. A business that
+    // has hit its cap stops taking bookings from everyone, which is the point:
+    // the cap protects the CALENDAR, not the caller.
+    const bizLimit = await checkRateLimit(req, db, 'create_booking', {
+      businessId: branch.businessId,
+    });
+    if (!bizLimit.allowed) {
+      return jsonError(req, 'rate_limited', { retryAfterSeconds: bizLimit.retryAfterSeconds });
+    }
 
     // Same rule as get_slots: when the branch hides the staff choice, a supplied
     // staff_id is ignored, not honoured. The RPC applies this too; doing it here

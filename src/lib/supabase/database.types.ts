@@ -1100,6 +1100,60 @@ export type Database = {
           },
         ]
       }
+      public_request_attempts: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: number
+          ip_hash: string | null
+          key_hash: string | null
+          outcome: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: never
+          ip_hash?: string | null
+          key_hash?: string | null
+          outcome?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: never
+          ip_hash?: string | null
+          key_hash?: string | null
+          outcome?: string
+        }
+        Relationships: []
+      }
+      rate_limit_rules: {
+        Row: {
+          endpoint: string
+          max_attempts: number
+          note: string | null
+          scope: string
+          updated_at: string
+          window_seconds: number
+        }
+        Insert: {
+          endpoint: string
+          max_attempts: number
+          note?: string | null
+          scope: string
+          updated_at?: string
+          window_seconds: number
+        }
+        Update: {
+          endpoint?: string
+          max_attempts?: number
+          note?: string | null
+          scope?: string
+          updated_at?: string
+          window_seconds?: number
+        }
+        Relationships: []
+      }
       reserved_slugs: {
         Row: {
           slug: string
@@ -1822,6 +1876,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      cancel_booking: {
+        Args: { p_reason?: string; p_token: string }
+        Returns: Json
+      }
+      check_rate_limit: {
+        Args: {
+          p_business_id?: string
+          p_endpoint: string
+          p_ip_hash?: string
+          p_key_hash?: string
+          p_outcome?: string
+        }
+        Returns: Json
+      }
+      cleanup_public_request_attempts: {
+        Args: { p_older_than?: string }
+        Returns: number
+      }
       create_booking: {
         Args: {
           p_answers?: Json
@@ -1851,6 +1923,7 @@ export type Database = {
         Returns: string
       }
       ensure_form_version: { Args: { p_business_id: string }; Returns: string }
+      get_booking: { Args: { p_token: string }; Returns: Json }
       get_free_slots: {
         Args: {
           p_branch_id: string
@@ -1944,6 +2017,15 @@ export type Database = {
         Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
         Returns: number
       }
+      reschedule_booking: {
+        Args: { p_staff_id?: string; p_starts_at: string; p_token: string }
+        Returns: Json
+      }
+      resend_manage_link: {
+        Args: { p_appointment_id: string; p_new_token: string }
+        Returns: Json
+      }
+      resolve_manage_token: { Args: { p_token: string }; Returns: string }
       save_booking_settings: {
         Args: { p_branch_id: string; p_settings: Json }
         Returns: Json
@@ -1952,6 +2034,7 @@ export type Database = {
         Args: { p_business_id: string; p_name: string }
         Returns: string
       }
+      touch_manage_token: { Args: { p_token: string }; Returns: undefined }
       write_audit_log: {
         Args: {
           p_action: string

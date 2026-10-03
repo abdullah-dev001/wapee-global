@@ -28,6 +28,7 @@ import { handlePreflight } from '../_shared/cors.ts';
 import { jsonError, jsonOk, logUnexpected } from '../_shared/response.ts';
 import { resolveBranch, serviceClient } from '../_shared/supabase.ts';
 import { checkRateLimit } from '../_shared/rateLimit.ts';
+import { issueStartToken } from '../_shared/startToken.ts';
 
 /** A calendar date, not an instant: the engine works on local dates. */
 const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
@@ -74,9 +75,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
   let slug: string | null = null;
 
   try {
-    // Before any database work (see _shared/rateLimit.ts).
-    const limit = await checkRateLimit(req, 'get_slots');
-    if (!limit.allowed) return jsonError(req, 'rate_limited');
+    // The limiter needs the service client, so it is created first. Nothing is
+    // read from the database before the limit is checked.
+    const db = serviceClient();
+
+    const limit = await checkRateLimit(req, db, 'get_slots');
+    if (!limit.allowed) {
+      return jsonError(req, 'rate_limited', { retryAfterSeconds: limit.retryAfterSeconds });
+    }
 
     let body: unknown;
     try {
@@ -89,8 +95,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!parsed.success) return jsonError(req, 'bad_request');
     const input = parsed.data;
     slug = input.slug;
-
-    const db = serviceClient();
 
     const branch = await resolveBranch(db, input.slug, input.branch_id ?? null);
     if (!branch) return jsonError(req, 'not_bookable');
@@ -150,6 +154,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       timezone: branch.timezone,
       branch_name: branch.branchName,
       currency: branch.currency,
+      // Bot protection: the booking form must send this back. It is HMAC-signed
+      // and bound to this slug, so it proves WHEN the form was issued without
+      // trusting anything the client says. See _shared/startToken.ts.
+      start_token: await issueStartToken(input.slug),
       settings: {
         staff_choice: branch.settings.staffChoice,
         slot_display: branch.settings.slotDisplay,

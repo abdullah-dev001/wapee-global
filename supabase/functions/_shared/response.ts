@@ -36,8 +36,23 @@ export type PublicErrorCode =
   | 'invalid_phone'
   // the name was empty
   | 'invalid_name'
-  // too many requests (step 7)
+  // too many requests
   | 'rate_limited'
+  // the form was submitted implausibly fast. A distinct code ONLY because the
+  // page can recover gracefully ("that was quick, please try again") where a
+  // generic bad_request would be a dead end. It says nothing about why we think
+  // so, and a tripped honeypot deliberately does NOT use it.
+  | 'too_fast'
+  // --- the guest manage link ---
+  // The manage token is unknown, expired, revoked, or for a booking that is
+  // gone. ONE code for all of them, so the endpoint cannot be used as an oracle
+  // for guessing tokens.
+  | 'invalid_token'
+  // Past the "customer can cancel" window (doc §6.2).
+  | 'cancel_window_passed'
+  // Already cancelled/completed/no-show, or the business does not allow guests
+  // to cancel at all.
+  | 'not_cancellable'
   // something broke on our side
   | 'server_error';
 
@@ -83,11 +98,21 @@ function statusFor(code: PublicErrorCode): number {
     case 'missing_answer':
     case 'invalid_phone':
     case 'invalid_name':
+    case 'too_fast':
       return 400;
     case 'not_bookable':
       // 404, not 403: "there is nothing bookable here" without confirming that
       // a business exists behind the slug.
       return 404;
+    case 'invalid_token':
+      // 404, deliberately, and identical for every token failure: a 401 or 403
+      // would confirm that the token format was recognised.
+      return 404;
+    case 'cancel_window_passed':
+    case 'not_cancellable':
+      // 409: the request was well formed, but the booking's state or the
+      // business's rules do not allow it.
+      return 409;
     case 'slot_unavailable':
       // 409: the request was well-formed but the world moved. The page should
       // refresh the slots and let the customer pick again.
@@ -109,15 +134,25 @@ export function jsonOk(req: Request, data: unknown, status = 200): Response {
 export function jsonError(
   req: Request,
   code: PublicErrorCode,
-  extra?: { fieldId?: string | null },
+  extra?: { fieldId?: string | null; retryAfterSeconds?: number },
 ): Response {
   const body: Record<string, unknown> = { ok: false, code };
   if (extra?.fieldId) body.field_id = extra.fieldId;
 
-  return new Response(JSON.stringify(body), {
-    status: statusFor(code),
-    headers: { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' },
-  });
+  const headers: Record<string, string> = {
+    ...corsHeaders(req.headers.get('origin')),
+    'Content-Type': 'application/json',
+  };
+
+  // A 429 without Retry-After leaves a well-behaved client guessing, and a
+  // guessing client retries in a tight loop — which is the behaviour the limit
+  // exists to stop. The value comes from the RPC (when the oldest attempt in the
+  // window expires), so it is honest rather than a fixed guess.
+  if (code === 'rate_limited') {
+    headers['Retry-After'] = String(Math.max(1, extra?.retryAfterSeconds ?? 60));
+  }
+
+  return new Response(JSON.stringify(body), { status: statusFor(code), headers });
 }
 
 /**

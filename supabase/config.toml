@@ -408,6 +408,27 @@ verify_jwt = false
 [functions.create_booking]
 verify_jwt = false
 
+# The guest manage link (step 6). Also public: the customer arrives from an email
+# link with no account. The token itself is the credential — 256-bit, scoped to
+# one appointment, expiring at the appointment's end, revoked on cancel — and
+# every token failure returns one identical response so the endpoint cannot be
+# used as a guessing oracle.
+[functions.manage_booking]
+verify_jwt = false
+
+# NOT public, and the one function here that KEEPS JWT verification.
+#
+# A receptionist reissues a lost manage link, so there IS a signed-in user. The
+# function forwards their Authorization header and calls the RPC as them — never
+# with the service role — so `can(business, branch, 'appointments.edit')` inside
+# the RPC sees the real caller. Using the service role here would bypass that
+# check and let any signed-in user reissue a link for any business's appointment.
+#
+# verify_jwt is therefore left at its default (true) and stated explicitly so
+# nobody "tidies" it to match the others.
+[functions.resend_manage_link]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
