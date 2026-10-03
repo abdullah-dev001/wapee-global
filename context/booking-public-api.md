@@ -240,6 +240,43 @@ publishable key — i.e. exactly what a stranger can do.
 A temporary `tmp-debug-headers` function was deployed to measure the IP headers and
 has been **deleted from the repo and un-deployed** (confirmed: 404, no references).
 
+## Smoke test (`npm run smoke:public`)
+
+`scripts/smoke-public.mjs` — built-in `fetch` only, no dependency, no test runner,
+so it runs from a bare shell or a CI step. **40 checks** against the DEPLOYED
+functions using only the publishable key, i.e. exactly what a stranger can do.
+
+```sh
+SMOKE_SUPABASE_URL=https://<ref>.supabase.co \
+SMOKE_SUPABASE_ANON_KEY=<publishable key> \
+SMOKE_BUSINESS_SLUG=smoke-test-salon \
+SMOKE_SERVICE_ID=<a bookable service id> \
+npm run smoke:public
+```
+
+Optional: `SMOKE_ALLOW_RATE_LIMIT=1` also proves the 429 carries `Retry-After`
+(off by default — it deliberately spends the per-IP hourly budget).
+`SMOKE_ALLOW_PRODUCTION=1` is required for a slug that does not look like test
+data.
+
+**It WRITES.** Two guards, because anon cannot delete:
+- the slug must contain `test`, `smoke` or `staging` unless the production
+  override is set, so nobody points it at a live salon's calendar
+- it refuses a key that looks like a service-role key, which would bypass every
+  boundary it is checking
+
+Every booking it makes is cancelled through the manage link before it exits, and a
+crash still runs the cleanup. **A second run inside the hour** will find the
+per-IP `create_booking` budget (10/hour) spent; the script detects that on its
+first write attempt and exits **3** with an explanation rather than reporting a
+dozen misleading failures.
+
+Covered: the start token's shape and slug binding · `too_fast` · missing token ·
+tampered HMAC · honeypot returning a generic code · a real booking · the same slot
+giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
+`client_*` field, no phone, no email, no ids) · token revocation and replay ·
+`Retry-After` on the 429.
+
 ## Known limits / TODO
 
 - **Leaked-password protection cannot be enabled: the org is on the FREE plan**
@@ -257,13 +294,18 @@ has been **deleted from the repo and un-deployed** (confirmed: 404, no reference
   that calls `get_slots`, waits 3 s and books is within the rules — the per-IP,
   per-phone and per-business caps are what bound that, and 200 junk bookings a day
   on one calendar is still possible inside them.
-- **No automated test runs against the DEPLOYED functions.** The verification
-  above was by hand with curl. Worth a script when CI exists.
+- ~~No automated test against the deployed functions~~ — **`npm run smoke:public`
+  now does this** (40 checks, see above). It is not yet wired into CI, because
+  there is no CI.
 - `manage_booking` rejects a <32-char token at the schema (`400 bad_request`)
   rather than reaching `invalid_token`. Harmless — no real token is that short —
   but it is a second shape for "bad token" and worth knowing.
 
 ## Changelog
+
+- 2026-10-04: `scripts/smoke-public.mjs` (40 checks against the deployed
+  endpoints); CORS dev origins widened to the ports Expo actually uses;
+  per-business daily cap 200 → 120.
 
 - 2026-10-04: Rate limiting and bot protection live; `manage_booking` and
   `resend_manage_link` deployed; **`clientIp()` corrected to `cf-connecting-ip`

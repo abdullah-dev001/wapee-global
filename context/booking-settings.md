@@ -1,6 +1,6 @@
 # Booking settings & booking form
 
-Status: DB done (no UI yet) · Phase: 3 · Last updated: 2026-10-03
+Status: DB + UI done · Phase: 3 · Last updated: 2026-10-04
 
 ## What it does
 
@@ -10,7 +10,9 @@ automatically when the branch is created. Custom fields are per business, with
 an immutable snapshot (`form_versions`) so an old booking's answers always keep
 the labels, types and options the customer actually saw.
 
-The settings UI with live preview is **step 4** of Phase 3 and is not built yet.
+**The settings UI is built** (step 4): `/settings/booking`, two tabs — Settings
+and Booking form — with a live customer preview. The public booking page itself
+(step 5) is still to come.
 
 ## Business rules
 
@@ -65,9 +67,19 @@ The settings UI with live preview is **step 4** of Phase 3 and is not built yet.
 | supabase/tests/06_booking_form_and_slot_engine.sql | form versioning, sensitivity, dropdown shape (part of 93 assertions) |
 | supabase/tests/07_booking_rls_per_role.sql | who may read/write settings and fields (part of 54 assertions) |
 | supabase/migrations/20261003170000_save_booking_settings.sql | `save_booking_settings()` + the people_per_slot guard + `branch_is_bookable()` |
-| supabase/tests/08_create_booking.sql | the guard, `branch_is_bookable`, and answer validation (part of 126) |
-
-No app code yet.
+| supabase/tests/08_create_booking.sql | the guard, `branch_is_bookable`, `require_client_email` (part of 134) |
+| supabase/migrations/20261005100000_require_client_email.sql | the one toggleable default field; wired into both RPCs |
+| **App** | |
+| app/(app)/settings/index.tsx | settings hub (only Booking so far) |
+| app/(app)/settings/booking.tsx | the screen: two tabs, responsive preview |
+| src/features/booking-settings/bookingWarnings.ts | warning rules + buffer explanation + link state (**18 tests**) |
+| src/features/booking-settings/previewSlots.ts | local sample slot grid (**19 tests**) |
+| src/features/booking-settings/schemas/customField.schemas.ts | zod + option parsing (**17 tests**) |
+| src/features/booking-settings/api/useBookingSettings.ts | settings read + save through the RPC |
+| src/features/booking-settings/api/usePreviewCatalogue.ts | the branch's real services/staff/fields for the preview |
+| src/features/booking-settings/api/useCustomFields.ts | list, save, archive, reorder |
+| src/features/booking-settings/components/ | BookingSettingsForm, BookingWarnings, BookingLinkCard, BookingPreview, CustomFieldList, CustomFieldEditor |
+| src/components/ui/{SegmentedControl,Collapsible,NumberStepper}.tsx | new primitives |
 
 ## Database
 
@@ -125,13 +137,36 @@ Not wired yet (no UI). When built: settings are `staleTimes.static` (5–10 min)
 
 ## UI
 
-Not built. Step 4 of Phase 3: settings screen with a **live preview of the
-customer booking page beside it** (doc §6.2 UX requirement), advanced section
-collapsed by default.
+`/settings/booking`, reached from the Settings hub. Two tabs: **Settings** and
+**Booking form**. The warnings and the booking link stay visible on both, because
+they describe the branch as a whole.
+
+**Settings tab** — Basics visible, Advanced collapsed (doc §6.2). Each setting's
+hint changes WITH the setting, so the owner reads what their own choice does
+rather than a description of all three options. Saves only the changed keys.
+
+**Booking form tab** — the fixed default fields (locked, with reasons) then the
+owner's own questions: create, edit, reorder, archive, restore. Sensitive can only
+be escalated, with a confirm dialog that says it also escalates existing answers.
+The answer type is frozen after the first save.
+
+**Live preview** (doc §6.2 requires it beside the settings):
+- desktop ≥1024 — a second 400px column, permanently visible
+- mobile/tablet — a "Show customer preview" button opening a full-screen `Drawer`,
+  because a 375px column cannot show both and the preview is consulted, not edited
+
+It renders the **real catalogue** (the owner's own service names and prices) with
+**locally generated sample times**, and uses the same components step 5 will use
+for the real page (`src/features/booking-public/components/`).
+
+Mobile-first: every screen checked at 375px, then 1280px.
 
 ## i18n
 
-Namespace not created yet. Will be `booking` (settings + public page share it).
+`common.json`, three groups: `bookingSettings.*` (the screen), `bookingFields.*`
+(the form builder), `bookingPublic.*` (the customer-facing components, reused by
+step 5). **152 literal keys verified to resolve** by a script that walks the
+feature and checks each against the locale file.
 
 ## Known limits / TODO
 
@@ -149,8 +184,35 @@ Namespace not created yet. Will be `booking` (settings + public page share it).
   `services` (per-service). The engine uses the service value when it is > 0,
   else the branch default. Worth stating plainly in the settings UI.
 
+## Known limits / TODO (UI)
+
+- **`Drawer` has no `KeyboardAvoidingView`** (pre-existing, affects 4 forms:
+  CustomFieldEditor plus ServiceForm, StaffForm and the schedule lists from
+  earlier phases). On Android a focused input near the bottom of a drawer can sit
+  under the keyboard. It does apply `insets.bottom` to the footer and
+  `keyboardShouldPersistTaps`. **Not fixed here** — the fix belongs in `Drawer`
+  and would change three features outside this session's scope.
+- **The preview models only the interval and the service duration**, not breaks,
+  time off, closures, buffers, notice or the window. Modelling those would make it
+  a second engine implementation that quietly disagrees with the real one. The
+  header says "sample times".
+- **The honeypot's HTML is not implemented** — no public page yet. Step 5 must
+  hide `company_website` with `position:absolute;left:-9999px`, **not**
+  `type="hidden"` or `display:none` (better bots skip both), plus
+  `autocomplete="off"` and `tabindex="-1"`.
+- **`useSaveCustomField` is not atomic**: the field row and its
+  `custom_field_services` rows are separate writes, the same limitation
+  `useSaveService`/`useSaveStaff` have. Blast radius is a question asked on the
+  wrong services, fixable by saving again.
+- **Reordering is two writes**, so a failure between them leaves an unexpected but
+  valid order. Order is display-only, so not worth an RPC.
+- **Android never run** (no emulator). Reviewed in code at the end of the task.
+
 ## Changelog
 
+- 2026-10-04: **Settings UI** (step 4): two tabs, live preview, warnings with fix
+  routes, booking link gated on `branch_is_bookable`, custom fields editor.
+  `require_client_email` added. 54 new unit tests.
 - 2026-10-03: `save_booking_settings()` with the people_per_slot downgrade guard,
   and `branch_is_bookable()` for the "don't show the link yet" rule.
 - 2026-10-03: Tables, enums, RLS, auto-create trigger, backfill, form

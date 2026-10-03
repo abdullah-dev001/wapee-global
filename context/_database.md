@@ -231,7 +231,7 @@ it is safe to publish.
 | Staff | 10 — own appointments, own schedule, own commission | own |
 
 ## Verification (2026-10-04, Phase 3)
-**421 assertions passing** against the live database, run as plain SQL inside
+**430 assertions passing** against the live database, run as plain SQL inside
 rolled-back transactions (`supabase db query --linked -f ...`):
 
 - `supabase/tests/06_booking_form_and_slot_engine.sql` — **93 passing**. Slot
@@ -341,6 +341,8 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261004100000_guest_manage_rpcs.sql` | Step 6: `resolve_manage_token`, `get_booking`, `cancel_booking`, `reschedule_booking`, `resend_manage_link` |
 | `20261004110000_fix_reschedule_rollback.sql` | **Fixed**: a FAILED reschedule left the appointment cancelled, because a `RETURN` does not roll back — only an exception does. Now validates everything before mutating and excludes the row from its own collision check (`a.id <> v_id`). |
 | `20261004120000_business_hourly_cap.sql` | Per-business **hourly** cap (30) beside the daily one (200). Widened the `rate_limit_rules` PK to (endpoint, scope, window_seconds) so one dimension can hold several windows. |
+| `20261005090000_lower_business_daily_cap.sql` | Per-business daily cap 200 → 120, with a migration-time assertion that the hourly cap never exceeds the daily one (which would make the hourly rule unreachable). |
+| `20261005100000_require_client_email.sql` | `booking_settings.require_client_email` — the ONE toggleable default field (doc §6.1). Wired into `save_booking_settings` and `create_booking`, which now returns `email_required` rather than silently dropping a malformed address. Also adds `conflicting_slots` to the people_per_slot refusal so the UI can say how many upcoming slots clash. |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -360,7 +362,8 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
   design, not an oversight.
 
 ## Changelog
-- 2026-10-04: **Step 7 (rate limiting + bot protection)** and **step 6 (guest manage link)**. Per-business hourly cap added. 421 assertions.
+- 2026-10-04: `require_client_email` (the one toggleable default booking field); per-business daily cap 200 → 120. 430 assertions.
+- 2026-10-04: **Step 7 (rate limiting + bot protection)** and **step 6 (guest manage link)**. Per-business hourly cap added.
 - 2026-10-04: **Fixed: a failed reschedule left the booking cancelled** — a `RETURN` does not roll back. Now a permanent rule in CLAUDE.md §10a.
 - 2026-10-04: `pg_cron` installed for retention; the grant assertion established that reachability is schema USAGE **and** the function grant.
 - 2026-10-03: `create_booking`, `save_booking_settings` (+ people_per_slot guard), `branch_is_bookable`, `include_booked`. 287 assertions total.

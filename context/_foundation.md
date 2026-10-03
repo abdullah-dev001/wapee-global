@@ -83,13 +83,21 @@ Specs come from DESIGN_GUIDE §12 + CLAUDE.md §5. Every component works on iOS,
 | `Dialog` | `open`, `onClose`, `title`, `message`, `confirm`, `cancelLabel`, `busy` | Centred, max 416px. Escape / Android back / scrim tap close it (`busy` blocks). |
 | `Drawer` | `open`, `onClose`, `title`, `subtitle`, `footer` | 480px from the end edge; full-screen sheet on mobile. Footer pinned above the safe area. |
 | `ToastProvider` + `useToast()` | `show({ message, tone, duration })` | Mounted in the root layout. `duration: 0` = manual dismiss. Max 3 visible, z-index 70. |
+| `SegmentedControl` | `options`, `value`, `onChange`, `label`, `hint` | One-tap choice between 2–4 options. Preferred over `Select` for a small closed set (a Select is a sheet — three interactions for one choice — and hides the alternatives). **Scrolls horizontally**, never wraps, so a long translated label cannot break the single-row shape at 320px. |
+| `Collapsible` | `title`, `subtitle`, `defaultOpen`, `headerAccessory` | Disclosure section. **UNMOUNTS children when closed**: a dozen controls behind `display:none` still cost render work, and a hidden focused input leaves the Android keyboard open over a section you cannot see. Chevron flips for RTL. |
+| `NumberStepper` | `value`, `onChange`, `min`, `max`, `step`, `suffix`, `label`, `hint` | Bounded integer, − [ n ] +. **Typing is clamped on BLUR, not per keystroke** — clamping mid-typing makes "120" impossible to enter when the minimum is 15. The draft is `string \| null`, not an effect sync (`react-hooks/set-state-in-effect`). |
 
 Shared internals: `useInteractionState()` (hover/focus/pressed; hover and focus ring are web-only) and `useOverlayDismiss()` (Escape + scroll lock on web, Android hardware back).
 
 Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
-- Not built yet: Checkbox/Radio, Segmented control, Pagination, DataTable, PhoneInput, TimeSlotPicker, Avatar, Collapsible, StepWizard, FormAlert, StatCard.
+- Not built yet: Checkbox/Radio, Pagination, DataTable, PhoneInput, TimeSlotPicker, Avatar, StepWizard, FormAlert, StatCard.
+- **`Drawer` has no `KeyboardAvoidingView`.** Four forms put inputs in one
+  (ServiceForm, StaffForm, the schedule lists, CustomFieldEditor), so on Android a
+  focused input near the bottom can sit under the keyboard. It does apply
+  `insets.bottom` to the footer and `keyboardShouldPersistTaps`. **Worth fixing in
+  `Drawer` itself**, which fixes all four at once.
 - **Forms must use `useWatch({ control, name })`, never `watch()`** — `watch()` returns a fresh function each render and the React Compiler lint refuses it (`react-hooks/incompatible-library`).
 - `useInteractionState` shows the focus ring only when the browser reports `:focus-visible`, so a mouse click leaves no ring while keyboard tabbing does.
 - `useOverlayDismiss` holds `onDismiss` in a ref. Passing it an inline arrow used to re-run its effect every render ("Maximum update depth exceeded") once several overlays were mounted; the ref makes any caller safe.
@@ -186,6 +194,11 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+
+- 2026-10-04: `SegmentedControl`, `Collapsible`, `NumberStepper` primitives; the
+  reusable public booking components in `src/features/booking-public/components/`
+  (ServiceList, StaffChoice, SlotGrid, BookingFormPreview) which step 5 reuses for
+  the real public page.
 
 - 2026-10-02: `Calendar` month grid (+ pure `calendarGrid` module, 20 tests) used by `DateRangePicker` on native; calendar-date helpers in `lib/time` (18 tests incl. date line, DST and leap years). Gallery shows all of them.
 - 2026-10-02: Shared composites (MoneyInput, SearchInput, TimePicker, DayHoursRow, DateRangePicker) + `components/shared/index.ts`; money and minute-of-day helpers implemented with 31 tests.

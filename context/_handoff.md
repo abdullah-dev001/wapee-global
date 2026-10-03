@@ -8,11 +8,29 @@ Last updated: 2026-10-04 · Branch: `dev` · All work is pushed.
 - Verified on web (375/768/1280) and the iOS simulator. 30+ SQL security assertions pass against the live database. Advisors clean except the item below.
 - Test data from Phase 1 has been cleaned up: **4 users and 3 businesses remain** (`Nova Hair Studio`, `Buenos Clinic`, `Rosario Clinic 19481`). No test users left.
 
-- **Phase 3 backend is COMPLETE, DEPLOYED and VERIFIED over HTTP** (no UI). Steps 6 and 7 are done: rate limiting + bot protection are live, and the guest manage link works. **Four deployed Edge Functions** (`get_slots`, `create_booking`, `manage_booking` — all public; `resend_manage_link` — JWT required). **421 SQL assertions passing**, plus a full anonymous-caller curl verification recorded in `context/booking-public-api.md`.
+- **Phase 3 step 4 (settings UI) is done.** `/settings/booking` with two tabs
+  (settings + form builder), a live customer preview, warnings with fix routes,
+  and a booking link gated on `branch_is_bookable`. Three new UI primitives
+  (SegmentedControl, Collapsible, NumberStepper) and the reusable public booking
+  components step 5 will use. **`npm run smoke:public`** smoke-tests the deployed
+  endpoints (40 checks). 54 new unit tests; **174 unit tests, 430 SQL assertions**.
+- **Phase 3 backend is COMPLETE, DEPLOYED and VERIFIED over HTTP.** Steps 6 and 7 are done: rate limiting + bot protection are live, and the guest manage link works. **Four deployed Edge Functions** (`get_slots`, `create_booking`, `manage_booking` — all public; `resend_manage_link` — JWT required). **421 SQL assertions passing**, plus a full anonymous-caller curl verification recorded in `context/booking-public-api.md`.
 - Earlier Phase 3 scope (unchanged): booking_settings per branch, custom fields + immutable form versions, clients/appointments/answers/manage tokens with 2 exclusion constraints, the DST-correct slot engine, **`create_booking` (one transaction, service_role only)**, `save_booking_settings` with the people_per_slot guard, `branch_is_bookable()`, and **two deployed Edge Functions** (`get_slots`, `create_booking`) verified end-to-end as an anonymous caller. **287 SQL assertions passing.** See `context/booking-engine.md`, `context/booking-public-api.md`, `context/booking-settings.md`.
 
 ## Next, in order
-1. **Phase 3 UI — the only Phase 3 work left**: booking settings screen with live preview → public booking page `(public)/[slug]` (service → staff → slot → form → confirmation; reuses the shared `Calendar`, needs a new `TimeSlotPicker`) → the guest manage page. **The whole backend is ready and verified**; the UI must send `start_token` back and hide the `company_website` honeypot with `position:absolute;left:-9999px` (NOT `type="hidden"` / `display:none`).
+1. **Phase 3 step 5 — the public booking page**, the only Phase 3 work left:
+   `(public)/[slug]` (service → staff → slot → form → confirmation) and the guest
+   manage page. **Most of the pieces exist already**: the presentational components
+   are built and in use by the settings preview
+   (`src/features/booking-public/components/` — ServiceList, StaffChoice, SlotGrid,
+   BookingFormPreview), the view models are in `types.ts`, and the backend is
+   deployed and verified. What step 5 adds is the route, the real `get_slots` /
+   `create_booking` wiring, react-hook-form + zod on the form, and the
+   confirmation screen with the manage link.
+   **Two things the page MUST do**: send the `start_token` from `get_slots` back
+   with the booking, and hide the `company_website` honeypot with
+   `position:absolute;left:-9999px` — **not** `type="hidden"` or `display:none`,
+   which better bots skip — plus `autocomplete="off"` and `tabindex="-1"`.
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -33,6 +51,11 @@ Last updated: 2026-10-04 · Branch: `dev` · All work is pushed.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **`Text`'s `color` prop takes a token NAME, not a hex value** (`color="textPrimary"`, not `color={theme.colors.textPrimary}`). Same for `Button`, which takes `children`, not a `label` prop, and `Badge`'s `icon`, which takes a NODE not a component.
+- **A service's buffer REPLACES the branch buffer; they never add.** `case when coalesce(service,0) > 0 then service else branch end`, in both `get_free_slots` and `create_booking`. 10 + 15 = 15, not 25. A service buffer of 0 means "no setting", so a service cannot opt out of the branch buffer.
+- **A smoke test that asserts on a JSON substring will lie.** The privacy check searched for the client's full name and matched the BUSINESS name ("Smoke Test Salon"), because the test data shared a word. Assert on fields.
+- **Network latency is not a reliable "instant".** The `too_fast` check reused a token from an earlier call and by then >3s had passed, so it booked the slot the next check needed. Fetch a fresh token immediately before.
+- **`npm run smoke:public` spends the per-IP `create_booking` budget** (10/hour). A second run inside the hour reports every write check as a 429; the script detects that on the first write and exits 3 with an explanation.
 - **A `RETURN` in PL/pgSQL does NOT roll back; only an exception does.** `reschedule_booking` freed the old slot, then returned a failure — so every failure path cancelled the customer's booking and told them it failed. **Validation must finish before any mutation.** Now a permanent rule: CLAUDE.md §10a.
 - **The real client IP here is `cf-connecting-ip`, NOT the last `x-forwarded-for` entry.** Measured on the deployed function: the last XFF entry is a *rotating* AWS proxy (`13.248.117.77`, `99.82.173.50`, …) while `cf-connecting-ip` is stable and correct. Keying on the last entry put every caller in a handful of shared buckets. A client-supplied `X-Forwarded-For` never arrives, and a request that sends `CF-Connecting-IP` is rejected by Cloudflare with **403 error 1000**. **Re-measure if this ever moves off Supabase/Cloudflare.**
 - **An extension's reachability is schema USAGE *and* the function grant.** `pg_cron` keeps EXECUTE grants that `postgres` cannot revoke, but `anon`/`authenticated` have no USAGE on schema `cron`, so they are dead letters — which is why pg_cron is safe where `dblink` (in `extensions`, a schema the API roles CAN use) was not.
