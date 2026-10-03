@@ -93,11 +93,12 @@ Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
 - Not built yet: Checkbox/Radio, Pagination, DataTable, PhoneInput, TimeSlotPicker, Avatar, StepWizard, FormAlert, StatCard.
-- **`Drawer` has no `KeyboardAvoidingView`.** Four forms put inputs in one
-  (ServiceForm, StaffForm, the schedule lists, CustomFieldEditor), so on Android a
-  focused input near the bottom can sit under the keyboard. It does apply
-  `insets.bottom` to the footer and `keyboardShouldPersistTaps`. **Worth fixing in
-  `Drawer` itself**, which fixes all four at once.
+- **`Drawer` now avoids the keyboard** (fixed 2026-10-04): the body is a
+  `KeyboardAwareScrollView` (same as `Screen`) and the footer rides a
+  `KeyboardStickyView`, so a focused input near the bottom is never covered on
+  Android or iOS. One fix in `Drawer` covers every form that puts inputs in one
+  (ServiceForm, StaffForm, the schedule lists, CustomFieldEditor) without
+  touching any of them.
 - **Forms must use `useWatch({ control, name })`, never `watch()`** — `watch()` returns a fresh function each render and the React Compiler lint refuses it (`react-hooks/incompatible-library`).
 - `useInteractionState` shows the focus ring only when the browser reports `:focus-visible`, so a mouse click leaves no ring while keyboard tabbing does.
 - `useOverlayDismiss` holds `onDismiss` in a ref. Passing it an inline arrow used to re-run its effect every render ("Maximum update depth exceeded") once several overlays were mounted; the ref makes any caller safe.

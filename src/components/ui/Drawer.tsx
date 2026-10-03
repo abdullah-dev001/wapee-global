@@ -1,6 +1,7 @@
 import { X } from 'lucide-react-native';
 import { type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { focusRing, shadow, theme, useBreakpoint } from '@/lib/theme';
@@ -67,18 +68,23 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
             <CloseButton onPress={onClose} />
           </View>
 
-          <ScrollView
+          <KeyboardAwareScrollView
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
             keyboardShouldPersistTaps="handled"
+            bottomOffset={theme.spacing[16]}
           >
             {children}
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
           {footer ? (
-            <View style={[styles.footer, { paddingBottom: theme.spacing[16] + insets.bottom }]}>
-              {footer}
-            </View>
+            // Rises with the keyboard, same mechanism as Screen's sticky footer,
+            // so a focused input near the bottom of the drawer is never covered.
+            <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+              <View style={[styles.footer, { paddingBottom: theme.spacing[16] + insets.bottom }]}>
+                {footer}
+              </View>
+            </KeyboardStickyView>
           ) : (
             <View style={{ height: insets.bottom }} />
           )}
