@@ -876,13 +876,13 @@ end $$;
 -- 24. Grants: the engine is service_role only
 -- ---------------------------------------------------------------------------
 select pg_temp.chk('anon cannot execute get_free_slots',
-  has_function_privilege('anon', 'public.get_free_slots(uuid,uuid,uuid,date,date,boolean)', 'execute'),
+  has_function_privilege('anon', 'public.get_free_slots(uuid,uuid,uuid,date,date,boolean,boolean)', 'execute'),
   false);
 select pg_temp.chk('authenticated cannot execute get_free_slots',
-  has_function_privilege('authenticated', 'public.get_free_slots(uuid,uuid,uuid,date,date,boolean)', 'execute'),
+  has_function_privilege('authenticated', 'public.get_free_slots(uuid,uuid,uuid,date,date,boolean,boolean)', 'execute'),
   false);
 select pg_temp.chk('service_role CAN execute get_free_slots',
-  has_function_privilege('service_role', 'public.get_free_slots(uuid,uuid,uuid,date,date,boolean)', 'execute'),
+  has_function_privilege('service_role', 'public.get_free_slots(uuid,uuid,uuid,date,date,boolean,boolean)', 'execute'),
   true);
 select pg_temp.chk('anon cannot execute pick_staff_for_slot',
   has_function_privilege('anon', 'public.pick_staff_for_slot(uuid,uuid,timestamptz,timestamptz)', 'execute'),
