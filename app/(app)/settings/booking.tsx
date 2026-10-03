@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
-import { Button, Drawer, ErrorState } from '@/components/ui';
+import { Button, Drawer, ErrorState, Tabs } from '@/components/ui';
 import { RouteGuard } from '@/features/auth';
 import {
   useBookingSettings,
@@ -17,6 +17,7 @@ import {
   BookingPreview,
   BookingSettingsForm,
   BookingWarnings,
+  CustomFieldList,
 } from '@/features/booking-settings/components';
 import { bookingLinkIsLive, bookingWarnings } from '@/features/booking-settings/bookingWarnings';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
@@ -43,6 +44,9 @@ export default function BookingSettingsScreen() {
   // anything is saved — the point of a live preview.
   const [draft, setDraft] = useState<BookingSettings | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // Two tabs rather than one long page: the settings and the form builder are
+  // separate jobs, and the builder's drawer would fight a long scroll.
+  const [tab, setTab] = useState<'settings' | 'form'>('settings');
 
   const settings = useBookingSettings(businessId, branchId);
   const bookable = useBranchBookable(businessId, branchId);
@@ -117,26 +121,51 @@ export default function BookingSettingsScreen() {
             ) : undefined
           }
         >
-          <View style={isDesktop ? styles.twoColumn : undefined}>
-            <View style={isDesktop ? styles.settingsColumn : styles.stack}>
-              <BookingWarnings warnings={warnings} />
+          <View style={styles.stack}>
+            <Tabs
+              items={[
+                { value: 'settings', label: t('bookingFields.settingsTab') },
+                { value: 'form', label: t('bookingFields.tab') },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
 
-              <BookingLinkCard
-                businessSlug={business?.slug ?? null}
-                isLive={bookingLinkIsLive(bookable.data)}
-              />
+            <View style={isDesktop ? styles.twoColumn : undefined}>
+              <View style={isDesktop ? styles.settingsColumn : styles.stack}>
+                {/* The warnings and the link describe the branch as a whole, so
+                    they stay visible on both tabs. */}
+                <BookingWarnings warnings={warnings} />
 
-              <BookingSettingsForm
-                businessId={businessId}
-                branchId={branchId}
-                canEdit={canEdit.allowed}
-                serviceBufferMinutes={catalogue.data?.serviceBufferMinutes ?? []}
-                draft={draft}
-                onDraftChange={onDraftChange}
-              />
+                <BookingLinkCard
+                  businessSlug={business?.slug ?? null}
+                  isLive={bookingLinkIsLive(bookable.data)}
+                />
+
+                {tab === 'settings' ? (
+                  <BookingSettingsForm
+                    businessId={businessId}
+                    branchId={branchId}
+                    canEdit={canEdit.allowed}
+                    serviceBufferMinutes={catalogue.data?.serviceBufferMinutes ?? []}
+                    draft={draft}
+                    onDraftChange={onDraftChange}
+                  />
+                ) : (
+                  <CustomFieldList
+                    businessId={businessId}
+                    canEdit={canEdit.allowed}
+                    services={(catalogue.data?.services ?? []).map((service) => ({
+                      id: service.id,
+                      name: service.name,
+                    }))}
+                    requireClientEmail={effective?.requireClientEmail ?? false}
+                  />
+                )}
+              </View>
+
+              {isDesktop ? <View style={styles.previewColumn}>{preview}</View> : null}
             </View>
-
-            {isDesktop ? <View style={styles.previewColumn}>{preview}</View> : null}
           </View>
         </PageContainer>
 
