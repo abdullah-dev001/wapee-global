@@ -20,4 +20,4 @@ Shared files:
 | Schedule | schedule.md | done (Phase 2 scope) | 2 | Working hours, breaks, time off, branch hours, holidays, rooms |
 | Booking settings & form | booking-settings.md | DB + RPC done, no UI | 3 | Per-branch booking settings (doc §6.2), custom fields, immutable form versions, save guard |
 | Booking engine | booking-engine.md | backend complete, no UI | 3 | Clients, appointments, no-double-booking, DST-correct slot engine, `create_booking` |
-| Booking public API | booking-public-api.md | deployed | 3 | `get_slots` and `create_booking` Edge Functions — the only public path |
+| Booking public API | booking-public-api.md | deployed + verified | 3 | 4 Edge Functions, rate-limited and bot-protected — the only public path |

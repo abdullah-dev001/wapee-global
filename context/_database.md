@@ -1,12 +1,12 @@
 # Database
-Status: in progress · Phase: 3 · Last updated: 2026-10-03
+Status: in progress · Phase: 3 · Last updated: 2026-10-04
 
 ## Project
 - Supabase project **Wapee Global Development**, ref `rfuovquhultjydtswtqf`, Postgres 17, region ap-south-1.
 - Applied through the **Supabase connector** (`apply_migration`). The local CLI is signed in to a different account and cannot link this project, so `supabase db push` and `supabase test db` are unavailable. Every migration file in `supabase/migrations/` matches what was applied.
 - Extensions: `citext`, `pg_trgm`, `btree_gist` (ready for Phase 3 no-double-booking), `pgtap`, `uuid-ossp`, `pgcrypto`.
 
-## Tables (32)
+## Tables (34)
 
 | Table | Key columns | Notes |
 |---|---|---|
@@ -46,6 +46,9 @@ Status: in progress · Phase: 3 · Last updated: 2026-10-03
 | `appointments` | business_id, branch_id, client_id, service_id, staff_id, resource_id, **starts_at/ends_at**, duration_minutes, buffer_minutes, status, source, **form_version_id**, **is_exclusive**, price_minor, cancelled_at | UTC instants; slots computed in the branch timezone. duration/buffer/price are snapshots. **No DELETE policy** — soft delete or cancel. |
 | `appointment_field_values` | business_id, appointment_id, custom_field_id, form_version_id, value, **is_sensitive** | One row per answer, so the sensitive gate can be per field. |
 | `booking_manage_tokens` | business_id, appointment_id, **token_hash**, expires_at, revoked_at, last_used_at | Guest cancel/reschedule. Only the sha256 HASH is stored. One live token per appointment. |
+| **Phase 3 — public endpoint protection** | | |
+| `public_request_attempts` | endpoint, **ip_hash**, key_hash, outcome, created_at | Rate-limit ledger. `ip_hash` is sha256(salt‖ip) — **never a raw IP**. RLS on, **no policy**; only `check_rate_limit()` touches it. Rows >7 days old deleted nightly by pg_cron. |
+| `rate_limit_rules` | **(endpoint, scope, window_seconds)**, max_attempts, note | THE one place the limits live, tunable without a deploy. scope = ip / key (hashed phone) / biz. Super admin may read. |
 
 Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (solo/team/business), `member_status` (invited/active/disabled), `permission_scope` (own/branch/all).
 Phase 3 adds: `appointment_status` (pending/confirmed/completed/cancelled/no_show), `booking_source` (online/dashboard/walk_in/portal), `custom_field_type` (short_text/long_text/dropdown/yes_no/number), `staff_choice_mode`, `slot_display_mode`, `booking_confirmation_mode`, `slot_interval_mode`.
@@ -227,8 +230,8 @@ it is safe to publish.
 | Receptionist | 20 — no discounts, credit notes, revenue reports, staff management, settings | branch |
 | Staff | 10 — own appointments, own schedule, own commission | own |
 
-## Verification (2026-10-03, Phase 3)
-**287 assertions passing** against the live database, run as plain SQL inside
+## Verification (2026-10-04, Phase 3)
+**421 assertions passing** against the live database, run as plain SQL inside
 rolled-back transactions (`supabase db query --linked -f ...`):
 
 - `supabase/tests/06_booking_form_and_slot_engine.sql` — **93 passing**. Slot
@@ -266,8 +269,25 @@ rolled-back transactions (`supabase db query --linked -f ...`):
   RPC, and the counted checks at every seat count. **It cannot execute two
   concurrent backends** — see the limitation in `context/booking-engine.md`.
 
-**Advisors after Phase 3:** security = **0 errors**. Two intentional new
-warnings: `has_permission_at_branch_scope` and `branch_is_bookable` executable by
+- `supabase/tests/10_rate_limiting.sql` — **43 passing**. A window allowing then
+  blocking; **a BLOCKED attempt being recorded**, which is what makes an attack stay
+  blocked; the retry hint; a different IP unaffected; a NULL endpoint failing
+  CLOSED; a missing IP neither disabling the endpoint nor escaping the other caps;
+  the per-phone and per-business caps; **the hourly cap biting before the daily one
+  and reporting the hourly retry hint**; the daily cap still biting when the hourly
+  is clear; retention; grants.
+- `supabase/tests/11_guest_manage_link.sql` — **91 passing**. `get_booking`'s
+  contract and its privacy limits (first name only); every token failure returning
+  the same `invalid_token`; cancel inside/outside the cutoff; an expired token;
+  revocation and replay; **the original booking surviving every failed reschedule**;
+  manual confirmation sending a reschedule back to pending; resend invalidating the
+  old token, its permission check and audit row; grants.
+
+**Advisors after Phase 3:** security = **0 errors**. Intentional new warnings:
+`public_request_attempts` (RLS on, no policy — only the SECURITY DEFINER function
+touches it, same as `invite_accept_attempts`), and `resend_manage_link` executable
+by `authenticated` (the `can()` check inside IS the boundary). Plus the two from
+before: `has_permission_at_branch_scope` and `branch_is_bookable` executable by
 `authenticated` — same family as the 6 pre-existing permission helpers (they only
 report on the caller's own access). `create_booking`, `get_free_slots` and
 `pick_staff_for_slot` do NOT appear: they are `service_role` only and are not
@@ -316,6 +336,11 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261003180000_fix_resource_capacity.sql` | **Fixed**: a resource with `capacity` > 1 was unusable. Adds `resource_capacity_at_booking` + generated `resource_is_exclusive` and re-keys the resource constraint. |
 | `20261003190000_fix_booking_answers_and_capacity.sql` | **Fixed**: `create_booking` inserted RAW answers, discarding normalisation (a yes_no "TRUE" stayed "TRUE"), and did not snapshot the resource capacity. |
 | `20261003210000_form_version_trigger_cascade_fix.sql` | **Fixed**: `touch_form_version` tried to CREATE a form version during the business-delete cascade (23503). No-ops when the business is gone. |
+| `20261004090000_public_request_attempts.sql` | Step 7: `public_request_attempts`, `rate_limit_rules`, `check_rate_limit()` (records AND decides in one call; records BLOCKED attempts too; fails closed), `cleanup_public_request_attempts()` |
+| `20261004093000_schedule_attempts_cleanup.sql` | `pg_cron` nightly retention job (03:17 UTC, 7 days). Asserts the API roles cannot reach the scheduler — and established that **reachability is schema USAGE *and* the function grant**, not the grant alone. |
+| `20261004100000_guest_manage_rpcs.sql` | Step 6: `resolve_manage_token`, `get_booking`, `cancel_booking`, `reschedule_booking`, `resend_manage_link` |
+| `20261004110000_fix_reschedule_rollback.sql` | **Fixed**: a FAILED reschedule left the appointment cancelled, because a `RETURN` does not roll back — only an exception does. Now validates everything before mutating and excludes the row from its own collision check (`a.id <> v_id`). |
+| `20261004120000_business_hourly_cap.sql` | Per-business **hourly** cap (30) beside the daily one (200). Widened the `rate_limit_rules` PK to (endpoint, scope, window_seconds) so one dimension can hold several windows. |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -335,6 +360,9 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
   design, not an oversight.
 
 ## Changelog
+- 2026-10-04: **Step 7 (rate limiting + bot protection)** and **step 6 (guest manage link)**. Per-business hourly cap added. 421 assertions.
+- 2026-10-04: **Fixed: a failed reschedule left the booking cancelled** — a `RETURN` does not roll back. Now a permanent rule in CLAUDE.md §10a.
+- 2026-10-04: `pg_cron` installed for retention; the grant assertion established that reachability is schema USAGE **and** the function grant.
 - 2026-10-03: `create_booking`, `save_booking_settings` (+ people_per_slot guard), `branch_is_bookable`, `include_booked`. 287 assertions total.
 - 2026-10-03: **Fixed: resource `capacity` > 1 was unusable** — the constraint had no notion of capacity. Now a generated `resource_is_exclusive` from a snapshotted capacity.
 - 2026-10-03: **Fixed two cascade bugs** that made a business undeletable (form-version immutability refusing the cascade; `touch_form_version` creating a version for a deleted business). Named as a recurring family under Guard triggers.

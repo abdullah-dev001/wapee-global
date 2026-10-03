@@ -300,6 +300,48 @@ overlay rgba(0,0,0,0.5)
 - No inline style objects with raw values; use theme.
 - Handle every error path; never swallow errors silently.
 
+## 10a. Testing rules (STRICT)
+
+**Every mutating RPC needs a test proving the original data survives EVERY
+failure path.** Not just the happy path, and not just "it returned an error" —
+assert that the row is still exactly as it was.
+
+**Validation must finish before any mutation.** In PL/pgSQL a `RETURN` does
+**not** roll anything back; only an exception does. So this is broken:
+
+```sql
+update appointments set status = 'cancelled' where id = v_id;  -- "free the slot"
+...
+if slot_is_taken then
+  return jsonb_build_object('ok', false, 'code', 'slot_unavailable');  -- BUG
+end if;
+```
+
+That shape shipped once in `reschedule_booking`: every failure path cancelled the
+customer's booking and then reported failure, so a guest tapping a slot that had
+just gone would have lost their appointment. It was caught by **one** assertion
+("the original booking is untouched after a failed reschedule"), which is why
+that assertion is now mandatory rather than optional.
+
+The pattern to follow:
+
+1. Read and validate everything first — permissions, state, windows, capacity.
+2. Return every failure **before** the first write.
+3. Mutate once, as late as possible, ideally in a single statement.
+4. If a check genuinely needs the new state to exist, use the exclusion
+   constraint as the backstop and catch its exception — do not mutate to make a
+   query come out right. (`reschedule_booking` excludes the row from its own
+   collision check with `a.id <> v_id` instead.)
+
+Also:
+- A public RPC behind a rate limiter must **return** `{ok:false,code}`, never
+  raise, or the raise rolls back the counter it just incremented (the
+  `accept_invite` trap).
+- Assert on **stored values**, not only on return codes. `create_booking`
+  discarded its own answer normalisation and the return code looked fine.
+- Test every new trigger against `delete from businesses`; a guard written for a
+  tenant action also fires for the cascade that deletes the tenant.
+
 ## 11. Security checklist (every feature)
 - [ ] RLS policies written and tested for each role (owner, manager, receptionist, staff, other business)
 - [ ] Permission checked in Edge Function / RPC

@@ -1,5 +1,5 @@
 # Handoff
-Last updated: 2026-10-03 · Branch: `dev` · All work is pushed.
+Last updated: 2026-10-04 · Branch: `dev` · All work is pushed.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
@@ -8,10 +8,11 @@ Last updated: 2026-10-03 · Branch: `dev` · All work is pushed.
 - Verified on web (375/768/1280) and the iOS simulator. 30+ SQL security assertions pass against the live database. Advisors clean except the item below.
 - Test data from Phase 1 has been cleaned up: **4 users and 3 businesses remain** (`Nova Hair Studio`, `Buenos Clinic`, `Rosario Clinic 19481`). No test users left.
 
-- **Phase 3 backend is COMPLETE** (no UI): booking_settings per branch, custom fields + immutable form versions, clients/appointments/answers/manage tokens with 2 exclusion constraints, the DST-correct slot engine, **`create_booking` (one transaction, service_role only)**, `save_booking_settings` with the people_per_slot guard, `branch_is_bookable()`, and **two deployed Edge Functions** (`get_slots`, `create_booking`) verified end-to-end as an anonymous caller. **287 SQL assertions passing.** See `context/booking-engine.md`, `context/booking-public-api.md`, `context/booking-settings.md`.
+- **Phase 3 backend is COMPLETE, DEPLOYED and VERIFIED over HTTP** (no UI). Steps 6 and 7 are done: rate limiting + bot protection are live, and the guest manage link works. **Four deployed Edge Functions** (`get_slots`, `create_booking`, `manage_booking` — all public; `resend_manage_link` — JWT required). **421 SQL assertions passing**, plus a full anonymous-caller curl verification recorded in `context/booking-public-api.md`.
+- Earlier Phase 3 scope (unchanged): booking_settings per branch, custom fields + immutable form versions, clients/appointments/answers/manage tokens with 2 exclusion constraints, the DST-correct slot engine, **`create_booking` (one transaction, service_role only)**, `save_booking_settings` with the people_per_slot guard, `branch_is_bookable()`, and **two deployed Edge Functions** (`get_slots`, `create_booking`) verified end-to-end as an anonymous caller. **287 SQL assertions passing.** See `context/booking-engine.md`, `context/booking-public-api.md`, `context/booking-settings.md`.
 
 ## Next, in order
-1. **Phase 3 UI + steps 6–7**: booking settings screen with live preview → public booking page `(public)/[slug]` (service → staff → slot → form → confirmation; reuses the shared `Calendar`, needs a new `TimeSlotPicker`) → guest manage link endpoints → **rate limiting (the seam is already called in `_shared/rateLimit.ts`; the endpoints are UNTHROTTLED until then)**.
+1. **Phase 3 UI — the only Phase 3 work left**: booking settings screen with live preview → public booking page `(public)/[slug]` (service → staff → slot → form → confirmation; reuses the shared `Calendar`, needs a new `TimeSlotPicker`) → the guest manage page. **The whole backend is ready and verified**; the UI must send `start_token` back and hide the `company_website` honeypot with `position:absolute;left:-9999px` (NOT `type="hidden"` / `display:none`).
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -22,7 +23,9 @@ Last updated: 2026-10-03 · Branch: `dev` · All work is pushed.
    - **No `/billing` route yet** — the trial banner and the lock's allow-list both point at `/settings` until Phase 8.
 
 ## Open items
-- **Leaked-password protection is OFF.** Dashboard → Authentication → enable the HaveIBeenPwned check. Do this before real users.
+- **Leaked-password protection CANNOT be enabled on this plan.** The org `Wapee Global` is on **FREE**, and Supabase gates the HaveIBeenPwned check to **Pro and above** (confirmed in their docs + Management API, 2026-10-04). It will stay as a security-advisor warning until the project is upgraded. **Do it as part of going to production** — it is one dashboard toggle once on Pro: Authentication → Providers → Email.
+- **Two Edge secrets are now REQUIRED** and are set: `PUBLIC_IP_HASH_SALT`, `PUBLIC_FORM_HMAC_KEY`. The code throws rather than defaulting, so a fresh/cloned project must set them or every public endpoint returns `server_error`.
+- **`PUBLIC_SITE_ORIGINS` is unset**, so CORS falls back to placeholder domains. Set it before a real site calls the endpoints.
 - **`supabase test db` needs Docker**, not installed. The pgTAP files in `supabase/tests/` are verified by running their assertions through the Supabase connector instead. Docker (or the DB password for `psql`) would let them run as a suite.
 - **`expo-clipboard` was added** (invite link copy button), so the dev build needs a rebuild: `npm run ios`.
 - **Android has never been run** — no emulator on this machine. Every UI task ends with a written Android code review instead (CLAUDE.md §4). Test on a real device via EAS build when possible.
@@ -30,6 +33,12 @@ Last updated: 2026-10-03 · Branch: `dev` · All work is pushed.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **A `RETURN` in PL/pgSQL does NOT roll back; only an exception does.** `reschedule_booking` freed the old slot, then returned a failure — so every failure path cancelled the customer's booking and told them it failed. **Validation must finish before any mutation.** Now a permanent rule: CLAUDE.md §10a.
+- **The real client IP here is `cf-connecting-ip`, NOT the last `x-forwarded-for` entry.** Measured on the deployed function: the last XFF entry is a *rotating* AWS proxy (`13.248.117.77`, `99.82.173.50`, …) while `cf-connecting-ip` is stable and correct. Keying on the last entry put every caller in a handful of shared buckets. A client-supplied `X-Forwarded-For` never arrives, and a request that sends `CF-Connecting-IP` is rejected by Cloudflare with **403 error 1000**. **Re-measure if this ever moves off Supabase/Cloudflare.**
+- **An extension's reachability is schema USAGE *and* the function grant.** `pg_cron` keeps EXECUTE grants that `postgres` cannot revoke, but `anon`/`authenticated` have no USAGE on schema `cron`, so they are dead letters — which is why pg_cron is safe where `dblink` (in `extensions`, a schema the API roles CAN use) was not.
+- **A rate limiter must FAIL CLOSED.** If the counter is unreachable, refuse. An unthrottled public write endpoint is worse than a brief outage.
+- **A blocked attempt must itself be counted**, or a sustained attack oscillates around the limit instead of staying blocked.
+- **An anon-key call is still a valid JWT.** `resend_manage_link` with only the publishable key reached the RPC and failed on the EXECUTE grant, surfacing as a 500 until the handler learned to map `42501`/`42883` to a clean 404. Correct boundary, wrong status code — check both.
 - **`create_booking` must never `raise` for an expected failure.** It returns `{ok:false,code}` because step 7's rate-limit counter will live inside it, and a raise rolls the increment back — the same bug `accept_invite` had. Same rule for any future public RPC.
 - **An exclusion constraint cannot express "at most N overlap."** Group bookings (`people_per_slot` > 1) and `resources.capacity` > 1 are guaranteed only by a counted check under `pg_advisory_xact_lock` inside `create_booking`. 1:1 IS a hard DB guarantee. Do not "simplify" the lock away.
 - **A guard trigger on a tenant table also fires for `delete from businesses`.** This has now broken a business delete three times (form-version immutability, `touch_form_version`, and `enforce_last_owner` which is still outstanding). **Test every new trigger against deleting the business** — `supabase/tests/08` asserts it.
