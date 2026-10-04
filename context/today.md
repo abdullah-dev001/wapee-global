@@ -93,3 +93,4 @@ Reuses the `appointments.*` namespace entirely — no new keys.
   state, Realtime. Extracted `calendarAppointmentToRow()` from `DayView`
   into the shared API module so Today's detail-drawer handoff reuses it
   instead of a second inline copy.
+- 2026-10-06 (Phase 5B): row restructured — the tappable summary and the action buttons are SIBLINGS (no `<button>` in `<button>` on web) and actions sit on their own line, which also stops a 375px phone squeezing the client name out. Completed rows get `AppointmentInvoiceButton` (Create/View invoice).

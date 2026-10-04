@@ -1,5 +1,5 @@
-# Invoices (backend)
-Status: backend done, NO UI yet · Phase: 5A · Last updated: 2026-10-06
+# Invoices (backend + UI)
+Status: backend done (5A) · UI done (5B) · Phase: 5 · Last updated: 2026-10-06
 
 ## What it does
 Draft → issued invoices with gapless per-branch numbers, tax snapshot, manual
@@ -47,21 +47,48 @@ RPCs (all DEFINER, `search_path=''`, explicit permission+scope check, validate-t
 - `create_credit_note(invoice, reason, net_minor?)` — `not_issued reason_required fully_credited invalid_amount`.
 - `list_invoices(business, branch?, status?, payment_status?, client?, from?, to?, search?, limit=20 (max 100), cursor_at?, cursor_id?)` → `{rows, next_cursor{at,id}}`, newest first on `coalesce(issued_at, created_at)`; dates in branch timezone; search ≥2 chars on number / bill-to / client name, `%`/`_` literal.
 - `get_invoice_print_data(invoice)` → `{invoice(+computed money), items, payments, credit_notes, branch, business, client}`; client phone/email only with `clients.view_contact`. Works for drafts (preview).
-- `get_basic_report(business, branch?, as_of?)` → `{branches[{tz, today/month windows in UTC}], revenue{today,month: [per currency]}, appointments{today,month:{total, <status>:n}}, top_services{today,month:[…]}}`. Revenue per currency, NEVER summed across currencies: `invoiced_minor` (incl. tax), `credited_minor`, `tax_minor`, `net_revenue_minor` (ex tax, minus credit notes), `collected_minor` (payments − reversals by `paid_at`), `invoice_count`. Windows are per branch in its own timezone (local midnight/1st → UTC through `at time zone`, so DST days/months are right). Only ISSUED invoices count; credit notes count when issued. `revenue` is `null` without `reports.view_revenue`; counts/top services are `null` without `reports.view_basic` (checked per branch). Top services = completed appointments (revenue per currency from issued invoice lines when permitted; it does not net credit notes). `as_of` is a test seam.
+- `get_basic_report(business, branch?)` → `{branches[{tz, today/month windows in UTC}], revenue{today,month: [per currency]}, appointments{today,month:{total, <status>:n}}, top_services{today,month:[…]}}`. Revenue per currency, NEVER summed across currencies: `invoiced_minor` (incl. tax), `credited_minor`, `tax_minor`, `net_revenue_minor` (ex tax, minus credit notes), `collected_minor` (payments − reversals by `paid_at`), `invoice_count`. Windows are per branch in its own timezone (local midnight/1st → UTC through `at time zone`, so DST days/months are right). Only ISSUED invoices count; credit notes count when issued. `revenue` is `null` without `reports.view_revenue`; counts/top services are `null` without `reports.view_basic` (checked per branch). Top services = completed appointments (revenue per currency from issued invoice lines when permitted; it does not net credit notes). The clock-injectable `report_basic_at(business, branch, as_of)` is INTERNAL (no API grant) and is what the DST tests call.
 - Internal (no API grant): `invoice_access, normalise_invoice_items, invoice_totals, insert_invoice_items, invoice_money, report_windows, format_document_number`.
 
-Migrations: `20261006090000_phase5_invoices_schema`, `…100000_phase5_invoice_draft_and_issue_rpcs`, `…110000_phase5_payment_and_credit_note_rpcs`, `…120000_phase5_invoice_read_and_report_rpcs`. Applied with `supabase db query --linked -f` + `supabase migration repair --status applied` so local filenames equal remote history exactly.
+Migrations: `20261006130000_report_basic_at_internal` (removed the public `p_as_of`), `20261006090000_phase5_invoices_schema`, `…100000_phase5_invoice_draft_and_issue_rpcs`, `…110000_phase5_payment_and_credit_note_rpcs`, `…120000_phase5_invoice_read_and_report_rpcs`. Applied with `supabase db query --linked -f` + `supabase migration repair --status applied` so local filenames equal remote history exactly.
 
 ## Tests
-- `supabase/tests/14_invoices.sql` — 310 assertions, all pass (rolled back).
+- `supabase/tests/14_invoices.sql` — 312 assertions, all pass (rolled back).
 - `supabase/tests/15_invoice_concurrency.sh` — 3 REAL parallel sessions (commits a fixture, deletes it after).
 
+## UI (Phase 5B)
+| Path | Purpose |
+|---|---|
+| app/(app)/invoices.tsx · reports.tsx | thin routes (RouteGuard) |
+| app/invoice-print/[id].tsx | standalone print/share view (outside `(app)`: no sidebar/header, so `window.print()` prints only the invoice; AuthGate still requires sign-in, the RPC enforces `invoices.view`) |
+| src/features/invoices/components/InvoicesScreen.tsx | list screen; URL params `search status payment from to clientId branch invoice` (`invoice=<id>` or `new` opens the drawer; browser back closes it) |
+| InvoiceListView / InvoiceFilterBar / InvoiceStateBadge | mobile cards / desktop+tablet `DataTable`, skeleton/empty/error, filters (branch select only with >1 branch; defaults to the current branch, `?branch=all` widens; client filter = chip, set from the detail's "Show this client's invoices") |
+| InvoiceDrawer / InvoiceDetailBody | ONE drawer for view → edit draft / issue / discard / add payment / reverse / credit note. Sub-forms REPLACE the content (no stacked overlay) so Escape/Android back step back first |
+| InvoiceEditor / ClientPickerField / PaymentForm / ReasonAmountForm | RHF + zod forms (`schemas/invoice.schemas.ts`); editor previews totals with `computeDraftTotals` (server recalculates) |
+| InvoiceDocument / InvoicePrintScreen | printable invoice from `get_invoice_print_data`; web = print stylesheet in `app/+html.tsx` (`@media print`, `[data-no-print]`) + `window.print()`; native = RN built-in `Share` of a plain-text summary (no PDF, no new dependency) |
+| AppointmentInvoiceButton | "Create invoice"/"View invoice" on a COMPLETED appointment: Calendar detail drawer and Today rows |
+| ReportsScreen | Today / This month; revenue block PER currency, appointment counts, top services (plain Views for bars, no chart library) |
+| api/useInvoices.ts · useReport.ts · useAppointmentInvoices.ts · useBranchTax.ts | hooks; pure mapping in `api/mappers.ts`, `api/reportMapper.ts` (unit-tested) |
+| invoiceLogic.ts (+ test) | totals preview, status+permission → actions, reversible/creditable amounts, report helpers |
+
+- **Query keys**: `invoiceKeys` / `reportKeys` (business + branch scoped). Every invoice mutation invalidates `invoiceKeys.scope`; issue/payment/reverse/credit also `reportKeys.scope`; create-from-appointment and discard also `appointmentKeys.scope` (detail, Today, Calendar).
+- **`get_calendar_appointments` has no `invoice_id`**, so Today/the appointment drawer ask the invoices table (`useAppointmentInvoices`, RLS-scoped). A caller without `invoices.view` sees no link; the create RPC still refuses a duplicate (`already_invoiced`).
+- Nav: Invoices needs `invoices.view`, Reports `reports.view_basic` (Staff sees neither). Revenue cards need `reports.view_revenue` (server returns `revenue: null` otherwise).
+- Error codes → `invoices.errors.<code>` messages; i18n blocks `invoices.*`, `reports.*`.
+- A receptionist cannot save an edit to a draft that already carries a discount (server refuses discounts without `invoices.discount`); the editor says so and disables Save.
+
 ## Known limits / TODO
-- **Credit notes are by amount, not per line/quantity** (no credit-note items). Decide with the user before the UI if item-level credits are needed.
-- `get_basic_report` top-service revenue ignores credit notes.
+- Native print is text share only; a real PDF needs expo-print + expo-sharing (new native deps, rebuild): ask first.
+- Client profile still shows its labelled invoice placeholder (not in 5B scope).
+- Reports follow the current branch scope (null = all branches); there is no branch switcher UI yet, so all-branch multi-currency is only reachable for an all-branches scope (covered by SQL tests + unit tests, not by a screenshot).
+- No per-line credit notes UI (backend is by amount).
+- **Credit notes are not per line** (by net amount only).
+- **Top-service revenue ignores credit notes.**
+- **Free (total 0) invoices cannot be issued** (`zero_total`).
 - `reverse_payment` has no per-day cut-off or Owner-only rule beyond `invoices.credit_note`.
-- No `invoices` realtime and no TanStack hooks/UI yet (Phase 5B). Client-profile invoice placeholder still waits for it.
+- No `invoices` realtime (not needed; precise invalidation instead).
 - Draft invoices are not audited on create (only discard), by choice.
 
 ## Changelog
+- 2026-10-06: Phase 5B UI (Invoices, detail/editor drawer, payments/reversal/credit note, print/share, Reports, appointment invoice buttons). Removed public `p_as_of` (`report_basic_at` internal).
 - 2026-10-06: Phase 5A backend built (schema, 10 RPCs, immutability, currency lock, reports). 310 SQL assertions + real concurrent-issue test.

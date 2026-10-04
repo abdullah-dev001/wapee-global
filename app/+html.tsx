@@ -51,6 +51,17 @@ body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
+@page { margin: 14mm; }
+@media print {
+  /* The app root is a fixed-height, non-scrolling shell; let the invoice flow across pages. */
+  html, body, body * {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  body, html { background: #fff !important; }
+  [data-no-print] { display: none !important; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

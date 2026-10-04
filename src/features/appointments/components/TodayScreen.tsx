@@ -16,6 +16,8 @@ import {
   useToast,
 } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
+import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
+import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 import { formatTime, todayInZone, type UtcIso } from '@/lib/time';
@@ -60,6 +62,13 @@ export function TodayScreen() {
     appointment: CalendarAppointment;
     action: 'approve' | 'complete' | 'no_show';
   } | null>(null);
+
+  const completedIds = useMemo(
+    () =>
+      (calendar.data?.rows ?? []).filter((row) => row.status === 'completed').map((row) => row.id),
+    [calendar.data],
+  );
+  const invoiceLinks = useAppointmentInvoices(businessId, completedIds);
 
   const nowMinute = minuteOfDayFromTime(new Date().toISOString(), timeZone);
 
@@ -139,6 +148,8 @@ export function TodayScreen() {
                 isNext={row.id === nextAppointmentId}
                 canApprove={canApprove}
                 canEdit={canEdit}
+                businessId={businessId}
+                invoiceId={invoiceLinks.data?.[row.id] ?? null}
                 onPress={() => setSelected(calendarAppointmentToRow(row, branchId ?? ''))}
                 onQuickAction={(action) => setQuickAction({ appointment: row, action })}
               />
@@ -202,6 +213,8 @@ function TodayRow({
   isNext,
   canApprove,
   canEdit,
+  businessId,
+  invoiceId,
   onPress,
   onQuickAction,
 }: {
@@ -211,17 +224,24 @@ function TodayRow({
   isNext: boolean;
   canApprove: boolean;
   canEdit: boolean;
+  businessId: string | null;
+  invoiceId: string | null;
   onPress: () => void;
   onQuickAction: (action: 'approve' | 'complete' | 'no_show') => void;
 }) {
   const { t } = useTranslation();
   const { handlers, showHover, showFocusRing } = useInteractionState(false);
 
+  const hasActions =
+    (appointment.status === 'pending' && canApprove) ||
+    appointment.status === 'completed' ||
+    (appointment.status === 'confirmed' && canEdit);
+
+  // The card is a plain View: the tappable summary and the action buttons are
+  // SIBLINGS (a <button> inside a <button> is invalid HTML on web), and the
+  // actions get their own line so a narrow phone does not squeeze the name out.
   return (
-    <Pressable
-      {...handlers}
-      onPress={onPress}
-      accessibilityRole="button"
+    <View
       style={[
         styles.row,
         { borderLeftColor: theme.colors[STATUS_BORDER[appointment.status]] },
@@ -230,48 +250,61 @@ function TodayRow({
         showFocusRing ? focusRing() : null,
       ]}
     >
-      <View style={styles.rowTime}>
-        <Text variant="bodyStrong">
-          {formatTime(appointment.startsAt as UtcIso, timeZone, locale)}
-        </Text>
-        {isNext ? (
-          <Text variant="caption" color="primary">
-            {t('appointments.today')}
+      <Pressable {...handlers} onPress={onPress} accessibilityRole="button" style={styles.rowMain}>
+        <View style={styles.rowTime}>
+          <Text variant="bodyStrong">
+            {formatTime(appointment.startsAt as UtcIso, timeZone, locale)}
           </Text>
-        ) : null}
-      </View>
+          {isNext ? (
+            <Text variant="caption" color="primary">
+              {t('appointments.today')}
+            </Text>
+          ) : null}
+        </View>
 
-      <Avatar name={appointment.clientName} />
+        <Avatar name={appointment.clientName} />
 
-      <View style={styles.rowBody}>
-        <Text variant="bodyStrong" numberOfLines={1}>
-          {appointment.clientName}
-        </Text>
-        <Text variant="helper" color="textSecondary" numberOfLines={1}>
-          {appointment.serviceName}
-          {appointment.staffName ? ` · ${appointment.staffName}` : ''}
-        </Text>
-      </View>
+        <View style={styles.rowBody}>
+          <Text variant="bodyStrong" numberOfLines={1}>
+            {appointment.clientName}
+          </Text>
+          <Text variant="helper" color="textSecondary" numberOfLines={1}>
+            {appointment.serviceName}
+            {appointment.staffName ? ` · ${appointment.staffName}` : ''}
+          </Text>
+        </View>
 
-      <View style={styles.rowActions}>
         <StatusBadge status={appointment.status} />
-        {appointment.status === 'pending' && canApprove ? (
-          <Button size="sm" variant="secondary" onPress={() => onQuickAction('approve')}>
-            {t('appointments.actions.approve')}
-          </Button>
-        ) : null}
-        {appointment.status === 'confirmed' && canEdit ? (
-          <>
-            <Button size="sm" variant="secondary" onPress={() => onQuickAction('complete')}>
-              {t('appointments.actions.complete')}
+      </Pressable>
+
+      {hasActions ? (
+        <View style={styles.rowActions}>
+          {appointment.status === 'pending' && canApprove ? (
+            <Button size="sm" variant="secondary" onPress={() => onQuickAction('approve')}>
+              {t('appointments.actions.approve')}
             </Button>
-            <Button size="sm" variant="ghost" onPress={() => onQuickAction('no_show')}>
-              {t('appointments.actions.noShow')}
-            </Button>
-          </>
-        ) : null}
-      </View>
-    </Pressable>
+          ) : null}
+          {appointment.status === 'completed' ? (
+            <AppointmentInvoiceButton
+              businessId={businessId}
+              appointmentId={appointment.id}
+              invoiceId={invoiceId}
+              size="sm"
+            />
+          ) : null}
+          {appointment.status === 'confirmed' && canEdit ? (
+            <>
+              <Button size="sm" variant="secondary" onPress={() => onQuickAction('complete')}>
+                {t('appointments.actions.complete')}
+              </Button>
+              <Button size="sm" variant="ghost" onPress={() => onQuickAction('no_show')}>
+                {t('appointments.actions.noShow')}
+              </Button>
+            </>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -368,15 +401,19 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing[24],
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing[10],
+    gap: theme.spacing[8],
     padding: theme.spacing[12],
     borderLeftWidth: 3,
     borderRadius: theme.radius.lg,
     borderWidth: theme.borderWidth.hairline,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
+  },
+  rowMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing[10],
+    minHeight: theme.layout.minTouchTarget,
   },
   rowNext: {
     borderColor: theme.colors.primary,
@@ -395,5 +432,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: theme.spacing[6],
     justifyContent: 'flex-end',
+    paddingStart: 64 + theme.spacing[10],
   },
 });

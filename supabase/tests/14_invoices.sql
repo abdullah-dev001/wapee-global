@@ -63,6 +63,16 @@ begin
   return r;
 end $$;
 
+-- Same, but stays the postgres role (JWT claims only): for the INTERNAL
+-- report_basic_at, which has no API grant. Permission checks still read the claims.
+create or replace function pg_temp.as_pg(p_user text, p_sql text) returns jsonb language plpgsql as $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id(p_user));
+  execute p_sql into r;
+  return r;
+end $$;
+
 create or replace function pg_temp.as_anon(p_sql text) returns jsonb language plpgsql as $$
 declare r jsonb;
 begin
@@ -761,7 +771,7 @@ begin
   perform pg_temp.mk_issued(bz, b, 'USD', '2026-11-02 04:30:00+00', 1000, 200, 5);  -- Nov 1 23:30 EST   -> Nov, today(Nov 1)
   perform pg_temp.mk_issued(bz, b, 'USD', '2026-11-02 05:00:00+00', 1000, 200, 6);  -- Nov 2 00:00 EST   -> Nov, NOT today(Nov 1)
 
-  r := pg_temp.as_('ownerb', format($q$select public.get_basic_report(%L, null, '2026-11-15 12:00:00+00')$q$, bz));
+  r := pg_temp.as_pg('ownerb', format($q$select public.report_basic_at(%L, null, '2026-11-15 12:00:00+00')$q$, bz));
   perform pg_temp.chk('NY report ok', r->>'ok', 'true');
   w := r->'branches'->0;
   perform pg_temp.chk('NY month starts 04:00Z (EDT)', w->>'month_start', '2026-11-01T04:00:00+00:00');
@@ -771,12 +781,12 @@ begin
   perform pg_temp.chk('NY month net revenue 4000, tax 800', (r->'revenue'->'month'->0->>'net_revenue_minor') || '/' || (r->'revenue'->'month'->0->>'tax_minor'), '4000/800');
   perform pg_temp.chk('NY revenue is one USD row', jsonb_array_length(r->'revenue'->'month') || '/' || (r->'revenue'->'month'->0->>'currency'), '1/USD');
 
-  r := pg_temp.as_('ownerb', format($q$select public.get_basic_report(%L, null, '2026-11-01 15:00:00+00')$q$, bz));
+  r := pg_temp.as_pg('ownerb', format($q$select public.report_basic_at(%L, null, '2026-11-01 15:00:00+00')$q$, bz));
   w := r->'branches'->0;
   perform pg_temp.chk('NY today (25-hour day) starts 04:00Z', w->>'today_start', '2026-11-01T04:00:00+00:00');
   perform pg_temp.chk('NY today ends 05:00Z next day (25 hours)', w->>'today_end', '2026-11-02T05:00:00+00:00');
   perform pg_temp.chk('NY today: only invoices 2 and 5', r->'revenue'->'today'->0->>'invoice_count', '2');
-  perform pg_temp.chk('NY spring forward: March day is 23 hours', (select (p->>'today_end')::timestamptz - (p->>'today_start')::timestamptz from (select pg_temp.as_('ownerb', format($q$select public.get_basic_report(%L, null, '2026-03-08 15:00:00+00')$q$, bz))->'branches'->0 as p) z)::text, '23:00:00');
+  perform pg_temp.chk('NY spring forward: March day is 23 hours', (select (p->>'today_end')::timestamptz - (p->>'today_start')::timestamptz from (select pg_temp.as_pg('ownerb', format($q$select public.report_basic_at(%L, null, '2026-03-08 15:00:00+00')$q$, bz))->'branches'->0 as p) z)::text, '23:00:00');
 end $$;
 
 do $$
@@ -787,13 +797,13 @@ begin
   perform pg_temp.mk_issued(a, k, 'PKR', '2026-10-31 19:00:00+00', 5000, 0, 2);
   perform pg_temp.mk_issued(a, k, 'PKR', '2026-11-30 18:59:00+00', 5000, 0, 3);
   perform pg_temp.mk_issued(a, k, 'PKR', '2026-11-30 19:00:00+00', 5000, 0, 4);
-  r := pg_temp.as_('owner', format($q$select public.get_basic_report(%L, %L, '2026-11-15 12:00:00+00')$q$, a, k));
+  r := pg_temp.as_pg('owner', format($q$select public.report_basic_at(%L, %L, '2026-11-15 12:00:00+00')$q$, a, k));
   w := r->'branches'->0;
   perform pg_temp.chk('Karachi month starts 19:00Z', w->>'month_start', '2026-10-31T19:00:00+00:00');
   perform pg_temp.chk('Karachi month ends 19:00Z (exactly 30 days, no DST)', w->>'month_end', '2026-11-30T19:00:00+00:00');
   perform pg_temp.chk('Karachi month: only the two inside invoices', r->'revenue'->'month'->0->>'invoice_count', '2');
   perform pg_temp.chk('Karachi month PKR 10000', (r->'revenue'->'month'->0->>'currency') || '/' || (r->'revenue'->'month'->0->>'invoiced_minor'), 'PKR/10000');
-  r := pg_temp.as_('owner', format($q$select public.get_basic_report(%L, %L, '2026-11-15 12:00:00+00')$q$, a, k));
+  r := pg_temp.as_pg('owner', format($q$select public.report_basic_at(%L, %L, '2026-11-15 12:00:00+00')$q$, a, k));
   perform pg_temp.chk('Karachi today (Nov 15) is 24 hours', (extract(epoch from (r->'branches'->0->>'today_end')::timestamptz - (r->'branches'->0->>'today_start')::timestamptz) / 3600)::int, 24);
 end $$;
 
@@ -812,7 +822,7 @@ begin
                ('2026-11-13 09:00+00', 'cancelled'), ('2026-11-30 23:59+00', 'completed'),
                ('2026-12-01 00:00+00', 'completed'), ('2026-10-31 23:59+00', 'completed')) s(t, st);
 
-  r := pg_temp.as_('owner', format($q$select public.get_basic_report(%L, null, '2026-11-15 12:00:00+00')$q$, a));
+  r := pg_temp.as_pg('owner', format($q$select public.report_basic_at(%L, null, '2026-11-15 12:00:00+00')$q$, a));
   perform pg_temp.chk('all-branch revenue is one row PER currency (never summed)', (select string_agg(x->>'currency', ',' order by x->>'currency') from jsonb_array_elements(r->'revenue'->'month') x), 'GBP,PKR');
   perform pg_temp.chk('GBP month: 2 invoices, 3600 invoiced, 3000 net, 600 tax', (select (x->>'invoice_count') || '/' || (x->>'invoiced_minor') || '/' || (x->>'net_revenue_minor') || '/' || (x->>'tax_minor') from jsonb_array_elements(r->'revenue'->'month') x where x->>'currency' = 'GBP'), '2/3600/3000/600');
   perform pg_temp.chk('PKR untouched by the GBP branch', (select x->>'invoiced_minor' from jsonb_array_elements(r->'revenue'->'month') x where x->>'currency' = 'PKR'), '10000');
@@ -821,7 +831,7 @@ begin
   perform pg_temp.chk('today bucket empty for a day with nothing', (r->'appointments'->'today'->>'total') || '/' || jsonb_array_length(r->'revenue'->'today'), '0/0');
 
   -- permissions
-  r := pg_temp.as_('manager', format($q$select public.get_basic_report(%L, null, '2026-11-15 12:00:00+00')$q$, a));
+  r := pg_temp.as_pg('manager', format($q$select public.report_basic_at(%L, null, '2026-11-15 12:00:00+00')$q$, a));
   perform pg_temp.chk('manager sees their branch only (GBP only, no PKR)', (select string_agg(x->>'currency', ',') from jsonb_array_elements(r->'revenue'->'month') x), 'GBP');
   perform pg_temp.chk('manager forbidden on a branch they do not hold', pg_temp.as_('manager', format($q$select public.get_basic_report(%L, %L)$q$, a, pg_temp.id('branchk')))->>'code', 'forbidden');
   perform pg_temp.chk('receptionist has no reports', pg_temp.as_('recep', format($q$select public.get_basic_report(%L)$q$, a))->>'code', 'forbidden');
@@ -836,7 +846,7 @@ begin
     insert into public.role_permissions (role_id, permission, scope) values (v_role, 'reports.view_basic', 'branch');
     select id into v_member from public.business_members where business_id = a and user_id = pg_temp.id('staffa');
     update public.member_role_assignments set role_id = v_role where member_id = v_member;
-    r := pg_temp.as_('staffa', format($q$select public.get_basic_report(%L, null, '2026-11-15 12:00:00+00')$q$, a));
+    r := pg_temp.as_pg('staffa', format($q$select public.report_basic_at(%L, null, '2026-11-15 12:00:00+00')$q$, a));
     perform pg_temp.chk('view_basic only: counts present', r->'appointments'->'month'->>'completed', '3');
     perform pg_temp.chk('view_basic only: revenue withheld', r->'revenue' is null or r->>'revenue' is null, true);
     perform pg_temp.chk('view_basic only: top-service revenue withheld', r->'top_services'->'month'->0->>'revenue' is null, true);
@@ -854,14 +864,14 @@ begin
     'discard_invoice_draft(uuid)', 'issue_invoice(uuid)', 'add_payment(uuid,text,bigint,timestamptz,text)',
     'reverse_payment(uuid,text,bigint)', 'create_credit_note(uuid,text,bigint)',
     'list_invoices(uuid,uuid,public.invoice_status,text,uuid,date,date,text,integer,timestamptz,uuid)',
-    'get_invoice_print_data(uuid)', 'get_basic_report(uuid,uuid,timestamptz)'] loop
+    'get_invoice_print_data(uuid)', 'get_basic_report(uuid,uuid)'] loop
     perform pg_temp.chk('authenticated may execute ' || f, has_function_privilege('authenticated', 'public.' || f, 'execute'), true);
     perform pg_temp.chk('anon may NOT execute ' || f, has_function_privilege('anon', 'public.' || f, 'execute'), false);
   end loop;
   foreach f in array array[
     'invoice_access(uuid,uuid,text)', 'normalise_invoice_items(uuid,uuid,jsonb,boolean)', 'invoice_totals(uuid,integer)',
     'insert_invoice_items(uuid,uuid,uuid,jsonb)', 'invoice_money(uuid)', 'report_windows(uuid,uuid,timestamptz)',
-    'format_document_number(text,bigint,boolean)'] loop
+    'format_document_number(text,bigint,boolean)', 'report_basic_at(uuid,uuid,timestamptz)'] loop
     perform pg_temp.chk('internal helper not callable by authenticated: ' || f, has_function_privilege('authenticated', 'public.' || f, 'execute'), false);
     perform pg_temp.chk('internal helper not callable by anon: ' || f, has_function_privilege('anon', 'public.' || f, 'execute'), false);
   end loop;

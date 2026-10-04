@@ -197,3 +197,4 @@ Namespace `common`, group `appointments.*`.
   `create_booking`/`reschedule_booking` (public path), which already assert
   the stored column in `08_create_booking.sql`/`11_guest_manage_link.sql`.
   35 new unit tests (241 total).
+- 2026-10-06 (Phase 5B): the detail drawer shows `AppointmentInvoiceButton` for COMPLETED appointments (link read via `useAppointmentInvoices`, since the calendar RPC has no `invoice_id`). See [invoices.md](invoices.md).

@@ -12,6 +12,7 @@ export type LucideIcon = typeof Icon;
 
 export const CalendarDays = Icon;
 export const LayoutDashboard = Icon;
+export const BarChart3 = Icon;
 export const Package = Icon;
 export const Receipt = Icon;
 export const Scissors = Icon;

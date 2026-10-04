@@ -49,7 +49,7 @@ Phase 4 placeholder.
 ## Files
 | Path | Purpose |
 |---|---|
-| supabase/migrations/20261005120000_list_appointments_client_filter.sql | `list_appointments` gains `p_client_id` (new, additive) — the visit history's server-paginated query. Applied as create-new-overload then drop-old-overload (two separate connector calls; the connector declined a combined drop+create as destructive SQL in one call) — see the migration's own header comment for the exact mechanics. |
+| supabase/migrations/20261004152214_list_appointments_client_filter.sql | `list_appointments` gains `p_client_id` (new, additive) — the visit history's server-paginated query. Applied as create-new-overload then drop-old-overload (two separate connector calls; the connector declined a combined drop+create as destructive SQL in one call) — see the migration's own header comment for the exact mechanics. |
 | supabase/tests/13_clients_dashboard.sql | 15 assertions: insert/update RLS gating, phone uniqueness (same + different business), archive/unarchive, Own-scope "only clients I have an appointment with" (proven against the new query path), another business, anon (no table grant), `list_appointments(p_client_id)` spanning branches |
 | supabase/tests/12_dashboard_appointments.sql | +2 assertions for `p_client_id`; re-run clean (150/150) after the migration |
 | app/(app)/clients/index.tsx, [id].tsx | list route + profile route (nested stack under the `clients` tab — `clients.tsx` moved to `clients/index.tsx`) |

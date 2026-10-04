@@ -868,5 +868,277 @@
       "notesTooLong": "Notes are too long.",
       "duplicatePhone": "This phone number already belongs to another client."
     }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "newInvoice": "New invoice",
+    "searchPlaceholder": "Search by number or client",
+    "noNumber": "Draft",
+    "fromAppointment": "From appointment",
+    "filters": {
+      "branch": "Branch",
+      "allBranches": "All branches",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "payment": "Payment",
+      "allPayments": "Any payment state",
+      "from": "From",
+      "to": "To",
+      "client": "Client",
+      "clearClient": "Clear client filter",
+      "showingClient": "Showing {{name}}",
+      "clearAll": "Clear filters",
+      "statusDraft": "Drafts",
+      "statusIssued": "Issued",
+      "title": "Filters"
+    },
+    "state": {
+      "draft": "Draft",
+      "pending": "Unpaid",
+      "partial": "Part paid",
+      "paid": "Paid",
+      "credited": "Credited"
+    },
+    "columns": {
+      "number": "Number",
+      "client": "Client",
+      "date": "Date",
+      "total": "Total",
+      "balance": "Balance",
+      "state": "State",
+      "branch": "Branch"
+    },
+    "empty": {
+      "title": "No invoices yet",
+      "description": "Invoices you create will appear here."
+    },
+    "emptySearch": {
+      "title": "No invoices match",
+      "description": "Try a different search, date range or status."
+    },
+    "error": {
+      "title": "Couldn't load invoices"
+    },
+    "walkInClient": "No client",
+    "detail": {
+      "title": "Invoice",
+      "draftTitle": "Draft invoice",
+      "client": "Client",
+      "noClient": "No client",
+      "branch": "Branch",
+      "issuedOn": "Issued",
+      "createdOn": "Created",
+      "items": "Items",
+      "discountReason": "Discount: {{reason}}",
+      "quantityPrice": "{{quantity}} × {{price}}",
+      "subtotal": "Subtotal",
+      "discount": "Discounts",
+      "net": "After discounts",
+      "tax": "Tax ({{rate}}%)",
+      "total": "Total",
+      "paid": "Paid",
+      "credited": "Credit notes",
+      "balance": "Balance due",
+      "refundDue": "Refund due",
+      "payments": "Payments",
+      "noPayments": "No payments yet",
+      "reversalOf": "Reversal",
+      "creditNotes": "Credit notes",
+      "noCreditNotes": "No credit notes",
+      "notes": "Notes",
+      "taxNumber": "Tax number",
+      "viewClient": "Show this client's invoices",
+      "draftNotice": "This is a draft. It has no number and is not counted in reports until it is issued.",
+      "loadError": "Couldn't load this invoice",
+      "notFound": "This invoice could not be found."
+    },
+    "actions": {
+      "edit": "Edit draft",
+      "discard": "Discard draft",
+      "issue": "Issue invoice",
+      "addPayment": "Add payment",
+      "creditNote": "Credit note",
+      "print": "Print / share",
+      "reverse": "Reverse",
+      "createInvoice": "Create invoice",
+      "viewInvoice": "View invoice",
+      "back": "Back to invoice"
+    },
+    "confirm": {
+      "issueTitle": "Issue this invoice?",
+      "issueMessage": "It gets its number now and can no longer be edited. Fix mistakes later with a credit note.",
+      "issueConfirm": "Issue",
+      "discardTitle": "Discard this draft?",
+      "discardMessage": "The draft is removed. If it came from an appointment, the appointment can be invoiced again.",
+      "discardConfirm": "Discard"
+    },
+    "form": {
+      "newTitle": "New invoice",
+      "editTitle": "Edit draft",
+      "branch": "Branch",
+      "client": "Client (optional)",
+      "clientSearch": "Search by name or phone",
+      "noClient": "No client",
+      "changeClient": "Change client",
+      "lines": "Items",
+      "addService": "Add service",
+      "addFreeLine": "Add free-text line",
+      "description": "Description",
+      "service": "Service",
+      "quantity": "Quantity",
+      "unitPrice": "Unit price",
+      "discount": "Discount",
+      "discountReason": "Discount reason",
+      "notes": "Notes",
+      "currencyFixed": "Prices are in {{currency}} (the branch currency).",
+      "taxFromBranch": "Tax {{rate}}% (set on the branch). Prices are before tax.",
+      "removeLine": "Remove line",
+      "preview": "Preview",
+      "previewHint": "The server calculates the final amounts when you save.",
+      "save": "Save draft",
+      "create": "Create draft",
+      "noLines": "Add at least one item to issue this invoice.",
+      "pickService": "Choose a service",
+      "freeLine": "Free-text line",
+      "saved": "Draft saved",
+      "created": "Draft created",
+      "discountNeedsPermission": "You don't have permission to give discounts."
+    },
+    "payment": {
+      "title": "Add payment",
+      "method": "Method",
+      "amount": "Amount",
+      "date": "Date paid",
+      "note": "Note (optional)",
+      "submit": "Add payment",
+      "balance": "Balance due: {{amount}}",
+      "payRest": "Pay the full balance",
+      "added": "Payment added"
+    },
+    "method": {
+      "cash": "Cash",
+      "card": "Card",
+      "bank_transfer": "Bank transfer"
+    },
+    "reverse": {
+      "title": "Reverse payment",
+      "message": "Reversal of {{amount}} paid by {{method}}.",
+      "amount": "Amount to reverse",
+      "reason": "Reason",
+      "submit": "Reverse payment",
+      "reversible": "Up to {{amount}} can still be reversed.",
+      "done": "Payment reversed"
+    },
+    "credit": {
+      "title": "Create credit note",
+      "hint": "The credit is on the amount before tax. Tax is added at the invoice's rate.",
+      "net": "Amount before tax",
+      "full": "Credit the full remaining amount",
+      "reason": "Reason",
+      "submit": "Create credit note",
+      "creditable": "Up to {{amount}} can still be credited (before tax).",
+      "done": "Credit note created"
+    },
+    "toast": {
+      "issued": "Invoice {{number}} issued",
+      "discarded": "Draft discarded",
+      "draftFromAppointment": "Draft invoice created"
+    },
+    "print": {
+      "title": "Invoice",
+      "creditNoteTitle": "Credit notes",
+      "billTo": "Bill to",
+      "from": "From",
+      "taxNumber": "Tax no. {{number}}",
+      "issuedOn": "Issued {{date}}",
+      "draftWatermark": "DRAFT",
+      "print": "Print",
+      "share": "Share",
+      "back": "Back",
+      "paymentsTitle": "Payments received",
+      "thanks": "Thank you for your business.",
+      "loadError": "Couldn't load this invoice",
+      "shareTitle": "Invoice {{number}}",
+      "shareLine": "{{description}} × {{quantity}}: {{amount}}",
+      "qty": "Qty"
+    },
+    "errors": {
+      "forbidden": "You don't have permission to do that.",
+      "not_found": "That invoice could not be found.",
+      "invalid_branch": "Choose a branch first.",
+      "branch_mismatch": "That appointment belongs to a different branch.",
+      "not_completed": "Only a completed appointment can be invoiced.",
+      "already_invoiced": "This appointment already has an invoice.",
+      "client_mismatch": "The client of an appointment's invoice can't be changed.",
+      "unknown_client": "That client could not be found.",
+      "invalid_items": "Check the items and try again.",
+      "too_many_items": "An invoice can have at most 100 lines.",
+      "unknown_service": "That service could not be found.",
+      "invalid_description": "Every line needs a description (up to 200 characters).",
+      "invalid_quantity": "Quantity must be a whole number from 1 to 9999.",
+      "invalid_price": "Check the price on each line.",
+      "invalid_discount": "Check the discount amount.",
+      "discount_forbidden": "You don't have permission to give discounts.",
+      "discount_reason_required": "A discount needs a reason (at least 3 characters).",
+      "discount_too_large": "A discount can't be more than the line total.",
+      "not_draft": "This invoice was already issued and can no longer be edited.",
+      "not_issued": "This invoice has not been issued yet.",
+      "no_items": "Add at least one item before issuing.",
+      "zero_total": "A free invoice (total 0) can't be issued.",
+      "currency_changed": "The branch currency changed. Contact support.",
+      "invalid_method": "Choose a payment method.",
+      "invalid_amount": "That amount isn't allowed. Check the limit shown.",
+      "invalid_paid_at": "The payment date can't be before the invoice was issued or in the future.",
+      "fully_credited": "This invoice is already fully credited.",
+      "overpayment": "That is more than the balance due.",
+      "not_a_payment": "Only a payment can be reversed.",
+      "reason_required": "A reason is required (at least 3 characters).",
+      "invalid_filter": "That filter isn't valid.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "loadMore": "Load more"
+  },
+  "reports": {
+    "title": "Reports",
+    "tabs": {
+      "today": "Today",
+      "month": "This month"
+    },
+    "noAccess": "You don't have access to reports.",
+    "error": {
+      "title": "Couldn't load reports"
+    },
+    "revenue": {
+      "title": "Revenue",
+      "invoiceCount_one": "{{count}} invoice",
+      "invoiceCount_other": "{{count}} invoices",
+      "net": "Revenue (before tax)",
+      "invoiced": "Invoiced (incl. tax)",
+      "tax": "Tax",
+      "credited": "Credit notes",
+      "collected": "Collected",
+      "currencyNote": "Each currency is shown separately. Amounts in different currencies are never added together.",
+      "empty": "No invoices issued in this period.",
+      "hidden": "Revenue figures need extra permission."
+    },
+    "appointments": {
+      "title": "Appointments",
+      "total": "Total",
+      "empty": "No appointments in this period."
+    },
+    "topServices": {
+      "title": "Top services",
+      "completed_one": "{{count}} completed",
+      "completed_other": "{{count}} completed",
+      "empty": "No completed appointments in this period."
+    },
+    "branches": {
+      "title": "Branches",
+      "window": "{{name}} · {{timezone}}"
+    },
+    "summary": {
+      "todayFor": "Today in each branch's timezone",
+      "monthFor": "This calendar month in each branch's timezone"
+    }
   }
 }

@@ -15,6 +15,9 @@ import {
   useMarkNoShow,
   useReopenAppointment,
 } from '../api/useAppointments';
+import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
+import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
+
 import { useIsOwnerOrManager } from '../api/useIsOwnerOrManager';
 import { actionsForStatus, type AppointmentAction } from '../statusActions';
 import { AppointmentRpcError, type AppointmentErrorCode, type AppointmentRow } from '../types';
@@ -45,6 +48,11 @@ export function AppointmentDetailDrawer({
   // internally to gate the action itself, so the button can never show when
   // the RPC would refuse, or hide when it would allow.
   const isOwnerOrManager = useIsOwnerOrManager(businessId, appointment?.branchId ?? null);
+
+  const invoices = useAppointmentInvoices(businessId, appointment ? [appointment.id] : []);
+  const linkedInvoiceId = appointment
+    ? (invoices.data?.[appointment.id] ?? appointment.invoiceId)
+    : null;
 
   const approve = useApproveAppointment(businessId);
   const cancel = useCancelAppointment(businessId);
@@ -131,6 +139,15 @@ export function AppointmentDetailDrawer({
               <Text variant="helper" color="error">
                 {t(`appointments.errors.${actionError}`)}
               </Text>
+            ) : null}
+
+            {appointment.status === 'completed' ? (
+              <AppointmentInvoiceButton
+                businessId={businessId}
+                appointmentId={appointment.id}
+                invoiceId={linkedInvoiceId}
+                onNavigate={onClose}
+              />
             ) : null}
 
             {available.length > 0 ? (

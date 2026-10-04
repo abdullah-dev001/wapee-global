@@ -1,15 +1,10 @@
-import { Receipt } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
-
-import { ComingSoonScreen } from '@/components/shared/ComingSoonScreen';
-import { navLabelKey } from '@/config/navigation';
 import { RouteGuard } from '@/features/auth';
+import { InvoicesScreen } from '@/features/invoices/components/InvoicesScreen';
 
-export default function InvoicesScreen() {
-  const { t } = useTranslation();
+export default function InvoicesRoute() {
   return (
     <RouteGuard>
-      <ComingSoonScreen title={t(navLabelKey('invoices'))} icon={Receipt} phase={5} />
+      <InvoicesScreen />
     </RouteGuard>
   );
 }

@@ -2383,7 +2383,7 @@ export type Database = {
         Returns: string
       }
       get_basic_report: {
-        Args: { p_as_of?: string; p_branch_id?: string; p_business_id: string }
+        Args: { p_branch_id?: string; p_business_id: string }
         Returns: Json
       }
       get_booking: { Args: { p_token: string }; Returns: Json }
@@ -2584,6 +2584,10 @@ export type Database = {
       replace_staff_working_hours: {
         Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
         Returns: number
+      }
+      report_basic_at: {
+        Args: { p_as_of?: string; p_branch_id?: string; p_business_id: string }
+        Returns: Json
       }
       report_windows: {
         Args: { p_as_of: string; p_branch_id: string; p_business_id: string }

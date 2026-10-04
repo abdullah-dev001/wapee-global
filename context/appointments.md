@@ -87,7 +87,7 @@ untouched and unrelated; this is the staff-facing path, callable by
 | supabase/migrations/20261004044911_phase4_reopen_and_own_staff_fix.sql | `reopen_appointment`, `my_staff_profile_id()`, the reopen transitions |
 | supabase/migrations/20261004045723_fix_dashboard_resource_id_not_stored.sql | `appointment_collision_result` composite type + `check_appointment_collision_v2` (the REAL bug fix — see Changelog) |
 | supabase/migrations/20261004043628, 20261004045004, 20261004045754, 20261004045817, 20261004045901 | Historical no-op placeholders: these timestamps are real entries in the remote migration-history table (from intermediate `apply_migration` calls this session), folded into the FINAL function bodies in the files above rather than replayed as separate changes. Local files are kept at current content; see each placeholder's own comment. |
-| supabase/migrations/20261005110000_is_owner_or_manager.sql | `is_owner_or_manager(business_id, branch_id?)` (new) + `reopen_appointment` refactored to call it instead of its own inline query (Phase 4 part B1 fix 1 — see Changelog) |
+| supabase/migrations/20261004143401_is_owner_or_manager.sql | `is_owner_or_manager(business_id, branch_id?)` (new) + `reopen_appointment` refactored to call it instead of its own inline query (Phase 4 part B1 fix 1 — see Changelog) |
 | supabase/tests/12_dashboard_appointments.sql | 148 assertions |
 
 No app code in this file's scope — see [appointments-ui.md](appointments-ui.md) for the Calendar screen and drawers built on top of this RPC surface.

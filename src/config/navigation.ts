@@ -2,7 +2,7 @@ import {
   CalendarClock,
   CalendarDays,
   LayoutDashboard,
-  Package,
+  BarChart3,
   Receipt,
   Scissors,
   Settings,
@@ -105,7 +105,7 @@ export const navItems: readonly NavItem[] = [
     phase: 2,
   },
   { id: 'invoices', route: '/invoices', icon: Receipt, permission: 'invoices.view', phase: 5 },
-  { id: 'reports', route: '/reports', icon: Package, permission: 'reports.view_basic', phase: 5 },
+  { id: 'reports', route: '/reports', icon: BarChart3, permission: 'reports.view_basic', phase: 5 },
   { id: 'reviews', route: '/reviews', icon: Star, permission: 'reviews.view', phase: 7 },
   { id: 'settings', route: '/settings', icon: Settings, permission: 'settings.business', phase: 1 },
 ] as const;

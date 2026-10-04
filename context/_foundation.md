@@ -234,6 +234,8 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 
 ## Changelog
 
+- 2026-10-06 (Phase 5B): `app/+html.tsx` gained a print stylesheet (`@media print` flattens the fixed-height app shell; `[data-no-print]` hides toolbars). New standalone route `app/invoice-print/[id].tsx` (outside `(app)`). Reports nav icon is now `BarChart3`. No new shared UI primitive; invoice composites live in `src/features/invoices/`.
+
 - 2026-10-05 (UI polish): **`PageContainer` no longer stretches by default** —
   the root cause of the dead vertical gap on Calendar, Clients and Today (two
   `flex: 1` siblings splitting the height). New opt-in `fill` prop; new
