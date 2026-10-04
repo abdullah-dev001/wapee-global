@@ -10,3 +10,5 @@ export { ServiceList, type ServiceListProps } from './ServiceList';
 export { StaffChoice, type StaffChoiceProps } from './StaffChoice';
 export { SlotGrid, type SlotGridProps } from './SlotGrid';
 export { BookingFormPreview, type BookingFormPreviewProps } from './BookingFormPreview';
+export { HoneypotField, type HoneypotFieldProps } from './HoneypotField';
+export { BookingFlow, type BookingFlowProps } from './BookingFlow';

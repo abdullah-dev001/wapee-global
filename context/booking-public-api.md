@@ -7,23 +7,43 @@ Status: deployed, rate-limited, verified end-to-end · Phase: 3 · Last updated:
 The only path from the internet to the booking data. `anon` has no table
 privileges and no policy on any booking table, and the booking RPCs are granted
 to `service_role` alone, so the public page cannot touch the database directly —
-these two functions are it.
+these functions are it.
 
 Verified end-to-end against the live project as an anonymous caller (see
-"Verified" below). The booking **page** itself is step 5's UI and is not built.
+"Verified" below). The public booking **page** (step 5) is built and reads this
+API; see `booking-public-page.md`. The guest manage **page** (step 6) is not
+built yet.
 
 ## Edge Functions (the public surface)
 
-Both are deployed with **`verify_jwt = false`**, pinned in `supabase/config.toml`
+All are deployed with **`verify_jwt = false`**, pinned in `supabase/config.toml`
 so a later deploy cannot silently turn verification on and break the page. The
 customer has no account.
 
 | Endpoint | JWT | Takes | Returns |
 |---|---|---|---|
+| `POST /functions/v1/get_booking_page` | no | slug, optional branch_id | branch display info, settings, bookable services, staff, service↔staff pairs, published form fields |
 | `POST /functions/v1/get_slots` | no | slug, service_id, from/to local dates, optional branch_id and staff_id | timezone, branch name, currency, settings, slots, **and a `start_token`** |
 | `POST /functions/v1/create_booking` | no | slug, service_id, starts_at, client {...}, answers[], **start_token**, honeypot | the confirmation fields **plus the raw manage token, once** |
 | `POST /functions/v1/manage_booking` | no | `action` = get / cancel / reschedule, **token**, (+reason, or starts_at & staff_id) | the manage-page view, or the new time |
 | `POST /functions/v1/resend_manage_link` | **YES** | appointment_id | a NEW raw manage token, once; the old one is revoked |
+
+**`get_booking_page`** (added 2026-10-04) is the bootstrap call the public page
+makes before it knows which service the customer will pick. Backed by a new
+read-only DB function, `get_booking_page_catalogue(p_branch_id)` —
+`SECURITY DEFINER`, `STABLE`, **`service_role` only**, same posture as
+`get_free_slots`. It reuses `build_form_fields_snapshot()` so the fields it
+returns are exactly the snapshot shape `create_booking` will validate answers
+against. A branch that fails its own `branch_is_bookable()` check returns the
+same `not_bookable` as an unresolvable slug — "exists but not set up" must stay
+indistinguishable from "does not exist" to a stranger, same rule `resolveBranch`
+already applies to trial/active state.
+
+`resolveBranch()`'s branch select was extended to also read
+`require_client_email` and `confirmation` (previously only `get_slots` used
+this helper and neither value was needed there); `get_slots` and
+`create_booking` were redeployed unchanged apart from picking up this shared
+file. `ResolvedBranch.settings` now carries both fields.
 
 `manage_booking` is one function for three actions because all three share the
 token handling, the rate-limit keying, the "every token failure looks identical"
@@ -65,8 +85,9 @@ instance is ephemeral and horizontally scaled.
 
 | Endpoint | Per IP | Per phone | Per business |
 |---|---|---|---|
+| `get_booking_page` | 60 / min | — | — |
 | `get_slots` | 60 / min | — | — |
-| `create_booking` | 10 / hour | **5 / day** | **30 / hour** and **200 / day** |
+| `create_booking` | 10 / hour | **5 / day** | **30 / hour** and **120 / day** |
 | `get_booking` | 60 / hour | — | — |
 | `cancel_booking` | 20 / hour | — | — |
 | `reschedule_booking` | 20 / hour | — | — |
@@ -140,6 +161,7 @@ header is a property of the deployment, not of HTTP.
 
 | Path | Purpose |
 |---|---|
+| supabase/functions/get_booking_page/index.ts | bootstrap endpoint: branch info, settings, services, staff, form fields |
 | supabase/functions/get_slots/index.ts | slots endpoint |
 | supabase/functions/create_booking/index.ts | booking endpoint; generates the manage token |
 | supabase/functions/_shared/supabase.ts | service-role client + `resolveBranch(slug)` |
@@ -156,6 +178,7 @@ header is a property of the deployment, not of HTTP.
 ## Deploy
 
 ```sh
+supabase functions deploy get_booking_page --no-verify-jwt
 supabase functions deploy get_slots --no-verify-jwt
 supabase functions deploy create_booking --no-verify-jwt
 supabase functions deploy manage_booking --no-verify-jwt
@@ -285,9 +308,10 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   is recorded in `_handoff.md` as a pre-launch item.
 - **CORS still defaults to placeholder domains** because no domain is bought.
   `PUBLIC_SITE_ORIGINS` must be set before a real site calls these.
-- **The honeypot's HTML requirements are not implemented** — there is no UI yet.
-  Whoever builds the form must hide `company_website` with
-  `position:absolute;left:-9999px`, not `type="hidden"`/`display:none`.
+- ~~The honeypot's HTML requirements are not implemented~~ — **done**:
+  `HoneypotField` (`src/features/booking-public/components/HoneypotField.tsx`)
+  hides `company_website` with `position:absolute;left:-9999px`, not
+  `type="hidden"`/`display:none`, plus `tabIndex={-1}` and `autoComplete="off"`.
 - **Nothing sends the manage link.** Email/SMS is Phase 6; the token only reaches
   the confirmation screen and the dashboard. Seams are marked in both functions.
 - **The bot protection stops naive automation, not a determined attacker.** One
@@ -303,6 +327,12 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
 
 ## Changelog
 
+- 2026-10-04: **`get_booking_page`** deployed (new endpoint + new DB function
+  `get_booking_page_catalogue`, service_role only) so the public page has
+  somewhere to bootstrap from. `resolveBranch()` extended to also return
+  `require_client_email` and `confirmation`; `get_slots` and `create_booking`
+  redeployed unchanged to pick up the shared-file update. Rate-limit rule added
+  (60/min per IP, same as `get_slots`).
 - 2026-10-04: `scripts/smoke-public.mjs` (40 checks against the deployed
   endpoints); CORS dev origins widened to the ports Expo actually uses;
   per-business daily cap 200 → 120.

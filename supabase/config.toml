@@ -402,6 +402,9 @@ deno_version = 2
 #
 # Pinned here so a later `supabase functions deploy` without the flag cannot
 # silently turn JWT verification on and break the public page.
+[functions.get_booking_page]
+verify_jwt = false
+
 [functions.get_slots]
 verify_jwt = false
 

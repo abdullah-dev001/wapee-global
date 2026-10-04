@@ -1,6 +1,6 @@
 import { X } from 'lucide-react-native';
-import { type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Modal, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,6 +32,16 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
   const { isMobile } = useBreakpoint();
   const insets = useSafeAreaInsets();
   useOverlayDismiss(open, onClose);
+
+  // KeyboardAwareScrollView's bottomOffset is how far ABOVE the keyboard it
+  // keeps the focused input clear of — which must be at least the pinned
+  // footer's own height, or the footer (which rises via a transform, not by
+  // shrinking the scroll area) can still cover the input. Measured instead of
+  // guessed, since the footer's content (one button vs. two, wrapped or not)
+  // varies per caller.
+  const [footerHeight, setFooterHeight] = useState(0);
+  const onFooterLayout = (event: LayoutChangeEvent) =>
+    setFooterHeight(event.nativeEvent.layout.height);
 
   return (
     <Modal
@@ -72,7 +82,7 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
             keyboardShouldPersistTaps="handled"
-            bottomOffset={theme.spacing[16]}
+            bottomOffset={theme.spacing[16] + footerHeight}
           >
             {children}
           </KeyboardAwareScrollView>
@@ -81,7 +91,10 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
             // Rises with the keyboard, same mechanism as Screen's sticky footer,
             // so a focused input near the bottom of the drawer is never covered.
             <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-              <View style={[styles.footer, { paddingBottom: theme.spacing[16] + insets.bottom }]}>
+              <View
+                onLayout={onFooterLayout}
+                style={[styles.footer, { paddingBottom: theme.spacing[16] + insets.bottom }]}
+              >
                 {footer}
               </View>
             </KeyboardStickyView>

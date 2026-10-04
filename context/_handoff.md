@@ -1,5 +1,5 @@
 # Handoff
-Last updated: 2026-10-04 · Branch: `dev` · All work is pushed.
+Last updated: 2026-10-04 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
@@ -14,23 +14,36 @@ Last updated: 2026-10-04 · Branch: `dev` · All work is pushed.
   (SegmentedControl, Collapsible, NumberStepper) and the reusable public booking
   components step 5 will use. **`npm run smoke:public`** smoke-tests the deployed
   endpoints (40 checks). 54 new unit tests; **174 unit tests, 430 SQL assertions**.
-- **Phase 3 backend is COMPLETE, DEPLOYED and VERIFIED over HTTP.** Steps 6 and 7 are done: rate limiting + bot protection are live, and the guest manage link works. **Four deployed Edge Functions** (`get_slots`, `create_booking`, `manage_booking` — all public; `resend_manage_link` — JWT required). **421 SQL assertions passing**, plus a full anonymous-caller curl verification recorded in `context/booking-public-api.md`.
+- **Phase 3 backend is COMPLETE, DEPLOYED and VERIFIED over HTTP.** Steps 6 and 7 are done: rate limiting + bot protection are live, and the guest manage link works. **Five deployed Edge Functions** (`get_booking_page`, `get_slots`, `create_booking`, `manage_booking` — all public; `resend_manage_link` — JWT required). **421 SQL assertions passing**, plus a full anonymous-caller curl verification recorded in `context/booking-public-api.md`.
 - Earlier Phase 3 scope (unchanged): booking_settings per branch, custom fields + immutable form versions, clients/appointments/answers/manage tokens with 2 exclusion constraints, the DST-correct slot engine, **`create_booking` (one transaction, service_role only)**, `save_booking_settings` with the people_per_slot guard, `branch_is_bookable()`, and **two deployed Edge Functions** (`get_slots`, `create_booking`) verified end-to-end as an anonymous caller. **287 SQL assertions passing.** See `context/booking-engine.md`, `context/booking-public-api.md`, `context/booking-settings.md`.
+- **Phase 3 step 5 (public booking page) is DONE.** `(public)/[slug]` — service →
+  staff → slot → form → confirmation — built on the existing presentational
+  components and backed by a new `get_booking_page` endpoint (added this
+  session because nothing could bootstrap the page before a service was
+  chosen). New: `PhoneInput` shared composite (E.164), the step state machine
+  and error-action mapping (pure, tested), the dynamic per-service zod form
+  schema, and the manage-link confirmation screen (token in the URL
+  **fragment**, never the query string). 30 new unit tests (**197 total**). An
+  Android code review found and fixed a real bug: back navigation did nothing
+  on any step (see Traps). See `context/booking-public-page.md`.
+  **Not run in a browser** — no browser tool was available this session; open
+  `npm run web` → `/nova-hair-studio` yourself to click through it (test data
+  is seeded there: one service, one staff member, Mon–Fri 9–5 hours).
+  Step 6 (the guest manage page) is next and still not built.
+- **The Drawer keyboard gap (reported by the user) is fixed**: `Drawer`'s body
+  is now a `KeyboardAwareScrollView` and its footer a `KeyboardStickyView`,
+  same mechanism as `Screen`, covering ServiceForm/StaffForm/the schedule
+  lists/CustomFieldEditor in one place. **The "settings gear overlapping the
+  Clients title" report could not be reproduced in code** (no gear icon exists
+  on that screen in the current codebase) — skipped this session pending a
+  screenshot or repro steps from the user.
 
 ## Next, in order
-1. **Phase 3 step 5 — the public booking page**, the only Phase 3 work left:
-   `(public)/[slug]` (service → staff → slot → form → confirmation) and the guest
-   manage page. **Most of the pieces exist already**: the presentational components
-   are built and in use by the settings preview
-   (`src/features/booking-public/components/` — ServiceList, StaffChoice, SlotGrid,
-   BookingFormPreview), the view models are in `types.ts`, and the backend is
-   deployed and verified. What step 5 adds is the route, the real `get_slots` /
-   `create_booking` wiring, react-hook-form + zod on the form, and the
-   confirmation screen with the manage link.
-   **Two things the page MUST do**: send the `start_token` from `get_slots` back
-   with the booking, and hide the `company_website` honeypot with
-   `position:absolute;left:-9999px` — **not** `type="hidden"` or `display:none`,
-   which better bots skip — plus `autocomplete="off"` and `tabindex="-1"`.
+1. **Phase 3 step 6 — the guest manage page**, the last piece of Phase 3:
+   `(public)/[slug]/manage`, reading the token from the URL fragment (never the
+   query string) and calling the already-deployed `manage_booking` Edge
+   Function (get/cancel/reschedule). The confirmation screen already links
+   here (`/<slug>/manage#token=...`), so the URL shape is fixed.
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -51,6 +64,7 @@ Last updated: 2026-10-04 · Branch: `dev` · All work is pushed.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **A step-back handler must reset the TARGET step, not the step being left.** `BookingFlow.goBack` computed `prev = previousStep(step, ...)` but then called `resetFrom(state, step)` — clearing fields on the step already being left (already empty) instead of `prev`'s own field. `currentStep()` came out unchanged every time, so the Back button did nothing and Android hardware back was silently swallowed (it still returned `true` from the handler). Caught only by a written Android review, not by the unit tests for `resetFrom` itself — the bug was in the wiring, not the pure function. Fixed: `resetFrom(state, prev)`. Test the whole `goBack` sequence, not just `resetFrom` in isolation.
 - **`Text`'s `color` prop takes a token NAME, not a hex value** (`color="textPrimary"`, not `color={theme.colors.textPrimary}`). Same for `Button`, which takes `children`, not a `label` prop, and `Badge`'s `icon`, which takes a NODE not a component.
 - **A service's buffer REPLACES the branch buffer; they never add.** `case when coalesce(service,0) > 0 then service else branch end`, in both `get_free_slots` and `create_booking`. 10 + 15 = 15, not 25. A service buffer of 0 means "no setting", so a service cannot opt out of the branch buffer.
 - **A smoke test that asserts on a JSON substring will lie.** The privacy check searched for the client's full name and matched the BUSINESS name ("Smoke Test Salon"), because the test data shared a word. Assert on fields.

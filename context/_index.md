@@ -19,5 +19,6 @@ Shared files:
 | Staff | staff.md | done (Phase 2 scope) | 2 | Staff profiles (login optional), branch + service assignment |
 | Schedule | schedule.md | done (Phase 2 scope) | 2 | Working hours, breaks, time off, branch hours, holidays, rooms |
 | Booking settings & form | booking-settings.md | DB + UI done | 3 | Per-branch settings (doc §6.2) + form builder, live preview, warnings, booking link |
-| Booking engine | booking-engine.md | backend complete, no UI | 3 | Clients, appointments, no-double-booking, DST-correct slot engine, `create_booking` |
-| Booking public API | booking-public-api.md | deployed + verified | 3 | 4 Edge Functions, rate-limited and bot-protected — the only public path |
+| Booking engine | booking-engine.md | backend complete, public UI done | 3 | Clients, appointments, no-double-booking, DST-correct slot engine, `create_booking` |
+| Booking public API | booking-public-api.md | deployed + verified | 3 | 5 Edge Functions, rate-limited and bot-protected — the only public path |
+| Booking public page | booking-public-page.md | done | 3 | `(public)/[slug]` booking flow: service → staff → slot → form → confirmation |

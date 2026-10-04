@@ -2,8 +2,14 @@
   "app": {
     "tagline": "Appointments made simple"
   },
+  "phoneInput": {
+    "label": "Phone number",
+    "countryCode": "Country code",
+    "placeholder": "700 900 123"
+  },
   "actions": {
     "retry": "Try again",
+    "back": "Back",
     "cancel": "Cancel",
     "save": "Save",
     "close": "Close",
@@ -427,6 +433,23 @@
     "slotTaken": "{{time}} — already booked",
     "anyStaff": "Any available person",
     "anyStaffHint": "We will assign whoever is free.",
+    "steps": {
+      "service": "Choose a service",
+      "staff": "Choose who you'll see",
+      "slot": "Choose a date and time",
+      "form": "Your details",
+      "confirmation": "Confirmed"
+    },
+    "notAvailableTitle": "Not available",
+    "notAvailableBody": "Online booking isn't available here right now.",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "slotGone": "That time was just taken. Pick another.",
+      "loadTitle": "Couldn't load this page",
+      "loadBody": "Something went wrong. Please try again.",
+      "rateLimitedTitle": "Too many attempts",
+      "rateLimitedBody": "Please wait a little before trying again."
+    },
     "form": {
       "name": "Your name",
       "phone": "Mobile number",
@@ -437,10 +460,43 @@
       "service": "Service",
       "staff": "Who you will see",
       "time": "Date and time",
-      "details": "Your details"
+      "details": "Your details",
+      "submit": "Confirm booking",
+      "leaveTitle": "Discard your details?",
+      "leaveBody": "Going back will clear what you've entered on this form.",
+      "leaveConfirm": "Discard and go back",
+      "errors": {
+        "nameRequired": "Enter your name.",
+        "nameTooLong": "That name is too long.",
+        "phoneRequired": "Enter a valid phone number.",
+        "emailRequired": "Enter your email.",
+        "emailInvalid": "Enter a valid email address.",
+        "notesTooLong": "That note is too long.",
+        "required": "This is required.",
+        "invalid": "Check this answer.",
+        "numberInvalid": "Enter a number.",
+        "textTooLong": "That answer is too long."
+      }
     },
+    "timezoneNote": "Times shown in {{timezone}}",
+    "slotsErrorTitle": "Couldn't load times",
+    "slotsErrorBody": "Something went wrong loading available times.",
     "confirmAuto": "The customer is told their booking is confirmed straight away.",
-    "confirmManual": "The customer is told their request was sent and is waiting for you to confirm."
+    "confirmManual": "The customer is told their request was sent and is waiting for you to confirm.",
+    "confirmation": {
+      "confirmedBadge": "Confirmed",
+      "pendingBadge": "Awaiting confirmation",
+      "confirmedTitle": "You're booked!",
+      "pendingTitle": "Request sent",
+      "confirmedBody": "Your appointment is confirmed. We look forward to seeing you.",
+      "pendingBody": "Your request has been sent and is awaiting confirmation. We'll be in touch.",
+      "price": "Price",
+      "manageTitle": "Manage your booking",
+      "manageHint": "Use this link to view, reschedule or cancel your booking. Save it now — it is shown only once.",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "copyFailed": "Couldn't copy the link. Select and copy it manually."
+    }
   },
   "bookingSettings": {
     "title": "Booking settings",

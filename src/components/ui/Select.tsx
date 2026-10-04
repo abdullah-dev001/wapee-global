@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Keyboard, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { focusRing, shadow, theme } from '@/lib/theme';
@@ -82,7 +82,16 @@ export function Select<TValue extends string = string>({
 
       <Pressable
         {...handlers}
-        onPress={disabled ? undefined : () => setOpen(true)}
+        onPress={
+          disabled
+            ? undefined
+            : () => {
+                // Dismiss first: the keyboard can otherwise stay up and cover
+                // the bottom of the sheet.
+                Keyboard.dismiss();
+                setOpen(true);
+              }
+        }
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={label}

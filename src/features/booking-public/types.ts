@@ -67,4 +67,89 @@ export type PublicBookingConfig = {
   /** 'auto' shows "Booked"; 'manual' shows "Request sent, awaiting confirmation". */
   confirmation: 'auto' | 'manual';
   timezone: string;
+  bookingWindowDays: number;
+};
+
+/**
+ * What `get_booking_page` returns: everything the page needs to bootstrap
+ * itself for a slug, before any service is picked. See
+ * `supabase/functions/get_booking_page/index.ts`.
+ */
+export type BookingPageData = {
+  branch: {
+    name: string;
+    timezone: string;
+    currency: string;
+  };
+  settings: PublicBookingConfig;
+  services: PublicService[];
+  staff: PublicStaff[];
+  /** Which staff perform which service, for filtering step 2. */
+  serviceStaff: { serviceId: string; staffId: string }[];
+  fields: PublicFormFieldSnapshot[];
+};
+
+/** A form field as the published snapshot describes it, with service scoping. */
+export type PublicFormFieldSnapshot = PublicFormField & {
+  appliesToAllServices: boolean;
+  serviceIds: string[];
+};
+
+/** The public reasons an Edge Function call can fail with (mirrors `_shared/response.ts`). */
+export type PublicErrorCode =
+  | 'bad_request'
+  | 'not_bookable'
+  | 'slot_unavailable'
+  | 'invalid_answer'
+  | 'missing_answer'
+  | 'invalid_phone'
+  | 'invalid_name'
+  | 'rate_limited'
+  | 'too_fast'
+  | 'email_required'
+  | 'server_error'
+  | 'network_error';
+
+export class PublicApiError extends Error {
+  code: PublicErrorCode;
+  fieldId?: string | null;
+  retryAfterSeconds?: number;
+
+  constructor(
+    code: PublicErrorCode,
+    opts?: { fieldId?: string | null; retryAfterSeconds?: number },
+  ) {
+    super(code);
+    this.name = 'PublicApiError';
+    this.code = code;
+    this.fieldId = opts?.fieldId ?? null;
+    this.retryAfterSeconds = opts?.retryAfterSeconds;
+  }
+}
+
+/** What `create_booking` returns on success. */
+export type CreateBookingResult = {
+  appointmentId: string;
+  status: 'pending' | 'confirmed';
+  startsAt: string;
+  endsAt: string;
+  localDate: string;
+  localMinute: number;
+  timezone: string;
+  serviceName: string;
+  staffName: string | null;
+  branchName: string;
+  priceMinor: number | null;
+  currency: string | null;
+  /** Raw token, present exactly once. Never persisted anywhere but memory/URL. */
+  manageToken: string;
+};
+
+/** One slot grid "page": a day's worth of slots plus the token to book with. */
+export type SlotsResult = {
+  timezone: string;
+  branchName: string;
+  currency: string;
+  startToken: string;
+  slots: PublicSlot[];
 };

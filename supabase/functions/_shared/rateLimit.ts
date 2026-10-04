@@ -37,7 +37,12 @@ import { hashWithSalt } from './crypto.ts';
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 export type PublicEndpoint =
-  'get_slots' | 'create_booking' | 'get_booking' | 'cancel_booking' | 'reschedule_booking';
+  | 'get_booking_page'
+  | 'get_slots'
+  | 'create_booking'
+  | 'get_booking'
+  | 'cancel_booking'
+  | 'reschedule_booking';
 
 export type RateLimitResult = {
   allowed: boolean;

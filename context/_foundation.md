@@ -92,13 +92,21 @@ Shared internals: `useInteractionState()` (hover/focus/pressed; hover and focus 
 Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
-- Not built yet: Checkbox/Radio, Pagination, DataTable, PhoneInput, TimeSlotPicker, Avatar, StepWizard, FormAlert, StatCard.
+- Not built yet: Checkbox/Radio, Pagination, DataTable, TimeSlotPicker, Avatar, StepWizard, FormAlert, StatCard. **`PhoneInput` built 2026-10-04** — see `components/shared` below.
 - **`Drawer` now avoids the keyboard** (fixed 2026-10-04): the body is a
   `KeyboardAwareScrollView` (same as `Screen`) and the footer rides a
   `KeyboardStickyView`, so a focused input near the bottom is never covered on
   Android or iOS. One fix in `Drawer` covers every form that puts inputs in one
   (ServiceForm, StaffForm, the schedule lists, CustomFieldEditor) without
-  touching any of them.
+  touching any of them. **The scroll view's `bottomOffset` is the footer's
+  MEASURED height** (`onLayout`), not a guessed constant — the footer rises via
+  a transform rather than shrinking the scroll area, so a guess too small
+  leaves it covering the focused input (caught in the public-booking-page
+  Android review).
+- **`Select` (and `PhoneInput`'s own country sheet) call `Keyboard.dismiss()`
+  before opening their sheet.** Without it, tapping the trigger while a text
+  input is focused can leave the Android keyboard up, covering as much as 70%
+  of the sheet's height.
 - **Forms must use `useWatch({ control, name })`, never `watch()`** — `watch()` returns a fresh function each render and the React Compiler lint refuses it (`react-hooks/incompatible-library`).
 - `useInteractionState` shows the focus ring only when the browser reports `:focus-visible`, so a mouse click leaves no ring while keyboard tabbing does.
 - `useOverlayDismiss` holds `onDismiss` in a ref. Passing it an inline arrow used to re-run its effect every render ("Maximum update depth exceeded") once several overlays were mounted; the ref makes any caller safe.
@@ -115,6 +123,7 @@ Conventions:
 | `DayHoursRow` | One weekday: open/closed toggle + interval list, so a split shift is two rows. Validates nothing itself — the DB holds the guarantees. |
 | `Calendar` | **Month grid, hand-built, no dependency.** "Today" comes from the **branch timezone** (decision 23). RTL-ready via `row-reverse` + swapped arrows (not `I18nManager`, which needs a native reload). Weekday/month names from `Intl`. Supports `minDate`/`maxDate`, `disabledDates` and a selected range. **Reused by the Phase 3 public booking page.** Grid maths is a pure module (`calendarGrid.ts`) with 20 tests. |
 | `DateRangePicker` | Calendar **dates**, not instants. Web keeps `<input type="date">` (browser calendar, keyboard, locale formatting for free); **native renders `Calendar`**. Tap picks start, then end; tapping below the start restarts the range. |
+| `PhoneInput` (2026-10-04) | Country-code picker (own sheet, `src/config/dialCodes.ts` — 42 countries, **kept in step with** `create_booking`'s SQL fallback table) + a national-number `TextInput`. Reports/accepts real **E.164**, never a raw national number — `lib/config/e164.ts` holds the pure `toE164`/`fromE164` split (7 tests). Built for the public booking page's phone field; usable anywhere a phone number is collected. |
 
 ## Layout & shell (`src/components/layout`)
 

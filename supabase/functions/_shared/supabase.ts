@@ -46,6 +46,8 @@ export type ResolvedBranch = {
     slotDisplay: 'only_available' | 'all_greyed';
     showPrices: boolean;
     bookingWindowDays: number;
+    requireClientEmail: boolean;
+    confirmation: 'auto' | 'manual';
   };
 };
 
@@ -93,7 +95,7 @@ export async function resolveBranch(
   let query = db
     .from('branches')
     .select(
-      'id, name, timezone, currency, business_id, is_primary, booking_settings(online_booking_enabled, staff_choice, slot_display, show_prices, booking_window_days)',
+      'id, name, timezone, currency, business_id, is_primary, booking_settings(online_booking_enabled, staff_choice, slot_display, show_prices, booking_window_days, require_client_email, confirmation)',
     )
     .eq('business_id', business.id)
     .is('deleted_at', null);
@@ -124,6 +126,8 @@ export async function resolveBranch(
       slotDisplay: settings.slot_display,
       showPrices: settings.show_prices,
       bookingWindowDays: settings.booking_window_days,
+      requireClientEmail: settings.require_client_email,
+      confirmation: settings.confirmation,
     },
   };
 }
