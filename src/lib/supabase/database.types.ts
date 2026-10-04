@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       appointment_field_values: {
@@ -101,6 +76,21 @@ export type Database = {
           },
         ]
       }
+      appointment_status_transitions: {
+        Row: {
+          from_status: Database["public"]["Enums"]["appointment_status"]
+          to_status: Database["public"]["Enums"]["appointment_status"]
+        }
+        Insert: {
+          from_status: Database["public"]["Enums"]["appointment_status"]
+          to_status: Database["public"]["Enums"]["appointment_status"]
+        }
+        Update: {
+          from_status?: Database["public"]["Enums"]["appointment_status"]
+          to_status?: Database["public"]["Enums"]["appointment_status"]
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           branch_id: string
@@ -119,6 +109,7 @@ export type Database = {
           form_version_id: string
           id: string
           internal_notes: string | null
+          invoice_id: string | null
           is_exclusive: boolean
           price_minor: number | null
           resource_capacity_at_booking: number
@@ -148,6 +139,7 @@ export type Database = {
           form_version_id: string
           id?: string
           internal_notes?: string | null
+          invoice_id?: string | null
           is_exclusive?: boolean
           price_minor?: number | null
           resource_capacity_at_booking?: number
@@ -177,6 +169,7 @@ export type Database = {
           form_version_id?: string
           id?: string
           internal_notes?: string | null
+          invoice_id?: string | null
           is_exclusive?: boolean
           price_minor?: number | null
           resource_capacity_at_booking?: number
@@ -1865,6 +1858,7 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
       build_form_fields_snapshot: {
         Args: { p_business_id: string }
@@ -1879,9 +1873,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      cancel_appointment: {
+        Args: { p_appointment_id: string; p_reason?: string }
+        Returns: Json
+      }
       cancel_booking: {
         Args: { p_reason?: string; p_token: string }
         Returns: Json
+      }
+      check_appointment_collision: {
+        Args: {
+          p_branch_id: string
+          p_buffer_minutes: number
+          p_ends_at: string
+          p_exclude_appointment_id?: string
+          p_people_per_slot: number
+          p_service_id: string
+          p_staff_id: string
+          p_starts_at: string
+          p_use_resources: boolean
+        }
+        Returns: string
       }
       check_rate_limit: {
         Args: {
@@ -1896,6 +1908,23 @@ export type Database = {
       cleanup_public_request_attempts: {
         Args: { p_older_than?: string }
         Returns: number
+      }
+      create_appointment: {
+        Args: {
+          p_auto_confirm?: boolean
+          p_branch_id: string
+          p_client_email?: string
+          p_client_id?: string
+          p_client_name?: string
+          p_client_notes?: string
+          p_client_phone?: string
+          p_internal_notes?: string
+          p_service_id: string
+          p_source?: Database["public"]["Enums"]["booking_source"]
+          p_staff_id?: string
+          p_starts_at: string
+        }
+        Returns: Json
       }
       create_booking: {
         Args: {
@@ -1927,6 +1956,24 @@ export type Database = {
       }
       ensure_form_version: { Args: { p_business_id: string }; Returns: string }
       get_booking: { Args: { p_token: string }; Returns: Json }
+      get_booking_page_catalogue: {
+        Args: { p_branch_id: string }
+        Returns: Json
+      }
+      get_booking_reschedule_slots: {
+        Args: { p_from_date?: string; p_to_date?: string; p_token: string }
+        Returns: Json
+      }
+      get_calendar_appointments: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from_date: string
+          p_staff_ids?: string[]
+          p_to_date: string
+        }
+        Returns: Json
+      }
       get_free_slots: {
         Args: {
           p_branch_id: string
@@ -1982,10 +2029,35 @@ export type Database = {
           invited_email: string
         }[]
       }
+      is_allowed_appointment_transition: {
+        Args: {
+          p_from: Database["public"]["Enums"]["appointment_status"]
+          p_to: Database["public"]["Enums"]["appointment_status"]
+        }
+        Returns: boolean
+      }
       is_member: { Args: { p_business_id: string }; Returns: boolean }
       is_own_staff_profile: { Args: { p_staff_id: string }; Returns: boolean }
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      list_appointments: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_cursor_id?: string
+          p_cursor_starts_at?: string
+          p_from_date?: string
+          p_limit?: number
+          p_search?: string
+          p_service_id?: string
+          p_staff_id?: string
+          p_status?: Database["public"]["Enums"]["appointment_status"]
+          p_to_date?: string
+        }
+        Returns: Json
+      }
+      mark_completed: { Args: { p_appointment_id: string }; Returns: Json }
+      mark_no_show: { Args: { p_appointment_id: string }; Returns: Json }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
       my_grants: {
         Args: { p_business_id: string }
@@ -2038,6 +2110,18 @@ export type Database = {
         Returns: string
       }
       touch_manage_token: { Args: { p_token: string }; Returns: undefined }
+      update_appointment: {
+        Args: {
+          p_appointment_id: string
+          p_clear_client_notes?: boolean
+          p_clear_internal_notes?: boolean
+          p_client_notes?: string
+          p_internal_notes?: string
+          p_staff_id?: string
+          p_starts_at?: string
+        }
+        Returns: Json
+      }
       write_audit_log: {
         Args: {
           p_action: string
@@ -2206,9 +2290,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       appointment_status: [

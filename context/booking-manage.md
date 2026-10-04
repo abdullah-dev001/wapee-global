@@ -100,6 +100,17 @@ confirm dialogs, error copy). Reuses `bookingPublic.form.*` and
 `bookingPublic.timezoneNote` for the summary rows and timezone note.
 
 ## Known limits / TODO
+- **Reschedule keeps the SAME staff member, with no staff-reselection step.**
+  If the booking is "Any staff" and that particular staff member is busy at
+  the new time, the guest sees no slots for that day even though a different
+  staff member might be free — the reschedule screen never re-runs the "Any
+  staff" assignment, it only asks "is MY current staff free then". A guest
+  in that situation has to try other days/times or contact the business;
+  there is no way in this UI to fall back to "any available person" for a
+  reschedule. (`reschedule_booking` itself would fall back to a different
+  staff member if the ORIGINAL one can no longer perform the service at all,
+  but that is a capability check, not an availability one — it does not help
+  here.)
 - **`PublicErrorCode` extended**: `invalid_token`, `cancel_window_passed`,
   `not_cancellable` added to `booking-public/types.ts`'s union and `client.ts`'s
   `KNOWN_CODES` — they already existed in the Edge Function's own

@@ -23,3 +23,4 @@ Shared files:
 | Booking public API | booking-public-api.md | deployed + verified | 3 | 5 Edge Functions, rate-limited and bot-protected — the only public path |
 | Booking public page | booking-public-page.md | done | 3 | `(public)/[slug]` booking flow: service → staff → slot → form → confirmation |
 | Guest manage page | booking-manage.md | done | 3 | `(public)/[slug]/manage` — view, cancel, reschedule a booking by token |
+| Dashboard appointments | appointments.md | backend done, no UI | 4 | create/update/cancel/no-show/complete/approve, list + calendar RPCs, Realtime |

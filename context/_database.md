@@ -1,5 +1,5 @@
 # Database
-Status: in progress · Phase: 3 · Last updated: 2026-10-04
+Status: in progress · Phase: 4 · Last updated: 2026-10-05
 
 ## Project
 - Supabase project **Wapee Global Development**, ref `rfuovquhultjydtswtqf`, Postgres 17, region ap-south-1.
@@ -43,12 +43,14 @@ Status: in progress · Phase: 3 · Last updated: 2026-10-04
 | `form_versions` | business_id, version, **fields jsonb**, fields_hash | **IMMUTABLE** snapshot of the whole field set. Created by a trigger when the set changes, NOT per booking. No write policy for anyone. |
 | **Phase 3 — bookings** | | |
 | `clients` | business_id, full_name, **phone_e164**, email, notes, first_branch_id, source | Belongs to the BUSINESS, not the branch. Unique `(business_id, phone_e164)` among live rows. |
-| `appointments` | business_id, branch_id, client_id, service_id, staff_id, resource_id, **starts_at/ends_at**, duration_minutes, buffer_minutes, status, source, **form_version_id**, **is_exclusive**, price_minor, cancelled_at | UTC instants; slots computed in the branch timezone. duration/buffer/price are snapshots. **No DELETE policy** — soft delete or cancel. |
+| `appointments` | business_id, branch_id, client_id, service_id, staff_id, resource_id, **starts_at/ends_at**, duration_minutes, buffer_minutes, status, source, **form_version_id**, **is_exclusive**, price_minor, cancelled_at, **invoice_id** (Phase 5 seam, no FK yet) | UTC instants; slots computed in the branch timezone. duration/buffer/price are snapshots. **No DELETE policy** — soft delete or cancel. In the `supabase_realtime` publication (Phase 4). |
 | `appointment_field_values` | business_id, appointment_id, custom_field_id, form_version_id, value, **is_sensitive** | One row per answer, so the sensitive gate can be per field. |
 | `booking_manage_tokens` | business_id, appointment_id, **token_hash**, expires_at, revoked_at, last_used_at | Guest cancel/reschedule. Only the sha256 HASH is stored. One live token per appointment. |
 | **Phase 3 — public endpoint protection** | | |
 | `public_request_attempts` | endpoint, **ip_hash**, key_hash, outcome, created_at | Rate-limit ledger. `ip_hash` is sha256(salt‖ip) — **never a raw IP**. RLS on, **no policy**; only `check_rate_limit()` touches it. Rows >7 days old deleted nightly by pg_cron. |
 | `rate_limit_rules` | **(endpoint, scope, window_seconds)**, max_attempts, note | THE one place the limits live, tunable without a deploy. scope = ip / key (hashed phone) / biz. Super admin may read. |
+| **Phase 4 — dashboard appointments** | | |
+| `appointment_status_transitions` | **(from_status, to_status)** | The ONE place every allowed status change is defined. No row with `cancelled`/`completed`/`no_show` as `from_status` — terminal, no reopen, ever. Readable by `authenticated` AND `anon` (reference data). |
 
 Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (solo/team/business), `member_status` (invited/active/disabled), `permission_scope` (own/branch/all).
 Phase 3 adds: `appointment_status` (pending/confirmed/completed/cancelled/no_show), `booking_source` (online/dashboard/walk_in/portal), `custom_field_type` (short_text/long_text/dropdown/yes_no/number), `staff_choice_mode`, `slot_display_mode`, `booking_confirmation_mode`, `slot_interval_mode`.
@@ -148,6 +150,20 @@ exceeds.
 `branch_is_bookable(branch)` → jsonb `{bookable, reasons[]}`.
 `get_free_slots(...)` / `pick_staff_for_slot(...)`: `service_role` only.
 
+**Phase 4 RPCs (dashboard appointments).** Full detail in `context/appointments.md`.
+`create_appointment`/`update_appointment`/`cancel_appointment`/`mark_no_show`/
+`mark_completed`/`approve_appointment`: **DEFINER**, explicit `can()` +
+`has_permission_at_branch_scope()`/`is_own_staff_profile()` as the real
+boundary — same posture as `resend_manage_link`, because they write
+`audit_logs` (DEFINER-only) and the collision check must see rows outside
+the caller's own RLS visibility. Staff may book/reschedule outside hours/
+notice/window but never double-book or violate capacity
+(`check_appointment_collision`, NOT `get_free_slots` — see appointments.md
+for why the engine cannot be reused here). Status changes gated by
+`is_allowed_appointment_transition()`; `cancelled`/`completed`/`no_show` are
+permanently terminal. `list_appointments`/`get_calendar_appointments`: pure
+reads, **INVOKER** — RLS is the boundary, not an explicit check.
+
 **Schedule writes go through RPCs, not direct table writes.**
 `replace_staff_working_hours(staff, branch, jsonb)`,
 `replace_staff_breaks(...)` and `replace_branch_hours(branch, jsonb)` clear and
@@ -229,6 +245,39 @@ it is safe to publish.
 | Manager | 39 — no billing, roles.manage, website.publish, **website.edit**, **settings.business**, commission.manage_rules, sms.buy_credits. Keeps `settings.booking` (doc §9: "Booking settings"). | branch |
 | Receptionist | 20 — no discounts, credit notes, revenue reports, staff management, settings | branch |
 | Staff | 10 — own appointments, own schedule, own commission | own |
+
+## Verification (2026-10-05, Phase 4 part A)
+`supabase/tests/12_dashboard_appointments.sql` — **103 passing**:
+`create_appointment` (existing client by id, walk-in by phone with never-
+overwrite, "any staff", out-of-hours succeeding, double-booking refused,
+Own-scope staff booking themselves vs forbidden on someone else, another
+business forbidden, anon refused outright); `update_appointment` (notes-
+only edit, reschedule to a free slot, **rescheduling onto a taken slot
+refused with the original appointment surviving untouched**, out-of-hours
+reschedule succeeding, a terminal row refusing even a notes-only edit, Own-
+scope staff forbidden on someone else's row); **every one of the 25
+(from,to) status pairs checked against `is_allowed_appointment_transition`**,
+proving the rule table itself rather than just the RPCs that read it;
+approve/no_show/complete/cancel each exercised on real rows, with every
+terminal status refusing ALL further transitions and the row provably
+unchanged after each refusal; Staff lacking `appointments.cancel`/`.approve`
+entirely (doc §9); unknown ids returning `not_found`; DST fall-back on an
+America/New_York branch (the repeated local hour resolves to one instant,
+booking it twice collides); `list_appointments` pagination, status filter,
+client-name search, Own-scope narrowing, cross-business and anon both
+seeing/getting nothing; `get_calendar_appointments` branch-timezone day
+boundaries (a day before the local date excludes the appointment) and
+cancelled rows excluded; the Realtime publication; and grants on every RPC
+including the service_role-only collision helper.
+
+Re-ran **07, 08, 11 unchanged** (54, 134, 106 passing) to confirm no
+regression from the new `appointments.invoice_id` column or the Realtime
+publication add.
+
+Advisors: security — the 6 new DEFINER functions add the same "executable by
+authenticated" warning `resend_manage_link` already had (intentional, the
+explicit check inside is the boundary). No new errors. Performance — no new
+unindexed FKs.
 
 ## Verification (2026-10-04, Phase 3)
 **430 assertions passing** against the live database, run as plain SQL inside
@@ -347,6 +396,13 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261004120000_business_hourly_cap.sql` | Per-business **hourly** cap (30) beside the daily one (200). Widened the `rate_limit_rules` PK to (endpoint, scope, window_seconds) so one dimension can hold several windows. |
 | `20261005090000_lower_business_daily_cap.sql` | Per-business daily cap 200 → 120, with a migration-time assertion that the hourly cap never exceeds the daily one (which would make the hourly rule unreachable). |
 | `20261005100000_require_client_email.sql` | `booking_settings.require_client_email` — the ONE toggleable default field (doc §6.1). Wired into `save_booking_settings` and `create_booking`, which now returns `email_required` rather than silently dropping a malformed address. Also adds `conflicting_slots` to the people_per_slot refusal so the UI can say how many upcoming slots clash. |
+| `20261005110000_get_booking_page_catalogue.sql` | Phase 3 step 5: `get_booking_page_catalogue()` for the public booking page's bootstrap endpoint |
+| `20261005120000_get_booking_page_rate_limit.sql` | Rate-limit rule for `get_booking_page` |
+| `20261005160000_phase4_appointments_schema.sql` | Phase 4 part A: `appointments.invoice_id` (Phase 5 seam, no FK yet), `appointment_status_transitions` table + `is_allowed_appointment_transition()`, `appointments` added to `supabase_realtime` |
+| `20261005170000_phase4_appointment_rpcs.sql` | `check_appointment_collision()` shared helper, `create_appointment` |
+| `20261005180000_phase4_update_appointment.sql` | `update_appointment` (reschedule or notes-only, validates fully before one write) |
+| `20261005190000_phase4_status_rpcs.sql` | `cancel_appointment`, `mark_no_show`, `mark_completed`, `approve_appointment` |
+| `20261005200000_phase4_read_rpcs.sql` | `list_appointments` (keyset pagination), `get_calendar_appointments` (branch-timezone day boundaries) |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -366,6 +422,7 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
   design, not an oversight.
 
 ## Changelog
+- 2026-10-05: **Phase 4 part A — dashboard appointments backend.** `appointments.invoice_id` (Phase 5 seam), `appointment_status_transitions` + `is_allowed_appointment_transition()`, `check_appointment_collision()`, `create_appointment`, `update_appointment`, `cancel_appointment`/`mark_no_show`/`mark_completed`/`approve_appointment`, `list_appointments`, `get_calendar_appointments`, Realtime publication. 103 new assertions. No UI yet.
 - 2026-10-04: `require_client_email` (the one toggleable default booking field); per-business daily cap 200 → 120. 430 assertions.
 - 2026-10-04: **Step 7 (rate limiting + bot protection)** and **step 6 (guest manage link)**. Per-business hourly cap added.
 - 2026-10-04: **Fixed: a failed reschedule left the booking cancelled** — a `RETURN` does not roll back. Now a permanent rule in CLAUDE.md §10a.

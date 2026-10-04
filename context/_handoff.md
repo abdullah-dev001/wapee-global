@@ -1,8 +1,10 @@
 # Handoff
-Last updated: 2026-10-04 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
+Last updated: 2026-10-05 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
 
-**Phase 3 is now fully complete** — step 6 (the guest manage page) was the
-last piece. Do not start Phase 4 without the user's go-ahead.
+**Phase 3 is fully complete. Phase 4 part A (dashboard appointments
+BACKEND ONLY, no UI) is also done** — see `context/appointments.md`. The
+user explicitly scoped this session to backend-only and asked for a report
+before any UI work; **ask before building the Phase 4 UI.**
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
@@ -70,10 +72,37 @@ last piece. Do not start Phase 4 without the user's go-ahead.
   on that screen in the current codebase) — skipped this session pending a
   screenshot or repro steps from the user.
 
+- **Phase 4 part A (dashboard appointments backend) is DONE — backend only,
+  no UI, by explicit scope.** `create_appointment` (dashboard + walk-in, any
+  staff, never-overwrite-by-phone), `update_appointment` (reschedule or
+  notes-only, validates fully before one write — the `reschedule_booking`
+  rollback bug must never recur), `cancel_appointment`/`mark_no_show`/
+  `mark_completed`/`approve_appointment` (every status change gated by a
+  NEW one-place rule table, `appointment_status_transitions` +
+  `is_allowed_appointment_transition()`; **cancelled/completed/no_show are
+  permanently terminal, no reopen, ever** — agreed with the user), and two
+  read RPCs (`list_appointments` keyset-paginated, `get_calendar_appointments`
+  with branch-timezone day boundaries). **Staff may book/reschedule outside
+  hours/notice/window but never double-book or violate capacity** — a new
+  shared helper (`check_appointment_collision`) runs the same collision
+  maths `reschedule_booking` uses, deliberately NOT `get_free_slots` (which
+  cannot express "ignore hours" — its joins are structural, not flagged).
+  All six write RPCs are SECURITY DEFINER with an explicit `can()`/scope
+  check as the real boundary (same posture as `resend_manage_link`, because
+  they write `audit_logs`, which is DEFINER-only); the two read RPCs are
+  SECURITY INVOKER, trusting RLS. `appointments` joined the
+  `supabase_realtime` publication (RLS applies automatically to Realtime
+  events for an authenticated client — documented in appointments.md for
+  the next session's UI). `appointments.invoice_id` added as the Phase 5
+  seam (nullable, no FK yet). 103 new SQL assertions
+  (`supabase/tests/12_dashboard_appointments.sql`); re-ran 07/08/11
+  unchanged to confirm no regression. Types regenerated. See
+  `context/appointments.md`.
+
 ## Next, in order
-1. **Phase 3 is complete. Ask the user before starting Phase 4** (CLAUDE.md
-   §1: stop on real doubt about scope/order). Until then, pick from the
-   follow-ups below.
+1. **The Phase 4 UI (calendar, appointment forms, Today screen, clients) is
+   next, once the user says go.** The backend above is the complete RPC
+   surface to build it against — read `context/appointments.md` first.
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -94,6 +123,10 @@ last piece. Do not start Phase 4 without the user's go-ahead.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **`get_free_slots()` cannot be reused for a "staff override hours" question — not even with a flag.** `p_ignore_notice` only affects minimum notice and `online_booking_enabled`; the branch/staff-hours joins (`branch_windows`, `staff_windows`) are STRUCTURAL — no row for an out-of-hours instant exists at all, flag or no flag. Phase 4's dashboard RPCs needed staff to book outside hours (doc §6.2), so they run a SEPARATE collision-only check (`check_appointment_collision`, reusing `reschedule_booking`'s exclusion-aware overlap query) instead of calling the engine. The engine stays the sole authority on the SLOT GRID; the dashboard RPCs are the sole authority on "does this collide".
+- **A column whose type matches another table's column of the same name is not automatically compatible with a bare string literal.** `clients.source` and `appointments.source` are both `public.booking_source`, not text — `case when p_source = 'walk_in' then 'walk_in' else 'dashboard' end` failed 42804 because the literals never got cast. Pass the already-typed parameter through directly instead of re-deriving a string.
+- **A `DECLARE`d variable's type is a silent trap in a SQL test fixture.** `select count(*) into v_client` where `v_client` was declared `uuid` (reused from an earlier `select client_id into v_client`) failed with `invalid input syntax for type uuid: "1"` — Postgres tried to cast the count into the wrong type. The error message's line number is relative to the function body, not the file, so when a SQL test fails with a cryptic type error, check every `declare`d variable's type against every `select into` that targets it, don't just reread the surrounding logic.
+- **Check for migration-filename collisions before writing a new file with today's date.** Two Phase 4 files this session landed on `20261005110000`/`20261005120000`, timestamps already used earlier the same day by an unrelated `get_booking_page` migration pair — `ls supabase/migrations/ | grep <date>` first, or two unrelated migrations silently share a sort position on disk (harmless to the already-applied DB, since Supabase's history tracks by the name passed to `apply_migration`, but confusing for anyone reading the migrations folder in order, and a real problem for `supabase db push` on a fresh clone).
 - **A guest-facing page keyed only by a token (not a business/branch id) cannot use `createQueryKeys`** — that factory requires a `businessId` the page does not have and must not infer. Use a plain key array instead (`['booking-manage', token]`), same reasoning as `useSlots` already fudging `businessId: slug` elsewhere, but here there is no id at all to fudge with.
 - **Internal state that isn't a route still needs Android back handling.** `BookingManage` flips between a view and a reschedule sub-screen with `useState`, not a route — so Android hardware back had no handler for it and would have fallen through to the Stack's default pop, exiting the whole manage page instead of returning to the view screen. `useOverlayDismiss(mode === 'reschedule', () => setMode('view'))` fixed it. Same bug class as the public booking flow's `goBack` trap below, but this time there was no handler at all rather than a wrong one — a written Android review is the only thing that catches either shape.
 - **A privacy-motivated response (returning names, not ids) can silently block a LATER feature that needs the id.** `get_booking` deliberately returns `service_name`/`staff_name` never `service_id`/`staff_id`, which is correct for its own job (CLAUDE.md §13) — but it meant the reschedule screen had no way to call the existing `get_slots` endpoint (`slug`+`service_id`). Fixed by resolving the token to the ids SERVER-SIDE inside a new function (`get_booking_reschedule_slots`) rather than loosening what the client-facing response reveals. When a public endpoint deliberately omits an id, assume a later screen will want it and plan the lookup to stay server-side rather than widening the response.
