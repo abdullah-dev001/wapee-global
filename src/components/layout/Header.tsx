@@ -1,10 +1,14 @@
-import { Menu } from 'lucide-react-native';
+import { CalendarClock, Menu } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
+import { Badge } from '@/components/ui/Badge';
 import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { brand } from '@/config/brand';
+import { usePendingApprovalCount } from '@/features/appointments/api/usePendingApprovalCount';
+import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
 export type HeaderProps = {
@@ -19,6 +23,12 @@ export type HeaderProps = {
  */
 export function Header({ onOpenMenu }: HeaderProps) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { businessId, branchId } = useCurrentScope();
+  const canApprove = usePermission('appointments.approve');
+  // Only roles holding appointments.approve see this (doc §9) — a Staff
+  // member can't act on a pending appointment, so it would just be noise.
+  const pendingApproval = usePendingApprovalCount(canApprove.allowed ? businessId : null, branchId);
 
   return (
     <View style={styles.header}>
@@ -38,6 +48,20 @@ export function Header({ onOpenMenu }: HeaderProps) {
       </Text>
 
       <View style={styles.right}>
+        {canApprove.allowed && pendingApproval.data ? (
+          <Pressable
+            onPress={() => router.push('/calendar')}
+            accessibilityRole="button"
+            accessibilityLabel={t('appointments.pendingApproval', { count: pendingApproval.data })}
+          >
+            <Badge
+              tone="warning"
+              icon={<CalendarClock size={11} strokeWidth={2} color={theme.colors.warning} />}
+            >
+              {t('appointments.pendingApproval', { count: pendingApproval.data })}
+            </Badge>
+          </Pressable>
+        ) : null}
         {/* TODO(phase 1): user menu (profile, switch business, sign out). */}
         <View
           style={styles.avatar}

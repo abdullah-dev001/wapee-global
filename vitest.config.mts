@@ -19,6 +19,7 @@ export default defineConfig({
   resolve: {
     alias: {
       'lucide-react-native': path.resolve(root, 'src/test/stubs/lucideIcons.ts'),
+      'expo-localization': path.resolve(root, 'src/test/stubs/expoLocalization.ts'),
       '@': path.resolve(root, 'src'),
     },
   },

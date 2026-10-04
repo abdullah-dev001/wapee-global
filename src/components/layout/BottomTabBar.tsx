@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { navLabelKey, primaryNavItems } from '@/config/navigation';
-import { useVisibleNav } from '@/lib/permissions';
+import { usePendingApprovalCount } from '@/features/appointments/api/usePendingApprovalCount';
+import { useCurrentScope, usePermission, useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
 /**
@@ -43,6 +44,11 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { isRouteAllowed, isPending } = useVisibleNav();
+  const { businessId, branchId } = useCurrentScope();
+  const canApprove = usePermission('appointments.approve');
+  // Only roles holding appointments.approve see the pending count — a Staff
+  // member cannot act on it (doc §9), so showing it to them would just be noise.
+  const pendingApproval = usePendingApprovalCount(canApprove.allowed ? businessId : null, branchId);
 
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
@@ -61,6 +67,9 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
             icon={Icon}
             label={t(labelKey)}
             focused={focused}
+            badgeCount={
+              route.name === 'calendar' && canApprove.allowed ? pendingApproval.data : undefined
+            }
             onPress={() => {
               const event = navigation.emit({
                 type: 'tabPress',
@@ -82,11 +91,14 @@ function TabButton({
   icon: Icon,
   label,
   focused,
+  badgeCount,
   onPress,
 }: {
   icon: LucideIcon;
   label: string;
   focused: boolean;
+  /** A small count dot on the icon; 0/undefined shows nothing. */
+  badgeCount?: number;
   onPress: () => void;
 }) {
   const { handlers, showFocusRing } = useInteractionState(false);
@@ -101,7 +113,10 @@ function TabButton({
       accessibilityLabel={label}
       style={[styles.tab, showFocusRing ? focusRing() : null]}
     >
-      <Icon size={theme.iconSize.lg} strokeWidth={focused ? 2 : theme.iconStroke} color={color} />
+      <View>
+        <Icon size={theme.iconSize.lg} strokeWidth={focused ? 2 : theme.iconStroke} color={color} />
+        {badgeCount ? <View style={styles.badgeDot} /> : null}
+      </View>
       <Text
         variant="badge"
         numberOfLines={1}
@@ -131,5 +146,14 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing[8],
     // 44px minimum touch target (CLAUDE.md §4).
     minHeight: theme.layout.minTouchTarget,
+  },
+  badgeDot: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 8,
+    height: 8,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.error,
   },
 });

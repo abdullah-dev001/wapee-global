@@ -1,15 +1,10 @@
-import { CalendarDays } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
-
-import { ComingSoonScreen } from '@/components/shared/ComingSoonScreen';
-import { navLabelKey } from '@/config/navigation';
+import { CalendarScreen } from '@/features/appointments/components/CalendarScreen';
 import { RouteGuard } from '@/features/auth';
 
-export default function CalendarScreen() {
-  const { t } = useTranslation();
+export default function Calendar() {
   return (
     <RouteGuard>
-      <ComingSoonScreen title={t(navLabelKey('calendar'))} icon={CalendarDays} phase={4} />
+      <CalendarScreen />
     </RouteGuard>
   );
 }

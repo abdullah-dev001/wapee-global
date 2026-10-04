@@ -11,7 +11,8 @@
  *
  * SKELETON: signatures only. Implement each helper in the task that first needs it.
  */
-import { notImplemented } from '@/lib/notImplemented';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
+import * as Localization from 'expo-localization';
 
 /** ISO-8601 timestamp in UTC, e.g. "2026-10-01T09:30:00.000Z". */
 export type UtcIso = string & { readonly __brand: 'UtcIso' };
@@ -70,7 +71,7 @@ export function parseMinuteOfDay(value: string): MinuteOfDay | null {
 
 /** Current instant as a UTC ISO string. */
 export function nowUtc(): UtcIso {
-  return notImplemented('nowUtc');
+  return new Date().toISOString() as UtcIso;
 }
 
 /**
@@ -79,34 +80,47 @@ export function nowUtc(): UtcIso {
  * those always take the branch timezone (product doc decision 23).
  */
 export function getDeviceTimeZone(): IanaTimeZone {
-  return notImplemented('getDeviceTimeZone');
+  return Localization.getCalendars()[0]?.timeZone ?? 'UTC';
 }
 
 /** True when `zone` is a valid IANA timezone name. */
-export function isValidTimeZone(_zone: string): boolean {
-  return notImplemented('isValidTimeZone');
+export function isValidTimeZone(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
- * Converts a wall-clock date + time in `zone` to a UTC instant. DST-safe:
- * non-existent times (spring forward) and ambiguous times (fall back) must follow
- * one documented rule.
+ * Converts a wall-clock date + time in `zone` to a UTC instant. DST-safe via
+ * `fromZonedTime` (date-fns-tz): a non-existent time (spring forward) is
+ * pushed forward by the gap; an ambiguous time (fall back) resolves to the
+ * SECOND, standard-time occurrence — matching Postgres's own resolution
+ * (see `context/_handoff.md` Traps). Do not change this without re-checking
+ * that trap.
  */
-export function zonedToUtc(_date: LocalDate, _time: LocalTime, _zone: IanaTimeZone): UtcIso {
-  return notImplemented('zonedToUtc');
+export function zonedToUtc(date: LocalDate, time: LocalTime, zone: IanaTimeZone): UtcIso {
+  return fromZonedTime(`${date}T${time}:00`, zone).toISOString() as UtcIso;
 }
 
 /** Splits a UTC instant into the wall-clock date and time seen in `zone`. */
 export function utcToZoned(
-  _instant: UtcIso,
-  _zone: IanaTimeZone,
+  instant: UtcIso,
+  zone: IanaTimeZone,
 ): { date: LocalDate; time: LocalTime } {
-  return notImplemented('utcToZoned');
+  const zoned = toZonedTime(instant, zone);
+  const date = dateInZone(new Date(instant), zone);
+  const time = `${String(zoned.getHours()).padStart(2, '0')}:${String(zoned.getMinutes()).padStart(2, '0')}`;
+  return { date, time };
 }
 
 /** UTC start and end (exclusive) of a calendar day in `zone` (23/25h on DST days). */
-export function dayRangeUtc(_date: LocalDate, _zone: IanaTimeZone): { start: UtcIso; end: UtcIso } {
-  return notImplemented('dayRangeUtc');
+export function dayRangeUtc(date: LocalDate, zone: IanaTimeZone): { start: UtcIso; end: UtcIso } {
+  const start = zonedToUtc(date, '00:00', zone);
+  const end = zonedToUtc(addDaysToLocalDate(date, 1), '00:00', zone);
+  return { start, end };
 }
 
 /**
@@ -191,33 +205,52 @@ export function weekdayOfLocalDate(value: LocalDate): number {
 }
 
 /** Adds minutes to a UTC instant (absolute time, not wall-clock). */
-export function addMinutesUtc(_instant: UtcIso, _minutes: number): UtcIso {
-  return notImplemented('addMinutesUtc');
+export function addMinutesUtc(instant: UtcIso, minutes: number): UtcIso {
+  return new Date(new Date(instant).getTime() + minutes * 60_000).toISOString() as UtcIso;
 }
+
+const DATE_STYLE_OPTIONS: Record<DateFormatStyle, Intl.DateTimeFormatOptions> = {
+  short: { month: 'numeric', day: 'numeric', year: '2-digit' },
+  medium: { month: 'short', day: 'numeric', year: 'numeric' },
+  long: { month: 'long', day: 'numeric', year: 'numeric' },
+  full: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
+};
 
 /** Formats a UTC instant as a date in `zone` with the business locale (Intl). */
 export function formatDate(
-  _instant: UtcIso,
-  _zone: IanaTimeZone,
-  _locale: LocaleTag,
-  _style?: DateFormatStyle,
+  instant: UtcIso,
+  zone: IanaTimeZone,
+  locale: LocaleTag,
+  style: DateFormatStyle = 'medium',
 ): string {
-  return notImplemented('formatDate');
+  return new Intl.DateTimeFormat(locale, {
+    ...DATE_STYLE_OPTIONS[style],
+    timeZone: zone,
+  }).format(new Date(instant));
 }
 
 /** Formats a UTC instant as a time in `zone` (12h/24h follows the locale). */
-export function formatTime(_instant: UtcIso, _zone: IanaTimeZone, _locale: LocaleTag): string {
-  return notImplemented('formatTime');
+export function formatTime(instant: UtcIso, zone: IanaTimeZone, locale: LocaleTag): string {
+  return new Intl.DateTimeFormat(locale, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: zone,
+  }).format(new Date(instant));
 }
 
 /** Formats a UTC instant as date + time in `zone`. */
 export function formatDateTime(
-  _instant: UtcIso,
-  _zone: IanaTimeZone,
-  _locale: LocaleTag,
-  _style?: DateFormatStyle,
+  instant: UtcIso,
+  zone: IanaTimeZone,
+  locale: LocaleTag,
+  style: DateFormatStyle = 'medium',
 ): string {
-  return notImplemented('formatDateTime');
+  return new Intl.DateTimeFormat(locale, {
+    ...DATE_STYLE_OPTIONS[style],
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: zone,
+  }).format(new Date(instant));
 }
 
 /**
@@ -250,7 +283,24 @@ export function formatDuration(minutes: number, locale: LocaleTag): string {
   return `${unit(hours, 'hour')} ${unit(mins, 'minute')}`;
 }
 
+const RELATIVE_UNITS: { unit: Intl.RelativeTimeFormatUnit; ms: number }[] = [
+  { unit: 'year', ms: 365 * 24 * 60 * 60 * 1000 },
+  { unit: 'month', ms: 30 * 24 * 60 * 60 * 1000 },
+  { unit: 'day', ms: 24 * 60 * 60 * 1000 },
+  { unit: 'hour', ms: 60 * 60 * 1000 },
+  { unit: 'minute', ms: 60 * 1000 },
+];
+
 /** Relative time such as "in 2 hours" / "3 days ago" (Intl.RelativeTimeFormat). */
-export function formatRelative(_instant: UtcIso, _locale: LocaleTag, _now?: UtcIso): string {
-  return notImplemented('formatRelative');
+export function formatRelative(instant: UtcIso, locale: LocaleTag, now?: UtcIso): string {
+  const diffMs = new Date(instant).getTime() - new Date(now ?? nowUtc()).getTime();
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+
+  for (const { unit, ms } of RELATIVE_UNITS) {
+    const value = diffMs / ms;
+    if (Math.abs(value) >= 1) {
+      return formatter.format(Math.round(value), unit);
+    }
+  }
+  return formatter.format(Math.round(diffMs / 1000), 'second');
 }

@@ -34,7 +34,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | src/lib/i18n/                                                                                                            | i18next instance, resources, typed keys, RTL helpers                                        |
 | src/lib/permissions/                                                                                                     | `can()`, `usePermission`, `useFeature`, `useVisibleNav`, current-scope store (see roles.md)  |
 | src/config/permissions.ts                                                                                                | 46-permission catalogue mirroring the table: `PermissionKey`, `minPlan`, `addon`, plan order |
-| src/lib/time/index.ts | Partly implemented: `formatMinuteOfDay`, `parseMinuteOfDay`, `formatDuration`, `todayInZone`, `dateInZone`, `parseLocalDate`, `toLocalDate`, `addDaysToLocalDate`, `daysInMonth`, `weekdayOfLocalDate`. `zonedToUtc`/`utcToZoned`/`dayRangeUtc` are still skeletons (Phase 3 slot engine). |
+| src/lib/time/index.ts | **Fully implemented** (2026-10-05): all of Phase 0's skeleton plus `nowUtc`, `getDeviceTimeZone` (via `expo-localization`, stubbed in tests), `isValidTimeZone`, `zonedToUtc`/`utcToZoned`/`dayRangeUtc` (DST-safe via `date-fns-tz`'s `fromZonedTime`/`toZonedTime` — an ambiguous fall-back time resolves to the SECOND, standard-time occurrence, matching Postgres), `addMinutesUtc`, `formatDate`/`formatTime`/`formatDateTime`, `formatRelative`. |
 | src/lib/money/index.ts | Partly implemented: `money`, `currencyExponent`, `parseMajorToMinor`, `formatMoney`, `formatMinorAsMajor`. Arithmetic helpers still skeletons. |
 | src/lib/notImplemented.ts                                                                                                | Throw helper for skeletons                                                                  |
 | src/lib/pwa/registerServiceWorker.ts                                                                                     | Registers /sw.js (web + production only), update hook                                       |
@@ -43,7 +43,8 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | assets/images/                                                                                                           | Native icon, adaptive icon fg/monochrome, splash icon, favicon (placeholders)               |
 | scripts/generate-web-manifest.mjs                                                                                        | Writes public/manifest.json from brand.ts (gitignored output)                               |
 | src/components/ui/ | Base UI primitives (see "UI components") + barrel `index.ts` |
-| src/components/shared/ | Reusable composites + barrel `index.ts`: `FormField`, `MoneyInput`, `SearchInput`, `TimePicker`, `DayHoursRow`, `DateRangePicker` |
+| src/components/shared/ | Reusable composites + barrel `index.ts`: `FormField`, `MoneyInput`, `SearchInput`, `TimePicker`, `DayHoursRow`, `DateRangePicker`, `StatusBadge`, `Avatar` |
+| src/components/shared/scheduler/ | `StaffColumnsGrid` (hour ruler + N `StaffDayColumn`s), `HourRuler` — the Day/Week calendar grid (see `context/appointments-ui.md`) |
 | src/lib/device/useTabletOrientation.ts | Android: release the portrait lock on tablet-sized screens |
 | src/lib/query/useOnlineManager.ts | NetInfo -> TanStack `onlineManager` (native) |
 | app/_gallery.tsx · src/dev/ComponentGallery.tsx | DEV-ONLY gallery at `/_gallery`; stripped from production builds; DELETE both when real screens exist |
@@ -92,7 +93,7 @@ Shared internals: `useInteractionState()` (hover/focus/pressed; hover and focus 
 Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
-- Not built yet: Checkbox/Radio, Pagination, DataTable, TimeSlotPicker, Avatar, StepWizard, FormAlert, StatCard. **`PhoneInput` built 2026-10-04** — see `components/shared` below.
+- Not built yet: Checkbox/Radio, Pagination, DataTable, TimeSlotPicker, StepWizard, FormAlert, StatCard. **`PhoneInput` built 2026-10-04, `Avatar`/`StatusBadge` built 2026-10-05** — see `components/shared` below.
 - **`Drawer` now avoids the keyboard** (fixed 2026-10-04): the body is a
   `KeyboardAwareScrollView` (same as `Screen`) and the footer rides a
   `KeyboardStickyView`, so a focused input near the bottom is never covered on
@@ -124,6 +125,14 @@ Conventions:
 | `Calendar` | **Month grid, hand-built, no dependency.** "Today" comes from the **branch timezone** (decision 23). RTL-ready via `row-reverse` + swapped arrows (not `I18nManager`, which needs a native reload). Weekday/month names from `Intl`. Supports `minDate`/`maxDate`, `disabledDates` and a selected range. **Reused by the Phase 3 public booking page.** Grid maths is a pure module (`calendarGrid.ts`) with 20 tests. |
 | `DateRangePicker` | Calendar **dates**, not instants. Web keeps `<input type="date">` (browser calendar, keyboard, locale formatting for free); **native renders `Calendar`**. Tap picks start, then end; tapping below the start restarts the range. |
 | `PhoneInput` (2026-10-04) | Country-code picker (own sheet, `src/config/dialCodes.ts` — 42 countries, **kept in step with** `create_booking`'s SQL fallback table) + a national-number `TextInput`. Reports/accepts real **E.164**, never a raw national number — `lib/config/e164.ts` holds the pure `toE164`/`fromE164` split (7 tests). Built for the public booking page's phone field; usable anywhere a phone number is collected. |
+| `StatusBadge` (2026-10-05) | Appointment status → `Badge` tone + translated label, so the mapping lives in one place. |
+| `Avatar` (2026-10-05) | Round initials circle for a person (client/staff). `BusinessAvatar` (DESIGN_GUIDE) stays the separate rounded-square variant for a business/logo — not built yet. |
+
+`src/components/shared/scheduler/` (2026-10-05, for the Calendar's Day/Week
+grid — see `context/appointments-ui.md`): `StaffColumnsGrid` (hour ruler +
+one `StaffDayColumn` per staff, shared vertical scroll) and `HourRuler`.
+Appointment blocks lay out via `src/features/appointments/timeGrid.ts`'s
+pure sweep-line column assignment (overlaps sit side by side).
 
 ## Layout & shell (`src/components/layout`)
 
@@ -134,8 +143,8 @@ Conventions:
 | `ConsumedInsetsProvider` / `useConsumedInsets` | Lets a bar above `Screen` (the trial banner on mobile) claim the top inset so `Screen` does not add it twice. |
 | `AppShell` | Picks the layout by `useBreakpoint()`: mobile = no chrome (tabs come from the Tabs layout); tablet = header + off-canvas sidebar (Escape / Android back / scrim close it); desktop = fixed 240px sidebar + 64px header. |
 | `Sidebar` | Teal 240px, lime active pill, items from `config/navigation`. Tablet variant shows a close button and closes on navigate. |
-| `Header` | 64px surface bar: business name + user-menu placeholder; hamburger on tablet only. |
-| `BottomTabBar` | Our own bar passed to Expo Router's `Tabs` via `tabBar`, so routing/history/state restoration stay native while the bar looks identical on Android, iOS and mobile web. Always adds `insets.bottom`; 44px targets; tab labels capped at `maxFontSizeMultiplier` 1.3. |
+| `Header` | 64px surface bar: business name + user-menu placeholder; hamburger on tablet only. Shows a pending-approval chip (2026-10-05, `appointments.approve` holders only) that routes to `/calendar`. |
+| `BottomTabBar` | Our own bar passed to Expo Router's `Tabs` via `tabBar`, so routing/history/state restoration stay native while the bar looks identical on Android, iOS and mobile web. Always adds `insets.bottom`; 44px targets; tab labels capped at `maxFontSizeMultiplier` 1.3. Calendar tab shows a small count dot (2026-10-05, same `appointments.approve` gate as `Header`'s chip) via a generic `badgeCount` prop on `TabButton`. |
 | `InstallHint` | Web-only dismissible "Install app" bar; iOS Safari shows "Share -> Add to Home Screen". Dismissal stored in localStorage. |
 | `ServiceWorkerUpdater` | Registers the SW and shows the "Update available" toast with a Reload action. |
 
@@ -204,6 +213,16 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+
+- 2026-10-05: `lib/time` fully implemented (was partial — `zonedToUtc`/
+  `utcToZoned`/`dayRangeUtc`/`formatDate`/`formatTime`/`formatDateTime`/
+  `formatRelative`/`nowUtc`/`addMinutesUtc`/`getDeviceTimeZone`/
+  `isValidTimeZone`), needed by the Phase 4 Calendar UI. `expo-localization`
+  stubbed for vitest (pulls in react-native/Flow otherwise), same pattern as
+  the existing `lucide-react-native` stub. `StatusBadge`, `Avatar`, and
+  `components/shared/scheduler/` (the Day/Week calendar grid) added — see
+  `context/appointments-ui.md`. `Header`/`BottomTabBar` gained a
+  pending-approval badge.
 
 - 2026-10-04: `SegmentedControl`, `Collapsible`, `NumberStepper` primitives; the
   reusable public booking components in `src/features/booking-public/components/`

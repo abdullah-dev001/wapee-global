@@ -1,0 +1,208 @@
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+
+import { Button, ErrorState, Select, Skeleton, Text } from '@/components/ui';
+import { StaffColumnsGrid } from '@/components/shared/scheduler/StaffColumnsGrid';
+import { type DayColumnAppointment } from '@/components/shared/scheduler/StaffDayColumn';
+import { useBranchSchedule } from '@/features/schedule/api/useBranchSchedule';
+import { useStaff } from '@/features/staff/api/useStaff';
+import { usePermission } from '@/lib/permissions';
+import { theme, useBreakpoint } from '@/lib/theme';
+import {
+  addDaysToLocalDate,
+  formatDate,
+  todayInZone,
+  weekdayOfLocalDate,
+  zonedToUtc,
+  type IanaTimeZone,
+  type LocaleTag,
+  type LocalDate,
+} from '@/lib/time';
+
+import { type CalendarAppointment, useCalendarAppointments } from '../api/useAppointments';
+import { useMyStaffProfile } from '../api/useMyStaffProfile';
+import { minuteOfDayFromTime } from '../timeGrid';
+import { type AppointmentRow } from '../types';
+import { DateNavButton } from './DateNavButton';
+
+export type DayViewProps = {
+  businessId: string | null;
+  branchId: string | null;
+  timeZone: IanaTimeZone;
+  locale: LocaleTag;
+  date: LocalDate;
+  onChangeDate: (date: LocalDate) => void;
+  onPressSlot: (staffId: string | null, minute: number) => void;
+  onPressAppointment: (id: string, row: AppointmentRow) => void;
+};
+
+export function DayView({
+  businessId,
+  branchId,
+  timeZone,
+  locale,
+  date,
+  onChangeDate,
+  onPressSlot,
+  onPressAppointment,
+}: DayViewProps) {
+  const { t } = useTranslation();
+  const { isMobile } = useBreakpoint();
+  const canViewAllStaff = usePermission('calendar.view_all_staff');
+  const myStaffProfile = useMyStaffProfile(businessId);
+  const staff = useStaff(businessId, branchId, { includeInactive: false });
+  const branchSchedule = useBranchSchedule(businessId, branchId);
+  const calendar = useCalendarAppointments(businessId, branchId, date, date);
+
+  const isOwnScopeOnly = !canViewAllStaff.allowed;
+  const allStaff = useMemo(() => staff.data ?? [], [staff.data]);
+  const visibleStaff = useMemo(() => {
+    if (!isOwnScopeOnly) return allStaff;
+    return allStaff.filter((member) => member.id === myStaffProfile.data);
+  }, [allStaff, isOwnScopeOnly, myStaffProfile.data]);
+
+  const [mobileStaffId, setMobileStaffId] = useState<string | null>(null);
+  const activeStaffId = isOwnScopeOnly
+    ? (myStaffProfile.data ?? null)
+    : (mobileStaffId ?? visibleStaff[0]?.id ?? null);
+
+  const columnsStaff = isMobile
+    ? visibleStaff.filter((member) => member.id === activeStaffId)
+    : visibleStaff;
+
+  const dayOfWeek = weekdayOfLocalDate(date);
+  const isToday = date === todayInZone(timeZone);
+  const nowMinute = isToday ? minuteOfDayFromTime(new Date().toISOString(), timeZone) : null;
+
+  if (calendar.isError) {
+    return (
+      <ErrorState
+        title={t('appointments.loadError')}
+        description={calendar.error.message}
+        onRetry={() => void calendar.refetch()}
+        retryLabel={t('actions.retry')}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.dateNav}>
+        <DateNavButton
+          icon={ChevronLeft}
+          label={t('appointments.previousDay')}
+          onPress={() => onChangeDate(addDaysToLocalDate(date, -1))}
+        />
+        <Text variant="bodyStrong">
+          {formatDate(zonedToUtc(date, '12:00', timeZone), timeZone, locale, 'full')}
+        </Text>
+        <DateNavButton
+          icon={ChevronRight}
+          label={t('appointments.nextDay')}
+          onPress={() => onChangeDate(addDaysToLocalDate(date, 1))}
+        />
+        {!isToday ? (
+          <Button variant="ghost" size="sm" onPress={() => onChangeDate(todayInZone(timeZone))}>
+            {t('appointments.today')}
+          </Button>
+        ) : null}
+      </View>
+
+      {isMobile && !isOwnScopeOnly && visibleStaff.length > 1 ? (
+        <View style={styles.staffSwitcher}>
+          <Select
+            options={visibleStaff.map((member) => ({
+              value: member.id,
+              label: member.displayName,
+            }))}
+            value={activeStaffId}
+            onChange={setMobileStaffId}
+          />
+        </View>
+      ) : null}
+
+      {calendar.isPending ? (
+        <Skeleton height={400} radius="md" />
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={isMobile ? false : true}>
+          <StaffColumnsGrid
+            locale={locale}
+            columnWidth={isMobile ? undefined : 220}
+            columns={columnsStaff.map((member) => {
+              const workingIntervals = isOwnScopeOnly
+                ? [] // own-scope single column: branch hours below is enough context
+                : (branchSchedule.data?.hours
+                    .filter((hour) => hour.dayOfWeek === dayOfWeek)
+                    .map((hour) => ({
+                      startMinute: hour.startMinute,
+                      endMinute: hour.endMinute,
+                    })) ?? []);
+
+              const appointments: DayColumnAppointment[] = (calendar.data?.rows ?? [])
+                .filter((row) => row.staffId === member.id)
+                .map((row) => ({
+                  id: row.id,
+                  startMinute: minuteOfDayFromTime(row.startsAt, timeZone),
+                  endMinute: minuteOfDayFromTime(row.endsAt, timeZone),
+                  status: row.status,
+                  clientName: row.clientName,
+                  serviceName: row.serviceName,
+                }));
+
+              return {
+                staffId: member.id,
+                staffName: member.displayName,
+                appointments,
+                workingIntervals,
+                nowMinute: member.id === activeStaffId || !isMobile ? nowMinute : null,
+                onPressSlot: (minute: number) => onPressSlot(member.id, minute),
+                onPressAppointment: (id: string) => {
+                  const row = calendar.data?.rows.find((r) => r.id === id);
+                  if (row) onPressAppointment(id, toAppointmentRow(row, branchId ?? ''));
+                },
+              };
+            })}
+          />
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+function toAppointmentRow(row: CalendarAppointment, branchId: string): AppointmentRow {
+  return {
+    id: row.id,
+    branchId,
+    startsAt: row.startsAt,
+    endsAt: row.endsAt,
+    status: row.status,
+    source: null,
+    serviceId: row.serviceId,
+    serviceName: row.serviceName,
+    staffId: row.staffId,
+    staffName: row.staffName,
+    clientId: row.clientId,
+    clientName: row.clientName,
+    clientPhone: null,
+    priceMinor: null,
+    invoiceId: null,
+  };
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    gap: theme.spacing[12],
+    paddingHorizontal: theme.layout.pagePadding,
+  },
+  dateNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing[8],
+  },
+  staffSwitcher: {
+    maxWidth: 280,
+  },
+});

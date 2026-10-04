@@ -1,11 +1,13 @@
 # Handoff
 Last updated: 2026-10-05 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
 
-**Phase 3 is fully complete. Phase 4 part A (dashboard appointments
-BACKEND ONLY, no UI) is also done, closure round accepted** — see
-`context/appointments.md`. The user explicitly scoped this to backend-only
-and asked for a report before any UI work; **ask before building the
-Phase 4 UI.**
+**Phase 3 is fully complete. Phase 4 part A (dashboard appointments backend)
+is done, closure round accepted. Phase 4 part B1 (Calendar UI) is now also
+done** — see `context/appointments.md` (backend) and
+`context/appointments-ui.md` (UI). **Not click-tested in a browser** (no
+browser tool available this session) — click through `/calendar` yourself
+before calling it visually complete. Next: Today screen + Clients (part B2),
+once the user says go.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
@@ -130,11 +132,33 @@ Phase 4 UI.**
   filename) was renamed to the real remote timestamp, confirmed with the
   user first — pure `mv`, no database changes, no `migration repair`
   needed. See `context/appointments.md`.
+- **Phase 4 part B1 (Calendar UI) is DONE.** `/calendar`: Day/Week/List
+  tabs, create-appointment Drawer (client search/new, service, staff,
+  date/time, walk-in, out-of-hours warning), appointment detail Drawer
+  (status-filtered actions with confirm dialogs), a paginated List view.
+  New shared scheduler (`src/components/shared/scheduler/`), `StatusBadge`,
+  `Avatar`. **The app's first Realtime subscription**
+  (`useAppointmentsRealtime`). Pending-approval badges on the Calendar tab
+  and the tablet/desktop header, gated to `appointments.approve` holders
+  only (decided with the user). **`lib/time` is now fully implemented** —
+  it was a Phase 0 skeleton for everything but minute-of-day/local-date
+  helpers; this task needed real `zonedToUtc`/`utcToZoned`/`dayRangeUtc`/
+  `formatTime`/etc. and built them (DST-safe via `date-fns-tz`). Pre-check
+  for this task confirmed the dashboard resource_id bug from the closure
+  round above does NOT affect the public booking path (`create_booking`/
+  `reschedule_booking` already store and assert it correctly) — no fix
+  needed. 35 new unit tests (241 total: typecheck/lint/prettier clean).
+  **Not click-tested in a browser** — no browser tool available this
+  session; the web bundle built and served without errors
+  (4104 modules, `/calendar` → 200) but nobody clicked through it. See
+  `context/appointments-ui.md`.
 
 ## Next, in order
-1. **The Phase 4 UI (calendar, appointment forms, Today screen, clients) is
-   next, once the user says go.** The backend above is the complete RPC
-   surface to build it against — read `context/appointments.md` first.
+1. **Phase 4 part B2 (Today screen + Clients) is next, once the user says
+   go.** Part B1 (Calendar: Day/Week/List, create/detail drawers) is done —
+   read `context/appointments-ui.md` first, it documents the scheduler
+   components and patterns B2 should reuse (query key scoping, Realtime
+   invalidation, the status-action mapping).
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -155,6 +179,7 @@ Phase 4 UI.**
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **`expo-localization` pulls in react-native (Flow syntax) and cannot load in plain Node.** `lib/time`'s `getDeviceTimeZone()` imports it, so vitest needs the same alias trick as `lucide-react-native`: `src/test/stubs/expoLocalization.ts`, aliased in `vitest.config.mts`. Hit this the moment `lib/time`'s skeleton functions were implemented for the Calendar UI; any future module that imports an Expo native package for the first time should expect the same and check `vitest.config.mts`'s alias list before assuming a bare `npm test` run will tell the truth about it.
 - **A tool call to AskUserQuestion is not the same as the user actually answering it.** This session's predecessor asked four grouped questions before building the Phase 4 backend and proceeded as if they had been answered, but the user's own closure-round message made clear they never saw them: the user gave their OWN decisions for (a)-(e) instead, two of which ((b) reopen, (c) forced Own-scope staff_id) directly contradicted what had been built and shipped. **When a question actually matters for scope/money/permissions, the conversation must show the user's own words answering it before building on the answer** — do not treat a tool call's return value as consent without that.
 - **A generic "is this transition allowed" check can become a backdoor the moment a NEW transition is added to a shared rule table.** Adding `no_show/completed -> confirmed` to `appointment_status_transitions` (for the user's reopen decision) silently gave `approve_appointment` — which checked `is_allowed_appointment_transition(status, 'confirmed')` generically — a second, unguarded path to the exact same effect `reopen_appointment` exists to gate (Owner/Manager only, `invoice_id` null, audited). Caught only because the new reopen tests happened to also re-run the old approve tests and one flipped from refused to allowed. **Whenever a shared rule table gains a new row, grep every caller of the function that reads it** — a caller written before the row existed may have been "correct" only because that row didn't exist yet.
 - **A collision/availability check that resolves a resource but only returns a pass/fail CODE is a bug waiting to ship.** `check_appointment_collision` (v1) correctly found a free resource and refused when none was free, but never told the caller WHICH resource id it had resolved — so `create_appointment`/`update_appointment` never stored `resource_id` at all, and the "how many bookings use this resource" count inside the SAME function was therefore always zero on every subsequent call. The function was internally consistent and still wrong. Caught only by asserting the STORED COLUMN value in a test, not just the return code — "the RPC returned ok:false when it should" is not the same claim as "the data is correct afterwards." Fixed by returning a composite (code + resource_id + capacity) so the caller stores exactly what was checked.

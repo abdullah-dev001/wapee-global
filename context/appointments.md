@@ -1,13 +1,15 @@
 # Dashboard appointments (backend)
-Status: backend done, closure round complete · no UI yet · Phase: 4 · Last updated: 2026-10-05
+Status: backend done · UI done, see [appointments-ui.md](appointments-ui.md) · Phase: 4 · Last updated: 2026-10-05
 
 ## What it does
 The authenticated, permission-checked write and read path for appointments
 from the dashboard: book, walk-in, reschedule, cancel, no-show, complete,
 approve, reopen, list (paginated, filtered, searched), and a calendar-range
-query. This is **backend only** — no screens. The public guest-facing path
-(`create_booking`, `manage_booking`) is untouched and unrelated; this is the
-staff-facing path, callable by `authenticated` through `can()`/scope checks.
+query. The public guest-facing path (`create_booking`, `manage_booking`) is
+untouched and unrelated; this is the staff-facing path, callable by
+`authenticated` through `can()`/scope checks. The UI built on top of this
+(Calendar screen, Day/Week/List, drawers) is documented separately in
+[appointments-ui.md](appointments-ui.md) to keep each file focused.
 
 ## Business rules
 - **Staff may book/reschedule OUTSIDE working hours and ignoring minimum
@@ -89,7 +91,7 @@ staff-facing path, callable by `authenticated` through `can()`/scope checks.
 | supabase/migrations/20261004043628, 20261004045004, 20261004045754, 20261004045817, 20261004045901 | Historical no-op placeholders: these timestamps are real entries in the remote migration-history table (from intermediate `apply_migration` calls this session), folded into the FINAL function bodies in the files above rather than replayed as separate changes. Local files are kept at current content; see each placeholder's own comment. |
 | supabase/tests/12_dashboard_appointments.sql | 141 assertions |
 
-No app code yet — no hooks, no screens.
+No app code in this file's scope — see [appointments-ui.md](appointments-ui.md) for the Calendar screen and drawers built on top of this RPC surface.
 
 ## Database
 
@@ -212,9 +214,8 @@ timestamps (confirmed with the user before doing it — pure `mv`, zero
 database changes). See Changelog and `context/_handoff.md`'s Traps.
 
 ## Data & caching
-Not wired yet — no app code. When built: `list_appointments` is `live`/
-`liveShort` staleTime; `get_calendar_appointments` the same; both
-invalidated by the Realtime subscription above.
+Not wired here — see [appointments-ui.md](appointments-ui.md) for query
+keys, staleTimes and the Realtime invalidation built on this RPC surface.
 
 ## Permissions & gating
 `appointments.view`/`.create`/`.edit`/`.cancel`/`.approve`, each Own/Branch/
@@ -222,13 +223,13 @@ All per doc §9's matrix. `reopen_appointment` is gated by ROLE (Owner/
 Manager), not a permission — see Business rules. No plan or add-on gate.
 
 ## UI
-Not built.
+See [appointments-ui.md](appointments-ui.md) — Calendar screen (Day/Week/
+List), create/detail drawers, the new shared scheduler.
 
 ## i18n
-Not wired yet.
+See [appointments-ui.md](appointments-ui.md).
 
 ## Known limits / TODO
-- **No UI yet** — backend only, by design.
 - **`list_appointments`'s search is a plain `ilike`** via the existing trgm
   index.
 - **No bulk operations** — one appointment per call, matching every other
@@ -244,6 +245,12 @@ Not wired yet.
   anywhere) but a candidate for real removal once the tooling allows it.
 
 ## Changelog
+- 2026-10-05 (Phase 4 part B1): UI built on this RPC surface — see
+  [appointments-ui.md](appointments-ui.md). Pre-check confirmed (no fix
+  needed): the dashboard resource_id bug from the closure round below was
+  specific to the dashboard RPCs and does not affect `create_booking`/
+  `reschedule_booking` (public path), which already assert the stored
+  column in `08_create_booking.sql`/`11_guest_manage_link.sql`.
 - 2026-10-05 (closure round): Implemented the user's decisions (b) reopen
   (`reopen_appointment`, Owner/Manager role check, `invoice_id` guard,
   audited) and (c) staff_id FORCED for Own-scope `create_appointment`
