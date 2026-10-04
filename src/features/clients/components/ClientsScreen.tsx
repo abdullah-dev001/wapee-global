@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { PageContainer, Screen } from '@/components/layout';
+import { PageContainer, Screen, usePagePadding } from '@/components/layout';
 import { SearchInput } from '@/components/shared';
 import { Button, Drawer, Toggle } from '@/components/ui';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
@@ -20,6 +20,7 @@ export function ClientsScreen() {
   const params = useLocalSearchParams<{ search?: string; archived?: string }>();
   const { businessId } = useCurrentScope();
   const canCreate = usePermission('clients.create');
+  const pagePadding = usePagePadding();
 
   const [creating, setCreating] = useState(false);
 
@@ -58,7 +59,7 @@ export function ClientsScreen() {
         </View>
       </PageContainer>
 
-      <View style={styles.body}>
+      <View style={[styles.body, { paddingHorizontal: pagePadding }]}>
         <ClientListView
           businessId={businessId}
           filters={{ search, includeArchived }}
@@ -90,7 +91,6 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    paddingHorizontal: theme.layout.pagePadding,
     marginTop: theme.spacing[12],
   },
 });

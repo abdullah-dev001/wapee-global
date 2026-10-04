@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
+import { usePagePadding } from '@/components/layout';
 import { Text } from '@/components/ui';
 import { localeWeekStart } from '@/components/shared/calendarGrid';
 import { theme } from '@/lib/theme';
@@ -58,6 +59,7 @@ export function WeekView({
   }, [weekStartDate, locale]);
 
   const [selectedDay, setSelectedDay] = useState(weekStartDate);
+  const pagePadding = usePagePadding();
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, index) => addDaysToLocalDate(weekStart, index)),
@@ -66,7 +68,7 @@ export function WeekView({
 
   return (
     <View style={styles.container}>
-      <View style={styles.nav}>
+      <View style={[styles.nav, { paddingHorizontal: pagePadding }]}>
         <DateNavButton
           icon={ChevronLeft}
           label={t('appointments.previousWeek')}
@@ -109,6 +111,7 @@ export function WeekView({
         onChangeDate={setSelectedDay}
         onPressSlot={(staffId, minute) => onPressSlot(staffId, selectedDay, minute)}
         onPressAppointment={onPressAppointment}
+        hideDateNav
       />
     </View>
   );
@@ -161,7 +164,6 @@ const styles = StyleSheet.create({
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.layout.pagePadding,
     gap: theme.spacing[4],
   },
   strip: {

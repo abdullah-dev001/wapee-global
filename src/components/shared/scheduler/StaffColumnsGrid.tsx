@@ -11,8 +11,17 @@ export type StaffColumnsGridProps = {
   columns: Omit<StaffDayColumnProps, 'hours' | 'locale' | 'width'>[];
   hours?: GridHours;
   locale: LocaleTag;
-  /** Per-column width; narrower on mobile (one wide column) vs desktop (several). */
+  /** Per-column width, used when `fillWidth` is off. */
   columnWidth?: number;
+  /**
+   * Let the columns share the remaining width (after the hour ruler) instead of
+   * each taking `columnWidth`. Used on mobile, which renders exactly one column:
+   * a fixed width there leaves dead space beside the grid.
+   *
+   * The caller must NOT wrap this in a horizontal ScrollView when `fillWidth` is
+   * on — a flexing child inside one collapses to zero.
+   */
+  fillWidth?: boolean;
 };
 
 /**
@@ -28,9 +37,10 @@ export function StaffColumnsGrid({
   hours = DEFAULT_GRID_HOURS,
   locale,
   columnWidth = 220,
+  fillWidth = false,
 }: StaffColumnsGridProps) {
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView style={fillWidth ? styles.fill : undefined} showsVerticalScrollIndicator={false}>
       <View style={styles.row}>
         <HourRuler hours={hours} locale={locale} />
         {columns.map((column) => (
@@ -40,6 +50,7 @@ export function StaffColumnsGrid({
             hours={hours}
             locale={locale}
             width={columnWidth}
+            fillWidth={fillWidth}
           />
         ))}
       </View>
@@ -51,5 +62,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
+  },
+  fill: {
+    flex: 1,
   },
 });

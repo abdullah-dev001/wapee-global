@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
+import { usePagePadding } from '@/components/layout';
 import { Button, ErrorState, Select, Skeleton, Text } from '@/components/ui';
 import { StaffColumnsGrid } from '@/components/shared/scheduler/StaffColumnsGrid';
 import { type DayColumnAppointment } from '@/components/shared/scheduler/StaffDayColumn';
@@ -37,6 +38,12 @@ export type DayViewProps = {
   onChangeDate: (date: LocalDate) => void;
   onPressSlot: (staffId: string | null, minute: number) => void;
   onPressAppointment: (id: string, row: AppointmentRow) => void;
+  /**
+   * Hide the prev/next/today date row. `WeekView` embeds this component under
+   * its own week strip, which already moves the date — two date navigators
+   * stacked on one screen.
+   */
+  hideDateNav?: boolean;
 };
 
 export function DayView({
@@ -48,9 +55,11 @@ export function DayView({
   onChangeDate,
   onPressSlot,
   onPressAppointment,
+  hideDateNav = false,
 }: DayViewProps) {
   const { t } = useTranslation();
   const { isMobile } = useBreakpoint();
+  const pagePadding = usePagePadding();
   const canViewAllStaff = usePermission('calendar.view_all_staff');
   const myStaffProfile = useMyStaffProfile(businessId);
   const staff = useStaff(businessId, branchId, { includeInactive: false });
@@ -91,29 +100,31 @@ export function DayView({
 
   return (
     <View style={styles.container}>
-      <View style={styles.dateNav}>
-        <DateNavButton
-          icon={ChevronLeft}
-          label={t('appointments.previousDay')}
-          onPress={() => onChangeDate(addDaysToLocalDate(date, -1))}
-        />
-        <Text variant="bodyStrong">
-          {formatDate(zonedToUtc(date, '12:00', timeZone), timeZone, locale, 'full')}
-        </Text>
-        <DateNavButton
-          icon={ChevronRight}
-          label={t('appointments.nextDay')}
-          onPress={() => onChangeDate(addDaysToLocalDate(date, 1))}
-        />
-        {!isToday ? (
-          <Button variant="ghost" size="sm" onPress={() => onChangeDate(todayInZone(timeZone))}>
-            {t('appointments.today')}
-          </Button>
-        ) : null}
-      </View>
+      {hideDateNav ? null : (
+        <View style={[styles.dateNav, { paddingHorizontal: pagePadding }]}>
+          <DateNavButton
+            icon={ChevronLeft}
+            label={t('appointments.previousDay')}
+            onPress={() => onChangeDate(addDaysToLocalDate(date, -1))}
+          />
+          <Text variant="bodyStrong" numberOfLines={1} style={styles.dateLabel}>
+            {formatDate(zonedToUtc(date, '12:00', timeZone), timeZone, locale, 'full')}
+          </Text>
+          <DateNavButton
+            icon={ChevronRight}
+            label={t('appointments.nextDay')}
+            onPress={() => onChangeDate(addDaysToLocalDate(date, 1))}
+          />
+          {!isToday ? (
+            <Button variant="ghost" size="sm" onPress={() => onChangeDate(todayInZone(timeZone))}>
+              {t('appointments.today')}
+            </Button>
+          ) : null}
+        </View>
+      )}
 
       {isMobile && !isOwnScopeOnly && visibleStaff.length > 1 ? (
-        <View style={styles.staffSwitcher}>
+        <View style={[styles.staffSwitcher, { marginHorizontal: pagePadding }]}>
           <Select
             options={visibleStaff.map((member) => ({
               value: member.id,
@@ -126,12 +137,19 @@ export function DayView({
       ) : null}
 
       {calendar.isPending ? (
-        <Skeleton height={400} radius="md" />
+        <View style={{ paddingHorizontal: pagePadding }}>
+          <Skeleton height={400} radius="md" />
+        </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={isMobile ? false : true}>
+        // Mobile shows exactly ONE staff column, so it flexes to fill the width
+        // instead of sitting at a fixed 220px with dead space beside it. There
+        // is nothing to scroll to horizontally, so the ScrollView is skipped
+        // entirely — a `flex: 1` child inside a horizontal ScrollView collapses.
+        <GridScroller isMobile={isMobile}>
           <StaffColumnsGrid
             locale={locale}
-            columnWidth={isMobile ? undefined : 220}
+            fillWidth={isMobile}
+            columnWidth={220}
             columns={columnsStaff.map((member) => {
               const shading = dayShading.data?.get(member.id);
               // A staff member with no individual hours configured for this
@@ -173,9 +191,22 @@ export function DayView({
               };
             })}
           />
-        </ScrollView>
+        </GridScroller>
       )}
     </View>
+  );
+}
+
+/**
+ * Mobile renders the single staff column at full width (no horizontal scroll to
+ * offer); tablet/desktop keep fixed-width columns and scroll when they overflow.
+ */
+function GridScroller({ isMobile, children }: { isMobile: boolean; children: ReactNode }) {
+  if (isMobile) return <View style={styles.gridFill}>{children}</View>;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator>
+      {children}
+    </ScrollView>
   );
 }
 
@@ -183,14 +214,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     gap: theme.spacing[12],
-    paddingHorizontal: theme.layout.pagePadding,
   },
   dateNav: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing[8],
   },
+  dateLabel: {
+    // Shrinks instead of pushing the next/Today buttons off a 320px screen.
+    flexShrink: 1,
+  },
   staffSwitcher: {
     maxWidth: 280,
+  },
+  gridFill: {
+    flex: 1,
   },
 });

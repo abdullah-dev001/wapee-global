@@ -160,6 +160,18 @@ Namespace `common`, group `appointments.*`.
   `setQueryData` — fine given Realtime already re-invalidates.
 
 ## Changelog
+- 2026-10-05 (UI polish): layout fixes, no behaviour change. The dead
+  vertical gap under the Day/Week/List tabs came from `PageContainer`'s
+  unconditional `flex: 1` splitting the screen with the `flex: 1` body
+  beside it (fixed in the shared component — see `_foundation.md`). The day
+  grid now fills the phone width (`StaffColumnsGrid` `fillWidth`, and the
+  horizontal `ScrollView` is skipped on mobile) instead of stopping at a
+  fixed 220px column. `DayView` gained `hideDateNav`: `WeekView` embeds
+  `DayView` under its own week strip and was showing two date navigators
+  stacked. The full date label now shrinks (`numberOfLines` + `flexShrink`)
+  instead of pushing the next/Today buttons off a 320px screen. `DayView`,
+  `WeekView` and `AppointmentListFilterBar` use `usePagePadding()` instead
+  of a hard-coded 24, so they line up with the title on mobile.
 - 2026-10-05 (Phase 4 part B2): Extracted `calendarAppointmentToRow()` out
   of `DayView` (was a private helper) into `useAppointments.ts`, exported,
   so the new Today screen (`context/today.md`) can reuse the SAME

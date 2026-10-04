@@ -137,6 +137,14 @@ Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
   other mutation in Phase 4.
 
 ## Changelog
+- 2026-10-05 (UI polish): layout fixes, no behaviour change. The dead
+  vertical gap above the table was `PageContainer`'s `flex: 1` (fixed in the
+  shared component — see `_foundation.md`). The `DataTable` now stretches to
+  the page width instead of stopping at its 704px `minWidth`. The body uses
+  `usePagePadding()` so it lines up with the title on mobile. The table's
+  email column header now reads "Email": it was reusing `clients.email`,
+  which the FORM needs as "Email (optional)", so the form label moved to a
+  new `clients.emailFieldLabel` key.
 - 2026-10-05: Built. List (search, keyset pagination, mobile cards /
   desktop `DataTable`), create/edit form with duplicate-phone detection,
   profile screen (contact/notes/upcoming/history/invoice placeholder),

@@ -39,7 +39,15 @@ export function DataTable<TRow extends { id: string }>({
 
   return (
     <View style={[styles.container, isRefetching ? styles.refetching : null]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator
+        // `flexGrow` lets the table STRETCH to the container width when there is
+        // room, while `minWidth` below still forces a horizontal scroll when
+        // there is not. Without it the content container hugs `minWidth` and the
+        // table stops at 704px however wide the page is.
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.table}>
           <View style={styles.headerRow}>
             {visibleColumns.map((column) => (
@@ -113,8 +121,12 @@ const styles = StyleSheet.create({
   refetching: {
     opacity: 0.6,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   table: {
-    minWidth: 704, // 44rem, DESIGN_GUIDE §12.15
+    flex: 1,
+    minWidth: 704, // 44rem, DESIGN_GUIDE §12.15 — the floor, not the width
   },
   headerRow: {
     flexDirection: 'row',

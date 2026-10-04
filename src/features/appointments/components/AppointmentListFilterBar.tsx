@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
+import { usePagePadding } from '@/components/layout';
 import { SearchInput } from '@/components/shared';
 import { Select } from '@/components/ui';
 import { useServices } from '@/features/services/api/useServices';
@@ -30,6 +31,7 @@ export function AppointmentListFilterBar({
   onChange,
 }: AppointmentListFilterBarProps) {
   const { t } = useTranslation();
+  const pagePadding = usePagePadding();
   const services = useServices(businessId, branchId, { includeInactive: true });
   const staff = useStaff(businessId, branchId, { includeInactive: true });
 
@@ -47,7 +49,7 @@ export function AppointmentListFilterBar({
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingHorizontal: pagePadding }]}>
       <SearchInput
         onSearch={(search) => onChange({ ...filters, search })}
         placeholder={t('appointments.list.searchPlaceholder')}

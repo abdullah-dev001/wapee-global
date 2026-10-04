@@ -7,3 +7,4 @@ export { PageContainer, type PageContainerProps } from './PageContainer';
 export { Screen, type ScreenProps } from './Screen';
 export { ServiceWorkerUpdater } from './ServiceWorkerUpdater';
 export { Sidebar, type SidebarProps } from './Sidebar';
+export { usePagePadding } from './usePagePadding';

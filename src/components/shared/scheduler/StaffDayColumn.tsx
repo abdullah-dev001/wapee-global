@@ -38,6 +38,8 @@ export type StaffDayColumnProps = {
   onPressSlot: (minute: MinuteOfDay) => void;
   onPressAppointment: (appointmentId: string) => void;
   width?: number;
+  /** Fill the remaining width instead of using `width` (a single mobile column). */
+  fillWidth?: boolean;
   locale: LocaleTag;
 };
 
@@ -60,6 +62,7 @@ export function StaffDayColumn({
   onPressSlot,
   onPressAppointment,
   width = 220,
+  fillWidth = false,
   locale,
 }: StaffDayColumnProps) {
   const laidOut = useMemo(
@@ -95,7 +98,7 @@ export function StaffDayColumn({
   }, [workingIntervals, closedIntervals]);
 
   return (
-    <View style={[styles.column, { width }]}>
+    <View style={[styles.column, fillWidth ? styles.columnFill : { width }]}>
       <View style={styles.header}>
         <Text variant="bodyStrong" numberOfLines={1}>
           {staffName}
@@ -215,6 +218,9 @@ const styles = StyleSheet.create({
   column: {
     borderRightWidth: theme.borderWidth.hairline,
     borderRightColor: theme.colors.borderSubtle,
+  },
+  columnFill: {
+    flex: 1,
   },
   header: {
     height: 40,

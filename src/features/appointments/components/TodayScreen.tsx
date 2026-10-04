@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { CalendarX } from 'lucide-react-native';
 
-import { PageContainer, Screen } from '@/components/layout';
+import { PageContainer, Screen, usePagePadding } from '@/components/layout';
 import { Avatar, StatusBadge } from '@/components/shared';
 import {
   Button,
@@ -43,6 +43,7 @@ export function TodayScreen() {
   const { businessId, business, branchId } = useCurrentScope();
   const canApprove = usePermission('appointments.approve').allowed;
   const canEdit = usePermission('appointments.edit').allowed;
+  const pagePadding = usePagePadding();
 
   const timeZone = useMemo(() => {
     const branch = business?.branches.find((b) => b.id === branchId);
@@ -114,7 +115,7 @@ export function TodayScreen() {
         </View>
       </PageContainer>
 
-      <View style={styles.body}>
+      <View style={[styles.body, { paddingHorizontal: pagePadding }]}>
         {calendar.isPending ? (
           <View style={styles.skeletonList}>
             {[0, 1, 2].map((row) => (
@@ -355,8 +356,8 @@ const styles = StyleSheet.create({
     gap: theme.spacing[2],
   },
   body: {
-    flex: 1,
-    paddingHorizontal: theme.layout.pagePadding,
+    // No `flex: 1`: this sits inside the scrolling `Screen`, where a flex child
+    // cannot grow and only squeezes its own content.
     marginTop: theme.spacing[12],
   },
   skeletonList: {

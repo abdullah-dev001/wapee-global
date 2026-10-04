@@ -149,6 +149,27 @@ Rules: routes in `app/` stay thin. Business logic lives in `features/`. No file 
 | Desktop web | ≥1024 sidebar layout, hover, keyboard focus |
 If you could not check a target, say so in the task report.
 
+### Screenshots are mandatory (STRICT)
+
+**A UI task is not done until you have LOOKED at the changed screen in a real
+screenshot at mobile width AND at desktop width.** Attach or reference both in
+the task report. Reading the code is not a substitute: the gap and width bugs
+fixed on 2026-10-05 were all plainly visible in one screenshot and invisible in
+a code review, because they came from how two `flex` siblings shared the
+height, not from a wrong value.
+
+- Mobile ~375px and desktop 1440px are the minimum. Add tablet (768) when the
+  screen changes layout at that breakpoint.
+- Web screenshots: Playwright against the dev server is enough and is the
+  fastest route for all three widths.
+- Native screenshots: `xcrun simctl io <device> screenshot <file>` on the iOS
+  simulator.
+- If a screen needs login and you have no credentials, **ask for them** rather
+  than marking the task done on a code review alone, and say in the report
+  exactly which screens you could not see.
+- Look for: dead vertical gaps, content not using the full width, horizontal
+  overflow, clipped text, title/body misalignment, overlapping bars.
+
 **Android cannot be run on this machine (no emulator, no storage for Android Studio).** Until the user says otherwise, every UI task must end with a written **Android code review** of the changed files, and the report must list the result. Check by reading the code:
 - All bottom spacing (tab bar, sticky buttons, sheets, FABs, toasts) uses `insets.bottom`; nothing assumes 0 on Android.
 - Layout works with edge-to-edge and a 3-button nav bar (about 48px inset), gesture nav, and no nav bar.

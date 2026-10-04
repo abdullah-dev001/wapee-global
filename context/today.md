@@ -82,6 +82,12 @@ Reuses the `appointments.*` namespace entirely — no new keys.
   time-sorted list already satisfies without a separate visual state.
 
 ## Changelog
+- 2026-10-05 (UI polish): layout fixes, no behaviour change. The body no
+  longer sets `flex: 1` — it sits inside the scrolling `Screen`, where a flex
+  child cannot grow and only squeezes its own content — and it uses
+  `usePagePadding()` so it lines up with the title on mobile. The gap under
+  the counts row came from `PageContainer`'s `flex: 1` (fixed in the shared
+  component — see `_foundation.md`).
 - 2026-10-05: Built. Counts, ordered list, next-appointment highlight,
   quick actions (approve/complete/no-show) via confirm dialogs, empty
   state, Realtime. Extracted `calendarAppointmentToRow()` from `DayView`

@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui';
 import { Text } from '@/components/ui/Text';
 import { theme, useBreakpoint } from '@/lib/theme';
 
+import { usePagePadding } from './usePagePadding';
+
 export type PageContainerProps = {
   children: ReactNode;
   /** Page title (DESIGN_GUIDE §13.4). The header bar never shows the title. */
@@ -17,6 +19,17 @@ export type PageContainerProps = {
   actions?: ReactNode;
   /** Cap the content width. Default is full width (DESIGN_GUIDE §13.1). */
   maxWidth?: number;
+  /**
+   * Stretch to fill the remaining height (`flex: 1`). **Off by default**: a
+   * PageContainer sized by its content can sit above a `flex: 1` body without
+   * stealing half the screen from it.
+   *
+   * Turn it on only when PageContainer is the ONLY child of a non-scrolling
+   * `Screen` and its own children need the full height (a centred empty or
+   * error state, a list that fills the page). Inside a scrolling `Screen` it is
+   * never needed — `Screen`'s content container already has `flexGrow: 1`.
+   */
+  fill?: boolean;
   style?: ViewStyle;
 };
 
@@ -31,14 +44,17 @@ export function PageContainer({
   count,
   actions,
   maxWidth,
+  fill = false,
   style,
 }: PageContainerProps) {
   const { isMobile } = useBreakpoint();
-  const padding = isMobile ? theme.layout.pagePaddingMobile : theme.layout.pagePadding;
+  const padding = usePagePadding();
 
   return (
-    <View style={[styles.container, { padding }, style]}>
-      <View style={[styles.inner, maxWidth ? { maxWidth } : null]}>
+    <View style={[styles.container, { padding }, fill ? styles.fill : null, style]}>
+      <View
+        style={[styles.inner, fill ? styles.fill : null, maxWidth ? { maxWidth } : null]}
+      >
         {title ? (
           <View style={[styles.header, isMobile ? styles.headerMobile : styles.headerWide]}>
             <View style={styles.titleBlock}>
@@ -67,12 +83,13 @@ export function PageContainer({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     width: '100%',
     alignItems: 'center',
   },
   inner: {
     width: '100%',
+  },
+  fill: {
     flex: 1,
   },
   header: {

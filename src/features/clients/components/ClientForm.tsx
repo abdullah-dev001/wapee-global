@@ -103,7 +103,7 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
       <FormField
         control={control}
         name="email"
-        label={t('clients.email')}
+        label={t('clients.emailFieldLabel')}
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"

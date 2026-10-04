@@ -127,11 +127,17 @@ Conventions:
 | `PhoneInput` (2026-10-04) | Country-code picker (own sheet, `src/config/dialCodes.ts` — 42 countries, **kept in step with** `create_booking`'s SQL fallback table) + a national-number `TextInput`. Reports/accepts real **E.164**, never a raw national number — `lib/config/e164.ts` holds the pure `toE164`/`fromE164` split (7 tests). Built for the public booking page's phone field; usable anywhere a phone number is collected. |
 | `StatusBadge` (2026-10-05) | Appointment status → `Badge` tone + translated label, so the mapping lives in one place. |
 | `Avatar` (2026-10-05) | Round initials circle for a person (client/staff). `BusinessAvatar` (DESIGN_GUIDE) stays the separate rounded-square variant for a business/logo — not built yet. |
-| `DataTable` (2026-10-05) | Desktop/tablet table (DESIGN_GUIDE §12.15 — "the only table in the app" there, now the second). `minWidth` 44rem forces horizontal scroll rather than cramming columns; whole row clickable, no per-row actions; a column can `hideOnCompact`. Built for Clients, generic over any `{ id: string }` row. |
+| `DataTable` (2026-10-05) | Desktop/tablet table (DESIGN_GUIDE §12.15 — "the only table in the app" there, now the second). `minWidth` 44rem is the **floor, not the width**: the scroll view's `contentContainerStyle` has `flexGrow: 1` and the table `flex: 1`, so it stretches to the container and only scrolls horizontally when it genuinely does not fit. Without that it hugged 704px and stopped at ~60% of a 1440px page. Whole row clickable, no per-row actions; a column can `hideOnCompact`. Built for Clients, generic over any `{ id: string }` row. |
 
 `src/components/shared/scheduler/` (2026-10-05, for the Calendar's Day/Week
 grid — see `context/appointments-ui.md`): `StaffColumnsGrid` (hour ruler +
 one `StaffDayColumn` per staff, shared vertical scroll) and `HourRuler`.
+**`fillWidth`** (2026-10-05) makes the columns share the remaining width instead
+of each taking `columnWidth`: mobile renders exactly one column, and a fixed
+220px there left ~70px of dead space beside the grid on a phone. A caller using
+`fillWidth` must NOT wrap the grid in a horizontal `ScrollView` — a flexing child
+inside one collapses — so `DayView` renders a plain `View` on mobile and the
+`ScrollView` only on tablet/desktop.
 Appointment blocks lay out via `src/features/appointments/timeGrid.ts`'s
 pure sweep-line column assignment (overlaps sit side by side).
 
@@ -140,7 +146,8 @@ pure sweep-line column assignment (overlaps sit side by side).
 | Component | Role |
 |---|---|
 | `Screen` | Base of every screen: safe-area insets, status bar style, Android nav-bar button style, keyboard avoidance (`KeyboardAwareScrollView` + `KeyboardStickyView` footer), scroll, pull-to-refresh. Adds **no** page padding. |
-| `PageContainer` | Page padding (24 / 16 mobile), optional max width, title + subtitle + count pill + actions. The page title lives here, never in the header. |
+| `PageContainer` | Page padding (24 / 16 mobile), optional max width, title + subtitle + count pill + actions. The page title lives here, never in the header. **Sized by its content; `flex: 1` only with the `fill` prop** (see below). |
+| `usePagePadding()` | The same number `PageContainer` pads with (24 / 16 mobile). A screen that puts a `flex: 1` body BESIDE `PageContainer` must pad that body with this, or the body sits out of line with the page title. |
 | `ConsumedInsetsProvider` / `useConsumedInsets` | Lets a bar above `Screen` (the trial banner on mobile) claim the top inset so `Screen` does not add it twice. |
 | `AppShell` | Picks the layout by `useBreakpoint()`: mobile = no chrome (tabs come from the Tabs layout); tablet = header + off-canvas sidebar (Escape / Android back / scrim close it); desktop = fixed 240px sidebar + 64px header. |
 | `Sidebar` | Teal 240px, lime active pill, items from `config/navigation`. Tablet variant shows a close button and closes on navigate. |
@@ -154,6 +161,18 @@ Navigation is driven entirely by **`src/config/navigation.ts`**: `navItems` (id,
 Routes: `/` redirects to `/today`. Tabs = Today, Calendar, Clients, More. Services, Staff, Invoices, Reports, Reviews and Settings are registered with `href: null` (reachable from More and the sidebar, never shown as a tab). `clients` and `settings` are both nested routes (a FOLDER, not a flat file: `clients/index.tsx` + `clients/[id].tsx`) — the `Tabs.Screen name="clients"` still resolves to `clients/index.tsx` automatically. **A folder shown in the bottom tab bar needs its OWN `clients/_layout.tsx` (a plain `Stack`)**, or Expo Router flattens every file in the folder into the PARENT Tabs navigator as sibling tab routes instead of nesting `[id]` inside a Stack — confirmed the hard way (see `_handoff.md` Traps): without it, the Clients tab itself disappeared from the bottom bar, because the folder screen's real `route.name` came through as `"clients/index"`, not `"clients"`. `settings/` has no `_layout.tsx` and gets away with it only because it is never shown in the bottom tab bar.
 
 Back behaviour: `useOverlayDismiss` closes the off-canvas sidebar, dialogs and drawers on Android hardware back and on Escape (web) before the route pops. iOS swipe-back is the Stack default and stays on.
+
+**`PageContainer` must NOT stretch when it has a sibling body.** It used to carry
+`flex: 1` unconditionally. On the three screens that put a `flex: 1` body next to
+it (Calendar, Clients, Today) the two flex siblings then split the height ~50/50,
+so a container holding only a title and a tab strip took half the screen — the
+big dead gap under the tabs — and the real content was squeezed into what was
+left. `flex: 1` now comes only from the opt-in **`fill`** prop, for the case it
+was written for: `PageContainer` as the ONLY child of a non-scrolling `Screen`
+whose children need the full height. Inside a scrolling `Screen` it is never
+needed (`scrollContent` already has `flexGrow: 1`). No call site currently needs
+`fill`. Related: a `flex: 1` child INSIDE a scrolling `Screen` cannot grow and
+only squeezes its own content (Today had this too).
 
 **Screens inside the bottom tabs must pass `edges={['top']}` to `Screen`.** The tab bar already sits in the bottom inset and adds its own padding; keeping the default `['top','bottom']` pads it twice — barely visible on iOS, but a ~48px dead gap on Android with 3-button navigation.
 
@@ -214,6 +233,17 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+
+- 2026-10-05 (UI polish): **`PageContainer` no longer stretches by default** —
+  the root cause of the dead vertical gap on Calendar, Clients and Today (two
+  `flex: 1` siblings splitting the height). New opt-in `fill` prop; new
+  `usePagePadding()` so a sibling body lines up with the page title instead of
+  hard-coding `theme.layout.pagePadding` (which was 8px too wide on mobile).
+  `DataTable` now stretches to its container; the scheduler grid gained
+  `fillWidth` for the single mobile column. `DayView` gained `hideDateNav`
+  (WeekView was stacking two date navigators) and its date label now shrinks
+  instead of pushing the Today button off a 320px screen. Screenshot rule added
+  to CLAUDE.md §4.
 
 - 2026-10-05 (Phase 4 part B2): `DataTable` shared composite (Clients
   desktop view). First nested-route tab (`clients/index.tsx` +
