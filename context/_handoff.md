@@ -1,13 +1,18 @@
 # Handoff
 Last updated: 2026-10-05 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
 
-**Phase 3 is fully complete. Phase 4 part A (dashboard appointments backend)
-is done, closure round accepted. Phase 4 part B1 (Calendar UI) is now also
-done** — see `context/appointments.md` (backend) and
-`context/appointments-ui.md` (UI). **Not click-tested in a browser** (no
-browser tool available this session) — click through `/calendar` yourself
-before calling it visually complete. Next: Today screen + Clients (part B2),
-once the user says go.
+**Phase 3 is fully complete. Phase 4 part A (backend) and part B1 (Calendar
+UI) are done and accepted. Part B2 (Today + Clients, plus three B1 fixes)
+is now ALSO done** — see `context/appointments.md`/`appointments-ui.md`
+(Calendar), `context/today.md`, `context/clients.md`. Click-tested on the
+iOS simulator this round (Today, Calendar Day view, Clients list all
+confirmed by screenshot with real data) — two REAL bugs were found and
+fixed this way (Realtime channel-name collision; a missing nested-route
+`_layout.tsx` that made the Clients TAB disappear entirely) — see Traps.
+**Not confirmed**: tapping into a client's profile screen or any dialog/
+form interaction — automated taps did not register on the simulator
+(documented limitation, see `clients.md`). Next: Phase 5 (invoices) or
+further Phase 4 polish, once the user says go.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
@@ -152,17 +157,42 @@ once the user says go.
   session; the web bundle built and served without errors
   (4104 modules, `/calendar` → 200) but nobody clicked through it. See
   `context/appointments-ui.md`.
+- **Phase 4 part B2 (Today + Clients, plus 3 B1 fixes) is DONE.** Fixes:
+  (1) the Reopen button now calls the real `is_owner_or_manager()` RPC
+  (new, shared with `reopen_appointment`'s own check) instead of a
+  permission stand-in; (2) Day/Week shading reads per-staff working hours/
+  breaks/time off (`useDayShading`), not branch hours only; (3) confirmed
+  (no fix needed) the Realtime subscription already tears down on logout
+  and branch switch. **Today**: counts, ordered appointments, next-
+  appointment highlight, quick approve/complete/no-show. **Clients**:
+  list (search, keyset pagination, mobile cards/desktop `DataTable`),
+  create/edit with duplicate-phone detection, archive/unarchive, a profile
+  screen (contact gated by `clients.view_contact`, notes, upcoming/history
+  spanning every branch, Phase 5 invoice placeholder). `list_appointments`
+  gained `p_client_id`. New test suite (`13_clients_dashboard.sql`, 15
+  assertions); `12_dashboard_appointments.sql` now 150/150 (was 141).
+  **Click-tested on the iOS simulator** (first time this session an actual
+  device/simulator run happened, not just a bundle build) — found and
+  fixed two real bugs this way, see Traps: a Realtime channel-name
+  collision between Today and Calendar, and a missing
+  `clients/_layout.tsx` that made the Clients TAB disappear from the
+  bottom bar entirely. Could not confirm tapping into the profile screen
+  (simulator tap automation limitation). See `context/today.md`,
+  `context/clients.md`, `context/appointments-ui.md`.
 
 ## Next, in order
-1. **Phase 4 part B2 (Today screen + Clients) is next, once the user says
-   go.** Part B1 (Calendar: Day/Week/List, create/detail drawers) is done —
-   read `context/appointments-ui.md` first, it documents the scheduler
-   components and patterns B2 should reuse (query key scoping, Realtime
-   invalidation, the status-action mapping).
-2. **Highest-value follow-ups from Phase 2**, any order:
+1. **Phase 5 (invoices) is next, once the user says go.** The client
+   profile screen already has a labelled placeholder for invoice history
+   (`context/clients.md`) and `appointments.invoice_id` is a nullable seam
+   with no FK yet (`context/appointments.md`) — both wait for Phase 5.
+2. Click through what this session could not: the Clients profile screen,
+   create/edit forms, archive confirm, and Calendar's create/detail
+   drawers — a working simulator tap-automation setup would unblock this
+   (see `context/clients.md` Known limits).
+3. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
-3. **Small follow-ups left from Phase 1**, any order:
+4. **Small follow-ups left from Phase 1**, any order:
    - **Members UI gaps**: change a role, remove a member, revoke/resend an invite (`context/members.md`).
    - **`supabase/tests/04_invite_flow.sql` has never run** (no Docker). The same ground is covered by REST checks.
    - **`enforce_last_owner` has no "business is being deleted" exemption** — see Traps and `context/_database.md`.
@@ -179,6 +209,8 @@ once the user says go.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **Supabase's `.channel(name)` resolves by NAME, and a second `.on()` call against an already-`subscribe()`d channel of the same name THROWS** ("cannot add postgres_changes callbacks ... after subscribe()"), it does not create an independent subscription. `useAppointmentsRealtime` named its channel only by `businessId`; Today and Calendar both mount it for the same business at the same time (the Tabs navigator keeps every tab mounted), so the second screen's `.on()` call threw and blanked that screen. Fixed by including a per-mount sequence number in the channel name — any hook meant to be called from more than one component at once needs a channel name unique PER CALLER, not per logical resource.
+- **A folder route (`clients/index.tsx`) needs its OWN `_layout.tsx` (a `Stack`) or Expo Router flattens every file in that folder into the PARENT navigator as sibling routes**, not a nested stack. Without `clients/_layout.tsx`, both `clients/index` and `clients/[id]` showed up as separate top-level screens inside the Tabs navigator (confirmed by logging `state.routes` in `BottomTabBar`), and the folder-based screen's ACTUAL `route.name` came through as `"clients/index"`, not the `"clients"` the Tabs.Screen was declared with — breaking every name-keyed lookup (`iconByName`, `isRouteAllowed`) and making the whole tab silently disappear from the bar. Two fixes needed together: add the `_layout.tsx`, AND normalize `route.name` (strip a trailing `/index`) before any lookup that assumes the plain config name, since even with the `_layout.tsx` the defensive normalization is cheap insurance. `settings/` had the exact same latent shape (`settings/index.tsx` + `settings/booking.tsx`, no `_layout.tsx`) and never surfaced this because `settings` is never shown in the bottom tab bar — only `More`/`Sidebar`, which navigate by `router.push(path)` (always correct) rather than by the Tabs navigator's internal route-name state.
 - **`expo-localization` pulls in react-native (Flow syntax) and cannot load in plain Node.** `lib/time`'s `getDeviceTimeZone()` imports it, so vitest needs the same alias trick as `lucide-react-native`: `src/test/stubs/expoLocalization.ts`, aliased in `vitest.config.mts`. Hit this the moment `lib/time`'s skeleton functions were implemented for the Calendar UI; any future module that imports an Expo native package for the first time should expect the same and check `vitest.config.mts`'s alias list before assuming a bare `npm test` run will tell the truth about it.
 - **A tool call to AskUserQuestion is not the same as the user actually answering it.** This session's predecessor asked four grouped questions before building the Phase 4 backend and proceeded as if they had been answered, but the user's own closure-round message made clear they never saw them: the user gave their OWN decisions for (a)-(e) instead, two of which ((b) reopen, (c) forced Own-scope staff_id) directly contradicted what had been built and shipped. **When a question actually matters for scope/money/permissions, the conversation must show the user's own words answering it before building on the answer** — do not treat a tool call's return value as consent without that.
 - **A generic "is this transition allowed" check can become a backdoor the moment a NEW transition is added to a shared rule table.** Adding `no_show/completed -> confirmed` to `appointment_status_transitions` (for the user's reopen decision) silently gave `approve_appointment` — which checked `is_allowed_appointment_transition(status, 'confirmed')` generically — a second, unguarded path to the exact same effect `reopen_appointment` exists to gate (Owner/Manager only, `invoice_id` null, audited). Caught only because the new reopen tests happened to also re-run the old approve tests and one flipped from refused to allowed. **Whenever a shared rule table gains a new row, grep every caller of the function that reads it** — a caller written before the row existed may have been "correct" only because that row didn't exist yet.

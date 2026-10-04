@@ -53,13 +53,23 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
       {state.routes.map((route, index) => {
+        // A folder-based tab (`clients/index.tsx`, a Tabs.Screen name="clients"
+        // pointing at a directory) reports its ACTUAL route.name as
+        // "clients/index", not "clients" — only a flat file keeps the plain
+        // name. Normalize so the config-driven lookups below (which use the
+        // plain `/clients`-style name from config/navigation.ts) still match.
+        const normalizedName = route.name.replace(/\/index$/, '');
+        // A sibling detail screen inside the same folder (`clients/[id]`)
+        // gets flattened into this SAME Tabs route list by Expo Router —
+        // it is not a nav destination, so it is never in iconByName and is
+        // correctly dropped by the check below without special-casing it.
         const focused = state.index === index;
-        const Icon = iconByName[route.name];
-        const labelKey = labelKeyByName[route.name];
+        const Icon = iconByName[normalizedName];
+        const labelKey = labelKeyByName[normalizedName];
         if (!Icon || !labelKey) return null;
         // A tab the member may not open is dropped from the bar. The screen stays
         // registered (routing must survive), and its RouteGuard refuses it.
-        if (!isPending && !isRouteAllowed(`/${route.name}`)) return null;
+        if (!isPending && !isRouteAllowed(`/${normalizedName}`)) return null;
 
         return (
           <TabButton
@@ -68,7 +78,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
             label={t(labelKey)}
             focused={focused}
             badgeCount={
-              route.name === 'calendar' && canApprove.allowed ? pendingApproval.data : undefined
+              normalizedName === 'calendar' && canApprove.allowed ? pendingApproval.data : undefined
             }
             onPress={() => {
               const event = navigation.emit({

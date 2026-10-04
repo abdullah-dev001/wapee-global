@@ -21,7 +21,8 @@ import {
   type LocalDate,
 } from '@/lib/time';
 
-import { type CalendarAppointment, useCalendarAppointments } from '../api/useAppointments';
+import { calendarAppointmentToRow, useCalendarAppointments } from '../api/useAppointments';
+import { useDayShading } from '../api/useDayShading';
 import { useMyStaffProfile } from '../api/useMyStaffProfile';
 import { minuteOfDayFromTime } from '../timeGrid';
 import { type AppointmentRow } from '../types';
@@ -54,6 +55,7 @@ export function DayView({
   const myStaffProfile = useMyStaffProfile(businessId);
   const staff = useStaff(businessId, branchId, { includeInactive: false });
   const branchSchedule = useBranchSchedule(businessId, branchId);
+  const dayShading = useDayShading(businessId, branchId, date, timeZone);
   const calendar = useCalendarAppointments(businessId, branchId, date, date);
 
   const isOwnScopeOnly = !canViewAllStaff.allowed;
@@ -131,14 +133,19 @@ export function DayView({
             locale={locale}
             columnWidth={isMobile ? undefined : 220}
             columns={columnsStaff.map((member) => {
-              const workingIntervals = isOwnScopeOnly
-                ? [] // own-scope single column: branch hours below is enough context
-                : (branchSchedule.data?.hours
-                    .filter((hour) => hour.dayOfWeek === dayOfWeek)
-                    .map((hour) => ({
-                      startMinute: hour.startMinute,
-                      endMinute: hour.endMinute,
-                    })) ?? []);
+              const shading = dayShading.data?.get(member.id);
+              // A staff member with no individual hours configured for this
+              // weekday falls back to the branch's hours, so the column is
+              // never shaded fully closed just for missing data entry.
+              const workingIntervals =
+                shading && shading.workingIntervals.length > 0
+                  ? shading.workingIntervals
+                  : (branchSchedule.data?.hours
+                      .filter((hour) => hour.dayOfWeek === dayOfWeek)
+                      .map((hour) => ({
+                        startMinute: hour.startMinute,
+                        endMinute: hour.endMinute,
+                      })) ?? []);
 
               const appointments: DayColumnAppointment[] = (calendar.data?.rows ?? [])
                 .filter((row) => row.staffId === member.id)
@@ -156,11 +163,12 @@ export function DayView({
                 staffName: member.displayName,
                 appointments,
                 workingIntervals,
+                closedIntervals: shading?.closedIntervals ?? [],
                 nowMinute: member.id === activeStaffId || !isMobile ? nowMinute : null,
                 onPressSlot: (minute: number) => onPressSlot(member.id, minute),
                 onPressAppointment: (id: string) => {
                   const row = calendar.data?.rows.find((r) => r.id === id);
-                  if (row) onPressAppointment(id, toAppointmentRow(row, branchId ?? ''));
+                  if (row) onPressAppointment(id, calendarAppointmentToRow(row, branchId ?? ''));
                 },
               };
             })}
@@ -169,26 +177,6 @@ export function DayView({
       )}
     </View>
   );
-}
-
-function toAppointmentRow(row: CalendarAppointment, branchId: string): AppointmentRow {
-  return {
-    id: row.id,
-    branchId,
-    startsAt: row.startsAt,
-    endsAt: row.endsAt,
-    status: row.status,
-    source: null,
-    serviceId: row.serviceId,
-    serviceName: row.serviceName,
-    staffId: row.staffId,
-    staffName: row.staffName,
-    clientId: row.clientId,
-    clientName: row.clientName,
-    clientPhone: null,
-    priceMinor: null,
-    invoiceId: null,
-  };
 }
 
 const styles = StyleSheet.create({

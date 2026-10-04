@@ -89,7 +89,8 @@ untouched and unrelated; this is the staff-facing path, callable by
 | supabase/migrations/20261004044911_phase4_reopen_and_own_staff_fix.sql | `reopen_appointment`, `my_staff_profile_id()`, the reopen transitions |
 | supabase/migrations/20261004045723_fix_dashboard_resource_id_not_stored.sql | `appointment_collision_result` composite type + `check_appointment_collision_v2` (the REAL bug fix — see Changelog) |
 | supabase/migrations/20261004043628, 20261004045004, 20261004045754, 20261004045817, 20261004045901 | Historical no-op placeholders: these timestamps are real entries in the remote migration-history table (from intermediate `apply_migration` calls this session), folded into the FINAL function bodies in the files above rather than replayed as separate changes. Local files are kept at current content; see each placeholder's own comment. |
-| supabase/tests/12_dashboard_appointments.sql | 141 assertions |
+| supabase/migrations/20261005110000_is_owner_or_manager.sql | `is_owner_or_manager(business_id, branch_id?)` (new) + `reopen_appointment` refactored to call it instead of its own inline query (Phase 4 part B1 fix 1 — see Changelog) |
+| supabase/tests/12_dashboard_appointments.sql | 148 assertions |
 
 No app code in this file's scope — see [appointments-ui.md](appointments-ui.md) for the Calendar screen and drawers built on top of this RPC surface.
 
@@ -144,17 +145,28 @@ EXECUTE, called from inside the DEFINER functions).
   DIRECTLY, not the transitions table (see Business rules: avoiding the
   reopen side door).
 - **`reopen_appointment(appointment_id) → jsonb`** — `no_show`/`completed`
-  → `confirmed`. Owner/Manager role check (not a permission). Refuses with
-  `invoiced` if `invoice_id is not null`. Audit action
-  `appointment.reopened`.
+  → `confirmed`. Owner/Manager role check (not a permission), via
+  `is_owner_or_manager()` (below). Refuses with `invoiced` if `invoice_id
+  is not null`. Audit action `appointment.reopened`.
+- **`is_owner_or_manager(business_id, branch_id default null) → boolean`**
+  (new, 2026-10-05, Phase 4 part B1 fix 1) — the single source of truth for
+  "is this caller Owner or Manager", extracted from `reopen_appointment`'s
+  own inline query so the RPC and the UI's Reopen button can never drift
+  apart. `branch_id null` asks "anywhere" (what the UI wants when deciding
+  whether to show the button at all, before it knows one appointment's
+  branch); `reopen_appointment` passes the specific appointment's branch.
+  `STABLE`, `SECURITY DEFINER`, `authenticated` only.
 - **`my_staff_profile_id(business_id) → uuid`** — the caller's own
   `staff_profiles` row in that business, or null. Used to FORCE `staff_id`
   for an Own-scope caller rather than merely validate it.
 - **`is_allowed_appointment_transition(from, to) → boolean`** — reads
   `appointment_status_transitions`. `select` granted to `authenticated` AND
   `anon` (read-only reference data).
-- **`list_appointments(...)`**, **`get_calendar_appointments(...)`** —
-  unchanged from the first pass; see the SQL for full signatures.
+- **`list_appointments(...)`** — gained `p_client_id` (2026-10-05, Phase 4
+  part B2, for the client profile's visit history — see
+  `context/clients.md`); every other filter unchanged from the first pass.
+  **`get_calendar_appointments(...)`** — unchanged from the first pass.
+  See the SQL for full signatures.
 
 ### Realtime
 `appointments` is in the `supabase_realtime` publication. Supabase's
@@ -245,6 +257,25 @@ See [appointments-ui.md](appointments-ui.md).
   anywhere) but a candidate for real removal once the tooling allows it.
 
 ## Changelog
+- 2026-10-05 (Phase 4 part B2): `list_appointments` gained `p_client_id`
+  for the Clients feature's profile screen (see
+  [clients.md](clients.md)) — the client profile's "visit history" needed
+  server-paginated past appointments for one client, a real gap (asked the
+  user before adding it). Applied as two connector calls (create the new
+  12-arg overload, then drop the old 11-arg one) because the connector
+  declined a combined drop+create as destructive SQL, and because a
+  PL/pgSQL caller with a named-but-unqualified call (the test suite) got
+  `function ... is not unique` while both overloads briefly existed — see
+  the migration file's own header for the exact mechanics. 2 new SQL
+  assertions (150 total, was 148): one client's visit history spans every
+  branch (decided with the user: clients are business-wide).
+- 2026-10-05 (Phase 4 part B1 fix 1): Added `is_owner_or_manager()` and
+  refactored `reopen_appointment` to call it instead of its own inline
+  role query — same behaviour, now deduplicated against the UI's Reopen
+  button check (see [appointments-ui.md](appointments-ui.md)). 7 new SQL
+  assertions (148 total, was 141): agrees with every role the existing
+  reopen tests already covered, plus another business and anon (cases a
+  working reopen call never exercises on its own).
 - 2026-10-05 (Phase 4 part B1): UI built on this RPC surface — see
   [appointments-ui.md](appointments-ui.md). Pre-check confirmed (no fix
   needed): the dashboard resource_id bug from the closure round below was

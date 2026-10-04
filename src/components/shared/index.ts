@@ -1,6 +1,7 @@
 export { Avatar, type AvatarProps } from './Avatar';
 export { Calendar, type CalendarProps } from './Calendar';
 export { ComingSoonScreen } from './ComingSoonScreen';
+export { DataTable, type DataTableColumn, type DataTableProps } from './DataTable';
 export { DateRangePicker, type DateRangePickerProps } from './DateRangePicker';
 export { DayHoursRow, type DayHoursRowProps, type DayInterval } from './DayHoursRow';
 export { FormField, type FormFieldProps } from './FormField';

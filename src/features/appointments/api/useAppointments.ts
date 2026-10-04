@@ -80,6 +80,8 @@ export type AppointmentListFilters = {
   staffId?: string | null;
   status?: AppointmentStatus | null;
   serviceId?: string | null;
+  /** One client's visit history (the client profile screen). */
+  clientId?: string | null;
   fromDate?: string | null;
   toDate?: string | null;
   search?: string;
@@ -92,14 +94,14 @@ type AppointmentListPage = {
 
 export function useAppointmentList(businessId: string | null, filters: AppointmentListFilters) {
   const { isAuthenticated } = useSession();
-  const { branchId, staffId, status, serviceId, fromDate, toDate, search = '' } = filters;
+  const { branchId, staffId, status, serviceId, clientId, fromDate, toDate, search = '' } = filters;
 
   return useInfiniteQuery<AppointmentListPage>({
     queryKey: appointmentKeys.list({
       businessId: businessId ?? 'none',
       branchId,
       search,
-      filters: { staffId, status, serviceId, fromDate, toDate },
+      filters: { staffId, status, serviceId, clientId, fromDate, toDate },
     }),
     enabled: isAuthenticated && Boolean(businessId),
     staleTime: staleTimes.liveShort,
@@ -113,6 +115,7 @@ export function useAppointmentList(businessId: string | null, filters: Appointme
         p_staff_id: staffId ?? undefined,
         p_status: status ?? undefined,
         p_service_id: serviceId ?? undefined,
+        p_client_id: clientId ?? undefined,
         p_from_date: fromDate ?? undefined,
         p_to_date: toDate ?? undefined,
         p_search: search || undefined,
@@ -149,6 +152,36 @@ export type CalendarAppointment = {
   clientId: string;
   clientName: string;
 };
+
+/**
+ * `get_calendar_appointments` returns fewer columns than `list_appointments`
+ * (no source/client phone/price/invoice — CLAUDE.md §6, "no select('*')",
+ * it only returns what a calendar grid needs). Shared by `DayView` and
+ * `TodayScreen`, both of which open the SAME `AppointmentDetailDrawer` on a
+ * calendar row and need to pad it out to the full `AppointmentRow` shape.
+ */
+export function calendarAppointmentToRow(
+  row: CalendarAppointment,
+  branchId: string,
+): AppointmentRow {
+  return {
+    id: row.id,
+    branchId,
+    startsAt: row.startsAt,
+    endsAt: row.endsAt,
+    status: row.status,
+    source: null,
+    serviceId: row.serviceId,
+    serviceName: row.serviceName,
+    staffId: row.staffId,
+    staffName: row.staffName,
+    clientId: row.clientId,
+    clientName: row.clientName,
+    clientPhone: null,
+    priceMinor: null,
+    invoiceId: null,
+  };
+}
 
 export function useCalendarAppointments(
   businessId: string | null,

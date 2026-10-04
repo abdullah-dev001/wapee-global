@@ -15,6 +15,7 @@ import {
   useMarkNoShow,
   useReopenAppointment,
 } from '../api/useAppointments';
+import { useIsOwnerOrManager } from '../api/useIsOwnerOrManager';
 import { actionsForStatus, type AppointmentAction } from '../statusActions';
 import { AppointmentRpcError, type AppointmentErrorCode, type AppointmentRow } from '../types';
 
@@ -40,10 +41,10 @@ export function AppointmentDetailDrawer({
   const canCancel = usePermission('appointments.cancel');
   const canEdit = usePermission('appointments.edit');
   // Reopen is Owner/Manager-only by ROLE, not a permission (context/appointments.md).
-  // `staff.manage` is held by exactly Owner + Manager in the seeded roles, so it is
-  // used here ONLY to decide whether to show the button — the RPC re-checks the
-  // role itself regardless of what this returns.
-  const canReopen = usePermission('staff.manage');
+  // `is_owner_or_manager()` is the SAME function `reopen_appointment` calls
+  // internally to gate the action itself, so the button can never show when
+  // the RPC would refuse, or hide when it would allow.
+  const isOwnerOrManager = useIsOwnerOrManager(businessId, appointment?.branchId ?? null);
 
   const approve = useApproveAppointment(businessId);
   const cancel = useCancelAppointment(businessId);
@@ -67,7 +68,7 @@ export function AppointmentDetailDrawer({
         if (action === 'approve') return canApprove.allowed;
         if (action === 'cancel') return canCancel.allowed;
         if (action === 'no_show' || action === 'complete') return canEdit.allowed;
-        if (action === 'reopen') return canReopen.allowed;
+        if (action === 'reopen') return isOwnerOrManager.data === true;
         return false;
       })
     : [];

@@ -93,7 +93,7 @@ Shared internals: `useInteractionState()` (hover/focus/pressed; hover and focus 
 Conventions:
 - Disabled and loading both render at `opacity 0.55` and block presses.
 - Hover exists only on web; the focus ring is drawn only on web (`focusRing()`).
-- Not built yet: Checkbox/Radio, Pagination, DataTable, TimeSlotPicker, StepWizard, FormAlert, StatCard. **`PhoneInput` built 2026-10-04, `Avatar`/`StatusBadge` built 2026-10-05** — see `components/shared` below.
+- Not built yet: Checkbox/Radio, Pagination, TimeSlotPicker, StepWizard, FormAlert, StatCard. **`PhoneInput` built 2026-10-04, `Avatar`/`StatusBadge` built 2026-10-05, `DataTable` built 2026-10-05 (in `components/shared`, not `components/ui` — it's a composite of `Text`/`Pressable`, not a base primitive)** — see `components/shared` below.
 - **`Drawer` now avoids the keyboard** (fixed 2026-10-04): the body is a
   `KeyboardAwareScrollView` (same as `Screen`) and the footer rides a
   `KeyboardStickyView`, so a focused input near the bottom is never covered on
@@ -127,6 +127,7 @@ Conventions:
 | `PhoneInput` (2026-10-04) | Country-code picker (own sheet, `src/config/dialCodes.ts` — 42 countries, **kept in step with** `create_booking`'s SQL fallback table) + a national-number `TextInput`. Reports/accepts real **E.164**, never a raw national number — `lib/config/e164.ts` holds the pure `toE164`/`fromE164` split (7 tests). Built for the public booking page's phone field; usable anywhere a phone number is collected. |
 | `StatusBadge` (2026-10-05) | Appointment status → `Badge` tone + translated label, so the mapping lives in one place. |
 | `Avatar` (2026-10-05) | Round initials circle for a person (client/staff). `BusinessAvatar` (DESIGN_GUIDE) stays the separate rounded-square variant for a business/logo — not built yet. |
+| `DataTable` (2026-10-05) | Desktop/tablet table (DESIGN_GUIDE §12.15 — "the only table in the app" there, now the second). `minWidth` 44rem forces horizontal scroll rather than cramming columns; whole row clickable, no per-row actions; a column can `hideOnCompact`. Built for Clients, generic over any `{ id: string }` row. |
 
 `src/components/shared/scheduler/` (2026-10-05, for the Calendar's Day/Week
 grid — see `context/appointments-ui.md`): `StaffColumnsGrid` (hour ruler +
@@ -144,13 +145,13 @@ pure sweep-line column assignment (overlaps sit side by side).
 | `AppShell` | Picks the layout by `useBreakpoint()`: mobile = no chrome (tabs come from the Tabs layout); tablet = header + off-canvas sidebar (Escape / Android back / scrim close it); desktop = fixed 240px sidebar + 64px header. |
 | `Sidebar` | Teal 240px, lime active pill, items from `config/navigation`. Tablet variant shows a close button and closes on navigate. |
 | `Header` | 64px surface bar: business name + user-menu placeholder; hamburger on tablet only. Shows a pending-approval chip (2026-10-05, `appointments.approve` holders only) that routes to `/calendar`. |
-| `BottomTabBar` | Our own bar passed to Expo Router's `Tabs` via `tabBar`, so routing/history/state restoration stay native while the bar looks identical on Android, iOS and mobile web. Always adds `insets.bottom`; 44px targets; tab labels capped at `maxFontSizeMultiplier` 1.3. Calendar tab shows a small count dot (2026-10-05, same `appointments.approve` gate as `Header`'s chip) via a generic `badgeCount` prop on `TabButton`. |
+| `BottomTabBar` | Our own bar passed to Expo Router's `Tabs` via `tabBar`, so routing/history/state restoration stay native while the bar looks identical on Android, iOS and mobile web. Always adds `insets.bottom`; 44px targets; tab labels capped at `maxFontSizeMultiplier` 1.3. Calendar tab shows a small count dot (2026-10-05, same `appointments.approve` gate as `Header`'s chip) via a generic `badgeCount` prop on `TabButton`. **Normalizes `route.name`** (strips a trailing `/index`) before any config-driven lookup — a folder-based tab's real route name is `"<folder>/index"`, not the plain config name (2026-10-05, found via the Clients tab silently vanishing — see `_handoff.md` Traps). |
 | `InstallHint` | Web-only dismissible "Install app" bar; iOS Safari shows "Share -> Add to Home Screen". Dismissal stored in localStorage. |
 | `ServiceWorkerUpdater` | Registers the SW and shows the "Update available" toast with a Reload action. |
 
 Navigation is driven entirely by **`src/config/navigation.ts`**: `navItems` (id, route, icon, `permission`, `phase`, `primary`). The sidebar, the bottom tabs and the More screen all read it through **`useVisibleNav()`**, so gating lives in one place. `permission` is typed `PermissionKey`, and plan/add-on gating comes from that key's catalogue entry (there is no separate `feature` field). **Gating is live** — see `context/roles.md`. Hiding is not the boundary: every `(app)` screen is wrapped in `RouteGuard`, which refuses a typed URL, and RLS refuses the data.
 
-Routes: `/` redirects to `/today`. Tabs = Today, Calendar, Clients, More. Services, Staff, Invoices, Reports, Reviews and Settings are registered with `href: null` (reachable from More and the sidebar, never shown as a tab).
+Routes: `/` redirects to `/today`. Tabs = Today, Calendar, Clients, More. Services, Staff, Invoices, Reports, Reviews and Settings are registered with `href: null` (reachable from More and the sidebar, never shown as a tab). `clients` and `settings` are both nested routes (a FOLDER, not a flat file: `clients/index.tsx` + `clients/[id].tsx`) — the `Tabs.Screen name="clients"` still resolves to `clients/index.tsx` automatically. **A folder shown in the bottom tab bar needs its OWN `clients/_layout.tsx` (a plain `Stack`)**, or Expo Router flattens every file in the folder into the PARENT Tabs navigator as sibling tab routes instead of nesting `[id]` inside a Stack — confirmed the hard way (see `_handoff.md` Traps): without it, the Clients tab itself disappeared from the bottom bar, because the folder screen's real `route.name` came through as `"clients/index"`, not `"clients"`. `settings/` has no `_layout.tsx` and gets away with it only because it is never shown in the bottom tab bar.
 
 Back behaviour: `useOverlayDismiss` closes the off-canvas sidebar, dialogs and drawers on Android hardware back and on Escape (web) before the route pops. iOS swipe-back is the Stack default and stays on.
 
@@ -213,6 +214,16 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+
+- 2026-10-05 (Phase 4 part B2): `DataTable` shared composite (Clients
+  desktop view). First nested-route tab (`clients/index.tsx` +
+  `clients/[id].tsx`) — the `settings/` pattern (a folder matching the tab
+  name, no `_layout.tsx`) does NOT extend cleanly to a folder shown in the
+  bottom tab bar: needed a new `clients/_layout.tsx` (`Stack`) and a
+  `BottomTabBar` fix once this was click-tested and the Clients tab turned
+  out to be missing entirely — see Traps in `_handoff.md` for the full
+  story. `settings/` only got away without one because it is never shown
+  in the bar.
 
 - 2026-10-05: `lib/time` fully implemented (was partial — `zonedToUtc`/
   `utcToZoned`/`dayRangeUtc`/`formatDate`/`formatTime`/`formatDateTime`/

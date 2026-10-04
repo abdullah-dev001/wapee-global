@@ -1,5 +1,11 @@
 # Dashboard appointments — UI
-Status: done (Phase 4 part B1) · Phase: 4 · Last updated: 2026-10-05
+Status: done (Phase 4 part B1, fixed in B2) · Phase: 4 · Last updated: 2026-10-05
+
+The Today screen (`context/today.md`) reuses this file's hooks/components
+directly: `useCalendarAppointments`, `useAppointmentsRealtime`,
+`AppointmentDetailDrawer`, `StatusBadge`, `Avatar`. The one addition made
+FOR Today, `calendarAppointmentToRow()` (exported from `useAppointments.ts`),
+is also now used by `DayView` instead of its own private copy.
 
 ## What it does
 The Calendar screen (Day/Week/List) and the appointment create/detail
@@ -10,11 +16,19 @@ documents the UI layer on top of it.
 ## Business rules
 - **No drag-and-drop** (doc §6.3 — deliberate, do not add).
 - **UI hiding is never the boundary** (CLAUDE.md §7): every action button is
-  filtered by `usePermission()` AND the RPC re-checks itself. `reopen`'s
-  button uses `usePermission('staff.manage')` as a stand-in for "Owner or
-  Manager" (that permission is held by exactly those two roles in the seeded
-  catalogue) because reopen is gated by ROLE server-side, not a permission —
-  the RPC is the real check regardless of what this shows.
+  filtered by `usePermission()` AND the RPC re-checks itself. **`reopen`'s
+  button calls `is_owner_or_manager(business_id, branch_id)` directly**
+  (fixed 2026-10-05 — a new tiny RPC, the SAME function `reopen_appointment`
+  now calls internally instead of its own inline role query, so the two can
+  never drift apart; see `context/appointments.md`). The previous
+  `usePermission('staff.manage')` stand-in was correct only by coincidence
+  (that permission happens to be held by exactly Owner+Manager) and is gone.
+- **Day/Week shading uses per-staff working hours, breaks and time off**
+  (fixed 2026-10-05, `useDayShading` + the pure `buildDayShading` —
+  `src/features/appointments/dayShading.ts`, 9 tests), falling back to
+  branch hours only for a staff member with no individual hours configured
+  for that weekday. Previously every column showed identical branch-only
+  shading regardless of who was actually available.
 - **Own-scope staff see one locked column, no switcher.** Decided by
   `calendar.view_all_staff`: holders get the staff switcher (mobile) /
   every column (tablet/desktop); non-holders (Staff) are locked to their own
@@ -44,6 +58,9 @@ documents the UI layer on top of it.
 | src/features/appointments/api/useMyStaffProfile.ts | wraps `my_staff_profile_id()` for the UI's own-column lock |
 | src/features/appointments/api/useClientSearch.ts | minimal client search (name/phone) for the create form — gated the same as `clients_select` RLS, not a Clients feature |
 | src/features/appointments/api/usePendingApprovalCount.ts | count of `status='pending'` rows for the approval badge |
+| src/features/appointments/api/useIsOwnerOrManager.ts | (2026-10-05) wraps `is_owner_or_manager()` — the Reopen button's real check, not a permission stand-in |
+| src/features/appointments/api/useDayShading.ts | (2026-10-05) per-staff working hours/breaks/time off for the Day/Week grid — one round trip for every staff member at the branch |
+| src/features/appointments/dayShading.ts | (2026-10-05) pure `buildDayShading` the hook above calls — time-off instant-range clamping, 9 tests |
 | src/features/appointments/types.ts | `AppointmentRow`, `AppointmentRpcError`, error codes |
 | src/features/appointments/statusActions.ts | pure status→action mapping mirroring `appointment_status_transitions` (21 tests) |
 | src/features/appointments/timeGrid.ts | pure time-grid maths: minute↔px, overlap column layout (sweep line), now-line minute (15 tests) |
@@ -68,15 +85,32 @@ branchId)` subscribes to `appointments` (`business_id` filter narrows the
 WAL subscription only — RLS is the real boundary, see
 `context/appointments.md`), invalidates `appointmentKeys.scope()` on every
 event, re-subscribes on business/branch change. `usePendingApprovalCount`
-has its own key, `liveShort`. Mutations invalidate the whole appointments
-scope (no precise per-row `setQueryData` — acceptable since Realtime
-already re-invalidates).
+has its own key, `liveShort`. `useDayShading` (per-staff hours/breaks/time
+off, see Business rules) is `staleTimes.static`. Mutations invalidate the
+whole appointments scope (no precise per-row `setQueryData` — acceptable
+since Realtime already re-invalidates).
+
+**Confirmed (2026-10-05, not a fix — traced and verified, no gap found):
+the Realtime subscription is torn down on logout and cleared on both
+logout and branch switch.** `useAppointmentsRealtime`'s `useEffect` cleanup
+calls `removeChannel` whenever `businessId`/`branchId` change OR the
+component unmounts. On sign-out, `SessionProvider`'s `onAuthStateChange`
+handler calls `queryClient.clear()` AND flips session state to null in the
+same synchronous event; `AuthGate` reads that same state and renders
+`<Redirect href="/login">` instead of `children` in the very next render,
+which unmounts `CalendarScreen` (and therefore this hook) in that same
+commit — there is no window where a live channel event could invalidate
+into an already-cleared cache while still mounted. On branch switch, the
+`branchId` dependency alone re-runs the effect (old channel removed, new
+one opened) without needing an unmount at all.
 
 ## Permissions & gating
 `appointments.view`/`.create`/`.edit`/`.cancel`/`.approve` via
 `usePermission()`. `calendar.view_all_staff` gates the staff switcher/extra
-columns. `reopen` uses `staff.manage` as a UI stand-in for Owner/Manager
-(see Business rules). Pending-approval badge: `appointments.approve` only.
+columns. **`reopen`'s button uses `is_owner_or_manager()` directly** (fixed
+2026-10-05 — see Business rules), the SAME function `reopen_appointment`
+calls internally, not a permission stand-in. Pending-approval badge:
+`appointments.approve` only.
 
 ## UI
 `/calendar`: Day / Week / List tabs, state in URL params on web
@@ -102,16 +136,22 @@ selected day.
 Namespace `common`, group `appointments.*`.
 
 ## Known limits / TODO
-- **Not click-tested in a browser** — no browser tool was available this
-  session. Verified instead: full project typecheck/lint/prettier clean,
-  241 unit tests passing (35 new), and the web bundle built and served
-  (`/calendar` → 200, Metro bundled 4104 modules, no fatal errors). Click
-  through `/calendar` yourself before calling this visually complete.
-- **Day/Week shading uses BRANCH hours only, not per-staff hours or
-  breaks/time off.** Every staff column currently shows the same shading.
-  `closedIntervals` exists on `StaffDayColumn` for this but nothing feeds it
-  yet — not a correctness bug (the RPC enforces the real rules regardless),
-  a visual gap to close next.
+- **Click-tested on the iOS simulator (2026-10-05, Phase 4 part B2
+  session)**: launched the installed dev build against a fresh Metro
+  bundle, signed in as a real Owner. Confirmed by screenshot: Today
+  (counts, empty state), Calendar Day view (Day/Week/List tabs, date nav,
+  per-staff shaded closed hours visible, "New appointment" button). Found
+  and fixed two REAL bugs this surfaced (see Traps in `_handoff.md`): (1)
+  `useAppointmentsRealtime` subscribed to a channel named only by
+  `businessId`, so Today and Calendar (both always mounted under the Tabs
+  navigator) collided on the SAME channel name and the second `.on()` call
+  threw, blanking the screen — fixed with a per-mount sequence number in
+  the channel name. (2) Could not tap through to a client's profile screen
+  — automated taps (AppleScript `click at`, then a compiled CGEvent tap
+  tool) did not register on the correct element, the same class of
+  simulator-interaction limitation documented in `booking-manage.md` from
+  an earlier session. Click through creating/editing an appointment and
+  the reschedule/cancel flows yourself.
 - **`DateNavButton` is a third private copy** of the icon-only button shape
   `Header.tsx` and `DayHoursRow.tsx` already have. Unifying all three into
   `ui/` is a reasonable follow-up, not done here (would touch existing
@@ -120,6 +160,22 @@ Namespace `common`, group `appointments.*`.
   `setQueryData` — fine given Realtime already re-invalidates.
 
 ## Changelog
+- 2026-10-05 (Phase 4 part B2): Extracted `calendarAppointmentToRow()` out
+  of `DayView` (was a private helper) into `useAppointments.ts`, exported,
+  so the new Today screen (`context/today.md`) can reuse the SAME
+  `CalendarAppointment -> AppointmentRow` padding instead of a second
+  inline copy.
+- 2026-10-05 (B1 fixes, same day): (1) Reopen button now calls the real
+  `is_owner_or_manager()` RPC instead of the `staff.manage` permission
+  stand-in — see `context/appointments.md` for the new function and the
+  `reopen_appointment` refactor. (2) Day/Week shading now reads per-staff
+  working hours, breaks and time off (`useDayShading`/`buildDayShading`),
+  not branch hours only. (3) Confirmed, not fixed: the Realtime subscription
+  already tears down on logout (via the unmount that follows
+  `AuthGate`'s redirect in the same render as `queryClient.clear()`) and on
+  branch switch (the effect's own dependency array) — see Data & caching.
+  148 SQL assertions (was 141; 7 new for `is_owner_or_manager`), 9 new unit
+  tests (250 total).
 - 2026-10-05: Built. Calendar screen (Day/Week/List), create and detail
   drawers, the new shared scheduler, `StatusBadge`/`Avatar`, the app's first
   Realtime subscription, pending-approval badges (tab + header), and

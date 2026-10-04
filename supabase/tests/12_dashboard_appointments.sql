@@ -8,7 +8,7 @@
 -- system role, two branches in different timezones for the DST checks) and
 -- rolls back everything at the end.
 --
--- Last run: 2026-10-05 against the live dev project. 141/141 passing.
+-- Last run: 2026-10-05 against the live dev project. 150/150 passing.
 --
 -- Covered: create_appointment (dashboard + walk-in, staff outside hours,
 -- Any-staff, client by id vs by phone, never-overwrite, staff_id FORCED for
@@ -672,6 +672,96 @@ select pg_temp.chk('the reopen is audited',
    where business_id = pg_temp.id('biza') and action = 'appointment.reopened'
      and entity_id = pg_temp.id('appt_pending')::text), 1);
 
+-- ===========================================================================
+-- 3c. is_owner_or_manager() -- Phase 4 part B1 fix: the single source of
+--     truth reopen_appointment now calls internally, and the UI calls
+--     directly for the Reopen button. Must agree with reopen_appointment's
+--     own refusals above for every role, plus the cases a working RPC call
+--     never exercises on its own: another business, and an anonymous caller.
+-- ===========================================================================
+do $$
+declare v_result boolean;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  v_result := public.is_owner_or_manager(pg_temp.id('biza'));
+  reset role;
+  perform pg_temp.chk('owner: is_owner_or_manager true (no branch)', v_result, true);
+end $$;
+
+do $$
+declare v_result boolean;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  v_result := public.is_owner_or_manager(pg_temp.id('biza'), pg_temp.id('brancha'));
+  reset role;
+  perform pg_temp.chk('owner: is_owner_or_manager true (own branch)', v_result, true);
+end $$;
+
+do $$
+declare v_result boolean;
+begin
+  perform pg_temp.act_as(pg_temp.id('manager'));
+  set local role authenticated;
+  v_result := public.is_owner_or_manager(pg_temp.id('biza'), pg_temp.id('brancha'));
+  reset role;
+  perform pg_temp.chk('manager: is_owner_or_manager true', v_result, true);
+end $$;
+
+do $$
+declare v_result boolean;
+begin
+  perform pg_temp.act_as(pg_temp.id('recep'));
+  set local role authenticated;
+  v_result := public.is_owner_or_manager(pg_temp.id('biza'), pg_temp.id('brancha'));
+  reset role;
+  perform pg_temp.chk('receptionist: is_owner_or_manager FALSE (agrees with reopen refusal above)',
+    v_result, false);
+end $$;
+
+do $$
+declare v_result boolean;
+begin
+  perform pg_temp.act_as(pg_temp.id('staffa'));
+  set local role authenticated;
+  v_result := public.is_owner_or_manager(pg_temp.id('biza'), pg_temp.id('brancha'));
+  reset role;
+  perform pg_temp.chk('staff: is_owner_or_manager FALSE (agrees with reopen refusal above)',
+    v_result, false);
+end $$;
+
+-- Owner of business B asking about business A: false. A real caller would
+-- never pass someone else's business_id here (the UI always passes its own
+-- current scope), but the function itself must still refuse it -- it is
+-- SECURITY DEFINER, so nothing upstream of it enforces this.
+do $$
+declare v_result boolean;
+begin
+  perform pg_temp.act_as(pg_temp.id('ownerb'));
+  set local role authenticated;
+  v_result := public.is_owner_or_manager(pg_temp.id('biza'));
+  reset role;
+  perform pg_temp.chk('owner of ANOTHER business: is_owner_or_manager FALSE for biza',
+    v_result, false);
+end $$;
+
+-- An anonymous caller: EXECUTE is not even granted to anon, so the call
+-- itself must fail (42501), not merely return false.
+do $$
+declare v_errcode text;
+begin
+  set local role anon;
+  begin
+    perform public.is_owner_or_manager(pg_temp.id('biza'));
+    v_errcode := 'no_error';
+  exception when insufficient_privilege then
+    v_errcode := sqlstate;
+  end;
+  reset role;
+  perform pg_temp.chk('anon: is_owner_or_manager has no EXECUTE grant', v_errcode, '42501');
+end $$;
+
 -- approve_appointment on that SAME now-confirmed row is correctly refused
 -- (it is no longer pending) -- and, separately, approve_appointment never
 -- reopens a STILL-no_show row either (proven on a fresh one next), closing
@@ -1192,6 +1282,26 @@ begin
     (select bool_and(row->>'client_name' = 'Walk In Guest') from jsonb_array_elements(r->'rows') row), true);
 end $$;
 
+-- p_client_id (Phase 4 part B2, the client profile's visit history):
+-- filters to exactly one client's appointments, across every branch/staff.
+do $$
+declare r jsonb; v_count int;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.list_appointments(pg_temp.id('biza'), p_client_id => pg_temp.id('client1'), p_limit => 100);
+  reset role;
+
+  select count(*) into v_count
+  from public.appointments where client_id = pg_temp.id('client1') and deleted_at is null;
+
+  perform pg_temp.chk('p_client_id returns every row for that client',
+    jsonb_array_length(r->'rows'), v_count);
+  perform pg_temp.chk('p_client_id returns ONLY that client''s rows',
+    (select bool_and((row->>'client_id')::uuid = pg_temp.id('client1')) from jsonb_array_elements(r->'rows') row),
+    true);
+end $$;
+
 -- Staff (Own scope) sees only their own rows through list_appointments, same
 -- as the RLS tests in 07 already prove for raw SELECT -- confirms the RPC
 -- does not widen it.
@@ -1307,9 +1417,9 @@ select pg_temp.chk('anon cannot call mark_completed',
 select pg_temp.chk('anon cannot call approve_appointment',
   has_function_privilege('anon','public.approve_appointment(uuid)','execute'), false);
 select pg_temp.chk('anon cannot call list_appointments',
-  has_function_privilege('anon','public.list_appointments(uuid,uuid,uuid,public.appointment_status,uuid,date,date,text,integer,timestamptz,uuid)','execute'), false);
+  has_function_privilege('anon','public.list_appointments(uuid,uuid,uuid,public.appointment_status,uuid,date,date,text,integer,timestamptz,uuid,uuid)','execute'), false);
 select pg_temp.chk('authenticated CAN call list_appointments',
-  has_function_privilege('authenticated','public.list_appointments(uuid,uuid,uuid,public.appointment_status,uuid,date,date,text,integer,timestamptz,uuid)','execute'), true);
+  has_function_privilege('authenticated','public.list_appointments(uuid,uuid,uuid,public.appointment_status,uuid,date,date,text,integer,timestamptz,uuid,uuid)','execute'), true);
 select pg_temp.chk('anon cannot call get_calendar_appointments',
   has_function_privilege('anon','public.get_calendar_appointments(uuid,uuid,date,date,uuid[])','execute'), false);
 select pg_temp.chk('anon cannot call check_appointment_collision_v2',

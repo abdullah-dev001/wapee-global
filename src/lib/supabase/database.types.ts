@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       appointment_field_values: {
@@ -2058,24 +2083,46 @@ export type Database = {
       }
       is_member: { Args: { p_business_id: string }; Returns: boolean }
       is_own_staff_profile: { Args: { p_staff_id: string }; Returns: boolean }
+      is_owner_or_manager: {
+        Args: { p_branch_id?: string; p_business_id: string }
+        Returns: boolean
+      }
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
-      list_appointments: {
-        Args: {
-          p_branch_id?: string
-          p_business_id: string
-          p_cursor_id?: string
-          p_cursor_starts_at?: string
-          p_from_date?: string
-          p_limit?: number
-          p_search?: string
-          p_service_id?: string
-          p_staff_id?: string
-          p_status?: Database["public"]["Enums"]["appointment_status"]
-          p_to_date?: string
-        }
-        Returns: Json
-      }
+      list_appointments:
+        | {
+            Args: {
+              p_branch_id?: string
+              p_business_id: string
+              p_cursor_id?: string
+              p_cursor_starts_at?: string
+              p_from_date?: string
+              p_limit?: number
+              p_search?: string
+              p_service_id?: string
+              p_staff_id?: string
+              p_status?: Database["public"]["Enums"]["appointment_status"]
+              p_to_date?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_branch_id?: string
+              p_business_id: string
+              p_client_id?: string
+              p_cursor_id?: string
+              p_cursor_starts_at?: string
+              p_from_date?: string
+              p_limit?: number
+              p_search?: string
+              p_service_id?: string
+              p_staff_id?: string
+              p_status?: Database["public"]["Enums"]["appointment_status"]
+              p_to_date?: string
+            }
+            Returns: Json
+          }
       mark_completed: { Args: { p_appointment_id: string }; Returns: Json }
       mark_no_show: { Args: { p_appointment_id: string }; Returns: Json }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
@@ -2317,6 +2364,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       appointment_status: [

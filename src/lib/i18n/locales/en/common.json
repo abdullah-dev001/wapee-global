@@ -814,5 +814,58 @@
       "invoiced": "This appointment has an invoice and cannot be reopened.",
       "unknown": "Something went wrong. Please try again."
     }
+  },
+  "clients": {
+    "title": "Clients",
+    "create": "New client",
+    "edit": "Edit client",
+    "save": "Save",
+    "saved": "Client saved",
+    "searchPlaceholder": "Search by name or phone",
+    "empty": {
+      "title": "No clients yet",
+      "description": "New clients appear here once they book or are added."
+    },
+    "emptySearch": {
+      "title": "No clients match your search",
+      "description": "Try a different name or phone number."
+    },
+    "error": {
+      "title": "Couldn't load clients"
+    },
+    "fullName": "Name",
+    "phone": "Phone",
+    "email": "Email (optional)",
+    "notes": "Notes",
+    "archived": "Archived",
+    "archive": "Archive",
+    "unarchive": "Restore",
+    "archiveConfirmTitle": "Archive this client?",
+    "archiveConfirmMessage": "They will be hidden from the list but their history is kept. You can restore them any time.",
+    "unarchiveConfirmTitle": "Restore this client?",
+    "unarchiveConfirmMessage": "They will appear in the list again.",
+    "showArchived": "Show archived",
+    "duplicatePhone": "This phone number already belongs to {{name}}.",
+    "viewExisting": "View existing client",
+    "contactHidden": "Contact details hidden",
+    "profile": {
+      "contact": "Contact",
+      "notes": "Notes",
+      "noNotes": "No notes",
+      "upcoming": "Upcoming appointments",
+      "history": "Visit history",
+      "noUpcoming": "No upcoming appointments",
+      "noHistory": "No past appointments",
+      "loadMoreHistory": "Load more",
+      "invoices": "Invoices",
+      "invoicesComingSoon": "Invoice history is coming in a later phase."
+    },
+    "errors": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "Name is too long.",
+      "phoneInvalid": "Enter a valid phone number.",
+      "notesTooLong": "Notes are too long.",
+      "duplicatePhone": "This phone number already belongs to another client."
+    }
   }
 }
