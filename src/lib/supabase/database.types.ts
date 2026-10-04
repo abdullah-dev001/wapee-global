@@ -1895,6 +1895,26 @@ export type Database = {
         }
         Returns: string
       }
+      check_appointment_collision_v2: {
+        Args: {
+          p_branch_id: string
+          p_buffer_minutes: number
+          p_ends_at: string
+          p_exclude_appointment_id?: string
+          p_people_per_slot: number
+          p_service_id: string
+          p_staff_id: string
+          p_starts_at: string
+          p_use_resources: boolean
+        }
+        Returns: Database["public"]["CompositeTypes"]["appointment_collision_result"]
+        SetofOptions: {
+          from: "*"
+          to: "appointment_collision_result"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       check_rate_limit: {
         Args: {
           p_business_id?: string
@@ -2067,6 +2087,7 @@ export type Database = {
           scope: Database["public"]["Enums"]["permission_scope"]
         }[]
       }
+      my_staff_profile_id: { Args: { p_business_id: string }; Returns: string }
       normalise_phone_e164: {
         Args: { p_default_dial_code?: string; p_input: string }
         Returns: string
@@ -2080,6 +2101,7 @@ export type Database = {
         }
         Returns: string
       }
+      reopen_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       replace_branch_hours: {
         Args: { p_branch_id: string; p_intervals: Json }
         Returns: number
@@ -2158,6 +2180,11 @@ export type Database = {
       staff_choice_mode: "hidden" | "optional" | "required"
     }
     CompositeTypes: {
+      appointment_collision_result: {
+        code: string | null
+        resource_id: string | null
+        resource_capacity: number | null
+      }
       free_slot: {
         starts_at: string | null
         ends_at: string | null

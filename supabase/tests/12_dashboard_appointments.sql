@@ -8,17 +8,28 @@
 -- system role, two branches in different timezones for the DST checks) and
 -- rolls back everything at the end.
 --
+-- Last run: 2026-10-05 against the live dev project. 141/141 passing.
+--
 -- Covered: create_appointment (dashboard + walk-in, staff outside hours,
--- Any-staff, client by id vs by phone, never-overwrite); update_appointment
--- (reschedule collision rules, notes-only edit, terminal rows refuse ALL
--- edits); every status RPC through every ALLOWED and FORBIDDEN transition
--- via is_allowed_appointment_transition; scope enforcement (owner, manager,
--- receptionist, staff at Own, another business, anon) on every write RPC;
--- **the original appointment surviving every failed create/update/status
--- call** (CLAUDE.md §10a); DST (Europe/London spring-forward, America/
--- New_York fall-back); list_appointments keyset pagination and filters;
--- get_calendar_appointments branch-timezone day boundaries; the Realtime
--- publication; and grants.
+-- Any-staff, client by id vs by phone, never-overwrite, staff_id FORCED for
+-- an Own-scope caller, audit row); update_appointment (reschedule collision
+-- rules incl. group/resource capacity, notes-only edit, terminal rows
+-- refuse ALL edits, audit row); every status RPC through every ALLOWED and
+-- FORBIDDEN transition via is_allowed_appointment_transition, INCLUDING the
+-- reopen decision (no_show/completed -> confirmed, Owner/Manager ONLY via a
+-- literal role check, invoice_id must be null, audit row) and the fix that
+-- stops approve_appointment being a side door into it; scope enforcement
+-- (owner, manager, receptionist, staff at Own, another business, anon) on
+-- every write RPC; **the original appointment surviving every failed
+-- create/update/status call** (CLAUDE.md §10a); a REAL bug this pass found
+-- and fixed — create_appointment/update_appointment never stored
+-- resource_id, making resource capacity a no-op from the dashboard; DST
+-- (Europe/London spring-forward, America/New_York fall-back, Asia/Karachi
+-- no-DST); group AND resource capacity respected on both create and
+-- update; list_appointments keyset pagination, filters and search;
+-- get_calendar_appointments branch-timezone day boundaries; audit_logs rows
+-- for every write RPC; the Realtime publication; and grants on every RPC
+-- including the collision helper.
 
 begin;
 
@@ -56,7 +67,7 @@ do $$
 declare r record; v_email text; v_id uuid;
 begin
   for r in select * from (values
-      ('owner'), ('manager'), ('recep'), ('staffa'), ('staffb'), ('ownerb')
+      ('owner'), ('manager'), ('recep'), ('staffa'), ('staffb'), ('ownerb'), ('ownerk')
     ) as x(k)
   loop
     v_email := 'p4.' || r.k || '@example.com';
@@ -191,6 +202,10 @@ begin
   perform pg_temp.chk('owner books an existing client by id', r->>'ok', 'true');
   insert into ids values ('appt_owner', (r->>'appointment_id')::uuid);
   perform pg_temp.chk('status is confirmed (auto)', r->>'status', 'confirmed');
+  perform pg_temp.chk('appointment.created is audited',
+    (select count(*)::int from public.audit_logs
+     where business_id = pg_temp.id('biza') and action = 'appointment.created'
+       and entity_id = (r->>'appointment_id')), 1);
 end $$;
 
 -- Dashboard booking OUTSIDE hours succeeds (the whole point).
@@ -267,10 +282,16 @@ begin
   perform pg_temp.chk('and a staff_id is actually set', r->'staff_id' is not null, true);
 end $$;
 
--- Double-booking the SAME staff at an overlapping instant is refused.
+-- Double-booking the SAME staff at an overlapping instant is refused, AND
+-- the failed attempt leaves no orphan row behind (failure-path survival for
+-- a CREATE: there is no "original" to protect, but there must be no trace
+-- of the rejected attempt either).
 do $$
-declare r jsonb;
+declare r jsonb; v_count_before int; v_count_after int;
 begin
+  select count(*) into v_count_before from public.appointments
+  where staff_id = pg_temp.id('staffa_profile') and starts_at = pg_temp.in_hours_slot();
+
   perform pg_temp.act_as(pg_temp.id('owner'));
   set local role authenticated;
   r := public.create_appointment(
@@ -280,6 +301,11 @@ begin
   reset role;
   perform pg_temp.chk('double-booking the same staff/instant is refused', r->>'ok', 'false');
   perform pg_temp.chk('with slot_unavailable', r->>'code', 'slot_unavailable');
+
+  select count(*) into v_count_after from public.appointments
+  where staff_id = pg_temp.id('staffa_profile') and starts_at = pg_temp.in_hours_slot();
+  perform pg_temp.chk('the failed create left NO orphan row (same count before/after)',
+    v_count_after, v_count_before);
 end $$;
 
 -- Staff member booking THEMSELVES (Own scope) succeeds.
@@ -296,7 +322,12 @@ begin
   perform pg_temp.chk('staff may book THEMSELVES (Own scope)', r->>'ok', 'true');
 end $$;
 
--- Staff member booking SOMEONE ELSE is forbidden (Own scope does not extend).
+-- Staff passing SOMEONE ELSE's staff_id is overridden, not honoured: the
+-- booking still succeeds, but FOR THE CALLER, never for the id they passed
+-- (the user's decision 2026-10-05: "staff_id FORCED to their own staff
+-- profile, cannot book for others"). It is not a 403 -- there is nothing
+-- wrong with the REQUEST, the server just never lets Own scope act as
+-- anyone but themselves.
 do $$
 declare r jsonb;
 begin
@@ -307,7 +338,25 @@ begin
     p_staff_id => pg_temp.id('other_profile'), p_client_id => pg_temp.id('client1')
   );
   reset role;
-  perform pg_temp.chk('staff booking SOMEONE ELSE is forbidden', r->>'code', 'forbidden');
+  perform pg_temp.chk('staff passing someone else''s id still succeeds', r->>'ok', 'true');
+  perform pg_temp.chk('but the staff_id is FORCED to the caller''s own profile',
+    r->>'staff_id', pg_temp.id('staffa_profile')::text);
+end $$;
+
+-- Staff with NO staff profile at all (e.g. a Receptionist with Own-only
+-- grants, which does not happen in the real seed, but the RPC must still
+-- refuse cleanly rather than fall through to "any staff").
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('staffb'));
+  set local role authenticated;
+  r := public.create_appointment(
+    pg_temp.id('brancha'), pg_temp.id('svc'), pg_temp.in_hours_slot(21)
+  );
+  reset role;
+  perform pg_temp.chk('a caller with no permission at all and no staff profile is forbidden',
+    r->>'code', 'forbidden');
 end $$;
 
 -- Receptionist (Branch scope) may book anyone, including staffa.
@@ -483,7 +532,13 @@ begin
       v_allowed := public.is_allowed_appointment_transition(v_from, v_to);
       v_expected := (v_from, v_to) in (
         ('pending','confirmed'), ('pending','cancelled'),
-        ('confirmed','cancelled'), ('confirmed','completed'), ('confirmed','no_show')
+        ('confirmed','cancelled'), ('confirmed','completed'), ('confirmed','no_show'),
+        -- The reopen decision (2026-10-05): no_show/completed -> confirmed
+        -- ARE allowed at the table level (reopen_appointment is the only
+        -- RPC that uses them; approve_appointment deliberately checks
+        -- status = 'pending' directly instead, so it cannot become a side
+        -- door into this).
+        ('no_show','confirmed'), ('completed','confirmed')
       );
       perform pg_temp.chk(
         format('transition %s -> %s is %s', v_from, v_to, case when v_expected then 'ALLOWED' else 'FORBIDDEN' end),
@@ -564,6 +619,172 @@ begin
     (select status::text from public.appointments where id = pg_temp.id('appt_pending')), 'no_show');
 end $$;
 
+-- ===========================================================================
+-- 3b. reopen_appointment -- the user's decision (b), 2026-10-05:
+--     no_show/completed -> confirmed, Owner/Manager ONLY, invoice_id null
+--     only, audit-logged.
+-- ===========================================================================
+
+-- Receptionist CANNOT reopen (not Owner/Manager), even though Receptionist
+-- holds appointments.edit at Branch scope -- this is the gap a plain
+-- permission check would have missed; reopen_appointment checks the ROLE
+-- KEY directly instead.
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('recep'));
+  set local role authenticated;
+  r := public.reopen_appointment(pg_temp.id('appt_pending'));
+  reset role;
+  perform pg_temp.chk('receptionist CANNOT reopen (not Owner/Manager)', r->>'code', 'forbidden');
+  perform pg_temp.chk('the row is still no_show after the refusal',
+    (select status::text from public.appointments where id = pg_temp.id('appt_pending')), 'no_show');
+end $$;
+
+-- Staff CANNOT reopen either (also not Owner/Manager).
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('staffa'));
+  set local role authenticated;
+  r := public.reopen_appointment(pg_temp.id('appt_pending'));
+  reset role;
+  perform pg_temp.chk('staff CANNOT reopen (not Owner/Manager)', r->>'code', 'forbidden');
+end $$;
+
+-- Manager CAN reopen a no_show (invoice_id is null).
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('manager'));
+  set local role authenticated;
+  r := public.reopen_appointment(pg_temp.id('appt_pending'));
+  reset role;
+  perform pg_temp.chk('manager CAN reopen a no_show (invoice_id null)', r->>'ok', 'true');
+  perform pg_temp.chk('and the status is confirmed', r->>'status', 'confirmed');
+  perform pg_temp.chk('the row really is confirmed now',
+    (select status::text from public.appointments where id = pg_temp.id('appt_pending')), 'confirmed');
+end $$;
+
+-- A reopened appointment's audit row is written with the right action.
+select pg_temp.chk('the reopen is audited',
+  (select count(*)::int from public.audit_logs
+   where business_id = pg_temp.id('biza') and action = 'appointment.reopened'
+     and entity_id = pg_temp.id('appt_pending')::text), 1);
+
+-- approve_appointment on that SAME now-confirmed row is correctly refused
+-- (it is no longer pending) -- and, separately, approve_appointment never
+-- reopens a STILL-no_show row either (proven on a fresh one next), closing
+-- the side-door this session found and fixed.
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.approve_appointment(pg_temp.id('appt_pending'));
+  reset role;
+  perform pg_temp.chk('approve_appointment refuses an already-confirmed row', r->>'code', 'invalid_transition');
+end $$;
+
+-- A FRESH no_show + completed row for the remaining reopen cases, so this
+-- section does not depend on 'appt_pending' having survived every earlier
+-- mutation unchanged.
+do $$
+declare v_fv uuid; v_no_show uuid; v_completed uuid; v_invoiced uuid; r jsonb;
+begin
+  select id into v_fv from public.form_versions where business_id = pg_temp.id('biza') order by version desc limit 1;
+
+  insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
+    starts_at, ends_at, duration_minutes, status, form_version_id, is_exclusive)
+  values (pg_temp.id('biza'), pg_temp.id('brancha'), pg_temp.id('client1'), pg_temp.id('svc'),
+    pg_temp.id('staffa_profile'), pg_temp.in_hours_slot(22), pg_temp.in_hours_slot(22) + interval '1 hour',
+    60, 'no_show', v_fv, false)
+  returning id into v_no_show;
+  insert into ids values ('appt_reopen_noshow', v_no_show);
+
+  insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
+    starts_at, ends_at, duration_minutes, status, form_version_id, is_exclusive)
+  values (pg_temp.id('biza'), pg_temp.id('brancha'), pg_temp.id('client1'), pg_temp.id('svc'),
+    pg_temp.id('staffa_profile'), pg_temp.in_hours_slot(23), pg_temp.in_hours_slot(23) + interval '1 hour',
+    60, 'completed', v_fv, false)
+  returning id into v_completed;
+  insert into ids values ('appt_reopen_completed', v_completed);
+
+  -- A completed appointment that ALREADY has an invoice_id set (simulating
+  -- Phase 5 having linked one) -- reopening this must be refused.
+  insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
+    starts_at, ends_at, duration_minutes, status, form_version_id, is_exclusive, invoice_id)
+  values (pg_temp.id('biza'), pg_temp.id('brancha'), pg_temp.id('client1'), pg_temp.id('svc'),
+    pg_temp.id('staffa_profile'), pg_temp.in_hours_slot(24), pg_temp.in_hours_slot(24) + interval '1 hour',
+    60, 'completed', v_fv, false, gen_random_uuid())
+  returning id into v_invoiced;
+  insert into ids values ('appt_reopen_invoiced', v_invoiced);
+end $$;
+
+-- Owner CAN reopen a completed appointment with no invoice.
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.reopen_appointment(pg_temp.id('appt_reopen_completed'));
+  reset role;
+  perform pg_temp.chk('owner CAN reopen a completed appointment (invoice_id null)', r->>'ok', 'true');
+end $$;
+
+-- An INVOICED appointment cannot be reopened, even by the Owner.
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.reopen_appointment(pg_temp.id('appt_reopen_invoiced'));
+  reset role;
+  perform pg_temp.chk('an INVOICED appointment cannot be reopened, even by the owner', r->>'code', 'invoiced');
+  perform pg_temp.chk('the row is still completed',
+    (select status::text from public.appointments where id = pg_temp.id('appt_reopen_invoiced')), 'completed');
+end $$;
+
+-- cancelled stays PERMANENTLY final: reopen_appointment refuses it too (the
+-- table has no row for cancelled -> anything).
+do $$
+declare r jsonb; v_appt uuid; v_fv uuid;
+begin
+  select id into v_fv from public.form_versions where business_id = pg_temp.id('biza') order by version desc limit 1;
+  insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
+    starts_at, ends_at, duration_minutes, status, cancelled_at, form_version_id, is_exclusive)
+  values (pg_temp.id('biza'), pg_temp.id('brancha'), pg_temp.id('client1'), pg_temp.id('svc'),
+    pg_temp.id('staffa_profile'), pg_temp.in_hours_slot(25), pg_temp.in_hours_slot(25) + interval '1 hour',
+    60, 'cancelled', now(), v_fv, false)
+  returning id into v_appt;
+
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.reopen_appointment(v_appt);
+  reset role;
+  perform pg_temp.chk('cancelled stays permanently final, even via reopen_appointment', r->>'code', 'invalid_transition');
+end $$;
+
+-- Another business, and anon, cannot reopen branch A's appointment.
+do $$
+declare r jsonb; v_ok boolean := true;
+begin
+  perform pg_temp.act_as(pg_temp.id('ownerb'));
+  set local role authenticated;
+  r := public.reopen_appointment(pg_temp.id('appt_reopen_noshow'));
+  reset role;
+  perform pg_temp.chk('another business cannot reopen branch A''s appointment', r->>'code', 'forbidden');
+
+  set local role anon;
+  begin
+    perform public.reopen_appointment(pg_temp.id('appt_reopen_noshow'));
+  exception when insufficient_privilege then
+    v_ok := false;
+  end;
+  reset role;
+  perform pg_temp.chk('anon cannot call reopen_appointment at all', v_ok, false);
+end $$;
+
 -- mark_completed: confirmed -> completed.
 do $$
 declare r jsonb;
@@ -605,6 +826,31 @@ begin
   perform pg_temp.chk('cancelled_by_guest is false (dashboard action)',
     (select cancelled_by_guest from public.appointments where id = pg_temp.id('appt_other')), false);
 end $$;
+
+-- AUDIT: every status change and cancel above wrote exactly one audit row
+-- with the right action, for the right entity. One block covering all five
+-- (create is checked separately, right after the first create test).
+select pg_temp.chk('appointment.approved is audited',
+  (select count(*)::int from public.audit_logs
+   where business_id = pg_temp.id('biza') and action = 'appointment.approved'
+     and entity_id = pg_temp.id('appt_pending')::text), 1);
+select pg_temp.chk('appointment.no_show is audited',
+  (select count(*)::int from public.audit_logs
+   where business_id = pg_temp.id('biza') and action = 'appointment.no_show'
+     and entity_id = pg_temp.id('appt_pending')::text), 1);
+select pg_temp.chk('appointment.completed is audited',
+  (select count(*)::int from public.audit_logs
+   where business_id = pg_temp.id('biza') and action = 'appointment.completed'
+     and entity_id = pg_temp.id('appt_walkin')::text), 1);
+select pg_temp.chk('appointment.cancelled is audited',
+  (select count(*)::int from public.audit_logs
+   where business_id = pg_temp.id('biza') and action = 'appointment.cancelled'
+     and entity_id = pg_temp.id('appt_other')::text), 1);
+select pg_temp.chk('appointment.rescheduled is audited',
+  (select count(*)::int from public.audit_logs
+   where business_id = pg_temp.id('biza') and action = 'appointment.rescheduled'
+     and entity_id = pg_temp.id('appt_owner')::text) >= 1, true);
+-- (appointment.reopened was already asserted right after the reopen test, above.)
 
 -- cancelled is terminal too.
 do $$
@@ -726,6 +972,184 @@ begin
   );
   reset role;
   perform pg_temp.chk('the SAME DST instant collides on a second booking', r->>'code', 'slot_unavailable');
+end $$;
+
+-- ===========================================================================
+-- 4b. DST — Asia/Karachi (NO DST at all): same offset June and January,
+--     booking across what would be a DST boundary elsewhere must behave
+--     identically on both dates.
+-- ===========================================================================
+do $$
+declare v_biz uuid; v_br uuid; v_staff uuid; v_svc uuid; v_client uuid;
+begin
+  perform pg_temp.act_as(pg_temp.id('ownerk'));
+  set local role authenticated;
+  v_biz := public.create_business_with_owner('P4 Karachi','p4-karachi','PK','PKR','Asia/Karachi','en',null,'Main');
+  reset role;
+  insert into ids values ('bizk', v_biz);
+
+  alter table public.businesses disable trigger businesses_enforce_guard;
+  update public.businesses set trial_ends_at = now() + interval '1000 days' where id = v_biz;
+  alter table public.businesses enable trigger businesses_enforce_guard;
+
+  select id into v_br from public.branches where business_id = v_biz limit 1;
+  insert into ids values ('branchk', v_br);
+  update public.booking_settings set minimum_notice_minutes = 0, booking_window_days = 365 where branch_id = v_br;
+
+  insert into public.staff_profiles (business_id, display_name) values (v_biz, 'Karachi Staff') returning id into v_staff;
+  insert into ids values ('karachi_staff', v_staff);
+  insert into public.services (business_id, name, duration_minutes) values (v_biz, 'Cut', 60) returning id into v_svc;
+  insert into ids values ('karachi_svc', v_svc);
+  insert into public.service_branches (service_id, branch_id, business_id, price_minor, enabled)
+  values (v_svc, v_br, v_biz, 2000, true);
+  insert into public.staff_branches (staff_id, branch_id, business_id) values (v_staff, v_br, v_biz);
+  insert into public.service_staff (service_id, staff_id, business_id) values (v_svc, v_staff, v_biz);
+  insert into public.branch_hours (branch_id, business_id, day_of_week, start_minute, end_minute)
+  select v_br, v_biz, d, 0, 1440 from generate_series(0,6) d;
+  insert into public.staff_working_hours (staff_id, branch_id, business_id, day_of_week, start_minute, end_minute)
+  select v_staff, v_br, v_biz, d, 0, 1440 from generate_series(0,6) d;
+  insert into public.clients (business_id, full_name, phone_e164) values (v_biz, 'Karachi Client', '+923001234567') returning id into v_client;
+  insert into ids values ('karachi_client', v_client);
+end $$;
+
+-- Book the same wall-clock time in June (would be DST in many zones) and in
+-- January (never DST anywhere) -- Karachi has no DST, so both must resolve
+-- to the SAME UTC offset (+05:00), and neither collides with the other
+-- (different dates, same staff).
+do $$
+declare r jsonb; v_june timestamptz; v_jan timestamptz;
+begin
+  v_june := '2027-06-15 10:00:00 Asia/Karachi'::timestamptz;
+  v_jan := '2028-01-15 10:00:00 Asia/Karachi'::timestamptz;
+
+  perform pg_temp.chk('Karachi has the same UTC offset in June and January (no DST)',
+    extract(timezone from v_june) = extract(timezone from v_jan), true);
+
+  perform pg_temp.act_as(pg_temp.id('ownerk'));
+  set local role authenticated;
+  r := public.create_appointment(
+    pg_temp.id('branchk'), pg_temp.id('karachi_svc'), v_june,
+    p_staff_id => pg_temp.id('karachi_staff'), p_client_id => pg_temp.id('karachi_client')
+  );
+  perform pg_temp.chk('Karachi June booking succeeds', r->>'ok', 'true');
+
+  r := public.create_appointment(
+    pg_temp.id('branchk'), pg_temp.id('karachi_svc'), v_jan,
+    p_staff_id => pg_temp.id('karachi_staff'), p_client_id => pg_temp.id('karachi_client')
+  );
+  reset role;
+  perform pg_temp.chk('Karachi January booking (different date) does NOT collide with June', r->>'ok', 'true');
+end $$;
+
+-- ===========================================================================
+-- 4c. Capacity respected on BOTH create_appointment and update_appointment
+-- ===========================================================================
+do $$
+declare v_svc2 uuid; v_resource uuid; v_client3 uuid;
+begin
+  update public.booking_settings set people_per_slot = 2, use_resources = true
+  where branch_id = pg_temp.id('brancha');
+
+  insert into public.services (business_id, name, duration_minutes) values (pg_temp.id('biza'), 'Group Class', 60) returning id into v_svc2;
+  insert into ids values ('group_svc', v_svc2);
+  insert into public.service_branches (service_id, branch_id, business_id, price_minor, enabled)
+  values (v_svc2, pg_temp.id('brancha'), pg_temp.id('biza'), 1000, true);
+  insert into public.service_staff (service_id, staff_id, business_id) values (v_svc2, pg_temp.id('staffa_profile'), pg_temp.id('biza'));
+
+  insert into public.resources (business_id, branch_id, name, capacity) values (pg_temp.id('biza'), pg_temp.id('brancha'), 'Room 1', 1) returning id into v_resource;
+  insert into ids values ('room1', v_resource);
+  insert into public.service_resources (service_id, resource_id, business_id) values (pg_temp.id('svc'), v_resource, pg_temp.id('biza'));
+
+  insert into public.clients (business_id, full_name, phone_e164) values (pg_temp.id('biza'), 'Client Three', '+447700900444') returning id into v_client3;
+  insert into ids values ('client3', v_client3);
+end $$;
+
+-- people_per_slot = 2: the first two CREATEs into the same group slot
+-- succeed, the third is refused with slot_taken.
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.create_appointment(
+    pg_temp.id('brancha'), pg_temp.id('group_svc'), pg_temp.in_hours_slot(30),
+    p_staff_id => pg_temp.id('staffa_profile'), p_client_id => pg_temp.id('client1')
+  );
+  perform pg_temp.chk('group booking seat 1 of 2 succeeds', r->>'ok', 'true');
+  insert into ids values ('appt_group1', (r->>'appointment_id')::uuid);
+
+  r := public.create_appointment(
+    pg_temp.id('brancha'), pg_temp.id('group_svc'), pg_temp.in_hours_slot(30),
+    p_staff_id => pg_temp.id('staffa_profile'), p_client_id => pg_temp.id('client2')
+  );
+  perform pg_temp.chk('group booking seat 2 of 2 succeeds', r->>'ok', 'true');
+
+  r := public.create_appointment(
+    pg_temp.id('brancha'), pg_temp.id('group_svc'), pg_temp.in_hours_slot(30),
+    p_staff_id => pg_temp.id('staffa_profile'), p_client_id => pg_temp.id('client3')
+  );
+  reset role;
+  perform pg_temp.chk('a THIRD create into a full people_per_slot=2 slot is refused',
+    r->>'code', 'slot_taken');
+end $$;
+
+-- Resource capacity 1: a second service needing the SAME resource at an
+-- overlapping instant is refused with no_resource via create_appointment.
+do $$
+declare r jsonb; v_appt1 uuid;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.create_appointment(
+    pg_temp.id('brancha'), pg_temp.id('svc'), pg_temp.in_hours_slot(31),
+    p_staff_id => pg_temp.id('staffa_profile'), p_client_id => pg_temp.id('client1')
+  );
+  perform pg_temp.chk('first booking using the capacity-1 resource succeeds', r->>'ok', 'true');
+  v_appt1 := (r->>'appointment_id')::uuid;
+
+  -- The bug this evidence pass FOUND: create_appointment never stored
+  -- resource_id at all, so the resource-capacity count was always zero and
+  -- the check below used to silently pass. Assert the id is actually
+  -- stored, not just that a later booking gets refused.
+  perform pg_temp.chk('the booking actually STORES resource_id (the bug this pass found)',
+    (select resource_id from public.appointments where id = v_appt1), pg_temp.id('room1'));
+  perform pg_temp.chk('and snapshots resource_capacity_at_booking',
+    (select resource_capacity_at_booking from public.appointments where id = v_appt1), 1);
+
+  r := public.create_appointment(
+    pg_temp.id('brancha'), pg_temp.id('svc'), pg_temp.in_hours_slot(31),
+    p_staff_id => pg_temp.id('other_profile'), p_client_id => pg_temp.id('client2')
+  );
+  reset role;
+  perform pg_temp.chk('a second booking needing the SAME capacity-1 resource at an overlapping time is refused',
+    r->>'code', 'no_resource');
+
+  update public.booking_settings set use_resources = false where branch_id = pg_temp.id('brancha');
+end $$;
+
+-- update_appointment respects group capacity too: rescheduling a THIRD
+-- appointment INTO an already-full group slot is refused.
+do $$
+declare r jsonb; v_fv uuid; v_appt3 uuid;
+begin
+  update public.booking_settings set people_per_slot = 2 where branch_id = pg_temp.id('brancha');
+  select id into v_fv from public.form_versions where business_id = pg_temp.id('biza') order by version desc limit 1;
+
+  insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
+    starts_at, ends_at, duration_minutes, status, form_version_id, is_exclusive)
+  values (pg_temp.id('biza'), pg_temp.id('brancha'), pg_temp.id('client3'), pg_temp.id('group_svc'),
+    pg_temp.id('staffa_profile'), pg_temp.in_hours_slot(32), pg_temp.in_hours_slot(32) + interval '1 hour',
+    60, 'confirmed', v_fv, false)
+  returning id into v_appt3;
+
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.update_appointment(v_appt3, p_starts_at => pg_temp.in_hours_slot(30));
+  reset role;
+  perform pg_temp.chk('update_appointment refuses rescheduling INTO a full group slot',
+    r->>'code', 'slot_taken');
+  perform pg_temp.chk('the appointment did not move',
+    (select starts_at from public.appointments where id = v_appt3), pg_temp.in_hours_slot(32));
 end $$;
 
 -- ===========================================================================
@@ -888,10 +1312,16 @@ select pg_temp.chk('authenticated CAN call list_appointments',
   has_function_privilege('authenticated','public.list_appointments(uuid,uuid,uuid,public.appointment_status,uuid,date,date,text,integer,timestamptz,uuid)','execute'), true);
 select pg_temp.chk('anon cannot call get_calendar_appointments',
   has_function_privilege('anon','public.get_calendar_appointments(uuid,uuid,date,date,uuid[])','execute'), false);
-select pg_temp.chk('anon cannot call check_appointment_collision',
-  has_function_privilege('anon','public.check_appointment_collision(uuid,uuid,uuid,timestamptz,timestamptz,integer,integer,boolean,uuid)','execute'), false);
-select pg_temp.chk('authenticated cannot call check_appointment_collision directly',
-  has_function_privilege('authenticated','public.check_appointment_collision(uuid,uuid,uuid,timestamptz,timestamptz,integer,integer,boolean,uuid)','execute'), false);
+select pg_temp.chk('anon cannot call check_appointment_collision_v2',
+  has_function_privilege('anon','public.check_appointment_collision_v2(uuid,uuid,uuid,timestamptz,timestamptz,integer,integer,boolean,uuid)','execute'), false);
+select pg_temp.chk('authenticated cannot call check_appointment_collision_v2 directly',
+  has_function_privilege('authenticated','public.check_appointment_collision_v2(uuid,uuid,uuid,timestamptz,timestamptz,integer,integer,boolean,uuid)','execute'), false);
+select pg_temp.chk('anon cannot call reopen_appointment',
+  has_function_privilege('anon','public.reopen_appointment(uuid)','execute'), false);
+select pg_temp.chk('authenticated CAN call reopen_appointment (the role check inside is the boundary)',
+  has_function_privilege('authenticated','public.reopen_appointment(uuid)','execute'), true);
+select pg_temp.chk('anon cannot call my_staff_profile_id',
+  has_function_privilege('anon','public.my_staff_profile_id(uuid)','execute'), false);
 
 select n, name, detail from res where not pass order by n;
 

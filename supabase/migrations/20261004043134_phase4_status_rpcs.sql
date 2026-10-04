@@ -210,7 +210,13 @@ begin
     end if;
   end if;
 
-  if not public.is_allowed_appointment_transition(v_row.status, 'confirmed') then
+  -- Deliberately NOT a call to is_allowed_appointment_transition() with a
+  -- generic 'confirmed' target: that table also allows no_show/completed ->
+  -- confirmed (the user's reopen decision), and approve_appointment must
+  -- NOT become a side door into reopening a finished appointment without
+  -- reopen_appointment's Owner/Manager-only check and invoice_id guard.
+  -- approve_appointment's only job is pending -> confirmed.
+  if v_row.status <> 'pending' then
     return jsonb_build_object('ok', false, 'code', 'invalid_transition', 'status', v_row.status);
   end if;
 

@@ -152,16 +152,23 @@ exceeds.
 
 **Phase 4 RPCs (dashboard appointments).** Full detail in `context/appointments.md`.
 `create_appointment`/`update_appointment`/`cancel_appointment`/`mark_no_show`/
-`mark_completed`/`approve_appointment`: **DEFINER**, explicit `can()` +
-`has_permission_at_branch_scope()`/`is_own_staff_profile()` as the real
-boundary — same posture as `resend_manage_link`, because they write
-`audit_logs` (DEFINER-only) and the collision check must see rows outside
-the caller's own RLS visibility. Staff may book/reschedule outside hours/
-notice/window but never double-book or violate capacity
-(`check_appointment_collision`, NOT `get_free_slots` — see appointments.md
-for why the engine cannot be reused here). Status changes gated by
-`is_allowed_appointment_transition()`; `cancelled`/`completed`/`no_show` are
-permanently terminal. `list_appointments`/`get_calendar_appointments`: pure
+`mark_completed`/`approve_appointment`/`reopen_appointment`: **DEFINER**,
+explicit `can()` + `has_permission_at_branch_scope()`/`is_own_staff_profile()`
+as the real boundary — same posture as `resend_manage_link`, because they
+write `audit_logs` (DEFINER-only) and the collision check must see rows
+outside the caller's own RLS visibility. Staff may book/reschedule outside
+hours/notice/window but never double-book or violate capacity
+(`check_appointment_collision_v2`, NOT `get_free_slots` — see appointments.md
+for why the engine cannot be reused here, and for the bug the v1 helper had:
+it never surfaced the resolved resource_id, so no dashboard appointment ever
+stored one). Status changes gated by `is_allowed_appointment_transition()`;
+`cancelled` is permanently final; `no_show`/`completed` can be reopened to
+`confirmed` ONLY via `reopen_appointment` (Owner/Manager role check,
+`invoice_id` must be null, audited) — `approve_appointment` deliberately
+checks `status = 'pending'` directly rather than the transitions table, so it
+cannot become a side door into that reopen path. An Own-scope caller's
+`staff_id` is FORCED to their own profile (`my_staff_profile_id()`), never
+merely validated. `list_appointments`/`get_calendar_appointments`: pure
 reads, **INVOKER** — RLS is the boundary, not an explicit check.
 
 **Schedule writes go through RPCs, not direct table writes.**
@@ -246,33 +253,57 @@ it is safe to publish.
 | Receptionist | 20 — no discounts, credit notes, revenue reports, staff management, settings | branch |
 | Staff | 10 — own appointments, own schedule, own commission | own |
 
-## Verification (2026-10-05, Phase 4 part A)
-`supabase/tests/12_dashboard_appointments.sql` — **103 passing**:
+## Verification (2026-10-05, Phase 4 part A + closure round)
+`supabase/tests/12_dashboard_appointments.sql` — **141 passing** (was 103
+after the first pass):
 `create_appointment` (existing client by id, walk-in by phone with never-
-overwrite, "any staff", out-of-hours succeeding, double-booking refused,
-Own-scope staff booking themselves vs forbidden on someone else, another
-business forbidden, anon refused outright); `update_appointment` (notes-
-only edit, reschedule to a free slot, **rescheduling onto a taken slot
-refused with the original appointment surviving untouched**, out-of-hours
-reschedule succeeding, a terminal row refusing even a notes-only edit, Own-
-scope staff forbidden on someone else's row); **every one of the 25
-(from,to) status pairs checked against `is_allowed_appointment_transition`**,
-proving the rule table itself rather than just the RPCs that read it;
-approve/no_show/complete/cancel each exercised on real rows, with every
-terminal status refusing ALL further transitions and the row provably
-unchanged after each refusal; Staff lacking `appointments.cancel`/`.approve`
-entirely (doc §9); unknown ids returning `not_found`; DST fall-back on an
-America/New_York branch (the repeated local hour resolves to one instant,
-booking it twice collides); `list_appointments` pagination, status filter,
-client-name search, Own-scope narrowing, cross-business and anon both
-seeing/getting nothing; `get_calendar_appointments` branch-timezone day
-boundaries (a day before the local date excludes the appointment) and
-cancelled rows excluded; the Realtime publication; and grants on every RPC
-including the service_role-only collision helper.
+overwrite, "any staff", out-of-hours succeeding, double-booking refused with
+no orphan row left behind, Own-scope staff booking themselves, **passing
+someone else's staff_id is overridden — the booking still succeeds but FOR
+THE CALLER**, another business forbidden, anon refused outright); `update_appointment`
+(notes-only edit, reschedule to a free slot, **rescheduling onto a taken
+slot refused with the original appointment surviving untouched**,
+out-of-hours reschedule succeeding, a terminal row refusing even a
+notes-only edit, Own-scope staff forbidden on someone else's row);
+**every one of the 25 (from,to) status pairs checked against
+`is_allowed_appointment_transition`**, including the two REOPEN transitions;
+approve/no_show/complete/cancel/reopen each exercised on real rows, every
+terminal-or-refused path leaving the row provably unchanged;
+**`reopen_appointment`**: Receptionist and Staff both refused (role check,
+not permission), Manager/Owner succeed when `invoice_id is null`, an
+INVOICED completed appointment refused even for the Owner, `cancelled`
+refused via reopen too, another business and anon refused; **a REAL bug
+found and fixed**: `create_appointment`/`update_appointment` never stored
+`resource_id`, caught by a new assertion on the stored column (not just the
+return code) — a capacity-1 resource booked twice via the dashboard used to
+silently succeed; group AND resource capacity now proven on BOTH create and
+update; DST on America/New_York (fall-back) AND **Asia/Karachi (no DST at
+all, same UTC offset June and January)**; audit_logs rows asserted for
+EVERY write RPC (`created`, `rescheduled`, `cancelled`, `no_show`,
+`completed`, `approved`, `reopened`); `list_appointments` pagination,
+filters, search, Own-scope narrowing, cross-business/anon seeing nothing;
+`get_calendar_appointments` branch-timezone day boundaries and cancelled
+rows excluded; Realtime publication membership; grants on every RPC
+including both collision helpers.
 
-Re-ran **07, 08, 11 unchanged** (54, 134, 106 passing) to confirm no
-regression from the new `appointments.invoice_id` column or the Realtime
-publication add.
+**Realtime RLS proved with a LIVE subscription** (not SQL fixtures, which
+cannot hold a real JWT): three signed-in `supabase-js` clients against the
+deployed project showed a cross-business subscriber receives zero events
+and an Own-scope Staff subscriber receives only their own appointment's
+events, never a colleague's, on the same unfiltered channel. See
+`context/appointments.md`.
+
+Re-ran **07, 08, 11 unchanged** (54, 134, 106 passing) after the first pass
+AND again after the closure round's fixes and the migration-filename
+renames, to confirm no regression at either point.
+
+**Migration history reconciled**: `supabase migration list` now reports
+**56/56 matched**, zero local/remote mismatches, confirmed 2026-10-05.
+The cause: `apply_migration` timestamps each migration by when it actually
+ran, not by the local filename's prefix, so several Phase 3/4 files had
+drifted. Fixed by renaming local files to the real remote timestamps
+(confirmed with the user first) — no `supabase migration repair`, no
+database changes, purely local `mv`.
 
 Advisors: security — the 6 new DEFINER functions add the same "executable by
 authenticated" warning `resend_manage_link` already had (intentional, the
@@ -391,18 +422,21 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261004090000_public_request_attempts.sql` | Step 7: `public_request_attempts`, `rate_limit_rules`, `check_rate_limit()` (records AND decides in one call; records BLOCKED attempts too; fails closed), `cleanup_public_request_attempts()` |
 | `20261004093000_schedule_attempts_cleanup.sql` | `pg_cron` nightly retention job (03:17 UTC, 7 days). Asserts the API roles cannot reach the scheduler — and established that **reachability is schema USAGE *and* the function grant**, not the grant alone. |
 | `20261004100000_guest_manage_rpcs.sql` | Step 6: `resolve_manage_token`, `get_booking`, `cancel_booking`, `reschedule_booking`, `resend_manage_link` |
-| `20261004110000_guest_manage_reschedule_slots.sql` | Step 6 (cont.): `get_booking_reschedule_slots` — reschedule screen's slots, resolved from a TOKEN not an id |
 | `20261004110000_fix_reschedule_rollback.sql` | **Fixed**: a FAILED reschedule left the appointment cancelled, because a `RETURN` does not roll back — only an exception does. Now validates everything before mutating and excludes the row from its own collision check (`a.id <> v_id`). |
 | `20261004120000_business_hourly_cap.sql` | Per-business **hourly** cap (30) beside the daily one (200). Widened the `rate_limit_rules` PK to (endpoint, scope, window_seconds) so one dimension can hold several windows. |
 | `20261005090000_lower_business_daily_cap.sql` | Per-business daily cap 200 → 120, with a migration-time assertion that the hourly cap never exceeds the daily one (which would make the hourly rule unreachable). |
 | `20261005100000_require_client_email.sql` | `booking_settings.require_client_email` — the ONE toggleable default field (doc §6.1). Wired into `save_booking_settings` and `create_booking`, which now returns `email_required` rather than silently dropping a malformed address. Also adds `conflicting_slots` to the people_per_slot refusal so the UI can say how many upcoming slots clash. |
-| `20261005110000_get_booking_page_catalogue.sql` | Phase 3 step 5: `get_booking_page_catalogue()` for the public booking page's bootstrap endpoint |
-| `20261005120000_get_booking_page_rate_limit.sql` | Rate-limit rule for `get_booking_page` |
-| `20261005160000_phase4_appointments_schema.sql` | Phase 4 part A: `appointments.invoice_id` (Phase 5 seam, no FK yet), `appointment_status_transitions` table + `is_allowed_appointment_transition()`, `appointments` added to `supabase_realtime` |
-| `20261005170000_phase4_appointment_rpcs.sql` | `check_appointment_collision()` shared helper, `create_appointment` |
-| `20261005180000_phase4_update_appointment.sql` | `update_appointment` (reschedule or notes-only, validates fully before one write) |
-| `20261005190000_phase4_status_rpcs.sql` | `cancel_appointment`, `mark_no_show`, `mark_completed`, `approve_appointment` |
-| `20261005200000_phase4_read_rpcs.sql` | `list_appointments` (keyset pagination), `get_calendar_appointments` (branch-timezone day boundaries) |
+| `20261003223040_get_booking_page_catalogue.sql` | Phase 3 step 5: `get_booking_page_catalogue()` for the public booking page's bootstrap endpoint |
+| `20261003223121_get_booking_page_rate_limit.sql` | Rate-limit rule for `get_booking_page` |
+| `20261004035654_guest_manage_reschedule_slots.sql` | Step 6 (cont.): `get_booking_reschedule_slots` — reschedule screen's slots, resolved from a TOKEN not an id |
+| `20261004042720_phase4_appointments_schema.sql` | Phase 4 part A: `appointments.invoice_id` (Phase 5 seam, no FK yet), `appointment_status_transitions` table + `is_allowed_appointment_transition()`, `appointments` added to `supabase_realtime` |
+| `20261004042940_phase4_appointment_rpcs.sql` | `check_appointment_collision_v2()` shared helper (final form — see below), `create_appointment` (final form) |
+| `20261004043110_phase4_update_appointment.sql` | `update_appointment` (final form: reschedule or notes-only, validates fully before one write, stores `resource_id`) |
+| `20261004043134_phase4_status_rpcs.sql` | `cancel_appointment`, `mark_no_show`, `mark_completed`, `approve_appointment` (final form: pending-only, not a reopen side door) |
+| `20261004043313_phase4_read_rpcs.sql` | `list_appointments` (keyset pagination), `get_calendar_appointments` (branch-timezone day boundaries) |
+| `20261004043628, 20261004045004, 20261004045754, 20261004045817, 20261004045901` | Historical no-op placeholders for intermediate `apply_migration` calls this session, folded into the FINAL bodies of the files above. See `context/appointments.md`'s Files table. |
+| `20261004044911_phase4_reopen_and_own_staff_fix.sql` | Closure round: `reopen_appointment`, `my_staff_profile_id()`, the two reopen transitions |
+| `20261004045723_fix_dashboard_resource_id_not_stored.sql` | **Fixed a real bug**: `create_appointment`/`update_appointment` never stored `resource_id`, making resource capacity a no-op from the dashboard. Adds `appointment_collision_result` composite + `check_appointment_collision_v2` (returns the resolved resource id). |
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
@@ -422,6 +456,7 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
   design, not an oversight.
 
 ## Changelog
+- 2026-10-05: **Phase 4 part A closure round.** `reopen_appointment` (Owner/Manager role check, `invoice_id` guard, audited), `my_staff_profile_id()` + forced Own-scope `staff_id`. **Found and fixed a real bug**: `create_appointment`/`update_appointment` never stored `resource_id`, making resource capacity a no-op from the dashboard — fixed with `check_appointment_collision_v2`. Found and fixed a second gap mid-round: `approve_appointment` had briefly become a side door into the reopen path. 141 assertions (was 103). Proved Realtime RLS with three live signed-in clients. Reconciled all migration filenames with the real remote history (56/56 matched, no `migration repair` needed).
 - 2026-10-05: **Phase 4 part A — dashboard appointments backend.** `appointments.invoice_id` (Phase 5 seam), `appointment_status_transitions` + `is_allowed_appointment_transition()`, `check_appointment_collision()`, `create_appointment`, `update_appointment`, `cancel_appointment`/`mark_no_show`/`mark_completed`/`approve_appointment`, `list_appointments`, `get_calendar_appointments`, Realtime publication. 103 new assertions. No UI yet.
 - 2026-10-04: `require_client_email` (the one toggleable default booking field); per-business daily cap 200 → 120. 430 assertions.
 - 2026-10-04: **Step 7 (rate limiting + bot protection)** and **step 6 (guest manage link)**. Per-business hourly cap added.

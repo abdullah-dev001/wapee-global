@@ -2,9 +2,10 @@
 Last updated: 2026-10-05 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
 
 **Phase 3 is fully complete. Phase 4 part A (dashboard appointments
-BACKEND ONLY, no UI) is also done** — see `context/appointments.md`. The
-user explicitly scoped this session to backend-only and asked for a report
-before any UI work; **ask before building the Phase 4 UI.**
+BACKEND ONLY, no UI) is also done, closure round accepted** — see
+`context/appointments.md`. The user explicitly scoped this to backend-only
+and asked for a report before any UI work; **ask before building the
+Phase 4 UI.**
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
@@ -98,6 +99,37 @@ before any UI work; **ask before building the Phase 4 UI.**
   (`supabase/tests/12_dashboard_appointments.sql`); re-ran 07/08/11
   unchanged to confirm no regression. Types regenerated. See
   `context/appointments.md`.
+- **Phase 4 part A closure round is DONE and accepted.** Implemented two
+  decisions the user made explicitly (their earlier questions were never
+  actually surfaced — see Traps): (b) `no_show`/`completed` can be reopened
+  to `confirmed`, but ONLY by Owner/Manager (a literal role-key check, not
+  a permission — `appointments.edit` at Branch is ALSO Receptionist's, and
+  the decision excludes them), ONLY when `invoice_id is null`, audited
+  (`reopen_appointment`, new); (c) an Own-scope Staff caller's `staff_id` is
+  now FORCED to their own profile (`my_staff_profile_id()`) rather than
+  merely validated if supplied. **Found and fixed a real bug while adding
+  the evidence this round asked for**: `create_appointment`/
+  `update_appointment` never stored `resource_id` on the row at all, so a
+  capacity-1 resource could be double-booked from the dashboard without
+  ever being refused — caught only because a new assertion checked the
+  STORED column, not just the return code. Fixed with
+  `check_appointment_collision_v2` (resolves AND returns the resource id).
+  Also found and fixed, mid-round: `approve_appointment` had briefly become
+  a side door into the reopen path by checking the transitions table
+  generically instead of `status = 'pending'` directly — caught before it
+  ever reached a real caller. Added: Asia/Karachi (no-DST) coverage, group
+  + resource capacity proven on BOTH create and update, audit_logs
+  assertions for every write RPC, reopen allowed/forbidden coverage. 141 SQL
+  assertions (was 103). **Realtime RLS proved with three REAL signed-in
+  `supabase-js` clients** (not SQL fixtures, which cannot hold a live JWT):
+  a cross-business subscriber received zero events, an Own-scope Staff
+  subscriber received only their own appointment's events on an unfiltered
+  channel. **Migration history reconciled**: `supabase migration list` now
+  reports 56/56 matched; every Phase 3/4 file that had drifted (because
+  `apply_migration` timestamps by when it actually runs, not by the local
+  filename) was renamed to the real remote timestamp, confirmed with the
+  user first — pure `mv`, no database changes, no `migration repair`
+  needed. See `context/appointments.md`.
 
 ## Next, in order
 1. **The Phase 4 UI (calendar, appointment forms, Today screen, clients) is
@@ -123,6 +155,10 @@ before any UI work; **ask before building the Phase 4 UI.**
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **A tool call to AskUserQuestion is not the same as the user actually answering it.** This session's predecessor asked four grouped questions before building the Phase 4 backend and proceeded as if they had been answered, but the user's own closure-round message made clear they never saw them: the user gave their OWN decisions for (a)-(e) instead, two of which ((b) reopen, (c) forced Own-scope staff_id) directly contradicted what had been built and shipped. **When a question actually matters for scope/money/permissions, the conversation must show the user's own words answering it before building on the answer** — do not treat a tool call's return value as consent without that.
+- **A generic "is this transition allowed" check can become a backdoor the moment a NEW transition is added to a shared rule table.** Adding `no_show/completed -> confirmed` to `appointment_status_transitions` (for the user's reopen decision) silently gave `approve_appointment` — which checked `is_allowed_appointment_transition(status, 'confirmed')` generically — a second, unguarded path to the exact same effect `reopen_appointment` exists to gate (Owner/Manager only, `invoice_id` null, audited). Caught only because the new reopen tests happened to also re-run the old approve tests and one flipped from refused to allowed. **Whenever a shared rule table gains a new row, grep every caller of the function that reads it** — a caller written before the row existed may have been "correct" only because that row didn't exist yet.
+- **A collision/availability check that resolves a resource but only returns a pass/fail CODE is a bug waiting to ship.** `check_appointment_collision` (v1) correctly found a free resource and refused when none was free, but never told the caller WHICH resource id it had resolved — so `create_appointment`/`update_appointment` never stored `resource_id` at all, and the "how many bookings use this resource" count inside the SAME function was therefore always zero on every subsequent call. The function was internally consistent and still wrong. Caught only by asserting the STORED COLUMN value in a test, not just the return code — "the RPC returned ok:false when it should" is not the same claim as "the data is correct afterwards." Fixed by returning a composite (code + resource_id + capacity) so the caller stores exactly what was checked.
+- **`apply_migration`'s remote timestamp is NOT the local filename's timestamp.** Every migration applied via the Supabase connector gets stamped with whatever time it actually ran, completely independent of the `name` argument or the local file's prefix. Local files narrated with sequential same-day timestamps (`20261005160000`, `170000`, ...) drifted from the real remote history (`20261004042720`, `042940`, ...) by a full day. `supabase migration list` is the only way to catch this — check it after a multi-migration session, before assuming the folder tells the true story.
 - **`get_free_slots()` cannot be reused for a "staff override hours" question — not even with a flag.** `p_ignore_notice` only affects minimum notice and `online_booking_enabled`; the branch/staff-hours joins (`branch_windows`, `staff_windows`) are STRUCTURAL — no row for an out-of-hours instant exists at all, flag or no flag. Phase 4's dashboard RPCs needed staff to book outside hours (doc §6.2), so they run a SEPARATE collision-only check (`check_appointment_collision`, reusing `reschedule_booking`'s exclusion-aware overlap query) instead of calling the engine. The engine stays the sole authority on the SLOT GRID; the dashboard RPCs are the sole authority on "does this collide".
 - **A column whose type matches another table's column of the same name is not automatically compatible with a bare string literal.** `clients.source` and `appointments.source` are both `public.booking_source`, not text — `case when p_source = 'walk_in' then 'walk_in' else 'dashboard' end` failed 42804 because the literals never got cast. Pass the already-typed parameter through directly instead of re-deriving a string.
 - **A `DECLARE`d variable's type is a silent trap in a SQL test fixture.** `select count(*) into v_client` where `v_client` was declared `uuid` (reused from an earlier `select client_id into v_client`) failed with `invalid input syntax for type uuid: "1"` — Postgres tried to cast the count into the wrong type. The error message's line number is relative to the function body, not the file, so when a SQL test fails with a cryptic type error, check every `declare`d variable's type against every `select into` that targets it, don't just reread the surrounding logic.

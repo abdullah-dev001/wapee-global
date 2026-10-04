@@ -1,11 +1,11 @@
 # Dashboard appointments (backend)
-Status: backend done (Phase 4 part A) · no UI yet · Phase: 4 · Last updated: 2026-10-05
+Status: backend done, closure round complete · no UI yet · Phase: 4 · Last updated: 2026-10-05
 
 ## What it does
 The authenticated, permission-checked write and read path for appointments
 from the dashboard: book, walk-in, reschedule, cancel, no-show, complete,
-approve, list (paginated, filtered, searched), and a calendar-range query.
-This is **backend only** — no screens. The public guest-facing path
+approve, reopen, list (paginated, filtered, searched), and a calendar-range
+query. This is **backend only** — no screens. The public guest-facing path
 (`create_booking`, `manage_booking`) is untouched and unrelated; this is the
 staff-facing path, callable by `authenticated` through `can()`/scope checks.
 
@@ -19,7 +19,7 @@ staff-facing path, callable by `authenticated` through `can()`/scope checks.
 - **`get_free_slots()` is NOT reused here** — it cannot be. Its branch/staff
   hours joins are structural (no row exists outside hours, with or without
   any flag), so it cannot express "ignore hours". A shared helper,
-  `check_appointment_collision()`, runs the SAME exclusion-aware overlap
+  `check_appointment_collision_v2()`, runs the SAME exclusion-aware overlap
   query `reschedule_booking` already uses (staff double-booking, group
   capacity, resource capacity), skipping the hours/notice/window EXISTENCE
   checks entirely. The DB exclusion constraint is still the hard backstop
@@ -28,126 +28,138 @@ staff-facing path, callable by `authenticated` through `can()`/scope checks.
   `appointment_status_transitions` (a table) +
   `is_allowed_appointment_transition(from, to)`. Allowed:
   `pending→confirmed` (approve), `pending→cancelled`, `confirmed→cancelled`,
-  `confirmed→completed`, `confirmed→no_show`. **`cancelled`/`completed`/
-  `no_show` are PERMANENTLY TERMINAL — no reopen, ever** (agreed with the
-  user 2026-10-05). A mistake is fixed by creating a new appointment, never
-  by reopening a finished one — same posture as credit notes/reversal rows
-  for money. `update_appointment` also refuses ANY edit (even just a note) on
-  a terminal row.
-- **Staff may create/edit appointments for THEMSELVES at Own scope**
-  (`appointments.create`/`.edit` are Own-scope for the Staff role, doc §9).
-  Booking or rescheading someone else's appointment needs Branch/All scope.
-  `appointments.cancel` and `appointments.approve` are **not** granted to
-  Staff at all (doc §9), so a Staff member cannot cancel or approve anything,
-  including their own.
+  `confirmed→completed`, `confirmed→no_show`, and **`no_show→confirmed` /
+  `completed→confirmed`** (the reopen decision below). **`cancelled` is
+  PERMANENTLY FINAL — no row, no path, ever.**
+- **Reopen (decided with the user, 2026-10-05): `no_show`/`completed` may be
+  moved back to `confirmed`, but ONLY by Owner or Manager, ONLY when
+  `invoice_id is null`, and it is audit-logged.** `reopen_appointment()` is
+  the only RPC that can do this. It checks the caller's **role key directly**
+  (`r.key in ('owner','manager')`) rather than a permission — `appointments.edit`
+  at Branch scope is ALSO Receptionist's (doc §9), and the user's decision
+  explicitly excludes Receptionist, which no existing permission expresses.
+  This is the first and only RPC in the project that checks a role name
+  instead of a permission; it is a deliberate, narrow exception for
+  reopening a finished record, not a pattern to copy elsewhere.
+  **`approve_appointment` deliberately does NOT use
+  `is_allowed_appointment_transition(status, 'confirmed')`** — that table
+  also allows the reopen transitions, so a generic check would have made
+  `approve_appointment` a side door into reopening a no_show/completed
+  appointment without the Owner/Manager-only check or the `invoice_id`
+  guard. (This exact gap was introduced and then caught and fixed inside
+  this same closure round — see Changelog.) `approve_appointment` checks
+  `status = 'pending'` directly instead.
+- **Staff creating/editing an appointment for THEMSELVES (Own scope) has
+  `staff_id` FORCED to their own staff profile** (`my_staff_profile_id()`),
+  not merely validated if supplied. Passing no id, or someone else's id, is
+  silently overridden to the caller's own — there is exactly one legitimate
+  choice for an Own-scope caller, so there is nothing to ask permission for.
+  Booking someone else requires Branch/All scope. `appointments.cancel` and
+  `appointments.approve` are **not** granted to Staff at all (doc §9), so a
+  Staff member cannot cancel or approve anything, including their own —
+  and `reopen_appointment` excludes them too (Owner/Manager only).
 - **Walk-in is just `booking_source = 'walk_in'`** on an otherwise normal
   appointment (agreed with the user 2026-10-05) — no special fields, no
-  different validation. It exists for reporting/filtering later.
+  different validation, no notifications (Phase 6). It exists for
+  reporting/filtering later.
 - **Validate everything, mutate once** (CLAUDE.md §10a) in every write RPC.
   `update_appointment`'s collision check excludes its own row
   (`p_exclude_appointment_id`), the same fix `reschedule_booking` needed
-  after its original bug (freeing the slot before validating, so every
-  failure path left the booking cancelled). None of the six RPCs here ever
-  mutates before every check has passed.
+  after its original bug. None of the seven write RPCs here ever mutates
+  before every check has passed.
 - **These RPCs raise freely on a genuinely unexpected error** (unlike the
   public RPCs) — there is no rate-limit counter here to roll back. An
   EXPECTED failure (forbidden, invalid_transition, slot_unavailable) is
-  still `{ok:false,code}`, never a raised Postgres error, so the UI has one
-  shape to translate everywhere.
+  still `{ok:false,code}`, never a raised Postgres error.
 - **The Phase 5 invoice seam**: `appointments.invoice_id`, nullable, no FK
-  yet (decided with the user 2026-10-05 — Phase 5 adds the FK once
-  `invoices` exists). A completed appointment is never automatically
-  unlocked or reopened to attach an invoice; Phase 5 writes the column
-  directly.
+  yet. A completed appointment is never automatically unlocked to attach an
+  invoice; Phase 5 writes the column directly. `reopen_appointment` reads
+  this column as its guard: once invoiced, not reopenable by anyone.
 
 ## Files
 | Path | Purpose |
 |---|---|
-| supabase/migrations/20261005110000_phase4_appointments_schema.sql | `invoice_id`, `appointment_status_transitions` table + `is_allowed_appointment_transition()`, Realtime publication |
-| supabase/migrations/20261005120000_phase4_appointment_rpcs.sql | `check_appointment_collision()` (shared helper), `create_appointment` |
-| supabase/migrations/20261005130000_phase4_update_appointment.sql | `update_appointment` (notes-only edit or full reschedule) |
-| supabase/migrations/20261005140000_phase4_status_rpcs.sql | `cancel_appointment`, `mark_no_show`, `mark_completed`, `approve_appointment` |
-| supabase/migrations/20261005150000_phase4_read_rpcs.sql | `list_appointments` (keyset pagination), `get_calendar_appointments` |
-| supabase/tests/12_dashboard_appointments.sql | 103 assertions |
+| supabase/migrations/20261004042720_phase4_appointments_schema.sql | `invoice_id`, `appointment_status_transitions` table + `is_allowed_appointment_transition()`, Realtime publication |
+| supabase/migrations/20261004042940_phase4_appointment_rpcs.sql | `check_appointment_collision_v2()` (final form), `create_appointment` (final form, forces Own-scope staff_id, stores resource_id) |
+| supabase/migrations/20261004043110_phase4_update_appointment.sql | `update_appointment` (final form, stores resource_id) |
+| supabase/migrations/20261004043134_phase4_status_rpcs.sql | `cancel_appointment`, `mark_no_show`, `mark_completed`, `approve_appointment` (final form: pending-only, not a reopen side door) |
+| supabase/migrations/20261004043313_phase4_read_rpcs.sql | `list_appointments` (keyset pagination), `get_calendar_appointments` |
+| supabase/migrations/20261004044911_phase4_reopen_and_own_staff_fix.sql | `reopen_appointment`, `my_staff_profile_id()`, the reopen transitions |
+| supabase/migrations/20261004045723_fix_dashboard_resource_id_not_stored.sql | `appointment_collision_result` composite type + `check_appointment_collision_v2` (the REAL bug fix — see Changelog) |
+| supabase/migrations/20261004043628, 20261004045004, 20261004045754, 20261004045817, 20261004045901 | Historical no-op placeholders: these timestamps are real entries in the remote migration-history table (from intermediate `apply_migration` calls this session), folded into the FINAL function bodies in the files above rather than replayed as separate changes. Local files are kept at current content; see each placeholder's own comment. |
+| supabase/tests/12_dashboard_appointments.sql | 141 assertions |
 
-No app code yet — no hooks, no screens. Next session builds those against
-this exact RPC surface.
+No app code yet — no hooks, no screens.
 
 ## Database
 
 ### Why SECURITY DEFINER, not INVOKER (the write RPCs)
 `create_appointment`, `update_appointment`, `cancel_appointment`,
-`mark_no_show`, `mark_completed`, `approve_appointment` are all **DEFINER**
-with an explicit `can()` + `has_permission_at_branch_scope()`/
-`is_own_staff_profile()` check as the actual boundary — same posture as
-`resend_manage_link`, for the same two reasons:
-1. They write `audit_logs` via `write_audit_log()`, which is DEFINER-only
-   with EXECUTE **revoked from `authenticated` entirely** — an INVOKER
-   function cannot reach it.
+`mark_no_show`, `mark_completed`, `approve_appointment`, `reopen_appointment`
+are all **DEFINER** with an explicit `can()`/role check as the actual
+boundary — same posture as `resend_manage_link`:
+1. They write `audit_logs` via `write_audit_log()`, DEFINER-only with
+   EXECUTE revoked from `authenticated` entirely.
 2. The collision check must see every OTHER appointment at that instant
-   regardless of the caller's own row-level grants (an Own-scope Staff
-   member's RLS visibility does not cover the row they would collide with).
+   regardless of the caller's own row-level grants.
 
-`list_appointments` and `get_calendar_appointments` are **INVOKER** — pure
-reads, and RLS's existing Own/Branch/All scoping on `appointments_select`
-(verified in `supabase/tests/07`) is already the correct boundary; there is
-no reason to bypass it here, and bypassing it would mean re-deriving the
-scope rule instead of trusting the one the policies already enforce.
-`check_appointment_collision` is INVOKER too (`service_role`-only EXECUTE,
-called from inside the DEFINER functions, same pattern as `get_free_slots`
-being callable from `create_booking` despite its own grant).
+`list_appointments` and `get_calendar_appointments` are **INVOKER** — RLS's
+existing Own/Branch/All scoping on `appointments_select` is the boundary.
+`check_appointment_collision_v2` is INVOKER too (`service_role`-only
+EXECUTE, called from inside the DEFINER functions).
 
 ### Functions
-- **`check_appointment_collision(branch, service, staff, starts_at, ends_at,
-  buffer, people_per_slot, use_resources, exclude_appointment_id?) → text`** —
-  the shared collision-only check. Returns `null` | `slot_unavailable` |
-  `slot_taken` | `no_resource`. `service_role` only.
+- **`check_appointment_collision_v2(branch, service, staff, starts_at,
+  ends_at, buffer, people_per_slot, use_resources, exclude_appointment_id?)
+  → appointment_collision_result`** (composite: `code`, `resource_id`,
+  `resource_capacity`) — the shared collision-only check. Replaces
+  `check_appointment_collision` (kept, deprecated, unused — see Changelog):
+  the old version only returned a pass/fail code and never told the caller
+  WHICH resource it had resolved, so no dashboard appointment ever got
+  `resource_id` stored. `service_role` only.
 - **`create_appointment(branch, service, starts_at, staff?, client_id?,
   client_name?, client_phone?, client_email?, client_notes?,
   internal_notes?, source default 'dashboard', auto_confirm default true) →
-  jsonb`** — dashboard booking/walk-in. Exactly one of `client_id` /
-  `client_name`+`client_phone` should be given. `staff = null` uses the SAME
-  least-loaded "Any staff" rule as `create_booking`
-  (`pick_staff_for_slot`). Codes: `forbidden`, `not_found`, `unknown_service`,
-  `service_unavailable`, `unknown_client`, `invalid_name`, `invalid_phone`,
-  `invalid_email`, `staff_unavailable`, `no_staff`, `slot_unavailable`,
-  `slot_taken`, `no_resource`.
+  jsonb`** — dashboard booking/walk-in. An Own-scope-only caller has
+  `staff_id` FORCED to `my_staff_profile_id()`. `staff = null` (Branch/All
+  caller) uses the SAME least-loaded "Any staff" rule as `create_booking`.
+  Stores the resolved `resource_id` + `resource_capacity_at_booking`. Codes:
+  `forbidden`, `not_found`, `unknown_service`, `service_unavailable`,
+  `unknown_client`, `invalid_name`, `invalid_phone`, `invalid_email`,
+  `staff_unavailable`, `no_staff`, `slot_unavailable`, `slot_taken`,
+  `no_resource`.
 - **`update_appointment(appointment_id, starts_at?, staff_id?,
   client_notes?, internal_notes?, clear_client_notes default false,
-  clear_internal_notes default false) → jsonb`** — `null` on a field means
-  "leave unchanged"; the two `clear_*` flags exist because `null` already
-  means that. Same-time-and-staff is a notes-only edit (skips the whole
-  collision path). Codes additionally include `not_editable` (terminal row).
+  clear_internal_notes default false) → jsonb`** — `null` means "leave
+  unchanged"; the `clear_*` flags exist because of that. Same-time-and-staff
+  is a notes-only edit (skips the collision path). Stores `resource_id` on
+  a reschedule too. Codes additionally include `not_editable` (terminal
+  row).
 - **`cancel_appointment(appointment_id, reason?)`**,
-  **`mark_no_show(appointment_id)`**, **`mark_completed(appointment_id)`**,
-  **`approve_appointment(appointment_id)`** — one status change each, all
-  gated by `is_allowed_appointment_transition()`. Code `invalid_transition`
-  on any disallowed change (including every terminal-row attempt).
+  **`mark_no_show(appointment_id)`**, **`mark_completed(appointment_id)`** —
+  gated by `is_allowed_appointment_transition()`.
+- **`approve_appointment(appointment_id)`** — gated by `status = 'pending'`
+  DIRECTLY, not the transitions table (see Business rules: avoiding the
+  reopen side door).
+- **`reopen_appointment(appointment_id) → jsonb`** — `no_show`/`completed`
+  → `confirmed`. Owner/Manager role check (not a permission). Refuses with
+  `invoiced` if `invoice_id is not null`. Audit action
+  `appointment.reopened`.
+- **`my_staff_profile_id(business_id) → uuid`** — the caller's own
+  `staff_profiles` row in that business, or null. Used to FORCE `staff_id`
+  for an Own-scope caller rather than merely validate it.
 - **`is_allowed_appointment_transition(from, to) → boolean`** — reads
-  `appointment_status_transitions`, the one place the rule lives. `select`
-  granted to `authenticated` AND `anon` (read-only reference data, same
-  posture as `permissions`), so the UI can know which buttons apply without
-  a round trip through an RPC.
-- **`list_appointments(business_id, branch_id?, staff_id?, status?,
-  service_id?, from_date?, to_date?, search?, limit default 20,
-  cursor_starts_at?, cursor_id?) → jsonb`** — keyset pagination on
-  `(starts_at desc, id desc)`, fixed sort (keeps the cursor shape simple).
-  `search` matches `clients.full_name`/`phone_e164` via the existing trgm
-  index, case-insensitive substring — debounce/min-length is the CALLER's
-  job (CLAUDE.md §6), this just runs the query. Returns
-  `{rows: [...], next_cursor: {starts_at, id} | null}`.
-- **`get_calendar_appointments(business_id, branch_id, from_date, to_date,
-  staff_ids?) → jsonb`** — day boundaries computed in the **branch's own
-  timezone**, not UTC (`p_from_date::timestamp at time zone v_tz` — the same
-  "naive local timestamp + zone" pattern the slot engine uses). Cancelled
-  appointments are excluded. Returns `{timezone, rows: [...]}`.
+  `appointment_status_transitions`. `select` granted to `authenticated` AND
+  `anon` (read-only reference data).
+- **`list_appointments(...)`**, **`get_calendar_appointments(...)`** —
+  unchanged from the first pass; see the SQL for full signatures.
 
 ### Realtime
-`appointments` is in the `supabase_realtime` publication (added in
-`20261005110000`). Supabase's `postgres_changes` applies the subscriber's
-own RLS policies to each change event for an authenticated client, so
-**`appointments_select` (Own/Branch/All) is the only access boundary** —
-nothing extra was built. The next session's UI should subscribe with:
+`appointments` is in the `supabase_realtime` publication. Supabase's
+`postgres_changes` applies the subscriber's own RLS policies to each change
+event for an authenticated client, so **`appointments_select` (Own/Branch/
+All) is the only access boundary** — nothing extra was built. Subscribe
+with:
 
 ```ts
 supabase
@@ -159,51 +171,102 @@ supabase
   .subscribe();
 ```
 
-A Staff member (Own scope) will still only ever RECEIVE events for rows RLS
-lets them see, regardless of the `filter` — the filter narrows the Postgres
-WAL subscription for efficiency, RLS is what actually decides visibility.
-Invalidate/refetch `list_appointments`/`get_calendar_appointments` on an
-event rather than trying to patch the cache from the payload (CLAUDE.md §6:
-"Realtime updates/invalidates the cache; it never replaces the query").
+A Staff member (Own scope) only ever RECEIVES events for rows RLS lets them
+see, regardless of the `filter` — the filter narrows the WAL subscription
+for efficiency; RLS decides visibility. Invalidate/refetch
+`list_appointments`/`get_calendar_appointments` on an event rather than
+patching the cache from the payload (CLAUDE.md §6).
 
-### Migrations
-See Files above, in order. `appointments.invoice_id` has no FK yet
-(Phase 5 adds `appointments_invoice_id_fkey references invoices(id)`).
+**Proved with a live subscription, not just argued (2026-10-05).**
+`set_config` JWT fixtures (the SQL suite's usual trick) cannot subscribe to
+a Realtime channel — it needs a live, signed JWT. Proved with three REAL
+signed-in `supabase-js` clients against the deployed project: Owner A
+(business A), Owner B (a DIFFERENT business), and Staff X (a Staff member
+on business A, Own scope, with a second staff profile on the SAME business
+with no login — "someone else's" appointment from Staff X's point of
+view). All three subscribed with no `filter`, to prove RLS alone does the
+work. Owner A created two appointments on business A: one for Staff X
+themselves, one for the other staff profile.
+
+Result:
+- **Owner B (another business) received ZERO events.**
+- **Staff X received exactly ONE event — their own appointment** — the one
+  for the other staff profile on the SAME business never arrived, proving
+  `is_own_staff_profile` narrowing applies to the Realtime stream exactly
+  as it does to an ordinary `select`.
+- Owner A (Branch/All, own business) received both, as expected.
+
+The throwaway script and its test businesses/users were deleted after the
+run; nothing from this proof is left in the database.
+
+### Migration history
+All local filenames now match the REAL remote `supabase_migrations` history
+exactly — `supabase migration list` reports 56/56 matched, zero mismatches,
+confirmed 2026-10-05. **No `supabase migration repair` was needed or run.**
+The mismatch this closure round found and fixed: `apply_migration` assigns
+each migration its OWN timestamp based on when it actually runs, which does
+not match whatever timestamp prefix the local filename happens to use.
+Every Phase 4 file (and two Phase 3 files from the previous session) had
+drifted for this reason. Fixed by renaming local files to the real remote
+timestamps (confirmed with the user before doing it — pure `mv`, zero
+database changes). See Changelog and `context/_handoff.md`'s Traps.
 
 ## Data & caching
 Not wired yet — no app code. When built: `list_appointments` is `live`/
-`liveShort` staleTime (CLAUDE.md §6: "today/calendar" class of data) plus
-the Realtime invalidation above; `get_calendar_appointments` the same.
+`liveShort` staleTime; `get_calendar_appointments` the same; both
+invalidated by the Realtime subscription above.
 
 ## Permissions & gating
 `appointments.view`/`.create`/`.edit`/`.cancel`/`.approve`, each Own/Branch/
-All per doc §9's matrix (Staff: Own on view/create/edit only; Receptionist/
-Manager/Owner: Branch/All on all five). No plan or add-on gate — appointments
-are core.
+All per doc §9's matrix. `reopen_appointment` is gated by ROLE (Owner/
+Manager), not a permission — see Business rules. No plan or add-on gate.
 
 ## UI
-Not built. Next session's scope.
+Not built.
 
 ## i18n
 Not wired yet.
 
 ## Known limits / TODO
-- **No UI yet** — this session was backend-only by design (user's scope).
-- **`list_appointments`'s search is a plain `ilike`**, not the dedicated
-  trgm-backed search pattern some other lists might want tuned further; it
-  reuses the existing `clients_name_trgm_idx` as-is.
-- **No bulk operations** (e.g. cancel a whole day) — one appointment per
-  call, matching every other write RPC in the project.
+- **No UI yet** — backend only, by design.
+- **`list_appointments`'s search is a plain `ilike`** via the existing trgm
+  index.
+- **No bulk operations** — one appointment per call, matching every other
+  write RPC in the project.
 - **True concurrent-backend proof is still out of reach on this machine**
-  (no service-role key, no DB password, `dblink` rejected — see
-  `context/booking-engine.md`). The collision-check tests here prove the
-  same three things `09_booking_concurrency.sql` proves for the public path:
-  correct lock keys, the exclusion constraint as backstop, and
-  correct-at-every-count arithmetic under the lock.
+  (no service-role key, no DB password, `dblink` rejected). The collision
+  tests here prove the same three things `09_booking_concurrency.sql`
+  proves for the public path: correct lock keys, the exclusion constraint
+  as backstop, correct-at-every-count arithmetic under the lock.
+- **The old `check_appointment_collision` (pre-v2) is kept, unused,
+  deprecated by comment.** `DROP FUNCTION` is refused by the migration
+  tooling available this session; harmless (no grants, not called from
+  anywhere) but a candidate for real removal once the tooling allows it.
 
 ## Changelog
-- 2026-10-05: Built. Schema (`invoice_id` seam, status-transition table),
-  `check_appointment_collision` shared helper, `create_appointment`,
-  `update_appointment`, the four status RPCs, `list_appointments`,
-  `get_calendar_appointments`, Realtime publication. 103 SQL assertions.
-  Backend only — no app code.
+- 2026-10-05 (closure round): Implemented the user's decisions (b) reopen
+  (`reopen_appointment`, Owner/Manager role check, `invoice_id` guard,
+  audited) and (c) staff_id FORCED for Own-scope `create_appointment`
+  (`my_staff_profile_id`). **Found and fixed a real bug while adding the
+  evidence this round asked for**: `create_appointment`/`update_appointment`
+  never stored `resource_id` on the row at all, so the "how many bookings
+  use this resource" count was always zero and a capacity-1 resource could
+  be double-booked from the dashboard without ever being refused — caught
+  only because the new resource-capacity test asserted the actual column
+  value, not just the return code. Fixed with `check_appointment_collision_v2`
+  (returns the resolved resource id) and both RPCs now storing it +
+  `resource_capacity_at_booking`. Also found and fixed, mid-round, a second
+  gap the reopen feature itself introduced: `approve_appointment` briefly
+  became a side door into reopening a no_show/completed appointment,
+  because it checked the transitions table generically instead of
+  `status = 'pending'` directly — fixed before it was ever exposed to a
+  real caller. Added Karachi (no-DST) coverage, group+resource capacity
+  coverage on both create and update, audit_logs assertions for every
+  write RPC, and reopen allowed/forbidden coverage. 141 SQL assertions (was
+  103). Proved Realtime RLS with three live signed-in clients (see
+  Realtime). Reconciled all migration filenames with the real remote
+  history — 56/56 matched, no `migration repair` needed.
+- 2026-10-05 (first pass): Built. Schema (`invoice_id` seam, status-
+  transition table), the original `create_appointment`/`update_appointment`/
+  status RPCs, `list_appointments`, `get_calendar_appointments`, Realtime
+  publication. 103 SQL assertions. Backend only — no app code.
