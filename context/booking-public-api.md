@@ -25,7 +25,7 @@ customer has no account.
 | `POST /functions/v1/get_booking_page` | no | slug, optional branch_id | branch display info, settings, bookable services, staff, service↔staff pairs, published form fields |
 | `POST /functions/v1/get_slots` | no | slug, service_id, from/to local dates, optional branch_id and staff_id | timezone, branch name, currency, settings, slots, **and a `start_token`** |
 | `POST /functions/v1/create_booking` | no | slug, service_id, starts_at, client {...}, answers[], **start_token**, honeypot | the confirmation fields **plus the raw manage token, once** |
-| `POST /functions/v1/manage_booking` | no | `action` = get / cancel / reschedule, **token**, (+reason, or starts_at & staff_id) | the manage-page view, or the new time |
+| `POST /functions/v1/manage_booking` | no | `action` = get / cancel / reschedule / get_slots, **token**, (+reason, or starts_at & staff_id, or from_date & to_date) | the manage-page view, the new time, or slots |
 | `POST /functions/v1/resend_manage_link` | **YES** | appointment_id | a NEW raw manage token, once; the old one is revoked |
 
 **`get_booking_page`** (added 2026-10-04) is the bootstrap call the public page
@@ -45,9 +45,13 @@ this helper and neither value was needed there); `get_slots` and
 `create_booking` were redeployed unchanged apart from picking up this shared
 file. `ResolvedBranch.settings` now carries both fields.
 
-`manage_booking` is one function for three actions because all three share the
-token handling, the rate-limit keying, the "every token failure looks identical"
-rule and the response mapping. Three functions would be three copies that drift.
+`manage_booking` is one function for three (now four) actions because they all
+share the token handling, the rate-limit keying, the "every token failure looks
+identical" rule and the response mapping. Separate functions would be copies
+that drift. **`get_slots`** (added for Phase 3 step 6, the guest manage page's
+reschedule screen) resolves the token to the appointment's own
+branch/service/staff SERVER-SIDE (`get_booking_reschedule_slots`) rather than
+taking any of them from the caller — see `context/booking-manage.md`.
 
 Rules they both follow:
 
@@ -171,7 +175,7 @@ header is a property of the deployment, not of HTTP.
 | supabase/functions/_shared/config.ts | THE one place the bot-protection constants and secret names live |
 | supabase/functions/_shared/crypto.ts | salted sha256, HMAC, timing-safe compare, CSPRNG token |
 | supabase/functions/_shared/startToken.ts | issue/verify the signed start token; honeypot check |
-| supabase/functions/manage_booking/index.ts | guest get / cancel / reschedule |
+| supabase/functions/manage_booking/index.ts | guest get / cancel / reschedule / get_slots |
 | supabase/functions/resend_manage_link/index.ts | dashboard resend; **keeps JWT verification** |
 | supabase/config.toml | `[functions.*] verify_jwt = false`, with the reasoning |
 
@@ -327,6 +331,12 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
 
 ## Changelog
 
+- 2026-10-04: **`manage_booking` gained a `get_slots` action** (Phase 3 step 6,
+  the guest manage page's reschedule screen) backed by a new DB function
+  `get_booking_reschedule_slots` (service_role only) that resolves the TOKEN to
+  the appointment's own branch/service/staff server-side, so no id reaches a
+  guest holding just a token. Shares the `get_booking` rate-limit bucket. See
+  `context/booking-manage.md`.
 - 2026-10-04: **`get_booking_page`** deployed (new endpoint + new DB function
   `get_booking_page_catalogue`, service_role only) so the public page has
   somewhere to bootstrap from. `resolveBranch()` extended to also return

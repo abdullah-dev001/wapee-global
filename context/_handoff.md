@@ -1,6 +1,9 @@
 # Handoff
 Last updated: 2026-10-04 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
 
+**Phase 3 is now fully complete** — step 6 (the guest manage page) was the
+last piece. Do not start Phase 4 without the user's go-ahead.
+
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
 - **Phase 2 — complete.** Catalogue and schedule: 13 tables with 5 exclusion constraints and Own-scope RLS; services UI (per-branch prices, server-side search); staff UI (login optional, branch + service assignment); schedule UI (per-person weeks, branch hours, time off, holidays, rooms). Five shared components built with **no new dependency**: MoneyInput, SearchInput, TimePicker, DayHoursRow, DateRangePicker. `lib/money` and `lib/time` partly implemented (75 unit tests).
@@ -29,7 +32,36 @@ Last updated: 2026-10-04 · Branch: `dev` · Work from this session NOT yet push
   **Not run in a browser** — no browser tool was available this session; open
   `npm run web` → `/nova-hair-studio` yourself to click through it (test data
   is seeded there: one service, one staff member, Mon–Fri 9–5 hours).
-  Step 6 (the guest manage page) is next and still not built.
+- **Phase 3 step 6 (the guest manage page) is DONE — Phase 3 is complete.**
+  `(public)/[slug]/manage`: view/cancel/reschedule a booking by a token read
+  from the URL fragment, reusing `Calendar`/`SlotGrid` from the public booking
+  flow. Closed a real backend gap found while building it: reschedule needs
+  slots for the guest's existing booking, but the public `get_slots` needs a
+  `slug`+`service_id` the manage page never has (only a token, by design —
+  `get_booking` deliberately returns names, not ids). Added
+  **`get_booking_reschedule_slots(token, from_date?, to_date?)`** (new
+  migration, `service_role` only — resolves the token to the booking's own
+  branch/service/staff SERVER-SIDE, same lookup `reschedule_booking` already
+  does) and a new `get_slots` action on the existing `manage_booking` Edge
+  Function. Also extended the shared `PublicErrorCode` type/`actionFor` with
+  `invalid_token`/`cancel_window_passed`/`not_cancellable`, which existed on
+  the Edge Function side but had never been surfaced to the app's own shared
+  type. 15 new unit tests (212 total). 106 SQL assertions
+  (`supabase/tests/11_guest_manage_link.sql`, +15 for the new function).
+  Verified end-to-end over HTTP (get → get_slots → reschedule → get → cancel
+  → get, all correct, token revoked only on cancel) and on the iOS simulator
+  via a deep link (view screen renders with real data and first-name-only
+  privacy; Reschedule opens the calendar+slots screen with real availability).
+  **Not clicked all the way through**: the reschedule confirm dialog and the
+  cancel confirm dialog were not tapped in the simulator (AppleScript-driven
+  taps kept landing on RN's accessibility wrapper groups instead of the
+  pressable) — the backend path both dialogs call is already fully verified,
+  but click through both dialogs yourself before calling this visually
+  complete. An Android review (code-only) found and fixed one real bug: the
+  reschedule sub-view is internal state, not a route, and had no hardware-back
+  handler, so Android back would have exited the manage page entirely instead
+  of returning to the view screen — fixed with `useOverlayDismiss`. See
+  `context/booking-manage.md`.
 - **The Drawer keyboard gap (reported by the user) is fixed**: `Drawer`'s body
   is now a `KeyboardAwareScrollView` and its footer a `KeyboardStickyView`,
   same mechanism as `Screen`, covering ServiceForm/StaffForm/the schedule
@@ -39,11 +71,9 @@ Last updated: 2026-10-04 · Branch: `dev` · Work from this session NOT yet push
   screenshot or repro steps from the user.
 
 ## Next, in order
-1. **Phase 3 step 6 — the guest manage page**, the last piece of Phase 3:
-   `(public)/[slug]/manage`, reading the token from the URL fragment (never the
-   query string) and calling the already-deployed `manage_booking` Edge
-   Function (get/cancel/reschedule). The confirmation screen already links
-   here (`/<slug>/manage#token=...`), so the URL shape is fixed.
+1. **Phase 3 is complete. Ask the user before starting Phase 4** (CLAUDE.md
+   §1: stop on real doubt about scope/order). Until then, pick from the
+   follow-ups below.
 2. **Highest-value follow-ups from Phase 2**, any order:
    - **No "give this person app access" link** between a staff profile and an invite — `context/staff.md`.
    - `useSaveService` / `useSaveStaff` are also multi-write and non-atomic.
@@ -64,6 +94,9 @@ Last updated: 2026-10-04 · Branch: `dev` · Work from this session NOT yet push
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **A guest-facing page keyed only by a token (not a business/branch id) cannot use `createQueryKeys`** — that factory requires a `businessId` the page does not have and must not infer. Use a plain key array instead (`['booking-manage', token]`), same reasoning as `useSlots` already fudging `businessId: slug` elsewhere, but here there is no id at all to fudge with.
+- **Internal state that isn't a route still needs Android back handling.** `BookingManage` flips between a view and a reschedule sub-screen with `useState`, not a route — so Android hardware back had no handler for it and would have fallen through to the Stack's default pop, exiting the whole manage page instead of returning to the view screen. `useOverlayDismiss(mode === 'reschedule', () => setMode('view'))` fixed it. Same bug class as the public booking flow's `goBack` trap below, but this time there was no handler at all rather than a wrong one — a written Android review is the only thing that catches either shape.
+- **A privacy-motivated response (returning names, not ids) can silently block a LATER feature that needs the id.** `get_booking` deliberately returns `service_name`/`staff_name` never `service_id`/`staff_id`, which is correct for its own job (CLAUDE.md §13) — but it meant the reschedule screen had no way to call the existing `get_slots` endpoint (`slug`+`service_id`). Fixed by resolving the token to the ids SERVER-SIDE inside a new function (`get_booking_reschedule_slots`) rather than loosening what the client-facing response reveals. When a public endpoint deliberately omits an id, assume a later screen will want it and plan the lookup to stay server-side rather than widening the response.
 - **A step-back handler must reset the TARGET step, not the step being left.** `BookingFlow.goBack` computed `prev = previousStep(step, ...)` but then called `resetFrom(state, step)` — clearing fields on the step already being left (already empty) instead of `prev`'s own field. `currentStep()` came out unchanged every time, so the Back button did nothing and Android hardware back was silently swallowed (it still returned `true` from the handler). Caught only by a written Android review, not by the unit tests for `resetFrom` itself — the bug was in the wiring, not the pure function. Fixed: `resetFrom(state, prev)`. Test the whole `goBack` sequence, not just `resetFrom` in isolation.
 - **`Text`'s `color` prop takes a token NAME, not a hex value** (`color="textPrimary"`, not `color={theme.colors.textPrimary}`). Same for `Button`, which takes `children`, not a `label` prop, and `Badge`'s `icon`, which takes a NODE not a component.
 - **A service's buffer REPLACES the branch buffer; they never add.** `case when coalesce(service,0) > 0 then service else branch end`, in both `get_free_slots` and `create_booking`. 10 + 15 = 15, not 25. A service buffer of 0 means "no setting", so a service cannot opt out of the branch buffer.

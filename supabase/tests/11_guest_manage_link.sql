@@ -6,7 +6,7 @@
 -- Plain SQL, not pgTAP (Docker is not installed; see context/_handoff.md).
 -- Builds its own fixtures (including real auth.users rows) and rolls back.
 --
--- Last run: 2026-10-04 against the live dev project. 91/91 passing.
+-- Last run: 2026-10-04 against the live dev project. 106/106 passing.
 --
 -- Covered: get_booking's whole contract and its PRIVACY limits (first name only;
 -- no phone, email, full name or ids); every token failure returning the same
@@ -19,7 +19,11 @@
 -- cancelled-on-failure bug); out of hours, notice, window, same_slot, full group
 -- slot; manual confirmation sending a reschedule back to PENDING; resend
 -- invalidating the old token and issuing exactly one live token; resend's
--- permission check, audit row, and refusal on a cancelled booking; and grants.
+-- permission check, audit row, and refusal on a cancelled booking;
+-- **`get_booking_reschedule_slots`** (added for the manage PAGE's reschedule
+-- screen): resolves a token to its OWN booking's slots with no id in the
+-- payload, the booked slot itself excluded, token failures identical to
+-- `get_booking`'s, and a finished booking refused; and grants.
 
 -- Guest manage link: get / cancel / reschedule / resend, and every rejection.
 begin;
@@ -562,6 +566,68 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- 4b. get_booking_reschedule_slots — the reschedule screen's slots, by token
+-- ---------------------------------------------------------------------------
+-- No id ever leaves this function: it resolves the token to the
+-- appointment's own branch/service/staff SERVER-SIDE (mirroring
+-- reschedule_booking's own lookup) rather than taking any of them from the
+-- caller, so a guest holding just a token cannot learn a branch, service or
+-- staff id.
+do $$
+declare r jsonb; v_appt3_token text; v_fv uuid; v_c uuid; v_appt3 uuid;
+begin
+  -- A fresh booking so this section does not depend on 'appt' having survived
+  -- every earlier mutation unchanged.
+  r := public.create_booking(pg_temp.uid('br'), pg_temp.uid('svc'), pg_temp.slot(600, 8),
+    pg_temp.uid('ann'), 'Slots Guest', '07700 900333');
+  perform pg_temp.chk('fixture booking for slots section created', r->>'ok', 'true');
+  v_appt3_token := r->>'manage_token';
+  insert into ids values ('token_slots', v_appt3_token);
+  insert into ids values ('appt_slots', r->>'appointment_id');
+
+  r := public.get_booking_reschedule_slots(v_appt3_token,
+    (pg_temp.slot(600, 8) at time zone 'Europe/London')::date,
+    (pg_temp.slot(600, 8) at time zone 'Europe/London')::date);
+  perform pg_temp.chk('get_booking_reschedule_slots works with a valid token', r->>'ok', 'true');
+  perform pg_temp.chk('returns the branch timezone', r->>'timezone', 'Europe/London');
+  perform pg_temp.chk('the booked slot itself is NOT free (occupied by this very booking)',
+    (select count(*)::int from jsonb_array_elements(r->'slots') s
+     where s->>'starts_at' = to_char(pg_temp.slot(600, 8) at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"+00:00"')), 0);
+  perform pg_temp.chk('an earlier same-day slot IS offered',
+    (select count(*)::int from jsonb_array_elements(r->'slots') s
+     where s->>'local_minute' = '540') > 0, true);
+
+  -- No ids anywhere in the payload.
+  perform pg_temp.chk('no branch_id in the response', (r::text like '%branch_id%'), false);
+  perform pg_temp.chk('no service_id in the response', (r::text like '%service_id%'), false);
+  perform pg_temp.chk('no staff_id in the response', (r::text like '%staff_id%'), false);
+  perform pg_temp.chk('no appointment id in the response',
+    (r::text like '%' || pg_temp.id('appt_slots') || '%'), false);
+end $$;
+
+-- Token failures behave exactly like get_booking's.
+do $$
+declare r jsonb;
+begin
+  r := public.get_booking_reschedule_slots(repeat('e', 64), null, null);
+  perform pg_temp.chk('an unknown token returns invalid_token', r->>'code', 'invalid_token');
+  r := public.get_booking_reschedule_slots(pg_temp.id('token2'), null, null);
+  perform pg_temp.chk('a REVOKED token (token2, cancelled earlier) returns invalid_token',
+    r->>'code', 'invalid_token');
+end $$;
+
+-- A finished booking has nothing to reschedule to.
+do $$
+declare r jsonb;
+begin
+  -- token_soon's appointment was left 'confirmed' earlier in this file;
+  -- mark it completed here purely to exercise this one branch.
+  update public.appointments set status = 'completed' where id = pg_temp.uid('appt_soon');
+  r := public.get_booking_reschedule_slots(pg_temp.id('token_soon'), null, null);
+  perform pg_temp.chk('a completed booking has no reschedule slots', r->>'code', 'not_cancellable');
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- 5. Grants
 -- ---------------------------------------------------------------------------
 select pg_temp.chk('anon cannot call get_booking',
@@ -576,6 +642,12 @@ select pg_temp.chk('anon cannot call reschedule_booking',
   has_function_privilege('anon','public.reschedule_booking(text,timestamptz,uuid)','execute'), false);
 select pg_temp.chk('anon cannot call resolve_manage_token',
   has_function_privilege('anon','public.resolve_manage_token(text)','execute'), false);
+select pg_temp.chk('anon cannot call get_booking_reschedule_slots',
+  has_function_privilege('anon','public.get_booking_reschedule_slots(text,date,date)','execute'), false);
+select pg_temp.chk('authenticated cannot call get_booking_reschedule_slots',
+  has_function_privilege('authenticated','public.get_booking_reschedule_slots(text,date,date)','execute'), false);
+select pg_temp.chk('service_role CAN call get_booking_reschedule_slots',
+  has_function_privilege('service_role','public.get_booking_reschedule_slots(text,date,date)','execute'), true);
 select pg_temp.chk('anon cannot call resend_manage_link',
   has_function_privilege('anon','public.resend_manage_link(uuid,text)','execute'), false);
 select pg_temp.chk('authenticated CAN call resend_manage_link (can() is the boundary)',

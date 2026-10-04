@@ -1,6 +1,6 @@
 # Booking engine (slots, clients, appointments)
 
-Status: backend complete, public UI done · Phase: 3 · Last updated: 2026-10-04
+Status: done (Phase 3 scope) · Phase: 3 · Last updated: 2026-10-04
 
 ## What it does
 
@@ -10,13 +10,12 @@ and `get_free_slots()` — one function that turns branch hours, staff hours,
 breaks, time off, existing bookings, buffer, notice, window, interval, resources
 and people-per-slot into a list of bookable slots, correct across DST.
 
-**The whole booking backend works end-to-end**: two deployed Edge Functions
-(`get_slots`, `create_booking`) are the public surface, and `create_booking` is
-one SECURITY DEFINER RPC doing the entire write in one transaction.
-
-Not built: the **UI** (settings screen, public booking page) and **step 6**
-(guest manage link endpoints) and **step 7** (rate limiting — the seam exists and
-is already called).
+**Phase 3 is complete end-to-end**: five deployed Edge Functions
+(`get_booking_page`, `get_slots`, `create_booking`, `manage_booking`,
+`resend_manage_link`) are the public surface; `create_booking` and
+`reschedule_booking` are SECURITY DEFINER RPCs doing their whole write in one
+transaction; settings UI, the public booking page, and the guest manage page
+are all built. Rate limiting and bot protection (step 7) are live.
 
 ## Business rules
 
@@ -186,8 +185,8 @@ resource_id, seats_left).
 
 ## Public API
 
-The two deployed Edge Functions are the only way in from the internet. They have
-their own file: **[booking-public-api.md](booking-public-api.md)**.
+The five deployed Edge Functions are the only way in from the internet. They
+have their own file: **[booking-public-api.md](booking-public-api.md)**.
 
 ## Timezone and DST
 
@@ -226,11 +225,12 @@ availability goes stale the moment anyone books. The public page will call the
 
 ## UI
 
-**Step 5 of Phase 3 is done**: `(public)/[slug]` — service → staff → slot → form
-→ confirmation. See `booking-public-page.md`. It reuses the shared
-**`Calendar`** month grid (via `minDate`/`maxDate`); no separate `TimeSlotPicker`
-was needed since `SlotGrid` (built in step 4) already covers it. Step 6 (the
-guest manage page) is not built.
+**Step 5**: `(public)/[slug]` — service → staff → slot → form → confirmation.
+See `booking-public-page.md`. It reuses the shared **`Calendar`** month grid
+(via `minDate`/`maxDate`); no separate `TimeSlotPicker` was needed since
+`SlotGrid` (built in step 4) already covers it. **Step 6**: `(public)/[slug]/manage`
+— view/cancel/reschedule by token, reusing the SAME `Calendar`/`SlotGrid`. See
+`booking-manage.md`.
 
 ## i18n
 
@@ -272,6 +272,10 @@ Namespace not created yet (`booking`).
 
 ## Changelog
 
+- 2026-10-04: Guest manage page built (Phase 3 step 6, the last piece of
+  Phase 3). See `booking-manage.md` for the UI; `booking-public-api.md` for
+  the new `get_booking_reschedule_slots` function and `manage_booking`'s
+  `get_slots` action this step needed.
 - 2026-10-04: Public booking page built (Phase 3 step 5). See
   `booking-public-page.md` for the UI; `booking-public-api.md` for the new
   `get_booking_page` endpoint this step needed.

@@ -108,7 +108,14 @@ export type PublicErrorCode =
   | 'too_fast'
   | 'email_required'
   | 'server_error'
-  | 'network_error';
+  | 'network_error'
+  // --- the guest manage link (manage_booking) ---
+  /** Unknown, expired, revoked or replayed token — ONE code for all of them. */
+  | 'invalid_token'
+  /** Past the "customer can cancel" window (doc §6.2). */
+  | 'cancel_window_passed'
+  /** Already cancelled/completed/no-show, or cancel is switched off for this branch. */
+  | 'not_cancellable';
 
 export class PublicApiError extends Error {
   code: PublicErrorCode;

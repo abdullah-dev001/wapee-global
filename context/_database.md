@@ -276,12 +276,15 @@ rolled-back transactions (`supabase db query --linked -f ...`):
   the per-phone and per-business caps; **the hourly cap biting before the daily one
   and reporting the hourly retry hint**; the daily cap still biting when the hourly
   is clear; retention; grants.
-- `supabase/tests/11_guest_manage_link.sql` — **91 passing**. `get_booking`'s
+- `supabase/tests/11_guest_manage_link.sql` — **106 passing**. `get_booking`'s
   contract and its privacy limits (first name only); every token failure returning
   the same `invalid_token`; cancel inside/outside the cutoff; an expired token;
   revocation and replay; **the original booking surviving every failed reschedule**;
   manual confirmation sending a reschedule back to pending; resend invalidating the
-  old token, its permission check and audit row; grants.
+  old token, its permission check and audit row; **`get_booking_reschedule_slots`**
+  (the manage page's reschedule screen: resolves a token to its own booking's
+  slots with no id in the payload, token failures identical to `get_booking`'s,
+  a finished booking refused); grants.
 
 **Advisors after Phase 3:** security = **0 errors**. Intentional new warnings:
 `public_request_attempts` (RLS on, no policy — only the SECURITY DEFINER function
@@ -339,6 +342,7 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261004090000_public_request_attempts.sql` | Step 7: `public_request_attempts`, `rate_limit_rules`, `check_rate_limit()` (records AND decides in one call; records BLOCKED attempts too; fails closed), `cleanup_public_request_attempts()` |
 | `20261004093000_schedule_attempts_cleanup.sql` | `pg_cron` nightly retention job (03:17 UTC, 7 days). Asserts the API roles cannot reach the scheduler — and established that **reachability is schema USAGE *and* the function grant**, not the grant alone. |
 | `20261004100000_guest_manage_rpcs.sql` | Step 6: `resolve_manage_token`, `get_booking`, `cancel_booking`, `reschedule_booking`, `resend_manage_link` |
+| `20261004110000_guest_manage_reschedule_slots.sql` | Step 6 (cont.): `get_booking_reschedule_slots` — reschedule screen's slots, resolved from a TOKEN not an id |
 | `20261004110000_fix_reschedule_rollback.sql` | **Fixed**: a FAILED reschedule left the appointment cancelled, because a `RETURN` does not roll back — only an exception does. Now validates everything before mutating and excludes the row from its own collision check (`a.id <> v_id`). |
 | `20261004120000_business_hourly_cap.sql` | Per-business **hourly** cap (30) beside the daily one (200). Widened the `rate_limit_rules` PK to (endpoint, scope, window_seconds) so one dimension can hold several windows. |
 | `20261005090000_lower_business_daily_cap.sql` | Per-business daily cap 200 → 120, with a migration-time assertion that the hourly cap never exceeds the daily one (which would make the hourly rule unreachable). |

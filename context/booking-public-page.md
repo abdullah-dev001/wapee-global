@@ -112,9 +112,9 @@ extended this step with: `bookingPublic.steps.*`, `bookingPublic.form.submit`,
 top-level `phoneInput.*` group for `PhoneInput`.
 
 ## Known limits / TODO
-- **The guest manage page (step 6) is not built.** The confirmation screen
-  links to `/<slug>/manage#token=...`, a route that does not exist yet —
-  intentional, so the link format is already fixed for whoever builds it next.
+- **The guest manage page (step 6) is now built** — see `context/booking-manage.md`.
+  The confirmation screen's `/<slug>/manage#token=...` link now resolves to a
+  real page.
 - **No PhoneInput validation beyond E.164 shape.** It is a country-code picker
   plus a free-text national number; a determined user can type garbage digits
   that pass the `^\+[1-9][0-9]{1,14}$` check but are not a real number. Full

@@ -14,9 +14,18 @@
  *   { action: 'get',        token }
  *   { action: 'cancel',     token, reason? }
  *   { action: 'reschedule', token, starts_at, staff_id? }
+ *   { action: 'get_slots',  token, from_date?, to_date? }
  *
  * Response
  *   { ok: true, data: {...} }  |  { ok: false, code }
+ *
+ * `get_slots` is for the reschedule screen: it resolves the token to the
+ * appointment's OWN branch/service/staff server-side
+ * (`get_booking_reschedule_slots`) rather than taking any id from the caller,
+ * so a guest holding just a token never learns a branch, service or staff id
+ * (booking-public-api.md: "a slot never carries a resource id"). It shares the
+ * `get_booking` rate-limit bucket — reading availability for your own booking
+ * is the same cost class as reading the booking itself.
  *
  * PRIVACY
  * -------
@@ -73,7 +82,23 @@ const RescheduleSchema = z
   })
   .strict();
 
-const RequestSchema = z.discriminatedUnion('action', [GetSchema, CancelSchema, RescheduleSchema]);
+const localDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'invalid date');
+
+const GetSlotsSchema = z
+  .object({
+    action: z.literal('get_slots'),
+    token: tokenSchema,
+    from_date: localDateSchema.nullish(),
+    to_date: localDateSchema.nullish(),
+  })
+  .strict();
+
+const RequestSchema = z.discriminatedUnion('action', [
+  GetSchema,
+  CancelSchema,
+  RescheduleSchema,
+  GetSlotsSchema,
+]);
 
 /**
  * RPC code -> public code.
@@ -130,7 +155,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // (a guest refreshing the page) does not consume the much tighter budget
     // for cancelling or rescheduling.
     const endpoint: PublicEndpoint =
-      input.action === 'get'
+      input.action === 'get' || input.action === 'get_slots'
         ? 'get_booking'
         : input.action === 'cancel'
           ? 'cancel_booking'
@@ -183,6 +208,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
       // customer). Nothing is sent yet — Resend lands in Phase 6. The booking IS
       // cancelled regardless, so a missing notification never blocks the guest.
       return jsonOk(req, { status: r.status });
+    }
+
+    if (input.action === 'get_slots') {
+      const { data, error } = await db.rpc('get_booking_reschedule_slots', {
+        p_token: input.token,
+        p_from_date: input.from_date ?? null,
+        p_to_date: input.to_date ?? null,
+      });
+      if (error) throw error;
+
+      const r = data as Record<string, unknown> | null;
+      if (!r || r.ok !== true) return jsonError(req, mapCode((r?.code as string) ?? null));
+
+      return jsonOk(req, { timezone: r.timezone, slots: r.slots });
     }
 
     // reschedule

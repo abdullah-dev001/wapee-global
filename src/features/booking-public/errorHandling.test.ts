@@ -51,4 +51,12 @@ describe('actionFor', () => {
       expect(actionFor(code)).toEqual({ kind: 'retry_button' });
     },
   );
+
+  it('invalid_token shows the generic invalid-link page', () => {
+    expect(actionFor('invalid_token')).toEqual({ kind: 'invalid_link' });
+  });
+
+  it.each(['cancel_window_passed', 'not_cancellable'] as const)('%s is not allowed', (code) => {
+    expect(actionFor(code)).toEqual({ kind: 'not_allowed' });
+  });
 });

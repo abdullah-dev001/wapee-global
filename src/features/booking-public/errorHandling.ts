@@ -20,7 +20,11 @@ export type ErrorAction =
   /** A generic "not available" page that reveals nothing about why. */
   | { kind: 'not_available' }
   /** A network/server error: show a retry button. */
-  | { kind: 'retry_button' };
+  | { kind: 'retry_button' }
+  /** The manage link is unknown, expired, revoked or replayed — ALWAYS this generic page, no hints. */
+  | { kind: 'invalid_link' }
+  /** Cancel/reschedule window has passed, or the booking is already finished with. */
+  | { kind: 'not_allowed' };
 
 export function actionFor(
   code: PublicErrorCode,
@@ -48,5 +52,10 @@ export function actionFor(
     case 'server_error':
     case 'network_error':
       return { kind: 'retry_button' };
+    case 'invalid_token':
+      return { kind: 'invalid_link' };
+    case 'cancel_window_passed':
+    case 'not_cancellable':
+      return { kind: 'not_allowed' };
   }
 }
