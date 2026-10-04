@@ -73,9 +73,7 @@ untouched and unrelated; this is the staff-facing path, callable by
   public RPCs) — there is no rate-limit counter here to roll back. An
   EXPECTED failure (forbidden, invalid_transition, slot_unavailable) is
   still `{ok:false,code}`, never a raised Postgres error.
-- **The Phase 5 invoice seam**: `appointments.invoice_id`, nullable, no FK
-  yet. A completed appointment is never automatically unlocked to attach an
-  invoice; Phase 5 writes the column directly. `reopen_appointment` reads
+- **The invoice link (Phase 5A, live)**: `appointments.invoice_id` now has a real FK and is written ONLY by the invoice RPCs (`create_invoice_draft` sets it, `discard_invoice_draft` clears it; guard trigger refuses any other write). See [invoices.md](invoices.md). `reopen_appointment` reads
   this column as its guard: once invoiced, not reopenable by anyone.
 
 ## Files

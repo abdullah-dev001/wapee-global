@@ -1,18 +1,18 @@
 # Database
-Status: in progress · Phase: 4 · Last updated: 2026-10-05
+Status: in progress · Phase: 5A · Last updated: 2026-10-06
 
 ## Project
 - Supabase project **Wapee Global Development**, ref `rfuovquhultjydtswtqf`, Postgres 17, region ap-south-1.
 - Applied through the **Supabase connector** (`apply_migration`). The local CLI is signed in to a different account and cannot link this project, so `supabase db push` and `supabase test db` are unavailable. Every migration file in `supabase/migrations/` matches what was applied.
 - Extensions: `citext`, `pg_trgm`, `btree_gist` (ready for Phase 3 no-double-booking), `pgtap`, `uuid-ossp`, `pgcrypto`.
 
-## Tables (34)
+## Tables (38)
 
 | Table | Key columns | Notes |
 |---|---|---|
 | `profiles` | id→auth.users, email, full_name, **is_super_admin**, default_business_id, locale | 1:1 with auth.users via trigger. `is_super_admin` set **only by hand in SQL**. |
 | `businesses` | name, **slug** (citext unique), industry, language, **plan**, **status**, **trial_ends_at**, plan_activated_at, `default_country_code`, `default_currency`, `default_timezone` (all nullable) | Tenant root. The `default_*` columns are **PRE-FILL ONLY** for a new branch — never read them for tax, SMS rates, slots or reporting. |
-| `branches` | business_id, name, is_primary, **country_code**, **currency**, **timezone** (all NOT NULL), address, phone, **tax_number**, **tax_rate_bp**, **invoice_prefix**, **invoice_next_no** | **Owns country, currency, timezone and tax** (decision 23). A business can have branches in different countries. `tax_rate_bp` = basis points (2000 = 20%). |
+| `branches` | business_id, name, is_primary, **country_code**, **currency**, **timezone** (all NOT NULL), address, phone, **tax_number**, **tax_rate_bp**, **invoice_prefix**, **invoice_next_no**, **credit_note_next_no** | **Owns country, currency, timezone and tax** (decision 23). A business can have branches in different countries. `tax_rate_bp` = basis points (2000 = 20%). |
 | `business_members` | business_id, user_id, status, invited_email, **invite_token_hash**, invite_expires_at, invited_by, joined_at | One user ↔ many businesses. Only the token *hash* is stored. |
 | `roles` | business_id (**null = system role**), key, name, is_system | 4 system roles; custom roles (Phase 9) carry a business_id. |
 | `role_permissions` | role_id, permission→permissions.key, **scope** | scope = own / branch / all. |
@@ -51,8 +51,14 @@ Status: in progress · Phase: 4 · Last updated: 2026-10-05
 | `rate_limit_rules` | **(endpoint, scope, window_seconds)**, max_attempts, note | THE one place the limits live, tunable without a deploy. scope = ip / key (hashed phone) / biz. Super admin may read. |
 | **Phase 4 — dashboard appointments** | | |
 | `appointment_status_transitions` | **(from_status, to_status)** | The ONE place every allowed status change is defined. No row with `cancelled`/`completed`/`no_show` as `from_status` — terminal, no reopen, ever. Readable by `authenticated` AND `anon` (reference data). |
+| **Phase 5A — invoices** | | |
+| `invoices` | business_id, branch_id, client_id?, appointment_id?, status (draft/issued), number, number_seq, currency, tax_rate_bp, tax_number, bill_to_name, subtotal/discount/net/tax/total_minor, issued_at/by | Draft editable, issued IMMUTABLE. Written only by RPCs. One live per appointment. Full detail: `context/invoices.md`. |
+| `invoice_items` | invoice_id, service_id?, description, quantity, unit_price_minor, discount_minor + reason, generated `line_net_minor` | Price at sale time. Editable only while the invoice is a draft. |
+| `invoice_payments` | invoice_id, kind (payment/reversal), method, amount_minor, currency, reverses_payment_id, reason | Append-only. A refund is a reversal row. |
+| `credit_notes` | invoice_id, number (`<prefix>-CN-<n>`), net/tax/total_minor, reason | Append-only, own gapless series per branch. |
 
 Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (solo/team/business), `member_status` (invited/active/disabled), `permission_scope` (own/branch/all).
+Phase 5A adds: `invoice_status`, `invoice_payment_kind`, `invoice_payment_method`.
 Phase 3 adds: `appointment_status` (pending/confirmed/completed/cancelled/no_show), `booking_source` (online/dashboard/walk_in/portal), `custom_field_type` (short_text/long_text/dropdown/yes_no/number), `staff_choice_mode`, `slot_display_mode`, `booking_confirmation_mode`, `slot_interval_mode`.
 
 ## Branch-owned settings (decisions 23–25)
@@ -60,7 +66,7 @@ A business can have branches in different countries, so the **branch** is the
 source of truth for locale and money:
 
 - **Timezone:** slot calculation, reminders and "today" use `branch.timezone`. There is no business timezone. `src/lib/time/` already takes an explicit zone on every function, so nothing assumes one per business.
-- **Currency:** belongs to the branch. **Locked once the branch has an invoice or payment** — the trigger currently only audits the change; the hard block lands in Phase 5 when `invoices` and `invoice_payments` exist (TODO in `enforce_branch_currency_lock`).
+- **Currency:** belongs to the branch. **Locked (hard, Phase 5A)** while the branch has any non-discarded invoice — `enforce_branch_currency_lock` raises 23514. The trigger also refuses ANY manual change to `invoice_next_no`/`credit_note_next_no` (only the invoice RPCs, via the transaction-local flag `wapee.numbering`).
 - **Tax:** `tax_number` and `tax_rate_bp` are per branch, because tax is a property of the location.
 - **Invoice numbering:** per branch, `prefix-000123`, gapless within the branch (decision 24, replaces the old per-business rule). `invoice_prefix` is required, unique within the business, and locked once numbering has started. `suggest_invoice_prefix()` derives one from the location name (first 3 letters, uppercased, suffixed if it collides).
 - **Reports must never add different currencies** (decision 25). Group by currency and show separate totals ("£2,400 · Rs 180,000"). No conversion at launch: that needs dated exchange rates, and a wrong rate silently corrupts financial reports. Revisit with multi-branch in Phase 9.
@@ -436,12 +442,30 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261004043313_phase4_read_rpcs.sql` | `list_appointments` (keyset pagination), `get_calendar_appointments` (branch-timezone day boundaries) |
 | `20261004043628, 20261004045004, 20261004045754, 20261004045817, 20261004045901` | Historical no-op placeholders for intermediate `apply_migration` calls this session, folded into the FINAL bodies of the files above. See `context/appointments.md`'s Files table. |
 | `20261004044911_phase4_reopen_and_own_staff_fix.sql` | Closure round: `reopen_appointment`, `my_staff_profile_id()`, the two reopen transitions |
+| `20261006090000_phase5_invoices_schema.sql` | Phase 5A: 4 invoice tables, enums, RLS (select only), immutability guards, hard currency lock + counter protection, `branches.credit_note_next_no`, `appointments.invoice_id` FK + RPC-only guard |
+| `20261006100000_phase5_invoice_draft_and_issue_rpcs.sql` | helpers, `create_invoice_draft`, `update_invoice_draft`, `discard_invoice_draft`, `issue_invoice` |
+| `20261006110000_phase5_payment_and_credit_note_rpcs.sql` | `invoice_money`, `add_payment`, `reverse_payment`, `create_credit_note` |
+| `20261006120000_phase5_invoice_read_and_report_rpcs.sql` | `list_invoices`, `get_invoice_print_data`, `report_windows`, `get_basic_report` |
 | `20261004045723_fix_dashboard_resource_id_not_stored.sql` | **Fixed a real bug**: `create_appointment`/`update_appointment` never stored `resource_id`, making resource capacity a no-op from the dashboard. Adds `appointment_collision_result` composite + `check_appointment_collision_v2` (returns the resolved resource id). |
+
+## Phase 5A (invoices backend)
+Full detail in `context/invoices.md`. Four tables with a SELECT-only policy
+(`can()` + `has_permission_at_branch_scope()` on `invoices.view`); every write is
+a DEFINER RPC. Four guard triggers make issued invoices/items/payments/credit
+notes immutable for every role and release rows only when the business itself
+is deleted (tested). Numbering is gapless: issuers serialise on the branch row
+(`for no key update`), counters move only inside the RPCs, a failed issue rolls
+the counter back. `appointments.invoice_id` now has a real FK and may only be
+written by the invoice RPCs (trigger + flag `wapee.invoice_link`).
+**Verification (2026-10-06):** `supabase/tests/14_invoices.sql` 310/310;
+`15_invoice_concurrency.sh` (3 real parallel sessions) passes. Advisors: security
+= no errors; the 10 new RPCs add the intentional "authenticated can execute
+SECURITY DEFINER" warning (the explicit check inside is the boundary);
+performance = no unindexed FKs (new indexes show as unused until used).
 
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
 - **Leaked-password protection is OFF** (security advisor). It is a dashboard setting: Authentication → Policies → enable "Check against HaveIBeenPwned". Worth turning on before real users.
-- Phase 5 must add the hard currency lock (block the change when invoices/payments exist) and the gapless per-branch numbering that consumes `invoice_next_no`.
 - Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
 - **Group capacity has no DB guarantee.** `people_per_slot > 1` and
   `resources.capacity > 1` need a counted check under
@@ -456,6 +480,7 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
   design, not an oversight.
 
 ## Changelog
+- 2026-10-06: **Phase 5A — invoices backend.** 4 tables, 10 RPCs, gapless numbering, immutability, hard currency lock, reports with DST-correct windows. 310 SQL assertions + a real 3-session concurrency test. Migrations applied with `db query --linked` + `migration repair`.
 - 2026-10-05: **Phase 4 part A closure round.** `reopen_appointment` (Owner/Manager role check, `invoice_id` guard, audited), `my_staff_profile_id()` + forced Own-scope `staff_id`. **Found and fixed a real bug**: `create_appointment`/`update_appointment` never stored `resource_id`, making resource capacity a no-op from the dashboard — fixed with `check_appointment_collision_v2`. Found and fixed a second gap mid-round: `approve_appointment` had briefly become a side door into the reopen path. 141 assertions (was 103). Proved Realtime RLS with three live signed-in clients. Reconciled all migration filenames with the real remote history (56/56 matched, no `migration repair` needed).
 - 2026-10-05: **Phase 4 part A — dashboard appointments backend.** `appointments.invoice_id` (Phase 5 seam), `appointment_status_transitions` + `is_allowed_appointment_transition()`, `check_appointment_collision()`, `create_appointment`, `update_appointment`, `cancel_appointment`/`mark_no_show`/`mark_completed`/`approve_appointment`, `list_appointments`, `get_calendar_appointments`, Realtime publication. 103 new assertions. No UI yet.
 - 2026-10-04: `require_client_email` (the one toggleable default booking field); per-business daily cap 200 → 120. 430 assertions.

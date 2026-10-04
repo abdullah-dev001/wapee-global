@@ -244,6 +244,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_resource_id_fkey"
             columns: ["resource_id"]
             isOneToOne: false
@@ -571,6 +578,7 @@ export type Database = {
           business_id: string
           country_code: string
           created_at: string
+          credit_note_next_no: number
           currency: string
           deleted_at: string | null
           id: string
@@ -589,6 +597,7 @@ export type Database = {
           business_id: string
           country_code: string
           created_at?: string
+          credit_note_next_no?: number
           currency: string
           deleted_at?: string | null
           id?: string
@@ -607,6 +616,7 @@ export type Database = {
           business_id?: string
           country_code?: string
           created_at?: string
+          credit_note_next_no?: number
           currency?: string
           deleted_at?: string | null
           id?: string
@@ -829,6 +839,82 @@ export type Database = {
           },
         ]
       }
+      credit_notes: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          invoice_id: string
+          issued_at: string
+          net_minor: number
+          number: string
+          number_seq: number
+          reason: string
+          tax_minor: number
+          tax_rate_bp: number
+          total_minor: number
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          id?: string
+          invoice_id: string
+          issued_at?: string
+          net_minor: number
+          number: string
+          number_seq: number
+          reason: string
+          tax_minor: number
+          tax_rate_bp: number
+          total_minor: number
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          invoice_id?: string
+          issued_at?: string
+          net_minor?: number
+          number?: string
+          number_seq?: number
+          reason?: string
+          tax_minor?: number
+          tax_rate_bp?: number
+          total_minor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_field_services: {
         Row: {
           business_id: string
@@ -996,6 +1082,273 @@ export type Database = {
           token_hash?: string
         }
         Relationships: []
+      }
+      invoice_items: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          description: string
+          discount_minor: number
+          discount_reason: string | null
+          id: string
+          invoice_id: string
+          line_net_minor: number | null
+          quantity: number
+          service_id: string | null
+          sort_order: number
+          unit_price_minor: number
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          description: string
+          discount_minor?: number
+          discount_reason?: string | null
+          id?: string
+          invoice_id: string
+          line_net_minor?: number | null
+          quantity: number
+          service_id?: string | null
+          sort_order?: number
+          unit_price_minor: number
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          description?: string
+          discount_minor?: number
+          discount_reason?: string | null
+          id?: string
+          invoice_id?: string
+          line_net_minor?: number | null
+          quantity?: number
+          service_id?: string | null
+          sort_order?: number
+          unit_price_minor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_payments: {
+        Row: {
+          amount_minor: number
+          branch_id: string
+          business_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          invoice_id: string
+          kind: Database["public"]["Enums"]["invoice_payment_kind"]
+          method: Database["public"]["Enums"]["invoice_payment_method"]
+          note: string | null
+          paid_at: string
+          reason: string | null
+          reverses_payment_id: string | null
+        }
+        Insert: {
+          amount_minor: number
+          branch_id: string
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          id?: string
+          invoice_id: string
+          kind: Database["public"]["Enums"]["invoice_payment_kind"]
+          method: Database["public"]["Enums"]["invoice_payment_method"]
+          note?: string | null
+          paid_at?: string
+          reason?: string | null
+          reverses_payment_id?: string | null
+        }
+        Update: {
+          amount_minor?: number
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          invoice_id?: string
+          kind?: Database["public"]["Enums"]["invoice_payment_kind"]
+          method?: Database["public"]["Enums"]["invoice_payment_method"]
+          note?: string | null
+          paid_at?: string
+          reason?: string | null
+          reverses_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_payments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_reverses_payment_id_fkey"
+            columns: ["reverses_payment_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          appointment_id: string | null
+          bill_to_name: string | null
+          branch_id: string
+          business_id: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deleted_at: string | null
+          discount_minor: number
+          id: string
+          issued_at: string | null
+          issued_by: string | null
+          net_minor: number
+          notes: string | null
+          number: string | null
+          number_seq: number | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal_minor: number
+          tax_minor: number
+          tax_number: string | null
+          tax_rate_bp: number
+          total_minor: number
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          bill_to_name?: string | null
+          branch_id: string
+          business_id: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          deleted_at?: string | null
+          discount_minor?: number
+          id?: string
+          issued_at?: string | null
+          issued_by?: string | null
+          net_minor?: number
+          notes?: string | null
+          number?: string | null
+          number_seq?: number | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_minor?: number
+          tax_minor?: number
+          tax_number?: string | null
+          tax_rate_bp?: number
+          total_minor?: number
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          bill_to_name?: string | null
+          branch_id?: string
+          business_id?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          discount_minor?: number
+          id?: string
+          issued_at?: string | null
+          issued_by?: string | null
+          net_minor?: number
+          notes?: string | null
+          number?: string | null
+          number_seq?: number | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_minor?: number
+          tax_minor?: number
+          tax_number?: string | null
+          tax_rate_bp?: number
+          total_minor?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       member_role_assignments: {
         Row: {
@@ -1883,6 +2236,16 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      add_payment: {
+        Args: {
+          p_amount_minor: number
+          p_invoice_id: string
+          p_method: string
+          p_note?: string
+          p_paid_at?: string
+        }
+        Returns: Json
+      }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
       build_form_fields_snapshot: {
@@ -1999,7 +2362,30 @@ export type Database = {
         }
         Returns: string
       }
+      create_credit_note: {
+        Args: { p_invoice_id: string; p_net_minor?: number; p_reason: string }
+        Returns: Json
+      }
+      create_invoice_draft: {
+        Args: {
+          p_appointment_id?: string
+          p_branch_id?: string
+          p_client_id?: string
+          p_items?: Json
+          p_notes?: string
+        }
+        Returns: Json
+      }
+      discard_invoice_draft: { Args: { p_invoice_id: string }; Returns: Json }
       ensure_form_version: { Args: { p_business_id: string }; Returns: string }
+      format_document_number: {
+        Args: { p_credit: boolean; p_prefix: string; p_seq: number }
+        Returns: string
+      }
+      get_basic_report: {
+        Args: { p_as_of?: string; p_branch_id?: string; p_business_id: string }
+        Returns: Json
+      }
       get_booking: { Args: { p_token: string }; Returns: Json }
       get_booking_page_catalogue: {
         Args: { p_branch_id: string }
@@ -2037,6 +2423,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_invoice_print_data: { Args: { p_invoice_id: string }; Returns: Json }
       has_permission: {
         Args: {
           p_branch_id: string
@@ -2052,6 +2439,15 @@ export type Database = {
           p_permission: string
         }
         Returns: boolean
+      }
+      insert_invoice_items: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_invoice_id: string
+          p_items: Json
+        }
+        Returns: undefined
       }
       invite_member: {
         Args: {
@@ -2074,6 +2470,25 @@ export type Database = {
           invited_email: string
         }[]
       }
+      invoice_access: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_permission: string
+        }
+        Returns: boolean
+      }
+      invoice_money: { Args: { p_invoice_id: string }; Returns: Json }
+      invoice_totals: {
+        Args: { p_invoice_id: string; p_rate_bp: number }
+        Returns: {
+          discount: number
+          net: number
+          subtotal: number
+          tax: number
+          total: number
+        }[]
+      }
       is_allowed_appointment_transition: {
         Args: {
           p_from: Database["public"]["Enums"]["appointment_status"]
@@ -2089,40 +2504,40 @@ export type Database = {
       }
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
-      list_appointments:
-        | {
-            Args: {
-              p_branch_id?: string
-              p_business_id: string
-              p_cursor_id?: string
-              p_cursor_starts_at?: string
-              p_from_date?: string
-              p_limit?: number
-              p_search?: string
-              p_service_id?: string
-              p_staff_id?: string
-              p_status?: Database["public"]["Enums"]["appointment_status"]
-              p_to_date?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_branch_id?: string
-              p_business_id: string
-              p_client_id?: string
-              p_cursor_id?: string
-              p_cursor_starts_at?: string
-              p_from_date?: string
-              p_limit?: number
-              p_search?: string
-              p_service_id?: string
-              p_staff_id?: string
-              p_status?: Database["public"]["Enums"]["appointment_status"]
-              p_to_date?: string
-            }
-            Returns: Json
-          }
+      issue_invoice: { Args: { p_invoice_id: string }; Returns: Json }
+      list_appointments: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_client_id?: string
+          p_cursor_id?: string
+          p_cursor_starts_at?: string
+          p_from_date?: string
+          p_limit?: number
+          p_search?: string
+          p_service_id?: string
+          p_staff_id?: string
+          p_status?: Database["public"]["Enums"]["appointment_status"]
+          p_to_date?: string
+        }
+        Returns: Json
+      }
+      list_invoices: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_client_id?: string
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_from_date?: string
+          p_limit?: number
+          p_payment_status?: string
+          p_search?: string
+          p_status?: Database["public"]["Enums"]["invoice_status"]
+          p_to_date?: string
+        }
+        Returns: Json
+      }
       mark_completed: { Args: { p_appointment_id: string }; Returns: Json }
       mark_no_show: { Args: { p_appointment_id: string }; Returns: Json }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
@@ -2135,6 +2550,15 @@ export type Database = {
         }[]
       }
       my_staff_profile_id: { Args: { p_business_id: string }; Returns: string }
+      normalise_invoice_items: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_items: Json
+          p_may_discount: boolean
+        }
+        Returns: Json
+      }
       normalise_phone_e164: {
         Args: { p_default_dial_code?: string; p_input: string }
         Returns: string
@@ -2161,6 +2585,20 @@ export type Database = {
         Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
         Returns: number
       }
+      report_windows: {
+        Args: { p_as_of: string; p_branch_id: string; p_business_id: string }
+        Returns: {
+          branch_id: string
+          branch_name: string
+          can_basic: boolean
+          can_rev: boolean
+          currency: string
+          period: string
+          tz: string
+          w_end: string
+          w_start: string
+        }[]
+      }
       reschedule_booking: {
         Args: { p_staff_id?: string; p_starts_at: string; p_token: string }
         Returns: Json
@@ -2170,6 +2608,14 @@ export type Database = {
         Returns: Json
       }
       resolve_manage_token: { Args: { p_token: string }; Returns: string }
+      reverse_payment: {
+        Args: {
+          p_amount_minor?: number
+          p_payment_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       save_booking_settings: {
         Args: { p_branch_id: string; p_settings: Json }
         Returns: Json
@@ -2188,6 +2634,17 @@ export type Database = {
           p_internal_notes?: string
           p_staff_id?: string
           p_starts_at?: string
+        }
+        Returns: Json
+      }
+      update_invoice_draft: {
+        Args: {
+          p_clear_client?: boolean
+          p_clear_notes?: boolean
+          p_client_id?: string
+          p_invoice_id: string
+          p_items?: Json
+          p_notes?: string
         }
         Returns: Json
       }
@@ -2220,6 +2677,9 @@ export type Database = {
         | "dropdown"
         | "yes_no"
         | "number"
+      invoice_payment_kind: "payment" | "reversal"
+      invoice_payment_method: "cash" | "card" | "bank_transfer"
+      invoice_status: "draft" | "issued"
       member_status: "invited" | "active" | "disabled"
       permission_scope: "own" | "branch" | "all"
       slot_display_mode: "only_available" | "all_greyed"
@@ -2387,6 +2847,9 @@ export const Constants = {
         "yes_no",
         "number",
       ],
+      invoice_payment_kind: ["payment", "reversal"],
+      invoice_payment_method: ["cash", "card", "bank_transfer"],
+      invoice_status: ["draft", "issued"],
       member_status: ["invited", "active", "disabled"],
       permission_scope: ["own", "branch", "all"],
       slot_display_mode: ["only_available", "all_greyed"],

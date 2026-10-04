@@ -1,0 +1,67 @@
+# Invoices (backend)
+Status: backend done, NO UI yet · Phase: 5A · Last updated: 2026-10-06
+
+## What it does
+Draft → issued invoices with gapless per-branch numbers, tax snapshot, manual
+payments, credit notes, payment reversals (the refund path), a one-call print
+payload, a paginated list, and basic reports (today / this month). Every write
+is a SECURITY DEFINER RPC; the tables are read-only to the API.
+
+## Business rules (decided with the user, 2026-10-05)
+- **Number** `<branch prefix>-<6-digit seq>` (e.g. `MAI-000001`), assigned **at issue**, gapless per branch. Seq past 999999 just gets longer (no truncation). Prefix unique per business, locked after the first invoice (Phase 1 trigger).
+- **Credit notes** have their OWN gapless series `<prefix>-CN-000001` per branch (`branches.credit_note_next_no`).
+- **Counters** (`invoice_next_no`, `credit_note_next_no`) move only inside the RPCs (transaction-local flag `wapee.numbering`); a direct UPDATE — even by postgres — is refused. Issuers serialise on `select … for no key update` of the branch row (NO KEY UPDATE so FK checks that take KEY SHARE are not blocked). A failure after the number is taken rolls the counter back with it: **no gaps** (proved with a forced mid-issue exception).
+- **Tax**: tax-EXCLUSIVE (total = net + tax). Rate (`tax_rate_bp`) and `tax_number` are copied from the branch onto the draft and **re-snapshotted at issue**; later branch changes never touch an issued invoice. Tax is computed once on the invoice net (after discounts), **half-up** (`floor((net*bp+5000)/10000)`, numeric).
+- **Lines** store price at sale time: description, integer quantity (1–9999), `unit_price_minor`, `discount_minor` + reason. Source: a service (name + branch price prefilled) or free text; or prefilled from a COMPLETED appointment (`price_minor` snapshot). Discount > 0 needs `invoices.discount` AND a reason (≥3 chars) AND ≤ the line gross. Max 100 lines, price ≤ 1e11 minor units.
+- **Draft** (editable, no number, can be discarded = soft delete) → **issued** (immutable). Issue needs ≥1 line and total > 0 (`no_items`, `zero_total`).
+- **One live invoice per appointment** (partial unique index). `appointments.invoice_id` is set when the DRAFT is created (so `reopen_appointment` is blocked from then on) and cleared only by discarding a draft. **A fully credit-noted invoice stays linked — no re-invoicing** (user decision). `appointments.invoice_id` can be written only by the invoice RPCs (guard trigger, flag `wapee.invoice_link`).
+- **Payments** (cash/card/bank_transfer) only on ISSUED invoices, never above the balance, `paid_at` between issue and now+5min. Append-only.
+- **Refunds**: a credit note on a paid invoice leaves `refund_due`; staff clear it with `reverse_payment` — a NEW row, partial allowed, never above what that payment still holds, reason required, a reversal cannot be reversed. No auto-reversal (user decision).
+- **Credit notes** are by pre-tax NET amount (full when `p_net_minor` is null). Tax follows the invoice's snapshotted rate; the credit that exhausts the remaining net takes the remaining tax exactly, so credits always add back to the invoice with no rounding drift. Not per line item (see Known limits).
+- **Computed, never stored**: `paid = Σpayments − Σreversals`, `credited = Σcredit notes`, `net_due = total − credited`, `balance = max(net_due − paid, 0)`, `refund_due = max(paid − net_due, 0)`, `payment_status` = `credited` (net_due 0) / `pending` / `partial` / `paid` (`invoice_money()`).
+- **Currency** = the branch's, copied onto every row. The branch currency is **locked** while the branch has any non-discarded invoice (payments/credit notes only exist on issued ones). A discarded draft does not lock.
+- **Immutability**: issued invoices and their items, payments, credit notes refuse UPDATE/DELETE for every role (guard triggers). All four guards release the row when the BUSINESS is being deleted (cascade trap) — tested.
+- **Audit log**: `invoice.issued`, `invoice.payment_added`, `invoice.payment_reversed`, `invoice.credit_note_created`, `invoice.draft_discarded`.
+
+## Permissions (Branch/All scope; Own does not count; Staff holds none)
+| Action | Permission | Roles that hold it |
+|---|---|---|
+| create/update/discard draft, issue, add_payment | `invoices.create` | Owner, Manager, Receptionist |
+| any line discount | `invoices.discount` | Owner, Manager |
+| create_credit_note, reverse_payment | `invoices.credit_note` | Owner, Manager |
+| list, print data, direct table reads (RLS) | `invoices.view` | Owner, Manager, Receptionist |
+| report counts / top services | `reports.view_basic` | Owner, Manager |
+| report revenue | `reports.view_revenue` | Owner, Manager |
+`add_payment` = `invoices.create` and `reverse_payment` = `invoices.credit_note` are MY choice (doc §9 has no payment permission): a receptionist takes money, only Owner/Manager undo it.
+
+## Database
+Tables (RLS on; SELECT policy only = `can()` + `has_permission_at_branch_scope()` on `invoices.view`; `authenticated` has SELECT only, `anon` nothing):
+`invoices`, `invoice_items` (generated `line_net_minor`), `invoice_payments` (kind payment|reversal), `credit_notes`. Enums `invoice_status`, `invoice_payment_kind`, `invoice_payment_method`. FKs and filter columns indexed; trigram on `number`/`bill_to_name`.
+
+RPCs (all DEFINER, `search_path=''`, explicit permission+scope check, validate-then-write, `{ok:false,code}` for expected failures, `authenticated` only):
+- `create_invoice_draft(branch?, appointment?, client?, items?, notes?)` — codes: `not_found forbidden invalid_branch branch_mismatch not_completed already_invoiced client_mismatch unknown_client` + item codes (`invalid_items too_many_items unknown_service invalid_description invalid_quantity invalid_price invalid_discount discount_forbidden discount_reason_required discount_too_large`).
+- `update_invoice_draft(invoice, items?, client?, clear_client, notes?, clear_notes)` — replaces all lines when `items` given; `not_draft`.
+- `discard_invoice_draft(invoice)`, `issue_invoice(invoice)` (`not_draft no_items zero_total currency_changed`).
+- `add_payment(invoice, method, amount_minor, paid_at?, note?)` — `not_issued invalid_method invalid_amount invalid_paid_at fully_credited overpayment`.
+- `reverse_payment(payment, reason, amount_minor?)` — `not_a_payment reason_required invalid_amount`.
+- `create_credit_note(invoice, reason, net_minor?)` — `not_issued reason_required fully_credited invalid_amount`.
+- `list_invoices(business, branch?, status?, payment_status?, client?, from?, to?, search?, limit=20 (max 100), cursor_at?, cursor_id?)` → `{rows, next_cursor{at,id}}`, newest first on `coalesce(issued_at, created_at)`; dates in branch timezone; search ≥2 chars on number / bill-to / client name, `%`/`_` literal.
+- `get_invoice_print_data(invoice)` → `{invoice(+computed money), items, payments, credit_notes, branch, business, client}`; client phone/email only with `clients.view_contact`. Works for drafts (preview).
+- `get_basic_report(business, branch?, as_of?)` → `{branches[{tz, today/month windows in UTC}], revenue{today,month: [per currency]}, appointments{today,month:{total, <status>:n}}, top_services{today,month:[…]}}`. Revenue per currency, NEVER summed across currencies: `invoiced_minor` (incl. tax), `credited_minor`, `tax_minor`, `net_revenue_minor` (ex tax, minus credit notes), `collected_minor` (payments − reversals by `paid_at`), `invoice_count`. Windows are per branch in its own timezone (local midnight/1st → UTC through `at time zone`, so DST days/months are right). Only ISSUED invoices count; credit notes count when issued. `revenue` is `null` without `reports.view_revenue`; counts/top services are `null` without `reports.view_basic` (checked per branch). Top services = completed appointments (revenue per currency from issued invoice lines when permitted; it does not net credit notes). `as_of` is a test seam.
+- Internal (no API grant): `invoice_access, normalise_invoice_items, invoice_totals, insert_invoice_items, invoice_money, report_windows, format_document_number`.
+
+Migrations: `20261006090000_phase5_invoices_schema`, `…100000_phase5_invoice_draft_and_issue_rpcs`, `…110000_phase5_payment_and_credit_note_rpcs`, `…120000_phase5_invoice_read_and_report_rpcs`. Applied with `supabase db query --linked -f` + `supabase migration repair --status applied` so local filenames equal remote history exactly.
+
+## Tests
+- `supabase/tests/14_invoices.sql` — 310 assertions, all pass (rolled back).
+- `supabase/tests/15_invoice_concurrency.sh` — 3 REAL parallel sessions (commits a fixture, deletes it after).
+
+## Known limits / TODO
+- **Credit notes are by amount, not per line/quantity** (no credit-note items). Decide with the user before the UI if item-level credits are needed.
+- `get_basic_report` top-service revenue ignores credit notes.
+- `reverse_payment` has no per-day cut-off or Owner-only rule beyond `invoices.credit_note`.
+- No `invoices` realtime and no TanStack hooks/UI yet (Phase 5B). Client-profile invoice placeholder still waits for it.
+- Draft invoices are not audited on create (only discard), by choice.
+
+## Changelog
+- 2026-10-06: Phase 5A backend built (schema, 10 RPCs, immutability, currency lock, reports). 310 SQL assertions + real concurrent-issue test.

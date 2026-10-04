@@ -27,3 +27,4 @@ Shared files:
 | Dashboard appointments UI | appointments-ui.md | done (B1 + B2 fixes), sim-tested | 4 | Calendar screen (Day/Week/List), create/detail drawers, shared scheduler |
 | Clients | clients.md | done (part B2) | 4 | Client list (search, pagination, archive), create/edit, profile (contact/notes/upcoming/history) |
 | Today | today.md | done (part B2) | 4 | Mobile home: today's appointments, counts, quick actions |
+| Invoices (backend) | invoices.md | backend done, no UI | 5A | Draft→issued invoices, gapless numbers, tax snapshot, payments, credit notes, reversals, list/print RPCs, basic reports |

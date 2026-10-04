@@ -1,6 +1,9 @@
 # Handoff
-Last updated: 2026-10-05 · Branch: `dev` · Work from this session NOT yet pushed (see Commands).
+Last updated: 2026-10-06 · Branch: `dev`.
 
+**Phase 5A (invoices BACKEND, no UI) is DONE** — see `context/invoices.md`.
+Phase 4's manual test is postponed until after Phase 5 (user decision).
+Next: Phase 5B (invoice UI + TanStack hooks) when the user says go.
 **Phase 3 is fully complete. Phase 4 part A (backend) and part B1 (Calendar
 UI) are done and accepted. Part B2 (Today + Clients, plus three B1 fixes)
 is now ALSO done** — see `context/appointments.md`/`appointments-ui.md`
@@ -180,11 +183,20 @@ further Phase 4 polish, once the user says go.
   (simulator tap automation limitation). See `context/today.md`,
   `context/clients.md`, `context/appointments-ui.md`.
 
+- **Phase 5A (invoices backend) is DONE.** Schema (invoices, invoice_items,
+  invoice_payments, credit_notes), 10 DEFINER RPCs (draft create/update/
+  discard, issue, add_payment, reverse_payment, create_credit_note,
+  list_invoices, get_invoice_print_data, get_basic_report), gapless branch
+  numbering (own CN series), tax snapshot, immutability for every role, hard
+  currency lock, RPC-only `appointments.invoice_id`. 310 SQL assertions
+  (`14_invoices.sql`) + a real 3-session concurrent-issue test
+  (`15_invoice_concurrency.sh`). See `context/invoices.md`.
+
 ## Next, in order
-1. **Phase 5 (invoices) is next, once the user says go.** The client
-   profile screen already has a labelled placeholder for invoice history
-   (`context/clients.md`) and `appointments.invoice_id` is a nullable seam
-   with no FK yet (`context/appointments.md`) — both wait for Phase 5.
+1. **Phase 5B (invoice UI + hooks) once the user says go.** The client
+   profile screen has a labelled placeholder for invoice history
+   (`context/clients.md`); `invoices.md` lists the RPC contract and the open
+   decision (credit notes are by amount, not per line).
 2. Click through what this session could not: the Clients profile screen,
    create/edit forms, archive confirm, and Calendar's create/detail
    drawers — a working simulator tap-automation setup would unblock this
@@ -209,6 +221,10 @@ further Phase 4 polish, once the user says go.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
 ## Traps to remember
+- **`SELECT … FOR UPDATE` on a parent row blocks every child INSERT's FK check** (they take KEY SHARE). The branch counter lock uses `FOR NO KEY UPDATE`, which still serialises issuers but lets appointments/invoices keep inserting. Use it for any "lock the parent to serialise" pattern.
+- **Migrations this session were applied with `supabase db query --linked -f <file>` followed by `supabase migration repair --status applied <version>`**, so the local filename IS the remote version (no connector timestamp drift). `supabase migration list` still shows two pre-existing mismatches from Phase 4 (remote 20261004143401/152214 vs local 20261005110000/120000: same SQL applied under other stamps) — do NOT `db push` until that is reconciled.
+- **Parallel `supabase db query` calls can hang** while the CLI creates its temporary login role; stagger them by >1 s (see `15_invoice_concurrency.sh`). One call = one transaction, and only the LAST statement's rows come back.
+- **A trigger-guarded financial table must still release rows on `delete from businesses`** — all four invoice guards check "is the business gone" first (tested).
 - **Supabase's `.channel(name)` resolves by NAME, and a second `.on()` call against an already-`subscribe()`d channel of the same name THROWS** ("cannot add postgres_changes callbacks ... after subscribe()"), it does not create an independent subscription. `useAppointmentsRealtime` named its channel only by `businessId`; Today and Calendar both mount it for the same business at the same time (the Tabs navigator keeps every tab mounted), so the second screen's `.on()` call threw and blanked that screen. Fixed by including a per-mount sequence number in the channel name — any hook meant to be called from more than one component at once needs a channel name unique PER CALLER, not per logical resource.
 - **A folder route (`clients/index.tsx`) needs its OWN `_layout.tsx` (a `Stack`) or Expo Router flattens every file in that folder into the PARENT navigator as sibling routes**, not a nested stack. Without `clients/_layout.tsx`, both `clients/index` and `clients/[id]` showed up as separate top-level screens inside the Tabs navigator (confirmed by logging `state.routes` in `BottomTabBar`), and the folder-based screen's ACTUAL `route.name` came through as `"clients/index"`, not the `"clients"` the Tabs.Screen was declared with — breaking every name-keyed lookup (`iconByName`, `isRouteAllowed`) and making the whole tab silently disappear from the bar. Two fixes needed together: add the `_layout.tsx`, AND normalize `route.name` (strip a trailing `/index`) before any lookup that assumes the plain config name, since even with the `_layout.tsx` the defensive normalization is cheap insurance. `settings/` had the exact same latent shape (`settings/index.tsx` + `settings/booking.tsx`, no `_layout.tsx`) and never surfaced this because `settings` is never shown in the bottom tab bar — only `More`/`Sidebar`, which navigate by `router.push(path)` (always correct) rather than by the Tabs navigator's internal route-name state.
 - **`expo-localization` pulls in react-native (Flow syntax) and cannot load in plain Node.** `lib/time`'s `getDeviceTimeZone()` imports it, so vitest needs the same alias trick as `lucide-react-native`: `src/test/stubs/expoLocalization.ts`, aliased in `vitest.config.mts`. Hit this the moment `lib/time`'s skeleton functions were implemented for the Calendar UI; any future module that imports an Expo native package for the first time should expect the same and check `vitest.config.mts`'s alias list before assuming a bare `npm test` run will tell the truth about it.
