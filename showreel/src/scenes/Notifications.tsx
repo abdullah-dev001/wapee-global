@@ -36,6 +36,9 @@ const NOTES: Note[] = [
   },
 ];
 
+/** Local timeline, shared with the SFX cue list. */
+export const NOTIFICATIONS_T = { first: 22, step: 14, land: 8 } as const;
+
 export const Notifications = () => {
   const frame = useCurrentFrame();
   return (
@@ -53,7 +56,7 @@ export const Notifications = () => {
             const bob = Math.sin((frame - i * 18) / 22) * 7;
             const offset = [0, 36, 8][i];
             return (
-              <div key={n.channel} style={{ ...appear(frame, 22 + i * 9, 70, 30) }}>
+              <div key={n.channel} style={{ ...appear(frame, NOTIFICATIONS_T.first + i * NOTIFICATIONS_T.step, 70, 30) }}>
                 <div style={{ transform: `translateY(${bob + offset}px)` }}>
                   <Card onTeal style={{ width: 470, padding: 32, boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

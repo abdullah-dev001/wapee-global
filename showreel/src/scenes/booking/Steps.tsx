@@ -135,10 +135,11 @@ export const TimeStep = ({ selected }: { selected: number }) => (
   </div>
 );
 
-const PHONE = '7700 900 123';
+export const PHONE = '7700 900 123';
+export const KEY_FRAMES = 1.8;
 
 export const PhoneStep = ({ frame, typeStart, pressAt }: { frame: number; typeStart: number; pressAt: number }) => {
-  const chars = Math.max(0, Math.min(PHONE.length, Math.floor((frame - typeStart) / 1.8)));
+  const chars = Math.max(0, Math.min(PHONE.length, Math.floor((frame - typeStart) / KEY_FRAMES)));
   const caretOn = Math.floor(frame / 8) % 2 === 0 || (chars > 0 && chars < PHONE.length);
   const pressed = ease(frame, pressAt, 4) - ease(frame, pressAt + 5, 6);
   const focused = frame >= typeStart - 4 && frame < pressAt;

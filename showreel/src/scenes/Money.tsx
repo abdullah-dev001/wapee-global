@@ -29,9 +29,12 @@ const Row = ({ label, value, strong = false }: { label: string; value: string; s
   </div>
 );
 
+/** Local timeline, shared with the SFX cue list. */
+export const MONEY_T = { paid: 66 } as const;
+
 export const Money = () => {
   const frame = useCurrentFrame();
-  const paid = ease(frame, 66, 18);
+  const paid = ease(frame, MONEY_T.paid, 18);
   const count = ease(frame, 36, 60);
   return (
     <SceneFrame>

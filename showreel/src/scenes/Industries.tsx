@@ -8,7 +8,7 @@ import { Card } from '../components/Card';
 import { Swap } from '../components/Swap';
 import { appear, ease, mix } from '../components/motion';
 
-const PHASES = [18, 54, 86];
+export const PHASES = [18, 54, 86];
 const INDUSTRIES = [
   { name: 'Salon', Icon: Scissors },
   { name: 'Clinic', Icon: Stethoscope },

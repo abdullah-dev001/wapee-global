@@ -6,8 +6,8 @@ import { Card } from '../components/Card';
 import { appear, ease, stepIn, stepOut } from '../components/motion';
 import { PhoneStep, ServiceStep, Success, TimeStep } from './booking/Steps';
 
-// Local timeline (frames).
-const T = {
+/** Local timeline, shared with the SFX cue list. */
+export const BOOKING_T = {
   card: 14,
   pickService: 40,
   toTime: 60,
@@ -30,6 +30,7 @@ const visible = (frame: number, inAt: number | null, outAt: number | null) => {
 
 export const Booking = () => {
   const frame = useCurrentFrame();
+  const T = BOOKING_T;
   const sub = ease(frame, 24, 26);
   const progress = frame < T.toTime + 6 ? 1 : frame < T.toPhone + 6 ? 2 : 3;
   const headerFade = 1 - ease(frame, T.toDone, 12);

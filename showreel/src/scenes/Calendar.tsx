@@ -49,10 +49,13 @@ const BlockView = ({ b, p, live = false }: { b: Block; p: number; live?: boolean
   </div>
 );
 
+/** Local timeline, shared with the SFX cue list. */
+export const CALENDAR_T = { live: 84, toast: 92 } as const;
+
 export const Calendar = () => {
   const frame = useCurrentFrame();
-  const live = ease(frame, 84, 20);
-  const toast = ease(frame, 92, 26);
+  const live = ease(frame, CALENDAR_T.live, 20);
+  const toast = ease(frame, CALENDAR_T.toast, 26);
   return (
     <SceneFrame>
       <AbsoluteFill style={{ alignItems: 'center', paddingTop: 92 }}>

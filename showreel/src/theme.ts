@@ -16,8 +16,6 @@ export const BRAND = {
 export const MUSIC: string | null = null;
 export const LOGO: string | null = null;
 
-export const VIDEO = { width: 1920, height: 1080, fps: 30, durationInFrames: 1110 } as const;
-
 export const C = {
   teal: '#024751',
   tealHover: '#013640',
@@ -38,6 +36,7 @@ export const C = {
   successLight: '#ecfdf5',
   successBorder: '#a7f3d0',
   warning: '#b45309',
+  star: '#f59e0b',
   warningLight: '#fffbeb',
   warningBorder: '#fde68a',
 } as const;
@@ -64,14 +63,39 @@ export const EASE = Easing.bezier(0.16, 1, 0.3, 1);
 
 export const CROSSFADE = 12;
 
-/** Scene lengths in frames; they sum to VIDEO.durationInFrames. */
+/** Scene order and lengths in frames. The video length is their sum. */
 export const SCENES = {
   hook: 90,
   booking: 180,
   calendar: 150,
   notifications: 150,
+  clients: 150,
   money: 150,
+  packages: 150,
+  forms: 150,
+  reviews: 90,
   website: 150,
+  team: 150,
   industries: 120,
   close: 120,
+} as const;
+
+export type SceneKey = keyof typeof SCENES;
+export const SCENE_ORDER = Object.keys(SCENES) as SceneKey[];
+
+/** Absolute first frame of a scene. */
+export const sceneStart = (key: SceneKey) => {
+  let from = 0;
+  for (const k of SCENE_ORDER) {
+    if (k === key) return from;
+    from += SCENES[k];
+  }
+  return from;
+};
+
+export const VIDEO = {
+  width: 1920,
+  height: 1080,
+  fps: 30,
+  durationInFrames: SCENE_ORDER.reduce((sum, k) => sum + SCENES[k], 0),
 } as const;

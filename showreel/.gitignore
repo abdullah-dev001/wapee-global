@@ -3,3 +3,5 @@ out/*
 !out/wapee-showreel.mp4
 stills/
 .remotion/
+.venv/
+__pycache__/

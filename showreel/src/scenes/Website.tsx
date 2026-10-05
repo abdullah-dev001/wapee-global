@@ -67,10 +67,13 @@ const Site = () => (
   </div>
 );
 
+/** Local timeline, shared with the SFX cue list. */
+export const WEBSITE_T = { embed: 100 } as const;
+
 export const Website = () => {
   const frame = useCurrentFrame();
   const scroll = ease(frame, 50, 62);
-  const embed = appear(frame, 100, 50, 28);
+  const embed = appear(frame, WEBSITE_T.embed, 50, 28);
   return (
     <SceneFrame>
       <AbsoluteFill style={{ flexDirection: 'row', alignItems: 'center', padding: '0 110px 0 140px', gap: 60 }}>
