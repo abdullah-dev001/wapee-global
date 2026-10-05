@@ -115,7 +115,10 @@ export type PublicErrorCode =
   /** Past the "customer can cancel" window (doc §6.2). */
   | 'cancel_window_passed'
   /** Already cancelled/completed/no-show, or cancel is switched off for this branch. */
-  | 'not_cancellable';
+  | 'not_cancellable'
+  // --- the website, review page and widget ---
+  /** Nothing public lives here (unknown, unpublished, inactive, widget not allowed). */
+  | 'not_found';
 
 export class PublicApiError extends Error {
   code: PublicErrorCode;

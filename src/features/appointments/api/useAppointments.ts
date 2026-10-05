@@ -355,15 +355,21 @@ export function useMarkNoShow(businessId: string | null) {
   });
 }
 
+/** Present only when the completion just created a review request (Phase 7). The raw token is shown once. */
+export type CompletedResult = {
+  ok: true;
+  review_request?: { token: string; expires_at: string };
+};
+
 export function useMarkCompleted(businessId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation<{ ok: true }, Error, { appointmentId: string }>({
+  return useMutation<CompletedResult, Error, { appointmentId: string }>({
     mutationFn: async (input) => {
       const { data, error } = await getSupabase().rpc('mark_completed', {
         p_appointment_id: input.appointmentId,
       });
-      return unwrapRpc(data, error);
+      return unwrapRpc<CompletedResult>(data, error);
     },
     onSuccess: () => invalidateAppointments(queryClient, businessId),
   });

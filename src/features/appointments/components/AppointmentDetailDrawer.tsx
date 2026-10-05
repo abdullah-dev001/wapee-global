@@ -11,12 +11,15 @@ import { formatDateTime, type IanaTimeZone, type LocaleTag } from '@/lib/time';
 import {
   useApproveAppointment,
   useCancelAppointment,
+  type CompletedResult,
   useMarkCompleted,
   useMarkNoShow,
   useReopenAppointment,
 } from '../api/useAppointments';
 import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
+import { ReviewLinkAction } from '@/features/reviews/components/ReviewLinkAction';
+import { showReviewLink } from '@/features/reviews/reviewLinkStore';
 
 import { useIsOwnerOrManager } from '../api/useIsOwnerOrManager';
 import { actionsForStatus, type AppointmentAction } from '../statusActions';
@@ -67,7 +70,8 @@ export function AppointmentDetailDrawer({
     approve,
     cancel,
     no_show: markNoShow,
-    complete: markCompleted,
+    // `complete` also returns the new review link, which the others do not.
+    complete: markCompleted as unknown as typeof approve,
     reopen,
   };
 
@@ -87,7 +91,8 @@ export function AppointmentDetailDrawer({
     mutationFor[action].mutate(
       { appointmentId: appointment.id },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          if (action === 'complete') showReviewLink((result as CompletedResult).review_request);
           toast.show({
             message: t(`appointments.actions.${toActionKey(action)}`),
             tone: 'success',
@@ -149,6 +154,12 @@ export function AppointmentDetailDrawer({
                 onNavigate={onClose}
               />
             ) : null}
+
+            <ReviewLinkAction
+              businessId={businessId}
+              appointmentId={appointment.id}
+              status={appointment.status}
+            />
 
             {available.length > 0 ? (
               <View style={styles.actions}>

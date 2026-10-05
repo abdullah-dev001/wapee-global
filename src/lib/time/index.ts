@@ -254,6 +254,28 @@ export function formatDateTime(
 }
 
 /**
+ * Guards `Intl.NumberFormat` unit output. Hermes on iOS was seen formatting 30
+ * minutes as "1,800s" (it converted to seconds), which is wrong, not merely
+ * unlocalised. A correct unit string always still contains the number we passed
+ * in, so anything that does not is replaced by the plain fallback.
+ */
+export function sensibleUnitText(
+  formatted: string,
+  value: number,
+  fallback: string,
+  locale: LocaleTag = 'en',
+): string {
+  let plain: string;
+  try {
+    // The number in the locale's own numerals ("٣٠" in Arabic), without separators.
+    plain = new Intl.NumberFormat(locale, { useGrouping: false }).format(value);
+  } catch {
+    plain = String(value);
+  }
+  return formatted.includes(plain) && !/\d\s*s$/i.test(formatted) ? formatted : fallback;
+}
+
+/**
  * Formats a duration in minutes for display, e.g. "1 h 30 min".
  *
  * `Intl.DurationFormat` is not in Hermes (and is new even in browsers), so this
@@ -266,15 +288,17 @@ export function formatDuration(minutes: number, locale: LocaleTag): string {
   const mins = total % 60;
 
   const unit = (value: number, which: 'hour' | 'minute') => {
+    const fallback = `${value} ${which === 'hour' ? 'h' : 'min'}`;
     try {
-      return new Intl.NumberFormat(locale, {
+      const formatted = new Intl.NumberFormat(locale, {
         style: 'unit',
         unit: which,
         unitDisplay: 'short',
       }).format(value);
+      return sensibleUnitText(formatted, value, fallback, locale);
     } catch {
       // Older runtime with no unit style: good enough, and never throws.
-      return `${value} ${which === 'hour' ? 'h' : 'min'}`;
+      return fallback;
     }
   };
 

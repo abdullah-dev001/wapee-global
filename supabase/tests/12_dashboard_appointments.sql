@@ -8,7 +8,7 @@
 -- system role, two branches in different timezones for the DST checks) and
 -- rolls back everything at the end.
 --
--- Last run: 2026-10-05 against the live dev project. 150/150 passing.
+-- Last run: 2026-10-07 against the live dev project. See the final query (fixture now uses real invoice RPCs).
 --
 -- Covered: create_appointment (dashboard + walk-in, staff outside hours,
 -- Any-staff, client by id vs by phone, never-overwrite, staff_id FORCED for
@@ -800,15 +800,35 @@ begin
   returning id into v_completed;
   insert into ids values ('appt_reopen_completed', v_completed);
 
-  -- A completed appointment that ALREADY has an invoice_id set (simulating
-  -- Phase 5 having linked one) -- reopening this must be refused.
+  -- A completed appointment that will get a REAL invoice (below, through the
+  -- invoice RPCs: appointments.invoice_id is RPC-only since Phase 5A).
   insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
-    starts_at, ends_at, duration_minutes, status, form_version_id, is_exclusive, invoice_id)
+    starts_at, ends_at, duration_minutes, status, form_version_id, is_exclusive)
   values (pg_temp.id('biza'), pg_temp.id('brancha'), pg_temp.id('client1'), pg_temp.id('svc'),
     pg_temp.id('staffa_profile'), pg_temp.in_hours_slot(24), pg_temp.in_hours_slot(24) + interval '1 hour',
-    60, 'completed', v_fv, false, gen_random_uuid())
+    60, 'completed', v_fv, false)
   returning id into v_invoiced;
   insert into ids values ('appt_reopen_invoiced', v_invoiced);
+end $$;
+
+-- Invoice it for real: draft (links appointments.invoice_id) then issue.
+do $$
+declare r jsonb; v_inv uuid;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.create_invoice_draft(pg_temp.id('brancha'), pg_temp.id('appt_reopen_invoiced'), pg_temp.id('client1'),
+    jsonb_build_array(jsonb_build_object('service_id', pg_temp.id('svc'), 'quantity', 1)), null);
+  reset role;
+  perform pg_temp.chk('fixture: invoice draft created via the RPC', r->>'ok', 'true');
+  v_inv := (r->>'invoice_id')::uuid;
+  perform pg_temp.chk('fixture: appointment is linked to the real invoice',
+    (select invoice_id from public.appointments where id = pg_temp.id('appt_reopen_invoiced')), v_inv);
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.issue_invoice(v_inv);
+  reset role;
+  perform pg_temp.chk('fixture: invoice issued via the RPC', r->>'ok', 'true');
 end $$;
 
 -- Owner CAN reopen a completed appointment with no invoice.

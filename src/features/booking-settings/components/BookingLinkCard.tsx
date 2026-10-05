@@ -6,6 +6,8 @@ import { Copy, Link2 } from 'lucide-react-native';
 
 import { Badge, Button, Card, Text, useToast } from '@/components/ui';
 import { brand } from '@/config/brand';
+import { useWebsiteAdmin } from '@/features/website/api/useWebsiteAdmin';
+import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { bookingUrl } from '../bookingWarnings';
@@ -28,6 +30,13 @@ export type BookingLinkCardProps = {
 export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) {
   const { t } = useTranslation();
   const toast = useToast();
+  const { businessId } = useCurrentScope();
+  // Only people who can read the website row can know it is unpublished (RLS hides it
+  // from everyone else), so the note is shown to them alone rather than guessed.
+  const canSeeWebsite = usePermission('website.edit');
+  const site = useWebsiteAdmin(canSeeWebsite.allowed ? businessId : null);
+  const websiteUnpublished =
+    canSeeWebsite.allowed && site.isSuccess && site.data.website?.isPublished !== true;
 
   const url = businessSlug ? bookingUrl(brand.urls.publicSite, businessSlug) : null;
 
@@ -70,6 +79,12 @@ export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) 
         <Text variant="helper" color="textSecondary">
           {t('bookingSettings.linkHint')}
         </Text>
+
+        {websiteUnpublished ? (
+          <Text variant="helper" color="textSecondary">
+            {t('bookingSettings.websiteNotPublished')}
+          </Text>
+        ) : null}
 
         <View style={styles.actions}>
           <Button

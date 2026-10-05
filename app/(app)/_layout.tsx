@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { AppShell, BottomTabBar, InstallHint } from '@/components/layout';
+import { ReviewLinkDialogHost } from '@/features/reviews/components/ReviewLinkDialogHost';
 import { navLabelKey, primaryNavItems, secondaryNavItems } from '@/config/navigation';
 import { useBreakpoint } from '@/lib/theme';
 
@@ -17,6 +18,7 @@ export default function AppLayout() {
   return (
     <AppShell>
       <InstallHint />
+      <ReviewLinkDialogHost />
       <Tabs
         tabBar={isMobile ? (props) => <BottomTabBar {...props} /> : () => null}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: 'transparent' } }}

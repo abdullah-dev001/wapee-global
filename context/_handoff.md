@@ -1,6 +1,7 @@
 # Handoff
 Last updated: 2026-10-06 · Branch: `dev`.
 
+**Phase 7B (website + reviews + widget UI) is DONE** on top of 7A (backend) — see `context/website-reviews-widget.md`. **`/<slug>` is now the WEBSITE; the booking link is `/<slug>/book`.** **Run `npm run ios` once: `expo-image-picker` is a new native module** (the editor's picker is loaded lazily, so an old build still starts; only choosing an image needs the rebuild).
 **Phase 7A (website + reviews + widget BACKEND, no UI) is DONE** — see `context/website-reviews-widget.md`. **LAUNCH BLOCKER: the booking page needs a host-level `Content-Security-Policy: frame-ancestors` header (value from `validate_widget` action `frame_policy`), or the widget's allowed-domains list is not enforced.** Also Phase 12.
 **Phase 5 (invoices backend 5A + UI 5B) is DONE** — see `context/invoices.md`.
 Phase 4's manual test is postponed until after Phase 5 (user decision) — it is now due.
@@ -195,6 +196,7 @@ further Phase 4 polish, once the user says go.
 - **Phase 7A (website, reviews, widget backend) is DONE.** 5 migrations, 4 new Edge Functions (`get_website`, `get_review_request`, `submit_review`, `validate_widget`), `mark_completed` now creates the review request and returns the raw link once, `public/widget.js`, public `website-assets` bucket. 417 SQL assertions (`16_website_reviews_widget.sql`). See `context/website-reviews-widget.md`.
 
 ## Next, in order
+0. **Phase 6 (notifications)** will send the review link (seam: `review_requests.sent_at`, `create_review_request_internal`); until then owners copy it from the dialog. Launch blocker still open: host `frame-ancestors` header for the widget.
 1. **Manual click-through of Phases 4 and 5** (postponed by the user), then Phase 6. Open from 5B: real PDF on native (needs expo-print + expo-sharing, ask), client-profile invoice list, per-line credit notes.
 2. Click through what this session could not: the Clients profile screen,
    create/edit forms, archive confirm, and Calendar's create/detail
@@ -219,8 +221,16 @@ further Phase 4 polish, once the user says go.
 - **Email is Supabase's built-in sender**: rate-limited, and it only delivers to project team members. Confirm test users with SQL (see `context/auth.md`). Resend replaces it in Phase 6.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
 
-- **Suite `12_dashboard_appointments.sql` has a stale fixture since Phase 5A**: it inserts an appointment with a fake `invoice_id`, which the RPC-only guard + FK now refuse, so the file aborts. With that one insert made un-invoiced it is 148/150 (only the two "invoiced cannot be reopened" assertions differ). Needs a fixture that creates a real invoice.
+- **Suite 12's fixture was fixed (153/153)**: the invoiced appointment now gets a REAL invoice via `create_invoice_draft` + `issue_invoice`. It (and any test that looks a client up by PHONE ALONE) can still fail while other businesses in the DB hold the same phone numbers: it did while a throwaway seed reused `+447700900111`. Suite 16's bucket count is now scoped to its own businesses for the same reason. Run suites on a database without leftover test data.
 - **Launch blocker (Phase 12): widget embedding is only enforced by a `frame-ancestors` header on the booking page.** Supabase Edge Functions cannot serve HTML, and the static web host is not chosen. Until the host emits it, any site can frame the booking page.
+
+## Traps to remember (Phase 7B)
+- **Hermes' `Intl.NumberFormat` unit style is wrong, not just missing:** 30 minutes came out as "1,800s" on iOS. `formatDuration` now checks the output still contains the number it was given (`sensibleUnitText`) and falls back to "30 min". Check any other `style: 'unit'` use before trusting it on device.
+- **A static import of a new native module crashes an old dev build at route-resolution time**, for the whole app, not just the screen that uses it. Import it lazily (`await import(...)`) where it is used.
+- **`public/widget.js` must open `/<slug>/book?embed=…`**, not `/<slug>` (now the website). Found only by running it on a real HTML page.
+- **`Blob.arrayBuffer()` is not reliable in React Native**; read upload bytes with `response.arrayBuffer()`.
+- **`smoke:public`'s `too_fast` check is timing-sensitive**: with a slow `get_slots` (2.5 s here) the "instant" booking goes through (201) and the per-IP budget (10/hour) is then spent, so the checks after it report 429. Not a regression; re-run from a quiet hour.
+- **Supabase's email rate limit makes `/auth/v1/signup` return 429**; create a throwaway user by SQL insert (with `''` token columns and an `auth.identities` row), then password grant.
 
 ## Traps to remember
 - **`get_calendar_appointments` does not return `invoice_id`.** Today/Calendar rows therefore map `invoiceId: null`; anything that needs the invoice link must use `useAppointmentInvoices` (invoices table, RLS-scoped), not `appointment.invoiceId`.

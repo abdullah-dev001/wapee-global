@@ -209,6 +209,7 @@ feature and checks each against the locale file.
 - **Android never run** (no emulator). Reviewed in code at the end of the task.
 
 ## Changelog
+- 2026-10-07 (Phase 7B): the booking link is now `<site>/<slug>/book` (`/<slug>` is the website); the link card adds "Your website is not published yet, but your booking link works." for people who can read the website row.
 
 - 2026-10-04: **Settings UI** (step 4): two tabs, live preview, warnings with fix
   routes, booking link gated on `branch_is_bookable`, custom fields editor.

@@ -41,6 +41,10 @@ describe('actionFor', () => {
     },
   );
 
+  it('not_found (website, widget) is the same generic not-available page', () => {
+    expect(actionFor('not_found')).toEqual({ kind: 'not_available' });
+  });
+
   it('not_bookable shows the generic not-available page', () => {
     expect(actionFor('not_bookable')).toEqual({ kind: 'not_available' });
   });

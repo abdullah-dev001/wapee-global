@@ -12,7 +12,15 @@ import { getSupabase } from '@/lib/supabase';
 
 import { PublicApiError, type PublicErrorCode } from '../types';
 
-type FunctionName = 'get_booking_page' | 'get_slots' | 'create_booking' | 'manage_booking';
+type FunctionName =
+  | 'get_booking_page'
+  | 'get_slots'
+  | 'create_booking'
+  | 'manage_booking'
+  | 'get_website'
+  | 'get_review_request'
+  | 'submit_review'
+  | 'validate_widget';
 
 type FailureBody = { ok: false; code?: string; field_id?: string };
 type SuccessBody<T> = { ok: true; data: T };
@@ -80,6 +88,7 @@ const KNOWN_CODES: readonly PublicErrorCode[] = [
   'invalid_token',
   'cancel_window_passed',
   'not_cancellable',
+  'not_found',
 ];
 
 function toKnownCode(code: string | undefined): PublicErrorCode {

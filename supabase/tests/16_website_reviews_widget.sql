@@ -1001,8 +1001,9 @@ select pg_temp.chk('nested path refused', pg_temp.upload(pg_temp.id('owner'), pg
 select pg_temp.chk('path with no business prefix refused', pg_temp.upload(pg_temp.id('owner'), 'dddddddd-dddd-dddd-dddd-dddddddddddd.png'), 'ERR:42501');
 select pg_temp.chk('other business CAN upload under ITS OWN prefix', pg_temp.upload(pg_temp.id('ownerb'), pg_temp.id('bizb')::text || '/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee.webp'), 'ok');
 
-select pg_temp.chk('only the two legitimate objects exist',
-  (select count(*)::int from storage.objects where bucket_id = 'website-assets'), 2);
+select pg_temp.chk('only the two legitimate objects exist (for these two businesses)',
+  (select count(*)::int from storage.objects where bucket_id = 'website-assets'
+     and (name like pg_temp.id('biza')::text || '/%' or name like pg_temp.id('bizb')::text || '/%')), 2);
 -- listing
 select pg_temp.chk('anon CANNOT list the bucket (0 rows or denied)',
   coalesce(pg_temp.call_anon('select jsonb_build_object(''n'', count(*)) from storage.objects where bucket_id = ''website-assets''') ->> 'n', 'denied') in ('0', 'denied'), true);

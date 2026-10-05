@@ -61,6 +61,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-font',
     [
+      'expo-image-picker',
+      {
+        photosPermission: `Allow ${brand.name} to access your photos so you can add images to your website.`,
+        cameraPermission: false,
+        microphonePermission: false,
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         image: './assets/images/splash-icon.png',

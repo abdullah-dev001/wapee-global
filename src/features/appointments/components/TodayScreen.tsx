@@ -18,6 +18,7 @@ import {
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
+import { showReviewLink } from '@/features/reviews/reviewLinkStore';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 import { formatTime, todayInZone, type UtcIso } from '@/lib/time';
@@ -27,6 +28,7 @@ import {
   useApproveAppointment,
   useCalendarAppointments,
   useMarkCompleted,
+  type CompletedResult,
   useMarkNoShow,
   type CalendarAppointment,
 } from '../api/useAppointments';
@@ -359,7 +361,10 @@ function QuickActionDialog({
           mutation.mutate(
             { appointmentId: appointment.id },
             {
-              onSuccess: () => {
+              onSuccess: (result) => {
+                if (action === 'complete') {
+                  showReviewLink((result as CompletedResult).review_request);
+                }
                 toast.show({
                   message: t(`appointments.actions.${action === 'no_show' ? 'noShow' : action}`),
                   tone: 'success',

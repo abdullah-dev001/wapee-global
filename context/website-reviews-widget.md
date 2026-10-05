@@ -1,8 +1,8 @@
-# Website, reviews and widget (backend)
-Status: backend done, deployed, tested · NO UI · Phase: 7A · Last updated: 2026-10-07
+# Website, reviews and widget (backend + UI)
+Status: backend + UI done · Phase: 7A (backend), 7B (UI) · Last updated: 2026-10-07
 
 ## What it does
-Backend for the single-page business website, customer reviews and the embed widget. No screens yet (Phase 7B). Public access is only through four Edge Functions; `anon` has no table grants.
+Backend (7A) and UI (7B, below) for the single-page business website, customer reviews and the embed widget. Public access is only through four Edge Functions; `anon` has no table grants.
 
 ## Website
 - `websites` (one per business, `branch_id` defaults to primary, theme: brand colour/font/radius/logo/hero, `template_key`, SEO overrides, `is_published`) and `website_sections` (7 FIXED types, one each: hero, about, services, gallery, testimonials, faqs, contact; `is_visible`, `sort_order`, jsonb `content`).
@@ -30,10 +30,28 @@ Backend for the single-page business website, customer reviews and the embed wid
 ## Files
 Migrations `20261007090000_phase7_website`, `…100000_phase7_reviews`, `…110000_phase7_widget`, `…120000_phase7_website_assets_bucket`, `…130000_phase7_regex_and_dedupe_fixes` (fix found by the first test run). Edge: `get_website`, `get_review_request`, `submit_review`, `validate_widget`, `_shared/embedToken.ts` (+ small edits to cors/config/rateLimit/response). Test: `supabase/tests/16_website_reviews_widget.sql` (417 assertions). Rate limits: get_website 60/min, get_review_request 60/h, submit_review 10/h, validate_widget 120/min (per IP).
 
+
+## UI (Phase 7B)
+**Routes.** `/<slug>` = the website (`get_website` only); **`/<slug>/book` = the booking flow and THE shareable booking link** (booking settings, widget and everything else use it; `bookingUrl()` in `features/website/links.ts` / `booking-settings`); `/<slug>/review#token=…` = the customer review page; dashboard `/website` (nav item, `website.edit`) and `/reviews` (replaces the placeholder).
+- **Public website** (`features/website/components/public`): ONE presentational `WebsiteView` fed a view model (`types.ts`, `mapWebsite.ts`), used by the public page AND the editor preview. Sections arrive already ordered/visible/non-empty from the server. Themed text and the one accent-driven `AccentButton`; shared `StarRating`. Head tags + LocalBusiness JSON-LD on web (`WebsiteHead`, `<` escaped). One generic `WebsiteNotFound`. Book buttons only when `booking.bookable`.
+- **Theme** (`websiteTheme.ts`, tested): brand colour reaches accents only (buttons, stars, links, hero wash); `onAccent` is picked for contrast (white / theme near-black / pure black fallback so >= 4.5:1 always holds), `accentText` is darkened until it reads on white; invalid colour -> default; fonts `dm_sans | system_sans | serif` (no new packages; system fonts switch weight from family-name to `fontWeight`); radius none..full.
+- **Editor** (`components/editor`): sections list (show/hide, up/down buttons, edit), one drawer for the 7 types (spec-driven simple form for hero/about/services/testimonials; Faq, Gallery, Contact forms), theme tab (colour presets + hex, font, radius, logo, hero, template key, SEO), widget tab, live preview (same `WebsiteView`; services/prices/featured reviews/address/hours are LIVE data, section text is the saved draft, colour/font/radius update before saving), Publish/Unpublish with confirm, "booking isn't ready" warning. Images: client checks type + 5 MB, uploads to `website-assets/<business>/<uuid>.<ext>`, deletes replaced/removed files (best effort) so the 60-file cap is not eaten. Hint says location data in photos is NOT removed.
+- **Reviews** (`features/reviews`): keyset list with rating / reply / featured (+ branch) filters in URL params, reply drawer, feature/unfeature (cap-of-12 message), Staff see own only (RLS). Review page: stars + comment + honeypot, NO staff prompt; after submit EVERY rating sees the same thanks and the same Google button; unknown/expired/used link = one generic page. The raw review link is shown once in `ReviewLinkDialogHost` (zustand store, mounted in `(app)/_layout`) after "Mark completed" (Today and Calendar drawer) with a copy button; completed + unreviewed appointments get "Get review link again" (`reissue_review_request`, old link dies).
+- **Widget** (`features/widget`): settings tab (key, on/off, allowed sites with normalisation, snippet copy, rotate with confirm; plan gate = `useWidgetFeatureEnabled()` seam, always true). `EmbedGate` wraps `/<slug>/book`: when framed it needs `?embed=` + a known parent origin (`ancestorOrigins` / referrer) and asks `validate_widget` `verify`; otherwise it shows "This booking form isn't available here". **Best-effort UI behaviour, not a security boundary** (the host `frame-ancestors` header is, still a launch blocker).
+- **Booking settings** shows "Your website is not published yet, but your booking link works." to people who can read the website row.
+
+**Verified (2026-10-07)**: web 375/1440 screenshots of the public website, editor (sections, theme, widget, FAQ drawer, unpublish dialog), reviews, reply drawer, review page (form, thanks, invalid), review-link dialog; real writes through the UI checked in the database (reorder, hide/show, reply, publish dialog cancel); `public/widget.js` on a real local HTML page (allowed origin -> booking form in an iframe; `127.0.0.1` not allowed -> nothing rendered; framed directly without a token -> blocked message); iOS simulator: website, review and booking pages by deep link. **Found by this**: `widget.js` still pointed at `/<slug>` (fixed -> `/<slug>/book`); Hermes formats 30 minutes as "1,800s" (fixed in `formatDuration`, see handoff).
+**Only reviewed in code, not run**: Android (written review below), iOS editor/reviews screens (dev client needs `npm run ios` for expo-image-picker), image picking/upload from the UI on any platform (uploads were proved over REST with the real storage policy), "get review link again" in the UI, hardware back, RTL.
+
+**Android review (code only).** Checked: bottom inset (public website now uses default edges), keyboard (Drawer/Screen are keyboard-aware; review comment input sits in `Screen`), touch targets (stars, accordion, icon buttons, accent buttons all >= 44px), `Linking.openURL` for `tel:`/wa.me/maps, deep link `wapee://<slug>/review#token=` (same fragment reader as the manage page), image bytes via `response.arrayBuffer()` (`Blob.arrayBuffer` is not reliable in RN), picker loaded lazily so an un-rebuilt build still starts. Fixed during the review: bottom inset on the public page, arrayBuffer. Open: confirm picker permission/URI behaviour (`content://`) on a real device.
+
+**Not changed / suggestions**: services in the preview come from the booking catalogue (online-bookable only, no description) so it can differ slightly from the live page; preview Contact/Gallery use real saved content; no bulk image management; the review link is not sent anywhere (Phase 6).
+
 ## Known limits
 - Deploy: `supabase functions deploy <name> --no-verify-jwt` (pinned in config.toml). Optional secret `PUBLIC_WEBSITE_BASE_URL` (default placeholder `https://wapee.site`).
 - Nothing sends the review link (Phase 6). No reminder/expiry cleanup job. No UI to remove a review.
 - Responses are not cached; `get_website` hits the DB per view (rate limited).
 
 ## Changelog
+- 2026-10-07: **7B UI** built (public website, review page, editor, reviews screen, widget settings, embed gate); `/<slug>` is now the website and the booking flow moved to `/<slug>/book`; `mark_completed` consumers show the review link; `formatDuration` fixed for Hermes.
 - 2026-10-07: Built (7A). 417 SQL assertions; positive+negative HTTP checks against the deployed functions with a throwaway business (deleted).

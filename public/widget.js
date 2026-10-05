@@ -33,7 +33,7 @@
         app +
         '/' +
         encodeURIComponent(body.data.slug) +
-        '?embed=' +
+        '/book?embed=' +
         encodeURIComponent(body.data.embed_token);
       frame.title = 'Booking';
       frame.loading = 'lazy';

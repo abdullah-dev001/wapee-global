@@ -220,6 +220,7 @@ describe('navigation per role', () => {
       'invoices',
       'reports',
       'reviews',
+      'website',
       'settings',
     ]);
   });

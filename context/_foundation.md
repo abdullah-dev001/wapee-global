@@ -141,6 +141,8 @@ inside one collapses — so `DayView` renders a plain `View` on mobile and the
 Appointment blocks lay out via `src/features/appointments/timeGrid.ts`'s
 pure sweep-line column assignment (overlaps sit side by side).
 
+Added in Phase 7B: `StarRating` / `StarRatingInput` (+ pure `starFlags`/`isRating` in `starFlags.ts`; the input is a 5-button radio group, >= 44px targets).
+
 ## Layout & shell (`src/components/layout`)
 
 | Component | Role |
@@ -233,6 +235,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+- 2026-10-07: Phase 7B — `StarRating`/`StarRatingInput`; `expo-image-picker` added (native module, plugin in `app.config.ts`, lazy-imported); `formatDuration` guarded against Hermes' wrong unit output (`sensibleUnitText`); nav item `website`.
 
 - 2026-10-06 (Phase 5B): `app/+html.tsx` gained a print stylesheet (`@media print` flattens the fixed-height app shell; `[data-no-print]` hides toolbars). New standalone route `app/invoice-print/[id].tsx` (outside `(app)`). Reports nav icon is now `BarChart3`. No new shared UI primitive; invoice composites live in `src/features/invoices/`.
 

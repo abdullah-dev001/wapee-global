@@ -47,6 +47,7 @@ export function actionFor(
     case 'email_required':
       return { kind: 'highlight_field', fieldId: opts?.fieldId ?? null, message: 'invalid' };
     case 'not_bookable':
+    case 'not_found':
       return { kind: 'not_available' };
     case 'bad_request':
     case 'server_error':

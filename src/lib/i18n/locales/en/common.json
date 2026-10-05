@@ -54,7 +54,8 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "members": "Team",
-    "schedule": "Schedule"
+    "schedule": "Schedule",
+    "website": "Website"
   },
   "screens": {
     "comingSoon": "Coming in phase {{phase}}",
@@ -587,7 +588,8 @@
       "invalid_value": "One of the values is out of range. Check and try again.",
       "peopleConflictOne": "Cannot reduce to {{limit}}: one upcoming time slot already has {{booked}} bookings ({{service}} at {{time}} on {{date}}). Those bookings keep their place — reduce this after they have passed, or cancel one.",
       "peopleConflictMany": "Cannot reduce to {{limit}}: {{count}} upcoming time slots already have more bookings than that. The busiest is {{service}} at {{time}} on {{date}} with {{booked}}. Those bookings keep their place."
-    }
+    },
+    "websiteNotPublished": "Your website is not published yet, but your booking link works."
   },
   "bookingFields": {
     "tab": "Booking form",
@@ -1139,6 +1141,350 @@
     "summary": {
       "todayFor": "Today in each branch's timezone",
       "monthFor": "This calendar month in each branch's timezone"
+    }
+  },
+  "website": {
+    "bookNow": "Book now",
+    "book": "Book",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "map": "Open in maps",
+    "hours": "Opening hours",
+    "closed": "Closed",
+    "defaults": {
+      "about": "About us",
+      "services": "Services",
+      "gallery": "Gallery",
+      "testimonials": "What our customers say",
+      "faqs": "Frequently asked questions",
+      "contact": "Contact"
+    },
+    "galleryImage": "Photo from {{name}}",
+    "ownerReply": "Reply from {{name}}",
+    "ratingLabel": "{{rating}} out of 5 stars",
+    "footer": "© {{year}} {{name}}",
+    "social": {
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "tiktok": "TikTok",
+      "x": "X",
+      "youtube": "YouTube",
+      "linkedin": "LinkedIn"
+    },
+    "notFoundTitle": "Page not found",
+    "notFoundMessage": "We couldn't find a page here. Check the address and try again.",
+    "loadErrorTitle": "This page didn't load",
+    "loadErrorMessage": "Something went wrong on our side. Please try again."
+  },
+  "websiteEditor": {
+    "title": "Website",
+    "subtitle": "Build the single page your customers see, then publish it.",
+    "emptyTitle": "Build your website",
+    "emptyMessage": "Create a one-page website with your services, photos, reviews and contact details. You can edit everything before you publish.",
+    "create": "Create website",
+    "loadErrorTitle": "Couldn't load your website",
+    "loadErrorMessage": "Check your connection and try again.",
+    "statusPublished": "Published",
+    "statusDraft": "Not published",
+    "viewSite": "View website",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "publishTitle": "Publish your website?",
+    "publishMessage": "Your website becomes visible to everyone at its address.",
+    "published": "Website published",
+    "unpublishTitle": "Unpublish your website?",
+    "unpublishMessage": "Your website will no longer be visible. Your booking link keeps working.",
+    "unpublished": "Website unpublished",
+    "notBookableTitle": "Online booking isn't ready yet",
+    "notBookableMessage": "Book buttons are hidden on your website until online booking works for this branch.",
+    "openBookingSettings": "Open booking settings",
+    "tabs": {
+      "sections": "Sections",
+      "theme": "Theme",
+      "widget": "Widget",
+      "preview": "Preview"
+    },
+    "saved": "Saved",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "sections": {
+      "show": "Show on website",
+      "emptyBadge": "Nothing to show yet",
+      "hiddenBadge": "Hidden",
+      "hero": "Top banner",
+      "heroHint": "The first thing visitors see.",
+      "about": "About",
+      "aboutHint": "Tell visitors about your business.",
+      "services": "Services",
+      "servicesHint": "Your live services and prices, from your catalogue.",
+      "gallery": "Gallery",
+      "galleryHint": "Photos of your work or your place.",
+      "testimonials": "Customer reviews",
+      "testimonialsHint": "Reviews you choose to feature.",
+      "faqs": "FAQs",
+      "faqsHint": "Answers to common questions.",
+      "contact": "Contact",
+      "contactHint": "How visitors reach you.",
+      "testimonialsNote": "Choose which reviews appear here on the Reviews screen.",
+      "emptyHint": {
+        "hero": "",
+        "about": "Add some text to show this section.",
+        "services": "Add services to your catalogue to show this section.",
+        "gallery": "Add photos to show this section.",
+        "testimonials": "Feature a review to show this section.",
+        "faqs": "Add a question to show this section.",
+        "contact": ""
+      }
+    },
+    "fields": {
+      "hero": {
+        "headline": "Headline",
+        "headlinePlaceholder": "Your business name",
+        "subheadline": "Sub-headline",
+        "subheadlinePlaceholder": "A short line about what you do",
+        "cta_label": "Button text",
+        "cta_labelPlaceholder": "Book now"
+      },
+      "about": {
+        "title": "Title",
+        "titlePlaceholder": "About us",
+        "body": "Text",
+        "bodyPlaceholder": "Tell your story"
+      },
+      "services": {
+        "title": "Title",
+        "titlePlaceholder": "Services",
+        "intro": "Introduction",
+        "introPlaceholder": "Optional intro above your services"
+      },
+      "testimonials": {
+        "title": "Title",
+        "titlePlaceholder": "What our customers say"
+      },
+      "gallery": {
+        "title": "Title",
+        "titlePlaceholder": "Gallery",
+        "add": "Add a photo",
+        "imageN": "Photo {{n}}",
+        "alt": "Description",
+        "altHint": "Describes the photo for people using screen readers.",
+        "max": "You can add up to {{max}} photos."
+      },
+      "faqs": {
+        "title": "Title",
+        "titlePlaceholder": "Frequently asked questions",
+        "itemNumber": "Question {{n}}",
+        "question": "Question",
+        "answer": "Answer",
+        "add": "Add a question",
+        "max": "You can add up to {{max}} questions."
+      },
+      "contact": {
+        "title": "Title",
+        "titlePlaceholder": "Contact",
+        "branchNote": "Address, phone and opening hours come from your branch settings.",
+        "whatsapp": "WhatsApp number",
+        "whatsappHint": "Adds a WhatsApp button. Leave empty to hide it.",
+        "mapUrl": "Map link",
+        "mapUrlHint": "Optional. Without it, a map search for your address is used."
+      }
+    },
+    "theme": {
+      "color": "Brand colour",
+      "colorHint": "Used for buttons, stars and links. Text on it is chosen to stay readable.",
+      "colorInvalid": "Use a colour like #024751.",
+      "font": "Font",
+      "fonts": {
+        "dm_sans": "Modern",
+        "system_sans": "System",
+        "serif": "Classic"
+      },
+      "radius": "Corners",
+      "radii": {
+        "none": "Square",
+        "sm": "Slight",
+        "md": "Medium",
+        "lg": "Large",
+        "full": "Round"
+      },
+      "logo": "Logo",
+      "hero": "Banner photo",
+      "template": "Template",
+      "templateHint": "Only the name is saved for now. Ready-made content for each type of business comes later.",
+      "templates": {
+        "default": "General",
+        "salon": "Salon",
+        "barber": "Barber",
+        "clinic": "Clinic"
+      },
+      "seoTitle": "Page title",
+      "seoTitleHint": "Shown in search results and browser tabs. Defaults to your business name.",
+      "seoDescription": "Page description",
+      "seoDescriptionHint": "A short summary for search results (up to 200 characters)."
+    },
+    "image": {
+      "choose": "Choose image",
+      "replace": "Replace image",
+      "remove": "Remove",
+      "hint": "JPEG, PNG or WebP, up to 5 MB. Location data inside photos is not removed, so use photos you are happy to share.",
+      "errors": {
+        "type": "Use a JPEG, PNG or WebP image.",
+        "size": "That image is larger than 5 MB.",
+        "unknown_size": "We couldn't read that image's size. Try another one.",
+        "upload_failed": "The image didn't upload. Try again.",
+        "picker_unavailable": "Choosing images isn't available in this version of the app. Update the app and try again."
+      }
+    },
+    "preview": {
+      "title": "Preview",
+      "note": "Services, reviews, address and hours come from your live data. Links and buttons don't work here."
+    },
+    "errors": {
+      "tooLong": "That's too long.",
+      "required": "This is required.",
+      "https": "Use a link starting with https://",
+      "whatsapp": "Use the full number with country code.",
+      "generic": "Something went wrong. Please try again.",
+      "rpc": {
+        "forbidden": "You don't have permission to do that.",
+        "no_website": "Create your website first.",
+        "no_branch": "Add a branch first.",
+        "invalid_settings": "One of those settings isn't valid.",
+        "invalid_content": "That content isn't valid. Check the fields and try again.",
+        "invalid_order": "That order isn't valid.",
+        "unknown_section": "That section doesn't exist.",
+        "unknown": "Something went wrong. Please try again."
+      }
+    }
+  },
+  "reviews": {
+    "title": "Reviews",
+    "subtitle": "What customers said after their visit.",
+    "emptyTitle": "No reviews yet",
+    "emptyMessage": "When you mark a visit as completed you get a review link to share with the customer.",
+    "emptyFilteredTitle": "No reviews match",
+    "emptyFilteredMessage": "Try different filters.",
+    "clearFilters": "Clear filters",
+    "loadMore": "Load more",
+    "filters": {
+      "rating": "Rating",
+      "allRatings": "All ratings",
+      "stars_one": "{{count}} star",
+      "stars_other": "{{count}} stars",
+      "replied": "Reply",
+      "anyReply": "Any reply",
+      "featured": "On website",
+      "anyFeatured": "Any",
+      "yes": "Yes",
+      "no": "No",
+      "branch": "Branch",
+      "allBranches": "All branches"
+    },
+    "ratingLabel": "{{rating}} out of 5 stars",
+    "byOn": "{{name}} · {{date}}",
+    "noComment": "No comment",
+    "featured": "On website",
+    "replied": "Replied",
+    "yourReply": "Your reply",
+    "reply": "Reply",
+    "editReply": "Edit reply",
+    "feature": "Show on website",
+    "unfeature": "Remove from website",
+    "replyTitle": "Reply to review",
+    "replySubtitle": "Your reply is public and shown with this review if you feature it on your website.",
+    "replyLabel": "Your reply",
+    "replyHint": "Be kind and brief. Don't include private details.",
+    "replySaved": "Reply saved",
+    "errors": {
+      "loadTitle": "Couldn't load reviews",
+      "loadMessage": "Check your connection and try again.",
+      "reply": "Your reply didn't save. Try again.",
+      "feature": "That didn't work. Try again.",
+      "tooManyFeatured": "You can feature up to 12 reviews on your website. Remove one first."
+    },
+    "link": {
+      "title": "Review link",
+      "message": "Send this link to the customer so they can leave a review. It works once and expires in 30 days.",
+      "copy": "Copy link",
+      "copied": "Link copied",
+      "expires": "Expires {{date}}",
+      "getAgain": "Get review link again",
+      "getAgainHint": "Making a new link stops the previous one from working.",
+      "received": "The customer has left a review.",
+      "error": "Couldn't make a review link. Try again."
+    }
+  },
+  "reviewPage": {
+    "title": "How was your visit?",
+    "subtitle": "{{business}} · {{service}}",
+    "ratingLabel": "Your rating",
+    "starLabel_one": "{{count}} star",
+    "starLabel_other": "{{count}} stars",
+    "commentLabel": "Your comment (optional)",
+    "commentHint": "Up to {{max}} characters.",
+    "submit": "Send review",
+    "errors": {
+      "ratingRequired": "Choose a rating from 1 to 5.",
+      "commentTooLong": "That comment is too long.",
+      "rateLimited": "Too many attempts. Please try again in a little while.",
+      "failed": "Your review didn't send. Please try again."
+    },
+    "thanksTitle": "Thank you!",
+    "thanksMessage": "Your review has been sent.",
+    "googlePrompt": "If you like, you can also share your experience on Google.",
+    "googleButton": "Review on Google",
+    "invalidTitle": "This review link isn't available",
+    "invalidMessage": "It may have expired or already been used.",
+    "loadErrorTitle": "This page didn't load",
+    "loadErrorMessage": "Something went wrong. Please try again."
+  },
+  "widget": {
+    "intro": "Show your booking form on another website. Add the sites where it may appear, then paste the code into your page.",
+    "emptyTitle": "Booking widget",
+    "emptyMessage": "Create a key to show your booking form on another website.",
+    "create": "Create widget key",
+    "unavailableTitle": "Not included in your plan",
+    "unavailableMessage": "The booking widget is available on higher plans.",
+    "loadErrorTitle": "Couldn't load the widget settings",
+    "status": "Status",
+    "active": "On",
+    "inactive": "Off",
+    "activeToggle": "Widget is on",
+    "key": "Public key",
+    "copyKey": "Copy key",
+    "keyCopied": "Key copied",
+    "rotate": "Create new key",
+    "rotateTitle": "Create a new key?",
+    "rotateMessage": "The code on your other websites stops working until you replace it with the new code.",
+    "rotateConfirm": "Create new key",
+    "domains": {
+      "title": "Allowed websites",
+      "hint": "Up to {{max}} sites. Use the exact address without https:// (www.example.com is different from example.com).",
+      "empty": "No websites added yet. The widget won't show anywhere until you add one.",
+      "add": "Add a website",
+      "addButton": "Add website",
+      "remove": "Remove {{domain}}",
+      "errors": {
+        "invalid": "Enter a website address like www.example.com.",
+        "too_many": "You can add up to 10 websites."
+      }
+    },
+    "snippet": {
+      "title": "Code to paste",
+      "hint": "Paste this into the page where the booking form should appear.",
+      "copy": "Copy code"
+    },
+    "snippetCopied": "Code copied",
+    "errors": {
+      "forbidden": "You don't have permission to do that.",
+      "feature_unavailable": "The widget isn't included in your plan.",
+      "no_key": "Create a widget key first.",
+      "invalid_domains": "One of those addresses isn't valid.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "embed": {
+      "blockedTitle": "This booking form isn't available here",
+      "blockedMessage": "Open it from the business's own page instead."
     }
   }
 }

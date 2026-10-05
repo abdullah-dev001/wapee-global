@@ -147,7 +147,7 @@ export function bufferExplanationKey(
  */
 export function bookingUrl(publicSiteUrl: string, businessSlug: string): string {
   const base = publicSiteUrl.replace(/\/+$/, '');
-  return `${base}/${businessSlug}`;
+  return `${base}/${businessSlug}/book`;
 }
 
 /**

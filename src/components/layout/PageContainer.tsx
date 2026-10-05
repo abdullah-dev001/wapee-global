@@ -52,9 +52,7 @@ export function PageContainer({
 
   return (
     <View style={[styles.container, { padding }, fill ? styles.fill : null, style]}>
-      <View
-        style={[styles.inner, fill ? styles.fill : null, maxWidth ? { maxWidth } : null]}
-      >
+      <View style={[styles.inner, fill ? styles.fill : null, maxWidth ? { maxWidth } : null]}>
         {title ? (
           <View style={[styles.header, isMobile ? styles.headerMobile : styles.headerWide]}>
             <View style={styles.titleBlock}>

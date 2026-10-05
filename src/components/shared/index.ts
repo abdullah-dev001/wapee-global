@@ -16,3 +16,9 @@ export {
   timeTextToMinute,
   type TimePickerProps,
 } from './TimePicker';
+export {
+  StarRating,
+  StarRatingInput,
+  type StarRatingInputProps,
+  type StarRatingProps,
+} from './StarRating';
