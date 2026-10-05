@@ -83,3 +83,17 @@ export function handlePreflight(req: Request): Response | null {
   if (req.method !== 'OPTIONS') return null;
   return new Response(null, { status: 204, headers: corsHeaders(req.headers.get('origin')) });
 }
+
+/**
+ * CORS for the ONE endpoint that must be callable from ARBITRARY customer
+ * sites: the widget's key/origin validation. It echoes the caller's origin
+ * because the allow-list is the data (per-key allowed domains) and cannot be
+ * known at preflight time. This is safe only because the function returns
+ * nothing for a caller whose origin is not on the key's list: the response is
+ * the same generic not_found either way.
+ */
+export function openCorsHeaders(origin: string | null): Record<string, string> {
+  const headers = corsHeaders(null);
+  if (origin) headers['Access-Control-Allow-Origin'] = origin;
+  return headers;
+}

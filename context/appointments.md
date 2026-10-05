@@ -255,6 +255,7 @@ See [appointments-ui.md](appointments-ui.md).
   anywhere) but a candidate for real removal once the tooling allows it.
 
 ## Changelog
+- 2026-10-07 (Phase 7A): `mark_completed` now also creates the review request in the same transaction and returns `review_request:{token,expires_at}` once (only when new). Nothing else changed. See [website-reviews-widget.md](website-reviews-widget.md).
 - 2026-10-05 (Phase 4 part B2): `list_appointments` gained `p_client_id`
   for the Clients feature's profile screen (see
   [clients.md](clients.md)) — the client profile's "visit history" needed

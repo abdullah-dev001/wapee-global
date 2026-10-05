@@ -1,6 +1,7 @@
 # Handoff
 Last updated: 2026-10-06 · Branch: `dev`.
 
+**Phase 7A (website + reviews + widget BACKEND, no UI) is DONE** — see `context/website-reviews-widget.md`. **LAUNCH BLOCKER: the booking page needs a host-level `Content-Security-Policy: frame-ancestors` header (value from `validate_widget` action `frame_policy`), or the widget's allowed-domains list is not enforced.** Also Phase 12.
 **Phase 5 (invoices backend 5A + UI 5B) is DONE** — see `context/invoices.md`.
 Phase 4's manual test is postponed until after Phase 5 (user decision) — it is now due.
 **Phase 3 is fully complete. Phase 4 part A (backend) and part B1 (Calendar
@@ -191,6 +192,8 @@ further Phase 4 polish, once the user says go.
   (`14_invoices.sql`) + a real 3-session concurrent-issue test
   (`15_invoice_concurrency.sh`). See `context/invoices.md`.
 
+- **Phase 7A (website, reviews, widget backend) is DONE.** 5 migrations, 4 new Edge Functions (`get_website`, `get_review_request`, `submit_review`, `validate_widget`), `mark_completed` now creates the review request and returns the raw link once, `public/widget.js`, public `website-assets` bucket. 417 SQL assertions (`16_website_reviews_widget.sql`). See `context/website-reviews-widget.md`.
+
 ## Next, in order
 1. **Manual click-through of Phases 4 and 5** (postponed by the user), then Phase 6. Open from 5B: real PDF on native (needs expo-print + expo-sharing, ask), client-profile invoice list, per-line credit notes.
 2. Click through what this session could not: the Clients profile screen,
@@ -215,6 +218,9 @@ further Phase 4 polish, once the user says go.
 - **Android has never been run** — no emulator on this machine. Every UI task ends with a written Android code review instead (CLAUDE.md §4). Test on a real device via EAS build when possible.
 - **Email is Supabase's built-in sender**: rate-limited, and it only delivers to project team members. Confirm test users with SQL (see `context/auth.md`). Resend replaces it in Phase 6.
 - Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
+
+- **Suite `12_dashboard_appointments.sql` has a stale fixture since Phase 5A**: it inserts an appointment with a fake `invoice_id`, which the RPC-only guard + FK now refuse, so the file aborts. With that one insert made un-invoiced it is 148/150 (only the two "invoiced cannot be reopened" assertions differ). Needs a fixture that creates a real invoice.
+- **Launch blocker (Phase 12): widget embedding is only enforced by a `frame-ancestors` header on the booking page.** Supabase Edge Functions cannot serve HTML, and the static web host is not chosen. Until the host emits it, any site can frame the booking page.
 
 ## Traps to remember
 - **`get_calendar_appointments` does not return `invoice_id`.** Today/Calendar rows therefore map `invoiceId: null`; anything that needs the invoice link must use `useAppointmentInvoices` (invoices table, RLS-scoped), not `appointment.invoiceId`.

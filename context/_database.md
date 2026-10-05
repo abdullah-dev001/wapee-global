@@ -61,6 +61,13 @@ Enums: `business_status` (trialing/active/inactive/suspended), `business_plan` (
 Phase 5A adds: `invoice_status`, `invoice_payment_kind`, `invoice_payment_method`.
 Phase 3 adds: `appointment_status` (pending/confirmed/completed/cancelled/no_show), `booking_source` (online/dashboard/walk_in/portal), `custom_field_type` (short_text/long_text/dropdown/yes_no/number), `staff_choice_mode`, `slot_display_mode`, `booking_confirmation_mode`, `slot_interval_mode`.
 
+| **Phase 7A — website, reviews, widget** | | |
+| `websites` / `website_sections` | business_id, branch_id, theme, is_published / 7 fixed section types, jsonb content | Writes via RPC only; SELECT for website.edit/publish. See `context/website-reviews-widget.md`. |
+| `review_requests` / `reviews` | one per appointment, sha256 token hash / rating, comment, first name, owner reply, featured | Customer words immutable; `token_hash` not readable by authenticated. Staff see own via `staff_id`. |
+| `widget_keys` | business_id, public_key, allowed_domains, is_active | One live key per business. |
+
+`branches.google_review_url` added. Storage bucket `website-assets` (public by URL, no anon listing).
+
 ## Branch-owned settings (decisions 23–25)
 A business can have branches in different countries, so the **branch** is the
 source of truth for locale and money:
@@ -449,6 +456,9 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261006120000_phase5_invoice_read_and_report_rpcs.sql` | `list_invoices`, `get_invoice_print_data`, `report_windows`, `get_basic_report` |
 | `20261004045723_fix_dashboard_resource_id_not_stored.sql` | **Fixed a real bug**: `create_appointment`/`update_appointment` never stored `resource_id`, making resource capacity a no-op from the dashboard. Adds `appointment_collision_result` composite + `check_appointment_collision_v2` (returns the resolved resource id). |
 
+## Phase 7A migrations
+`20261007090000_phase7_website`, `20261007100000_phase7_reviews` (also redefines `mark_completed`), `20261007110000_phase7_widget`, `20261007120000_phase7_website_assets_bucket`, `20261007130000_phase7_regex_and_dedupe_fixes`. Applied with `db query --linked` + `migration repair`. 417 assertions in `16_website_reviews_widget.sql`; regression 13/14/07/08/11 unchanged. Advisors: no errors; intentional authenticated-DEFINER warnings for the owner RPCs.
+
 ## Phase 5A (invoices backend)
 Full detail in `context/invoices.md`. Four tables with a SELECT-only policy
 (`can()` + `has_permission_at_branch_scope()` on `invoices.view`); every write is
@@ -481,6 +491,7 @@ performance = no unindexed FKs (new indexes show as unused until used).
   design, not an oversight.
 
 ## Changelog
+- 2026-10-07: **Phase 7A** — website, reviews, widget keys, assets bucket (5 migrations, 417 assertions).
 - 2026-10-06: `p_as_of` removed from the public report RPC (internal `report_basic_at`); the two Phase 4 migration files renamed to their remote stamps (`20261004143401_is_owner_or_manager`, `20261004152214_list_appointments_client_filter`), `supabase migration list` matches 63/63. 312 assertions.
 - 2026-10-06: **Phase 5A — invoices backend.** 4 tables, 10 RPCs, gapless numbering, immutability, hard currency lock, reports with DST-correct windows. 310 SQL assertions + a real 3-session concurrency test. Migrations applied with `db query --linked` + `migration repair`.
 - 2026-10-05: **Phase 4 part A closure round.** `reopen_appointment` (Owner/Manager role check, `invoice_id` guard, audited), `my_staff_profile_id()` + forced Own-scope `staff_id`. **Found and fixed a real bug**: `create_appointment`/`update_appointment` never stored `resource_id`, making resource capacity a no-op from the dashboard — fixed with `check_appointment_collision_v2`. Found and fixed a second gap mid-round: `approve_appointment` had briefly become a side door into the reopen path. 141 assertions (was 103). Proved Realtime RLS with three live signed-in clients. Reconciled all migration filenames with the real remote history (56/56 matched, no `migration repair` needed).

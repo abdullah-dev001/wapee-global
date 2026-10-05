@@ -42,7 +42,11 @@ export type PublicEndpoint =
   | 'create_booking'
   | 'get_booking'
   | 'cancel_booking'
-  | 'reschedule_booking';
+  | 'reschedule_booking'
+  | 'get_website'
+  | 'get_review_request'
+  | 'submit_review'
+  | 'validate_widget';
 
 export type RateLimitResult = {
   allowed: boolean;

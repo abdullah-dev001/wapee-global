@@ -432,6 +432,22 @@ verify_jwt = false
 [functions.resend_manage_link]
 verify_jwt = true
 
+# Phase 7A public endpoints: the website read, the review page, and the widget
+# key/origin validation. Public for the same reason as the booking endpoints
+# (visitors and customers have no account); each is rate-limited, returns one
+# generic failure shape, and maps responses field by field.
+[functions.get_website]
+verify_jwt = false
+
+[functions.get_review_request]
+verify_jwt = false
+
+[functions.submit_review]
+verify_jwt = false
+
+[functions.validate_widget]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

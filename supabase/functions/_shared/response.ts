@@ -53,6 +53,10 @@ export type PublicErrorCode =
   // Already cancelled/completed/no-show, or the business does not allow guests
   // to cancel at all.
   | 'not_cancellable'
+  // --- website and widget ---
+  // Nothing public lives here. ONE code for "no such slug", "unpublished",
+  // "inactive business", "widget key/origin not allowed" so none can be told apart.
+  | 'not_found'
   // something broke on our side
   | 'server_error';
 
@@ -103,6 +107,8 @@ function statusFor(code: PublicErrorCode): number {
     case 'not_bookable':
       // 404, not 403: "there is nothing bookable here" without confirming that
       // a business exists behind the slug.
+      return 404;
+    case 'not_found':
       return 404;
     case 'invalid_token':
       // 404, deliberately, and identical for every token failure: a 401 or 403

@@ -581,6 +581,7 @@ export type Database = {
           credit_note_next_no: number
           currency: string
           deleted_at: string | null
+          google_review_url: string | null
           id: string
           invoice_next_no: number
           invoice_prefix: string
@@ -600,6 +601,7 @@ export type Database = {
           credit_note_next_no?: number
           currency: string
           deleted_at?: string | null
+          google_review_url?: string | null
           id?: string
           invoice_next_no?: number
           invoice_prefix: string
@@ -619,6 +621,7 @@ export type Database = {
           credit_note_next_no?: number
           currency?: string
           deleted_at?: string | null
+          google_review_url?: string | null
           id?: string
           invoice_next_no?: number
           invoice_prefix?: string
@@ -1591,6 +1594,196 @@ export type Database = {
           },
         ]
       }
+      review_requests: {
+        Row: {
+          appointment_id: string
+          branch_id: string
+          business_id: string
+          client_id: string | null
+          created_at: string
+          deleted_at: string | null
+          expires_at: string
+          id: string
+          sent_at: string | null
+          token_hash: string
+          updated_at: string
+          used_at: string | null
+        }
+        Insert: {
+          appointment_id: string
+          branch_id: string
+          business_id: string
+          client_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          expires_at: string
+          id?: string
+          sent_at?: string | null
+          token_hash: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          branch_id?: string
+          business_id?: string
+          client_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          expires_at?: string
+          id?: string
+          sent_at?: string | null
+          token_hash?: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_requests_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          appointment_id: string
+          branch_id: string
+          business_id: string
+          client_id: string | null
+          comment: string | null
+          created_at: string
+          deleted_at: string | null
+          featured_at: string | null
+          featured_on_website: boolean
+          id: string
+          owner_reply: string | null
+          rating: number
+          replied_at: string | null
+          replied_by: string | null
+          review_request_id: string
+          reviewer_first_name: string
+          staff_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          branch_id: string
+          business_id: string
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          featured_at?: string | null
+          featured_on_website?: boolean
+          id?: string
+          owner_reply?: string | null
+          rating: number
+          replied_at?: string | null
+          replied_by?: string | null
+          review_request_id: string
+          reviewer_first_name: string
+          staff_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          branch_id?: string
+          business_id?: string
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          featured_at?: string | null
+          featured_on_website?: boolean
+          id?: string
+          owner_reply?: string | null
+          rating?: number
+          replied_at?: string | null
+          replied_by?: string | null
+          review_request_id?: string
+          reviewer_first_name?: string
+          staff_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_replied_by_fkey"
+            columns: ["replied_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_review_request_id_fkey"
+            columns: ["review_request_id"]
+            isOneToOne: true
+            referencedRelation: "review_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           permission: string
@@ -2230,6 +2423,203 @@ export type Database = {
           },
         ]
       }
+      website_sections: {
+        Row: {
+          business_id: string
+          content: Json
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_visible: boolean
+          section_type: string
+          sort_order: number
+          updated_at: string
+          website_id: string
+        }
+        Insert: {
+          business_id: string
+          content?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_visible?: boolean
+          section_type: string
+          sort_order: number
+          updated_at?: string
+          website_id: string
+        }
+        Update: {
+          business_id?: string
+          content?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_visible?: boolean
+          section_type?: string
+          sort_order?: number
+          updated_at?: string
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_sections_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "website_sections_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      websites: {
+        Row: {
+          branch_id: string
+          brand_color: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          font_key: string | null
+          hero_image_path: string | null
+          id: string
+          is_published: boolean
+          logo_path: string | null
+          published_at: string | null
+          radius_key: string | null
+          seo_description: string | null
+          seo_title: string | null
+          template_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          branch_id: string
+          brand_color?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          font_key?: string | null
+          hero_image_path?: string | null
+          id?: string
+          is_published?: boolean
+          logo_path?: string | null
+          published_at?: string | null
+          radius_key?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          branch_id?: string
+          brand_color?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          font_key?: string | null
+          hero_image_path?: string | null
+          id?: string
+          is_published?: boolean
+          logo_path?: string | null
+          published_at?: string | null
+          radius_key?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "websites_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "websites_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "websites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "websites_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      widget_keys: {
+        Row: {
+          allowed_domains: string[]
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          public_key: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_domains?: string[]
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          public_key: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_domains?: string[]
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          public_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "widget_keys_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "widget_keys_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2376,8 +2766,14 @@ export type Database = {
         }
         Returns: Json
       }
+      create_review_request_internal: {
+        Args: { p_appointment_id: string }
+        Returns: Json
+      }
       discard_invoice_draft: { Args: { p_invoice_id: string }; Returns: Json }
       ensure_form_version: { Args: { p_business_id: string }; Returns: string }
+      ensure_website: { Args: { p_business_id: string }; Returns: Json }
+      ensure_widget_key: { Args: { p_business_id: string }; Returns: Json }
       format_document_number: {
         Args: { p_credit: boolean; p_prefix: string; p_seq: number }
         Returns: string
@@ -2424,6 +2820,12 @@ export type Database = {
         }
       }
       get_invoice_print_data: { Args: { p_invoice_id: string }; Returns: Json }
+      get_review_request: { Args: { p_token: string }; Returns: Json }
+      get_website_public: { Args: { p_slug: string }; Returns: Json }
+      get_widget_frame_ancestors: {
+        Args: { p_slug: string }
+        Returns: string[]
+      }
       has_permission: {
         Args: {
           p_branch_id: string
@@ -2538,6 +2940,19 @@ export type Database = {
         }
         Returns: Json
       }
+      list_reviews: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_featured?: boolean
+          p_has_reply?: boolean
+          p_limit?: number
+          p_rating?: number
+        }
+        Returns: Json
+      }
       mark_completed: { Args: { p_appointment_id: string }; Returns: Json }
       mark_no_show: { Args: { p_appointment_id: string }; Returns: Json }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
@@ -2572,7 +2987,15 @@ export type Database = {
         }
         Returns: string
       }
+      reissue_review_request: {
+        Args: { p_appointment_id: string }
+        Returns: Json
+      }
       reopen_appointment: { Args: { p_appointment_id: string }; Returns: Json }
+      reorder_website_sections: {
+        Args: { p_business_id: string; p_order: string[] }
+        Returns: Json
+      }
       replace_branch_hours: {
         Args: { p_branch_id: string; p_intervals: Json }
         Returns: number
@@ -2584,6 +3007,10 @@ export type Database = {
       replace_staff_working_hours: {
         Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
         Returns: number
+      }
+      reply_to_review: {
+        Args: { p_reply: string; p_review_id: string }
+        Returns: Json
       }
       report_basic_at: {
         Args: { p_as_of?: string; p_branch_id?: string; p_business_id: string }
@@ -2620,8 +3047,42 @@ export type Database = {
         }
         Returns: Json
       }
+      rotate_widget_key: { Args: { p_business_id: string }; Returns: Json }
       save_booking_settings: {
         Args: { p_branch_id: string; p_settings: Json }
+        Returns: Json
+      }
+      save_website_section: {
+        Args: {
+          p_business_id: string
+          p_content?: Json
+          p_is_visible?: boolean
+          p_section_type: string
+        }
+        Returns: Json
+      }
+      save_website_settings: {
+        Args: { p_business_id: string; p_settings: Json }
+        Returns: Json
+      }
+      save_widget_domains: {
+        Args: { p_business_id: string; p_domains: string[] }
+        Returns: Json
+      }
+      set_review_featured: {
+        Args: { p_featured: boolean; p_review_id: string }
+        Returns: Json
+      }
+      set_website_published: {
+        Args: { p_business_id: string; p_published: boolean }
+        Returns: Json
+      }
+      set_widget_active: {
+        Args: { p_active: boolean; p_business_id: string }
+        Returns: Json
+      }
+      submit_review: {
+        Args: { p_comment?: string; p_rating: number; p_token: string }
         Returns: Json
       }
       suggest_invoice_prefix: {
@@ -2651,6 +3112,30 @@ export type Database = {
           p_notes?: string
         }
         Returns: Json
+      }
+      validate_widget_origin: {
+        Args: { p_origin: string; p_public_key: string }
+        Returns: Json
+      }
+      website_asset_path_ok: { Args: { p: string }; Returns: boolean }
+      website_section_content_error: {
+        Args: { p_content: Json; p_type: string }
+        Returns: string
+      }
+      website_section_paths_error: {
+        Args: { p_business_id: string; p_content: Json; p_type: string }
+        Returns: string
+      }
+      website_str_err: {
+        Args: { k: string; p: Json; p_max: number }
+        Returns: string
+      }
+      website_template_defaults: { Args: { p_template: string }; Returns: Json }
+      website_url_err: { Args: { k: string; p: Json }; Returns: string }
+      widget_domains_ok: { Args: { p_domains: string[] }; Returns: boolean }
+      widget_feature_enabled: {
+        Args: { p_business_id: string }
+        Returns: boolean
       }
       write_audit_log: {
         Args: {

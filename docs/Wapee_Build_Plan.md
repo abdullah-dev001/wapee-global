@@ -108,6 +108,7 @@ Updated: Oct 1, 2026 · Based on: Wapee_Product_Overview_v2.md
 - Website domain (wapee.site ya jo final ho)
 - App Store / Play Store policy review aur submission
 - Production setup, monitoring, backups
+- **BLOCKER (widget):** booking page must be served with `Content-Security-Policy: frame-ancestors <per-business allowed domains>` (value from `validate_widget` action `frame_policy`) by the web host; without it the widget domain list is not enforced. Also set `PUBLIC_SITE_ORIGINS` / `PUBLIC_WEBSITE_BASE_URL`.
 
 ---
 

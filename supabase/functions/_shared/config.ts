@@ -59,3 +59,11 @@ export const BOT_PROTECTION = {
  * abuse. Revisit if the attempt table shows sustained pressure.
  */
 export const TURNSTILE_ENABLED = false;
+
+/**
+ * The embed widget's signed token (validate_widget). Bound to slug AND origin,
+ * short-lived so a harvested token is worth little.
+ */
+export const EMBED_TOKEN = {
+  ttlSeconds: 60 * 60,
+} as const;

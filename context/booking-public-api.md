@@ -330,6 +330,7 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   but it is a second shape for "bad token" and worth knowing.
 
 ## Changelog
+- 2026-10-07: Phase 7A added four more public endpoints (`get_website`, `get_review_request`, `submit_review`, `validate_widget`) using the same shared helpers; see [website-reviews-widget.md](website-reviews-widget.md).
 
 - 2026-10-04: **`manage_booking` gained a `get_slots` action** (Phase 3 step 6,
   the guest manage page's reschedule screen) backed by a new DB function
