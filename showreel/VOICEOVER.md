@@ -2,7 +2,7 @@
 
 Tone: calm, confident, warm. Unhurried, like an Apple product film. About 100 words in 60 s.
 
-Each line starts at the frame below (30 fps) and must finish within **Max**, so it ends before the next scene's line begins. Timings come from `src/voiceover.ts` (`startOffset`) and `SCENES` in `src/theme.ts`; if you change either, the starts move with them.
+Each line starts at the frame below (30 fps) and must finish within **Max**, so it ends before the next scene's line begins (longer recordings are cut there). Timings come from `src/voiceover.ts` (`startOffset`) and `SCENES` in `src/theme.ts`; if you change either, the starts move with them.
 
 | # | Scene | File (in `public/`) | Start frame | Start time | Max frames | Max time | Line |
 |---|---|---|---|---|---|---|---|
@@ -33,4 +33,4 @@ The product name in lines 2 and 13 comes from `BRAND.name` in `src/theme.ts`. If
 
 1. Put the files in `public/vo/`.
 2. In `src/voiceover.ts` set `enabled: true`.
-3. `npm run render`. Music (if set) ducks to 30% under each line automatically.
+3. `npm run render && npm run verify`. Each file's real length is measured before rendering; the ambient bed and music (if set) duck to 30% under each line with 10-frame ramps and come back up between lines. A missing file stops the render with a clear message.
