@@ -1,0 +1,24 @@
+{
+  "name": "wapee-showreel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Remotion explainer video. Not part of the product build.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Showreel out/wapee-showreel.mp4 --codec=h264 --crf=17",
+    "still": "remotion still src/index.ts Showreel",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "5.3.0",
+    "@remotion/cli": "4.0.533",
+    "lucide-react": "1.52.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.533"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
