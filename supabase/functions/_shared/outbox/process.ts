@@ -41,7 +41,7 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
       e: deps.config.now() + UNSUBSCRIBE_DAYS * 86_400_000,
     });
     // The email shows the confirm PAGE; the one-click header POSTs to the function.
-    unsubscribeUrl = `${base}/unsubscribe#t=${encodeURIComponent(t)}`;
+    unsubscribeUrl = `${base}/unsubscribe#token=${encodeURIComponent(t)}`;
     oneClickUrl = `${deps.config.unsubscribeUrl}?t=${encodeURIComponent(t)}`;
   }
 

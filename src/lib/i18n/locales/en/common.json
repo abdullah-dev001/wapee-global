@@ -1663,5 +1663,13 @@
       "empty": "Nothing has been sent for this appointment yet.",
       "loadError": "Could not load message status"
     }
+  },
+  "unsubscribe": {
+    "title": "Unsubscribe from reminders",
+    "explain": "Press the button to stop reminders and review requests from this business. Booking confirmations and changes to your bookings will still be sent.",
+    "confirm": "Unsubscribe",
+    "done": "If this link was valid, you have been unsubscribed from reminders and review requests.",
+    "failed": "Something went wrong. Please try again.",
+    "noLink": "This link is not complete. Open the link from your email again."
   }
 }
