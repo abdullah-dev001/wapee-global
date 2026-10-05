@@ -140,6 +140,7 @@ export type Database = {
           resource_capacity_at_booking: number
           resource_id: string | null
           resource_is_exclusive: boolean | null
+          scheduled_at: string
           service_id: string
           source: Database["public"]["Enums"]["booking_source"]
           staff_id: string | null
@@ -170,6 +171,7 @@ export type Database = {
           resource_capacity_at_booking?: number
           resource_id?: string | null
           resource_is_exclusive?: boolean | null
+          scheduled_at?: string
           service_id: string
           source?: Database["public"]["Enums"]["booking_source"]
           staff_id?: string | null
@@ -200,6 +202,7 @@ export type Database = {
           resource_capacity_at_booking?: number
           resource_id?: string | null
           resource_is_exclusive?: boolean | null
+          scheduled_at?: string
           service_id?: string
           source?: Database["public"]["Enums"]["booking_source"]
           staff_id?: string | null
@@ -1409,6 +1412,322 @@ export type Database = {
           },
         ]
       }
+      message_outbox: {
+        Row: {
+          appointment_id: string | null
+          attempts: number
+          branch_id: string
+          business_id: string
+          channel: string
+          claimed_at: string | null
+          client_id: string | null
+          created_at: string
+          deliver_after: string
+          event: string
+          finished_at: string | null
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          locked_until: string | null
+          max_attempts: number
+          payload: Json
+          provider_call_at: string | null
+          review_request_id: string | null
+          sealed: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          attempts?: number
+          branch_id: string
+          business_id: string
+          channel: string
+          claimed_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          deliver_after?: string
+          event: string
+          finished_at?: string | null
+          id?: string
+          idempotency_key: string
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          payload?: Json
+          provider_call_at?: string | null
+          review_request_id?: string | null
+          sealed?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          attempts?: number
+          branch_id?: string
+          business_id?: string
+          channel?: string
+          claimed_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          deliver_after?: string
+          event?: string
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          payload?: Json
+          provider_call_at?: string | null
+          review_request_id?: string | null
+          sealed?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_outbox_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_review_request_id_fkey"
+            columns: ["review_request_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_suppressions: {
+        Row: {
+          business_id: string
+          channel: string
+          created_at: string
+          id: string
+          recipient_hash: string
+          source: string
+        }
+        Insert: {
+          business_id: string
+          channel: string
+          created_at?: string
+          id?: string
+          recipient_hash: string
+          source: string
+        }
+        Update: {
+          business_id?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          recipient_hash?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_suppressions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          appointment_id: string | null
+          branch_id: string | null
+          business_id: string
+          channel: string
+          code: string | null
+          created_at: string
+          credits: number | null
+          encoding: string | null
+          error: string | null
+          event: string
+          id: number
+          outbox_id: string | null
+          provider: string | null
+          provider_id: string | null
+          recipient_hash: string | null
+          recipient_masked: string | null
+          segments: number | null
+          status: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          branch_id?: string | null
+          business_id: string
+          channel: string
+          code?: string | null
+          created_at?: string
+          credits?: number | null
+          encoding?: string | null
+          error?: string | null
+          event: string
+          id?: never
+          outbox_id?: string | null
+          provider?: string | null
+          provider_id?: string | null
+          recipient_hash?: string | null
+          recipient_masked?: string | null
+          segments?: number | null
+          status: string
+        }
+        Update: {
+          appointment_id?: string | null
+          branch_id?: string | null
+          business_id?: string
+          channel?: string
+          code?: string | null
+          created_at?: string
+          credits?: number | null
+          encoding?: string | null
+          error?: string | null
+          event?: string
+          id?: never
+          outbox_id?: string | null
+          provider?: string | null
+          provider_id?: string | null
+          recipient_hash?: string | null
+          recipient_masked?: string | null
+          segments?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_outbox_id_fkey"
+            columns: ["outbox_id"]
+            isOneToOne: false
+            referencedRelation: "message_outbox"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_limits: {
+        Row: {
+          key: string
+          note: string | null
+          value: number
+        }
+        Insert: {
+          key: string
+          note?: string | null
+          value: number
+        }
+        Update: {
+          key?: string
+          note?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
+      notification_settings: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          quiet_end_minute: number
+          quiet_start_minute: number
+          reminder_hours_before: number
+          reminders_enabled: boolean
+          review_requests_enabled: boolean
+          sms_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          quiet_end_minute?: number
+          quiet_start_minute?: number
+          reminder_hours_before?: number
+          reminders_enabled?: boolean
+          review_requests_enabled?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          quiet_end_minute?: number
+          quiet_start_minute?: number
+          reminder_hours_before?: number
+          reminders_enabled?: boolean
+          review_requests_enabled?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           addon: string | null
@@ -1501,6 +1820,33 @@ export type Database = {
           ip_hash?: string | null
           key_hash?: string | null
           outcome?: string
+        }
+        Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2117,6 +2463,125 @@ export type Database = {
           },
         ]
       }
+      sms_country_rates: {
+        Row: {
+          country_code: string
+          credits_per_segment: number
+          dial_code: string
+          note: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          country_code: string
+          credits_per_segment: number
+          dial_code: string
+          note?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          country_code?: string
+          credits_per_segment?: number
+          dial_code?: string
+          note?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      sms_credit_accounts: {
+        Row: {
+          balance: number
+          business_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          business_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          business_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_credit_accounts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_credit_ledger: {
+        Row: {
+          amount: number
+          attempt: number | null
+          balance_after: number
+          business_id: string
+          created_at: string
+          created_by: string | null
+          dial_code: string | null
+          encoding: string | null
+          id: number
+          kind: string
+          note: string | null
+          outbox_id: string | null
+          ref_ledger_id: number | null
+          segments: number | null
+        }
+        Insert: {
+          amount: number
+          attempt?: number | null
+          balance_after: number
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          dial_code?: string | null
+          encoding?: string | null
+          id?: never
+          kind: string
+          note?: string | null
+          outbox_id?: string | null
+          ref_ledger_id?: number | null
+          segments?: number | null
+        }
+        Update: {
+          amount?: number
+          attempt?: number | null
+          balance_after?: number
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          dial_code?: string | null
+          encoding?: string | null
+          id?: never
+          kind?: string
+          note?: string | null
+          outbox_id?: string | null
+          ref_ledger_id?: number | null
+          segments?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_credit_ledger_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_credit_ledger_ref_ledger_id_fkey"
+            columns: ["ref_ledger_id"]
+            isOneToOne: false
+            referencedRelation: "sms_credit_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_branches: {
         Row: {
           branch_id: string
@@ -2636,6 +3101,19 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_add_sms_credits: {
+        Args: { p_business: string; p_credits: number; p_note?: string }
+        Returns: Json
+      }
+      admin_set_sms_rate: {
+        Args: {
+          p_country: string
+          p_credits: number
+          p_dial: string
+          p_note?: string
+        }
+        Returns: Json
+      }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
       build_form_fields_snapshot: {
@@ -2771,6 +3249,8 @@ export type Database = {
         Returns: Json
       }
       discard_invoice_draft: { Args: { p_invoice_id: string }; Returns: Json }
+      enqueue_due_reminders: { Args: never; Returns: number }
+      enqueue_due_reminders_at: { Args: { p_now: string }; Returns: number }
       ensure_form_version: { Args: { p_business_id: string }; Returns: string }
       ensure_website: { Args: { p_business_id: string }; Returns: Json }
       ensure_widget_key: { Args: { p_business_id: string }; Returns: Json }
@@ -2851,6 +3331,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      internal_secret: { Args: { p_name: string }; Returns: string }
       invite_member: {
         Args: {
           p_branch_id?: string
@@ -2891,6 +3372,7 @@ export type Database = {
           total: number
         }[]
       }
+      invoke_outbox_worker: { Args: never; Returns: number }
       is_allowed_appointment_transition: {
         Args: {
           p_from: Database["public"]["Enums"]["appointment_status"]
@@ -2955,7 +3437,10 @@ export type Database = {
       }
       mark_completed: { Args: { p_appointment_id: string }; Returns: Json }
       mark_no_show: { Args: { p_appointment_id: string }; Returns: Json }
+      mask_email: { Args: { p_email: string }; Returns: string }
+      mask_phone: { Args: { p_phone: string }; Returns: string }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
+      message_recipient_hash: { Args: { p_address: string }; Returns: string }
       my_grants: {
         Args: { p_business_id: string }
         Returns: {
@@ -2978,6 +3463,86 @@ export type Database = {
         Args: { p_default_dial_code?: string; p_input: string }
         Returns: string
       }
+      notification_next_allowed: {
+        Args: { p_appointment_start?: string; p_at: string; p_branch: string }
+        Returns: string
+      }
+      outbox_attach_token: {
+        Args: { p_appointment: string; p_token: string }
+        Returns: undefined
+      }
+      outbox_cancel_unsent: {
+        Args: { p_appointment: string; p_events: string[]; p_reason: string }
+        Returns: undefined
+      }
+      outbox_claim: {
+        Args: { p_channels?: string[]; p_limit?: number }
+        Returns: Json
+      }
+      outbox_clean_error: { Args: { p_text: string }; Returns: string }
+      outbox_complete: {
+        Args: {
+          p_dead_tokens?: string[]
+          p_id: string
+          p_provider: string
+          p_provider_id: string
+        }
+        Returns: Json
+      }
+      outbox_enqueue: {
+        Args: {
+          p_appointment?: string
+          p_branch: string
+          p_business: string
+          p_client?: string
+          p_deliver_after?: string
+          p_event: string
+          p_key: string
+          p_payload?: Json
+          p_review_request?: string
+          p_token?: string
+          p_user?: string
+        }
+        Returns: string
+      }
+      outbox_fail: {
+        Args: { p_error: string; p_id: string; p_retryable?: boolean }
+        Returns: Json
+      }
+      outbox_finish: {
+        Args: {
+          p_code: string
+          p_error: string
+          p_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      outbox_guard: { Args: { p_id: string }; Returns: string }
+      outbox_job: { Args: { p_id: string }; Returns: Json }
+      outbox_log: {
+        Args: {
+          p_code: string
+          p_credits?: number
+          p_encoding?: string
+          p_error: string
+          p_id: string
+          p_provider?: string
+          p_provider_id?: string
+          p_segments?: number
+          p_status: string
+        }
+        Returns: undefined
+      }
+      outbox_maintenance: { Args: { p_now?: string }; Returns: Json }
+      outbox_recipient: { Args: { p_id: string }; Returns: Json }
+      outbox_reserve_sms: {
+        Args: { p_body: string; p_id: string }
+        Returns: Json
+      }
+      outbox_seal: { Args: { p_token: string }; Returns: string }
+      outbox_unseal: { Args: { p_sealed: string }; Returns: string }
+      outbox_worker_authorize: { Args: { p_token: string }; Returns: boolean }
       pick_staff_for_slot: {
         Args: {
           p_branch_id: string
@@ -2986,6 +3551,24 @@ export type Database = {
           p_starts_at: string
         }
         Returns: string
+      }
+      push_recipient_users: {
+        Args: {
+          p_branch: string
+          p_business: string
+          p_exclude?: string
+          p_permission: string
+          p_staff: string
+        }
+        Returns: string[]
+      }
+      push_remove_dead_tokens: {
+        Args: { p_outbox: string; p_token_ids: string[] }
+        Returns: number
+      }
+      register_push_token: {
+        Args: { p_platform: string; p_token: string }
+        Returns: Json
       }
       reissue_review_request: {
         Args: { p_appointment_id: string }
@@ -3081,6 +3664,47 @@ export type Database = {
         Args: { p_active: boolean; p_business_id: string }
         Returns: Json
       }
+      sms_ledger_post: {
+        Args: {
+          p_amount: number
+          p_attempt?: number
+          p_business: string
+          p_by?: string
+          p_dial?: string
+          p_encoding?: string
+          p_kind: string
+          p_note?: string
+          p_outbox?: string
+          p_ref?: number
+          p_segments?: number
+        }
+        Returns: Json
+      }
+      sms_rate_for: {
+        Args: { p_phone: string }
+        Returns: {
+          country_code: string
+          credits_per_segment: number
+          dial_code: string
+          note: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sms_country_rates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      sms_segments: {
+        Args: { p_text: string }
+        Returns: {
+          out_encoding: string
+          out_segments: number
+          out_units: number
+        }[]
+      }
       submit_review: {
         Args: { p_comment?: string; p_rating: number; p_token: string }
         Returns: Json
@@ -3089,7 +3713,17 @@ export type Database = {
         Args: { p_business_id: string; p_name: string }
         Returns: string
       }
+      suppress_recipient: {
+        Args: {
+          p_business: string
+          p_channel: string
+          p_hash: string
+          p_source: string
+        }
+        Returns: boolean
+      }
       touch_manage_token: { Args: { p_token: string }; Returns: undefined }
+      unregister_push_token: { Args: { p_token: string }; Returns: undefined }
       update_appointment: {
         Args: {
           p_appointment_id: string

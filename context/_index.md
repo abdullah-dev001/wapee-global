@@ -29,3 +29,4 @@ Shared files:
 | Today | today.md | done (part B2) | 4 | Mobile home: today's appointments, counts, quick actions |
 | Invoices (backend) | invoices.md | backend done, no UI | 5A | Draft→issued invoices, gapless numbers, tax snapshot, payments, credit notes, reversals, list/print RPCs, basic reports |
 | Website, reviews, widget | website-reviews-widget.md | backend + UI done | 7A/7B | Public website at `/<slug>` (booking moved to `/<slug>/book`), editor, reviews screen + review page, widget settings + embed gate, 4 Edge Functions, assets bucket |
+| Notifications (backend) | notifications.md | backend done, not deployed | 6A | Outbox, Resend email, Twilio SMS + credits, Expo push, reminders (pg_cron), unsubscribe link, 2 Edge Functions |

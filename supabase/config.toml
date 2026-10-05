@@ -448,6 +448,15 @@ verify_jwt = false
 [functions.validate_widget]
 verify_jwt = false
 
+# Phase 6A. send_outbox is called by pg_cron (via pg_net) with a Vault token that
+# the function checks through outbox_worker_authorize(); it has no user and no JWT.
+# unsubscribe is a link in an email: public, HMAC-signed, rate-limited.
+[functions.send_outbox]
+verify_jwt = false
+
+[functions.unsubscribe]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

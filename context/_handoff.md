@@ -1,5 +1,7 @@
 # Handoff
-Last updated: 2026-10-06 · Branch: `dev`.
+Last updated: 2026-10-08 · Branch: `dev`.
+
+**Phase 6A (notifications BACKEND, no UI) is built but NOT DEPLOYED** — see `context/notifications.md`. Before deploying: set the Edge secrets listed there, then `supabase functions deploy send_outbox --no-verify-jwt` and `unsubscribe --no-verify-jwt`. Until then rows queue and expire after 48 h; nothing is sent. Next is 6B (UI: notification settings, push registration, message log, credits).
 
 **Phase 7B (website + reviews + widget UI) is DONE** on top of 7A (backend) — see `context/website-reviews-widget.md`. **`/<slug>` is now the WEBSITE; the booking link is `/<slug>/book`.** **Run `npm run ios` once: `expo-image-picker` is a new native module** (the editor's picker is loaded lazily, so an old build still starts; only choosing an image needs the rebuild).
 **Phase 7A (website + reviews + widget BACKEND, no UI) is DONE** — see `context/website-reviews-widget.md`. **LAUNCH BLOCKER: the booking page needs a host-level `Content-Security-Policy: frame-ancestors` header (value from `validate_widget` action `frame_policy`), or the widget's allowed-domains list is not enforced.** Also Phase 12.
@@ -196,7 +198,7 @@ further Phase 4 polish, once the user says go.
 - **Phase 7A (website, reviews, widget backend) is DONE.** 5 migrations, 4 new Edge Functions (`get_website`, `get_review_request`, `submit_review`, `validate_widget`), `mark_completed` now creates the review request and returns the raw link once, `public/widget.js`, public `website-assets` bucket. 417 SQL assertions (`16_website_reviews_widget.sql`). See `context/website-reviews-widget.md`.
 
 ## Next, in order
-0. **Phase 6 (notifications)** will send the review link (seam: `review_requests.sent_at`, `create_review_request_internal`); until then owners copy it from the dialog. Launch blocker still open: host `frame-ancestors` header for the widget.
+0. **Phase 6B (notifications UI)** + deploy 6A; the review link is queued by 6A (`review_requests.sent_at` set when sent); owners can still copy it from the dialog. Launch blocker still open: host `frame-ancestors` header for the widget.
 1. **Manual click-through of Phases 4 and 5** (postponed by the user), then Phase 6. Open from 5B: real PDF on native (needs expo-print + expo-sharing, ask), client-profile invoice list, per-line credit notes.
 2. Click through what this session could not: the Clients profile screen,
    create/edit forms, archive confirm, and Calendar's create/detail
@@ -223,6 +225,13 @@ further Phase 4 polish, once the user says go.
 
 - **Suite 12's fixture was fixed (153/153)**: the invoiced appointment now gets a REAL invoice via `create_invoice_draft` + `issue_invoice`. It (and any test that looks a client up by PHONE ALONE) can still fail while other businesses in the DB hold the same phone numbers: it did while a throwaway seed reused `+447700900111`. Suite 16's bucket count is now scoped to its own businesses for the same reason. Run suites on a database without leftover test data.
 - **Launch blocker (Phase 12): widget embedding is only enforced by a `frame-ancestors` header on the booking page.** Supabase Edge Functions cannot serve HTML, and the static web host is not chosen. Until the host emits it, any site can frame the booking page.
+
+## Traps to remember (Phase 6A)
+- **Supabase default privileges give `authenticated` ALL (incl. TRUNCATE) on every new table**; RLS does not govern TRUNCATE. Revoke down to what the policies need in the same migration (new tables did; 41 older tables still carry it).
+- **pg_net's `net` schema is superuser-owned and executable by anon/authenticated; it is safe only because PostgREST does not expose `net`** (verified 406). Never call `net.*` from a function the API roles can execute.
+- **`select ... from (update ... returning)` is invalid**; test helpers wrap statements in `with q as (...)`.
+- **A pg_temp test clock is not the real clock**: `appointments.scheduled_at` is real `now()`, so reminder tests that fake `p_now` must not expect the "booked after reminder time" skip unless they set `scheduled_at` explicitly.
+- Reminder "N hours before" is branch wall-clock, not elapsed hours (DST): 23 or 25 elapsed hours on change days is correct.
 
 ## Traps to remember (Phase 7B)
 - **Hermes' `Intl.NumberFormat` unit style is wrong, not just missing:** 30 minutes came out as "1,800s" on iOS. `formatDuration` now checks the output still contains the number it was given (`sensibleUnitText`) and falls back to "30 min". Check any other `style: 'unit'` use before trusting it on device.

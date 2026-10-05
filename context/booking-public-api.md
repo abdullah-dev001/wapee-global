@@ -316,8 +316,7 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   `HoneypotField` (`src/features/booking-public/components/HoneypotField.tsx`)
   hides `company_website` with `position:absolute;left:-9999px`, not
   `type="hidden"`/`display:none`, plus `tabIndex={-1}` and `autoComplete="off"`.
-- **Nothing sends the manage link.** Email/SMS is Phase 6; the token only reaches
-  the confirmation screen and the dashboard. Seams are marked in both functions.
+- **The manage link is now queued for sending** (Phase 6A, `create_booking` seals the token into the confirmation outbox row; `resend_manage_link` queues a `manage_link`). Nothing is sent until the worker is deployed: see [notifications.md](notifications.md).
 - **The bot protection stops naive automation, not a determined attacker.** One
   that calls `get_slots`, waits 3 s and books is within the rules — the per-IP,
   per-phone and per-business caps are what bound that, and 200 junk bookings a day
@@ -330,6 +329,7 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   but it is a second shape for "bad token" and worth knowing.
 
 ## Changelog
+- 2026-10-08: `create_booking` and `resend_manage_link` redefined to add their outbox enqueue (Phase 6A); no change to inputs or responses.
 - 2026-10-07: Phase 7A added four more public endpoints (`get_website`, `get_review_request`, `submit_review`, `validate_widget`) using the same shared helpers; see [website-reviews-widget.md](website-reviews-widget.md).
 
 - 2026-10-04: **`manage_booking` gained a `get_slots` action** (Phase 3 step 6,

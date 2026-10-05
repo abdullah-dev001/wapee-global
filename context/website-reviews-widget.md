@@ -49,9 +49,10 @@ Migrations `20261007090000_phase7_website`, `…100000_phase7_reviews`, `…1100
 
 ## Known limits
 - Deploy: `supabase functions deploy <name> --no-verify-jwt` (pinned in config.toml). Optional secret `PUBLIC_WEBSITE_BASE_URL` (default placeholder `https://wapee.site`).
-- Nothing sends the review link (Phase 6). No reminder/expiry cleanup job. No UI to remove a review.
+- The review link is queued for sending by `create_review_request_internal` / `reissue_review_request` (Phase 6A; `review_requests.sent_at` is set when sent). Not deployed yet: see [notifications.md](notifications.md). Reissuing now also re-sends the new link. No reminder/expiry cleanup job. No UI to remove a review.
 - Responses are not cached; `get_website` hits the DB per view (rate limited).
 
 ## Changelog
+- 2026-10-08: review request creation/reissue now queue the message in the outbox (Phase 6A).
 - 2026-10-07: **7B UI** built (public website, review page, editor, reviews screen, widget settings, embed gate); `/<slug>` is now the website and the booking flow moved to `/<slug>/book`; `mark_completed` consumers show the review link; `formatDuration` fixed for Hermes.
 - 2026-10-07: Built (7A). 417 SQL assertions; positive+negative HTTP checks against the deployed functions with a throwaway business (deleted).

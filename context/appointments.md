@@ -255,6 +255,7 @@ See [appointments-ui.md](appointments-ui.md).
   anywhere) but a candidate for real removal once the tooling allows it.
 
 ## Changelog
+- 2026-10-08 (Phase 6A): an AFTER INSERT/UPDATE trigger on `appointments` queues client and staff notifications for create / approve / cancel / reschedule (walk-ins excluded); `scheduled_at` column added. RPC behaviour unchanged. See [notifications.md](notifications.md).
 - 2026-10-07 (Phase 7A): `mark_completed` now also creates the review request in the same transaction and returns `review_request:{token,expires_at}` once (only when new). Nothing else changed. See [website-reviews-widget.md](website-reviews-widget.md).
 - 2026-10-05 (Phase 4 part B2): `list_appointments` gained `p_client_id`
   for the Clients feature's profile screen (see

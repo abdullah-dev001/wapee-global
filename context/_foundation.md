@@ -235,6 +235,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+- 2026-10-08: Edge shared module `supabase/functions/_shared/outbox/` (templates, signed unsubscribe, job processor, providers) for Phase 6A; vitest now also runs `supabase/functions/**/*.test.ts`.
 - 2026-10-07: Phase 7B — `StarRating`/`StarRatingInput`; `expo-image-picker` added (native module, plugin in `app.config.ts`, lazy-imported); `formatDuration` guarded against Hermes' wrong unit output (`sensibleUnitText`); nav item `website`.
 
 - 2026-10-06 (Phase 5B): `app/+html.tsx` gained a print stylesheet (`@media print` flattens the fixed-height app shell; `[data-no-print]` hides toolbars). New standalone route `app/invoice-print/[id].tsx` (outside `(app)`). Reports nav icon is now `BarChart3`. No new shared UI primitive; invoice composites live in `src/features/invoices/`.
