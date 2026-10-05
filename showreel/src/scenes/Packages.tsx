@@ -1,47 +1,35 @@
-import { AbsoluteFill, useCurrentFrame } from 'remotion';
+import { useCurrentFrame } from 'remotion';
 import { CalendarClock, Check, Package } from 'lucide-react';
-import { C, ICON, RADIUS, TYPE } from '../theme';
-import { Headline } from '../components/Headline';
-import { SceneFrame } from '../components/SceneFrame';
+import { C, ICON, TYPE } from '../theme';
+import { T } from '../timeline';
+import { CLIENT, PACKAGE } from '../content';
+import { Scene } from '../components/Scene';
+import { StackLayout } from '../components/Layout';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
+import { Divider } from '../components/Divider';
+import { IconTile } from '../components/IconTile';
 import { Swap } from '../components/Swap';
+import { pressAt } from '../components/Cursor';
 import { appear, ease, mix } from '../components/motion';
 
-/** Local timeline, shared with the SFX cue list. */
-export const PACKAGES_T = { card: 16, sell: 38, uses: [70, 100] } as const;
-
-const TOTAL = 6;
-const RING = 248;
+const P = T.packages;
+const RING = 250;
 const STROKE = 16;
 const R = (RING - STROKE) / 2;
 const CIRC = 2 * Math.PI * R;
-
-const LOG = [
-  { date: 'Tue 14 Oct', staff: 'Amira' },
-  { date: 'Tue 28 Oct', staff: 'Amira' },
-];
+const COUNTS = Array.from({ length: P.uses.length + 1 }, (_, i) => String(PACKAGE.sessions - i));
 
 export const Packages = () => {
   const frame = useCurrentFrame();
-  const T = PACKAGES_T;
-  const sold = ease(frame, T.sell, 18);
-  const press = ease(frame, T.sell - 4, 4) - ease(frame, T.sell + 1, 6);
-  const used = T.uses.reduce((n, at) => n + ease(frame, at, 20), 0);
-  const left = TOTAL - used;
+  const sold = ease(frame, P.sell, 18);
+  const used = P.uses.reduce((n, at) => n + ease(frame, at, 20), 0);
   return (
-    <SceneFrame dark>
-      <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', paddingBottom: 30 }}>
-        <Headline
-          lines={[['Packages that track', { text: 'every visit.', accent: true }]]}
-          size={108}
-          color="#fff"
-          accent={C.lime}
-          align="center"
-        />
-        <div style={{ marginTop: 80, ...appear(frame, T.card, 60) }}>
-          <Card onTeal style={{ width: 1120, padding: 44, boxSizing: 'border-box', display: 'flex', gap: 56, alignItems: 'center' }}>
+    <Scene>
+      <StackLayout headline={[['Packages that track', { text: 'every visit.', accent: true }]]} headlineAt={P.headline} gap={72}>
+        <div style={appear(frame, P.card, 56)}>
+          <Card style={{ width: 1120, padding: 46, boxSizing: 'border-box', display: 'flex', gap: 56, alignItems: 'center', color: C.text }}>
             <div style={{ position: 'relative', width: RING, height: RING, flexShrink: 0 }}>
               <svg width={RING} height={RING} style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx={RING / 2} cy={RING / 2} r={R} fill="none" stroke={C.tealLight} strokeWidth={STROKE} />
@@ -54,66 +42,53 @@ export const Packages = () => {
                   strokeWidth={STROKE}
                   strokeLinecap="round"
                   strokeDasharray={CIRC}
-                  strokeDashoffset={CIRC * (1 - (sold * left) / TOTAL)}
+                  strokeDashoffset={CIRC * (1 - (sold * (PACKAGE.sessions - used)) / PACKAGE.sessions)}
                 />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <Swap
-                  frame={frame}
-                  words={['6', '5', '4']}
-                  phases={[T.card, ...T.uses]}
-                  style={{ ...TYPE.headline, fontSize: 96, color: C.text, fontVariantNumeric: 'tabular-nums' }}
-                />
-                <div style={{ fontSize: 19, color: C.text2, marginTop: 4 }}>of {TOTAL} sessions left</div>
+                <Swap frame={frame} words={COUNTS} phases={[P.card, ...P.uses]} style={{ ...TYPE.headlineStyle, fontSize: 96, fontVariantNumeric: 'tabular-nums' }} />
+                <div style={{ fontSize: 19, color: C.text2, marginTop: 2 }}>of {PACKAGE.sessions} sessions left</div>
               </div>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 56, height: 56, borderRadius: RADIUS.lg, background: C.lime, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Package size={26} color={C.teal} strokeWidth={ICON.strokeWidth} />
-                </div>
+                <IconTile Icon={Package} size={56} tone="lime" />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', color: C.text }}>Glow facial course</div>
-                  <div style={{ fontSize: 19, color: C.text2, marginTop: 2 }}>6 sessions · Sara Khan</div>
+                  <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em' }}>{PACKAGE.name}</div>
+                  <div style={{ fontSize: 19, color: C.text2, marginTop: 2 }}>
+                    {PACKAGE.sessions} sessions · {CLIENT.name}
+                  </div>
                 </div>
-                <div style={{ position: 'relative', width: 190, height: 56 }}>
+                <div style={{ position: 'relative', width: 200, height: 56 }}>
                   <div style={{ position: 'absolute', right: 0, top: 0, opacity: 1 - sold }}>
-                    <Button height={56} fontSize={20} pressed={press}>
+                    <Button height={56} fontSize={20} pressed={pressAt(frame, P.sell - 2)}>
                       Sell package
                     </Button>
                   </div>
-                  <div style={{ position: 'absolute', right: 0, top: 10, opacity: sold, transform: `scale(${mix(sold, 0.97, 1)})` }}>
-                    <Badge tone="success">
-                      <Check size={16} strokeWidth={2.5} /> Active
+                  <div style={{ position: 'absolute', right: 0, top: 11, opacity: sold, transform: `scale(${mix(sold, 0.97, 1)})` }}>
+                    <Badge tone="success" dot>
+                      Active
                     </Badge>
                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, color: C.text2, marginTop: 22, opacity: mix(sold, 0.4, 1) }}>
-                <CalendarClock size={18} strokeWidth={ICON.strokeWidth} /> Expires 14 Apr 2027
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, color: C.text2, marginTop: 22 }}>
+                <CalendarClock size={18} strokeWidth={ICON.strokeWidth} /> {PACKAGE.expires}
               </div>
-              <div style={{ height: 1, background: C.border, margin: '24px 0 4px' }} />
-              <div style={{ height: 2 * 64 }}>
-                {LOG.map((row, i) => {
-                  const p = ease(frame, T.uses[i] + 2, 20);
+              <Divider margin="24px 0 4px" />
+              <div style={{ height: PACKAGE.log.length * 64 }}>
+                {PACKAGE.log.map((row, i) => {
+                  const p = ease(frame, P.uses[i] + 2, 20);
                   return (
-                    <div
-                      key={row.date}
-                      style={{
-                        height: 64,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 14,
-                        borderBottom: i === 0 ? `1px solid ${C.borderSubtle}` : 'none',
-                        opacity: p,
-                        transform: `translateY(${mix(p, 14, 0)}px)`,
-                      }}
-                    >
-                      <div style={{ width: 10, height: 10, borderRadius: 5, background: C.teal }} />
-                      <div style={{ flex: 1, fontSize: 20, fontWeight: 600, color: C.text }}>Session used</div>
-                      <div style={{ fontSize: 18, color: C.text2 }}>
-                        {row.date} · {row.staff}
+                    <div key={row.date} style={{ opacity: p, transform: `translateY(${mix(p, 14, 0)}px)` }}>
+                      <div style={{ height: 63, display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <Check size={20} color={C.teal} strokeWidth={2.25} />
+                        <div style={{ flex: 1, fontSize: 21, fontWeight: 600 }}>Session used</div>
+                        <div style={{ fontSize: 18, color: C.text2 }}>
+                          {row.date} · {row.staff}
+                        </div>
                       </div>
+                      {i < PACKAGE.log.length - 1 ? <Divider subtle /> : null}
                     </div>
                   );
                 })}
@@ -121,7 +96,7 @@ export const Packages = () => {
             </div>
           </Card>
         </div>
-      </AbsoluteFill>
-    </SceneFrame>
+      </StackLayout>
+    </Scene>
   );
 };

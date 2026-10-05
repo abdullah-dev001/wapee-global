@@ -1,4 +1,5 @@
-import { BRAND, SCENES, sceneStart, type SceneKey } from './theme';
+import { BRAND, SCENES, type SceneKey } from './theme';
+import { sceneStart } from './timeline';
 
 export type VoLine = {
   scene: SceneKey;
@@ -48,4 +49,4 @@ export const VO = {
 export const voStart = (l: VoLine) => sceneStart(l.scene) + l.startOffset;
 
 /** Longest a line may run so it ends before the next scene's line starts. */
-export const voMaxFrames = (l: VoLine) => SCENES[l.scene] - l.startOffset - 4;
+export const voMaxFrames = (l: VoLine) => SCENES[l.scene].frames - l.startOffset - 4;

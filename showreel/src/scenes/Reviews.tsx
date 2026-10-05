@@ -1,64 +1,51 @@
-import { AbsoluteFill, useCurrentFrame } from 'remotion';
+import { useCurrentFrame } from 'remotion';
 import { Globe, Star } from 'lucide-react';
 import { C, ICON, RADIUS } from '../theme';
-import { Headline } from '../components/Headline';
-import { SceneFrame } from '../components/SceneFrame';
+import { T } from '../timeline';
+import { BOOKING, BUSINESS, CLIENT, REVIEW } from '../content';
+import { Scene } from '../components/Scene';
+import { StackLayout } from '../components/Layout';
 import { Card } from '../components/Card';
+import { Avatar } from '../components/Avatar';
 import { appear, ease, mix } from '../components/motion';
 
-/** Local timeline, shared with the SFX cue list. */
-export const REVIEWS_T = { card: 8, stars: 18, starStep: 4, reply: 44 } as const;
+const R = T.reviews;
 
 export const Reviews = () => {
   const frame = useCurrentFrame();
-  const T = REVIEWS_T;
-  const reply = ease(frame, T.reply, 22);
-  const web = ease(frame, T.reply + 12, 18);
+  const reply = ease(frame, R.reply, 22);
+  const featured = ease(frame, R.featured, 18);
   return (
-    <SceneFrame dark>
-      <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', paddingBottom: 20 }}>
-        <Headline
-          lines={[['Reviews that', { text: 'build trust.', accent: true }]]}
-          size={108}
-          color="#fff"
-          accent={C.lime}
-          align="center"
-          start={4}
-        />
-        <div style={{ marginTop: 76, ...appear(frame, T.card, 60) }}>
-          <Card onTeal style={{ width: 900, padding: 40, boxSizing: 'border-box' }}>
+    <Scene>
+      <StackLayout headline={[['Reviews that', { text: 'build trust.', accent: true }]]} headlineAt={R.headline} gap={72}>
+        <div style={appear(frame, R.card, 56)}>
+          <Card style={{ width: 920, padding: 42, boxSizing: 'border-box', color: C.text }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 54, height: 54, borderRadius: 27, background: C.tealLight, color: C.teal, fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                PR
-              </div>
+              <Avatar initials={CLIENT.initials} size={56} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 23, fontWeight: 600, color: C.text }}>Priya R.</div>
-                <div style={{ fontSize: 17, color: C.text2 }}>Colour & gloss with Mei · 2 days ago</div>
+                <div style={{ fontSize: 23, fontWeight: 600 }}>{CLIENT.short}</div>
+                <div style={{ fontSize: 18, color: C.text2 }}>
+                  {BOOKING.service.name} with {BOOKING.staff} · {REVIEW.when}
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                {[0, 1, 2, 3, 4].map((i) => {
-                  const p = ease(frame, T.stars + i * T.starStep, 12);
+                {Array.from({ length: REVIEW.stars }, (_, i) => {
+                  const p = ease(frame, R.stars + i * R.starStep, 12);
                   return (
                     <div key={i} style={{ display: 'grid' }}>
-                      <Star size={30} color={C.border} strokeWidth={ICON.strokeWidth} style={{ gridArea: '1 / 1' }} />
-                      <Star
-                        size={30}
-                        color={C.star}
-                        fill={C.star}
-                        strokeWidth={ICON.strokeWidth}
-                        style={{ gridArea: '1 / 1', opacity: p, transform: `scale(${mix(p, 0.97, 1)})` }}
-                      />
+                      <Star size={32} color={C.border} strokeWidth={ICON.strokeWidth} style={{ gridArea: '1 / 1' }} />
+                      <Star size={32} color={C.star} fill={C.star} strokeWidth={ICON.strokeWidth} style={{ gridArea: '1 / 1', opacity: p, transform: `scale(${mix(p, 0.8, 1)})` }} />
                     </div>
                   );
                 })}
               </div>
             </div>
-            <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: '-0.03em', color: C.text, marginTop: 26, lineHeight: 1.3 }}>
-              &ldquo;Lovely team, easy to book, and they remembered every detail from last time.&rdquo;
+            <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 28, lineHeight: 1.3, textIndent: '-0.42em', textWrap: 'balance' }}>
+              &ldquo;{REVIEW.text}&rdquo;
             </div>
             <div
               style={{
-                marginTop: 26,
+                marginTop: 28,
                 padding: '18px 22px',
                 borderRadius: RADIUS.lg,
                 background: C.bg,
@@ -67,15 +54,15 @@ export const Reviews = () => {
                 transform: `translateY(${mix(reply, 16, 0)}px)`,
               }}
             >
-              <div style={{ fontSize: 17, fontWeight: 600, color: C.teal }}>Reply from Studio Nova</div>
-              <div style={{ fontSize: 20, color: C.text, marginTop: 4 }}>Thank you, Priya! See you at your next visit.</div>
+              <div style={{ fontSize: 17, fontWeight: 600, color: C.teal }}>Reply from {BUSINESS.name}</div>
+              <div style={{ fontSize: 21, marginTop: 4 }}>{REVIEW.reply}</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 20, fontSize: 17, color: C.text2, opacity: web }}>
-              <Globe size={17} strokeWidth={ICON.strokeWidth} /> Featured on your website
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 20, fontSize: 18, color: C.text2, opacity: featured }}>
+              <Globe size={18} strokeWidth={ICON.strokeWidth} /> Featured on your website
             </div>
           </Card>
         </div>
-      </AbsoluteFill>
-    </SceneFrame>
+      </StackLayout>
+    </Scene>
   );
 };

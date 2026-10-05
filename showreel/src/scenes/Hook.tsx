@@ -1,37 +1,27 @@
 import { AbsoluteFill, useCurrentFrame } from 'remotion';
-import { C } from '../theme';
+import { C, TYPE } from '../theme';
+import { T } from '../timeline';
 import { Headline } from '../components/Headline';
-import { SceneFrame } from '../components/SceneFrame';
+import { Depth, Scene } from '../components/Scene';
 import { ease } from '../components/motion';
 
 export const Hook = () => {
   const frame = useCurrentFrame();
-  const line = ease(frame, 34, 34);
+  const line = ease(frame, T.hook.line, T.hook.lineFrames);
   return (
-    <SceneFrame dark>
+    <Scene>
       <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Depth z={0.9} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Headline
             lines={[["Booking shouldn't"], ['be', { text: 'this hard.', accent: true }]]}
-            size={176}
-            color="#fff"
-            accent={C.lime}
+            start={T.hook.words}
+            size={TYPE.display}
+            tone="teal"
             align="center"
-            start={4}
           />
-          <div
-            style={{
-              marginTop: 48,
-              height: 6,
-              width: 260,
-              borderRadius: 3,
-              background: C.lime,
-              transform: `scaleX(${line})`,
-              opacity: line > 0 ? 1 : 0,
-            }}
-          />
-        </div>
+          <div style={{ marginTop: 52, height: 6, width: 260, borderRadius: 3, background: C.lime, transform: `scaleX(${line})` }} />
+        </Depth>
       </AbsoluteFill>
-    </SceneFrame>
+    </Scene>
   );
 };

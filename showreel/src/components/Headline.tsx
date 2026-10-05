@@ -1,37 +1,40 @@
 import type { CSSProperties } from 'react';
 import { useCurrentFrame } from 'remotion';
-import { C, TYPE } from '../theme';
+import { C, STAGGER, TYPE, type Tone } from '../theme';
 import { ease, mix } from './motion';
 
 export type Segment = string | { text: string; accent: true };
 
 type Props = {
-  /** One array of segments per line. An accent segment should be a phrase, not a lone word. */
+  /** One array of segments per line (max two lines). Accent a phrase, never a lone word. */
   lines: Segment[][];
-  size: number;
-  color?: string;
-  accent?: string;
-  start?: number;
-  stagger?: number;
+  start: number;
+  tone?: Tone;
+  size?: number;
   align?: CSSProperties['textAlign'];
 };
 
+const RISE = 26;
+
 /** Headline whose words rise out of a mask, staggered. */
-export const Headline = ({
-  lines,
-  size,
-  color = C.text,
-  accent = C.teal,
-  start = 6,
-  stagger = 4,
-  align = 'left',
-}: Props) => {
+export const Headline = ({ lines, start, tone = 'light', size = TYPE.headline, align = 'left' }: Props) => {
   const frame = useCurrentFrame();
+  const color = tone === 'teal' ? '#fff' : C.text;
+  const accent = tone === 'teal' ? C.lime : C.teal;
   let index = 0;
   return (
-    <div style={{ fontSize: size, color, textAlign: align, ...TYPE.headline }}>
+    <div
+      style={{
+        fontSize: size,
+        color,
+        textAlign: align,
+        // Optical alignment: pull large type left by its side bearing so it lines up with body text.
+        marginLeft: align === 'left' ? '-0.05em' : 0,
+        ...TYPE.headlineStyle,
+      }}
+    >
       {lines.map((line, li) => (
-        <div key={li} style={{ display: 'block', whiteSpace: 'nowrap' }}>
+        <div key={li} style={{ whiteSpace: 'nowrap' }}>
           {line.flatMap((seg, si) => {
             const isAccent = typeof seg !== 'string';
             const text = typeof seg === 'string' ? seg : seg.text;
@@ -39,7 +42,7 @@ export const Headline = ({
               .split(' ')
               .filter(Boolean)
               .map((word, wi) => {
-                const p = ease(frame, start + index++ * stagger, 26);
+                const p = ease(frame, start + index++ * STAGGER.words, RISE);
                 return (
                   <span
                     key={`${si}-${wi}`}
@@ -70,7 +73,3 @@ export const Headline = ({
     </div>
   );
 };
-
-/** Number of words in a headline, to time what follows it. */
-export const wordCount = (lines: Segment[][]) =>
-  lines.flat().reduce((n, s) => n + (typeof s === 'string' ? s : s.text).split(' ').filter(Boolean).length, 0);
