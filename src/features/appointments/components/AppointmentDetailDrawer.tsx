@@ -18,6 +18,7 @@ import {
 } from '../api/useAppointments';
 import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
+import { AppointmentMessages } from '@/features/notifications/components/AppointmentMessages';
 import { ReviewLinkAction } from '@/features/reviews/components/ReviewLinkAction';
 import { showReviewLink } from '@/features/reviews/reviewLinkStore';
 
@@ -154,6 +155,13 @@ export function AppointmentDetailDrawer({
                 onNavigate={onClose}
               />
             ) : null}
+
+            {/* "Did the customer get a message?" (branch-scope viewers only). */}
+            <AppointmentMessages
+              appointmentId={appointment.id}
+              timezone={timeZone}
+              enabled={appointment.source !== 'walk_in'}
+            />
 
             <ReviewLinkAction
               businessId={businessId}

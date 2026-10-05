@@ -309,8 +309,10 @@ describe('processJob: email', () => {
     await processJob(job({ event: 'review_request', token: RAW }), d);
     const m = calls.emails[0]!;
     expect(m.text).toContain(`https://wapee.site/nova-hair/review#token=${RAW}`);
-    expect(m.unsubscribeUrl).toMatch(/^https:\/\/x\.supabase\.co\/functions\/v1\/unsubscribe\?t=/);
-    const t = decodeURIComponent(m.unsubscribeUrl!.split('?t=')[1]!);
+    // The email links the confirm PAGE (token in the fragment); the one-click header POSTs to the function.
+    expect(m.unsubscribeUrl).toMatch(/^https:\/\/wapee\.site\/unsubscribe#t=/);
+    expect(m.oneClickUrl).toMatch(/^https:\/\/x\.supabase\.co\/functions\/v1\/unsubscribe\?t=/);
+    const t = decodeURIComponent(m.unsubscribeUrl!.split('#t=')[1]!);
     expect(await verifyUnsubscribe(KEY, t, NOW)).toMatchObject({ b: 'biz-1', c: 'email', h: HASH });
   });
 
@@ -318,6 +320,7 @@ describe('processJob: email', () => {
     const a = deps();
     await processJob(job(), a.d);
     expect(a.calls.emails[0]?.unsubscribeUrl).toBeNull();
+    expect(a.calls.emails[0]?.oneClickUrl).toBeNull();
     const b = deps();
     await processJob(job({ event: 'reminder' }), b.d);
     expect(b.calls.emails[0]?.unsubscribeUrl).not.toBeNull();
@@ -326,7 +329,7 @@ describe('processJob: email', () => {
   it('a retryable provider error is reported as retryable, a permanent one is not', async () => {
     const r = deps({ email: { ok: false, retryable: true, code: 'resend_503', message: 'down' } });
     expect(await processJob(job(), r.d)).toBe('retry');
-    expect(r.calls.fail[0]).toEqual(['job-1', 'resend_503: down', true]);
+    expect(r.calls.fail[0]).toEqual(['job-1', 'resend_503: down', true, false]);
     const p = deps({
       email: { ok: false, retryable: false, code: 'resend_422', message: 'validation_error' },
     });
@@ -334,10 +337,29 @@ describe('processJob: email', () => {
     expect(p.calls.fail[0]?.[2]).toBe(false);
   });
 
+  it('a definite provider refusal is passed on so the retry can use a fresh key; an ambiguous one is not', async () => {
+    const a = deps({
+      email: {
+        ok: false,
+        retryable: true,
+        code: 'resend_429',
+        message: 'rate_limit_exceeded',
+        definite: true,
+      },
+    });
+    await processJob(job(), a.d);
+    expect(a.calls.fail[0]).toEqual(['job-1', 'resend_429: rate_limit_exceeded', true, true]);
+    const b = deps({
+      email: { ok: false, retryable: true, code: 'resend_503', message: 'x', definite: false },
+    });
+    await processJob(job(), b.d);
+    expect(b.calls.fail[0]?.[3]).toBe(false);
+  });
+
   it('a provider that throws becomes a retryable failure with no payload in the message', async () => {
     const { d, calls } = deps({ throwEmail: true });
     expect(await processJob(job(), d)).toBe('retry');
-    expect(calls.fail[0]).toEqual(['job-1', 'exception: TypeError', true]);
+    expect(calls.fail[0]).toEqual(['job-1', 'exception: TypeError', true, false]);
     expect(JSON.stringify(calls.fail)).not.toContain('mia@example.com');
   });
 
@@ -345,7 +367,7 @@ describe('processJob: email', () => {
     const { d, calls } = deps();
     expect(await processJob(job({ event: 'manage_link', token: null }), d)).toBe('dead');
     expect(calls.emails).toHaveLength(0);
-    expect(calls.fail[0]).toEqual(['job-1', 'missing_token', false]);
+    expect(calls.fail[0]).toEqual(['job-1', 'missing_token', false, false]);
   });
 
   it('a staff event on the email channel is refused', async () => {
@@ -383,7 +405,7 @@ describe('processJob: sms', () => {
       sms: { ok: false, retryable: true, code: 'twilio_503', message: 'twilio 503' },
     });
     expect(await processJob(sms(), d)).toBe('retry');
-    expect(calls.fail[0]).toEqual(['job-1', 'twilio_503: twilio 503', true]);
+    expect(calls.fail[0]).toEqual(['job-1', 'twilio_503: twilio 503', true, false]);
   });
 
   it('Twilio 21610 (recipient replied STOP) suppresses the number and is not retried', async () => {
@@ -392,7 +414,7 @@ describe('processJob: sms', () => {
     });
     expect(await processJob(sms(), d)).toBe('dead');
     expect(calls.suppress[0]).toEqual(['biz-1', 'sms', HASH, 'provider_stop']);
-    expect(calls.fail[0]).toEqual(['job-1', 'recipient_opted_out', false]);
+    expect(calls.fail[0]).toEqual(['job-1', 'recipient_opted_out', false, false]);
   });
 
   it('never sends to a number the database did not hand back', async () => {

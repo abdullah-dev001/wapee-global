@@ -69,6 +69,22 @@ begin
   end;
 end $$;
 
+-- Run a bare statement (e.g. TRUNCATE) as a role; report ok or the SQLSTATE.
+create or replace function pg_temp.try_exec(p_role text, p_user uuid, p_sql text) returns text
+language plpgsql as $$
+begin
+  if p_user is not null then perform pg_temp.act_as(p_user); end if;
+  execute format('set local role %I', p_role);
+  begin
+    execute p_sql;
+    reset role;
+    return 'ok';
+  exception when others then
+    reset role;
+    return 'ERR:' || sqlstate;
+  end;
+end $$;
+
 -- Row counts a role can SEE (RLS applied).
 create or replace function pg_temp.visible(p_user uuid, p_table text) returns text
 language plpgsql as $$
@@ -600,6 +616,8 @@ begin
     perform pg_temp.chk('attempt ' || i || ' backoff is ' || power(4, i-1)::int || ' min',
       (select round(extract(epoch from (deliver_after - now())) / 60)::int from public.message_outbox where id = v_id), power(4, i-1)::int);
     if i = 1 then
+      perform pg_temp.chk('an AMBIGUOUS failure keeps the same idempotency key (no suffix)',
+        (select idem_suffix from public.message_outbox where id = v_id), 0);
       perform pg_temp.chk('error scrubbed: no email, phone, url or hex stored',
         (select last_error from public.message_outbox where id = v_id), 'timeout talking to [email] or [number] via [url]');
       perform pg_temp.chk('...token still sealed while retrying', (select sealed is not null from public.message_outbox where id = v_id), true);
@@ -615,6 +633,32 @@ begin
   perform pg_temp.chk('dead is logged as failed', (select row(status, code)::text from public.messages where outbox_id = v_id), '(failed,max_attempts)');
   perform pg_temp.chk('a dead row is not in a claimable state',
     (select count(*)::int from public.message_outbox where id = v_id and status in ('pending','retry','sending')), 0);
+end $$;
+
+-- Resend idempotency: definite failure -> fresh key next attempt; ambiguous -> same key.
+do $$
+declare v_id uuid; j jsonb; r jsonb;
+begin
+  v_id := public.outbox_enqueue(pg_temp.id('biza'), pg_temp.id('brancha'), 'manage_link', 'test:idem:key', null, pg_temp.id('c_mail'), null, null, null, '{}', repeat('3d', 32));
+  j := pg_temp.claim_job(v_id);
+  perform pg_temp.chk('first attempt uses the base key', j->>'idempotency_key', 'test:idem:key');
+  r := public.outbox_fail(v_id, 'timeout', true, false);
+  perform pg_temp.chk('ambiguous failure: suffix stays 0', (select idem_suffix from public.message_outbox where id = v_id), 0);
+  j := pg_temp.claim_job(v_id);
+  perform pg_temp.chk('...retry reuses the SAME key', j->>'idempotency_key', 'test:idem:key');
+  r := public.outbox_fail(v_id, '429', true, true);
+  perform pg_temp.chk('definite failure: suffix becomes 1', (select idem_suffix from public.message_outbox where id = v_id), 1);
+  j := pg_temp.claim_job(v_id);
+  perform pg_temp.chk('...retry uses a FRESH key', j->>'idempotency_key', 'test:idem:key:1');
+  perform pg_temp.chk('...and the stored unique key itself is unchanged',
+    (select idempotency_key from public.message_outbox where id = v_id), 'test:idem:key');
+  -- stale lock = ambiguous: key unchanged
+  update public.message_outbox set locked_until = now() - interval '1 minute' where id = v_id;
+  perform pg_temp.park_except(v_id);
+  perform public.outbox_claim(1, null);
+  perform pg_temp.chk('stale lock recovery does not change the key', (select idem_suffix from public.message_outbox where id = v_id), 1);
+  perform pg_temp.chk('a non-retryable failure never changes the suffix',
+    (select (public.outbox_fail(v_id, 'x', false, true)->>'status')), 'dead');
 end $$;
 
 -- Non-retryable failure goes dead at once.
@@ -684,7 +728,7 @@ begin
     (public.suppress_recipient(pg_temp.id('biza'), 'email', v_h, 'unsubscribe_link'))::text || (select count(*)::int from public.message_suppressions where recipient_hash = v_h), 'true1');
   perform pg_temp.chk('bad hash is refused, nothing stored', (public.suppress_recipient(pg_temp.id('biza'), 'email', 'nothex', 'unsubscribe_link'))::text, 'false');
   perform pg_temp.chk('unknown business: returns false, never raises, nothing stored',
-    (public.suppress_recipient(gen_random_uuid(), 'email', v_h, 'unsubscribe_link'))::text || (select count(*)::int from public.message_suppressions), 'false1');
+    (public.suppress_recipient(gen_random_uuid(), 'email', v_h, 'unsubscribe_link'))::text || (select count(*)::int from public.message_suppressions where business_id = pg_temp.id('biza')), 'false1');
   perform pg_temp.chk('bad channel refused', (public.suppress_recipient(pg_temp.id('biza'), 'push', v_h, 'unsubscribe_link'))::text, 'false');
   v_rem := public.outbox_enqueue(pg_temp.id('biza'), pg_temp.id('brancha'), 'reminder', 'test:sup:rem', pg_temp.id('appt2'), pg_temp.id('c_mail2'));
   perform pg_temp.claim_job(v_rem);
@@ -1147,7 +1191,7 @@ select pg_temp.chk('CHECK: a token key in payload is refused',
 -- 9. RLS per role on the log / outbox / suppressions / limits
 -- ===========================================================================
 select pg_temp.chk('owner reads the messages log (settings.business)', (pg_temp.visible(pg_temp.id('owner'), 'messages') like 'ok:%' and pg_temp.visible(pg_temp.id('owner'), 'messages') <> 'ok:0')::text, 'true');
-select pg_temp.chk('manager (no settings.business) sees no messages', pg_temp.visible(pg_temp.id('manager'), 'messages'), 'ok:0');
+select pg_temp.chk('manager (settings.booking) reads the messages log of their branch', (pg_temp.visible(pg_temp.id('manager'), 'messages') <> 'ok:0')::text, 'true');
 select pg_temp.chk('receptionist sees no messages', pg_temp.visible(pg_temp.id('recep'), 'messages'), 'ok:0');
 select pg_temp.chk('staff sees no messages', pg_temp.visible(pg_temp.id('staffa'), 'messages'), 'ok:0');
 select pg_temp.chk('other business sees no messages of A',
@@ -1183,7 +1227,7 @@ select pg_temp.chk('NO internal function is executable by anon or authenticated'
 select pg_temp.chk('worker RPCs: service_role yes, anon no, authenticated no',
   (select string_agg(f, ', ') from (values
     ('outbox_claim(integer,text[])'), ('outbox_reserve_sms(uuid,text)'), ('outbox_complete(uuid,text,text,uuid[])'),
-    ('outbox_fail(uuid,text,boolean)'), ('suppress_recipient(uuid,text,text,text)'), ('outbox_worker_authorize(text)')) as t(f)
+    ('outbox_fail(uuid,text,boolean,boolean)'), ('suppress_recipient(uuid,text,text,text)'), ('outbox_worker_authorize(text)')) as t(f)
    where not has_function_privilege('service_role', 'public.' || f, 'execute')
       or has_function_privilege('anon', 'public.' || f, 'execute') or has_function_privilege('authenticated', 'public.' || f, 'execute')), null);
 select pg_temp.chk('register/unregister push token: authenticated yes, anon no',
@@ -1210,6 +1254,86 @@ select pg_temp.chk('the hash is not a plain sha256 (keyed)',
   (public.message_recipient_hash('mia@example.com') <> encode(extensions.digest('mia@example.com', 'sha256'), 'hex'))::text, 'true');
 select pg_temp.chk('masks never contain the full address',
   public.mask_email('mia@example.com') || '|' || public.mask_phone('+447700900111'), 'm***@example.com|+447*******11');
+
+-- ===========================================================================
+-- 10b. Phase 6B backend: push preferences, appointment send status
+-- ===========================================================================
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('recep')); set local role authenticated;
+  r := public.save_push_preferences(pg_temp.id('biza'), '{"cancelled": false}'::jsonb); reset role;
+  perform pg_temp.chk('a member saves a push preference', r->>'ok', 'true');
+  perform pg_temp.chk('...stored: cancelled off, the others default on',
+    (select row(new_booking, pending_approval, cancelled, reminder)::text from public.push_preferences where user_id = pg_temp.id('recep') and business_id = pg_temp.id('biza')), '(t,t,f,t)');
+  perform pg_temp.act_as(pg_temp.id('recep')); set local role authenticated;
+  r := public.save_push_preferences(pg_temp.id('biza'), '{"reminder": false}'::jsonb); reset role;
+  perform pg_temp.chk('a second save changes only the key given (merge)',
+    (select row(cancelled, reminder)::text from public.push_preferences where user_id = pg_temp.id('recep') and business_id = pg_temp.id('biza')), '(f,f)');
+  perform pg_temp.act_as(pg_temp.id('recep')); set local role authenticated;
+  r := public.save_push_preferences(pg_temp.id('biza'), '{"bogus": true}'::jsonb); reset role;
+  perform pg_temp.chk('unknown key refused', r->>'code', 'invalid');
+  perform pg_temp.act_as(pg_temp.id('recep')); set local role authenticated;
+  r := public.save_push_preferences(pg_temp.id('biza'), '{"cancelled": "no"}'::jsonb); reset role;
+  perform pg_temp.chk('non-boolean refused', r->>'code', 'invalid');
+  perform pg_temp.act_as(pg_temp.id('ownerb')); set local role authenticated;
+  r := public.save_push_preferences(pg_temp.id('biza'), '{"cancelled": false}'::jsonb); reset role;
+  perform pg_temp.chk('a non-member cannot set preferences for another business', r->>'code', 'forbidden');
+end $$;
+select pg_temp.chk('a user reads only their own preferences', pg_temp.visible(pg_temp.id('recep'), 'push_preferences') || pg_temp.visible(pg_temp.id('manager'), 'push_preferences'), 'ok:1ok:0');
+select pg_temp.chk('anon refused on push_preferences', pg_temp.try_as('anon', null, 'select 1 from public.push_preferences'), 'ERR:42501');
+select pg_temp.chk('authenticated cannot write push_preferences directly',
+  pg_temp.try_as('authenticated', pg_temp.id('recep'), format('update public.push_preferences set cancelled = true where user_id = %L returning 1', pg_temp.id('recep'))), 'ERR:42501');
+do $$
+declare a uuid; b uuid;
+begin
+  insert into public.push_tokens (user_id, token, platform) values (pg_temp.id('recep'), 'ExponentPushToken[recep-device-00002]', 'ios') on conflict do nothing;
+  a := public.outbox_enqueue(pg_temp.id('biza'), pg_temp.id('brancha'), 'staff_cancelled', 'test:pref:off', pg_temp.id('appt1'), null, pg_temp.id('recep'));
+  b := public.outbox_enqueue(pg_temp.id('biza'), pg_temp.id('brancha'), 'staff_new_booking', 'test:pref:on', pg_temp.id('appt1'), null, pg_temp.id('recep'));
+  perform pg_temp.chk('a push event the user switched off is not queued', a is null, true);
+  perform pg_temp.chk('...an event they left on is', b is not null, true);
+  a := public.outbox_enqueue(pg_temp.id('biza'), pg_temp.id('brancha'), 'staff_cancelled', 'test:pref:other', pg_temp.id('appt1'), null, pg_temp.id('manager'));
+  perform pg_temp.chk('...and another user without preferences still gets everything', a is not null, true);
+end $$;
+
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner')); set local role authenticated;
+  r := public.get_appointment_messages(pg_temp.id('appt1')); reset role;
+  perform pg_temp.chk('owner reads the send status of an appointment', r->>'ok', 'true');
+  perform pg_temp.chk('...items carry event/channel/status/code/at and NOTHING else (no recipient, body or link)',
+    (select (count(*) filter (where (select array_agg(k order by k) from jsonb_object_keys(e) k) = array['at','channel','code','event','status']) = count(*))::text from jsonb_array_elements(r->'items') e), 'true');
+  perform pg_temp.chk('...no staff push events leak into it', (select count(*)::int from jsonb_array_elements(r->'items') e where e->>'event' like 'staff\_%'), 0);
+  perform pg_temp.chk('...queued rows show as queued', (select count(*)::int from jsonb_array_elements(r->'items') e where e->>'status' = 'queued') > 0, true);
+  perform pg_temp.chk('...the serialised answer contains no address', r::text !~* '(@|https?://|\+44)', true);
+  perform pg_temp.act_as(pg_temp.id('staffa')); set local role authenticated;
+  r := public.get_appointment_messages(pg_temp.id('appt1')); reset role;
+  perform pg_temp.chk('Staff (Own scope) get nothing, even for their own appointment', r->>'code', 'forbidden');
+  perform pg_temp.act_as(pg_temp.id('recep')); set local role authenticated;
+  r := public.get_appointment_messages(pg_temp.id('appt1')); reset role;
+  perform pg_temp.chk('receptionist (branch scope) can read it', r->>'ok', 'true');
+  perform pg_temp.act_as(pg_temp.id('ownerb')); set local role authenticated;
+  r := public.get_appointment_messages(pg_temp.id('appt1')); reset role;
+  perform pg_temp.chk('another business is refused', r->>'code', 'forbidden');
+  perform pg_temp.chk('an unknown appointment is not_found', public.get_appointment_messages(gen_random_uuid())->>'code', 'not_found');
+end $$;
+select pg_temp.chk('anon cannot call get_appointment_messages', has_function_privilege('anon', 'public.get_appointment_messages(uuid)', 'execute'), false);
+select pg_temp.chk('anon cannot call save_push_preferences', has_function_privilege('anon', 'public.save_push_preferences(uuid,jsonb)', 'execute'), false);
+
+select pg_temp.chk('unsubscribe is a reserved slug', (select count(*)::int from public.reserved_slugs where slug = 'unsubscribe'), 1);
+-- Least privilege project-wide (migration 20261009100000)
+select pg_temp.chk('no public table lets authenticated TRUNCATE / REFERENCES / TRIGGER',
+  (select count(*)::int from information_schema.role_table_grants where table_schema = 'public' and grantee = 'authenticated' and privilege_type in ('TRUNCATE','REFERENCES','TRIGGER')), 0);
+select pg_temp.chk('anon holds only SELECT on reserved_slugs',
+  (select string_agg(table_name || ':' || privilege_type, ',') from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'), 'reserved_slugs:SELECT');
+select pg_temp.chk('a write privilege exists only where an RLS policy for that command exists',
+  (select count(*)::int from information_schema.role_table_grants g
+   where g.table_schema = 'public' and g.grantee = 'authenticated' and g.privilege_type in ('INSERT','UPDATE','DELETE')
+     and not exists (select 1 from pg_policies p where p.schemaname = 'public' and p.tablename = g.table_name
+                     and (p.cmd = g.privilege_type or p.cmd = 'ALL') and (p.roles && array['authenticated'::name,'public'::name]))
+     and g.table_name in (select tablename from pg_tables where schemaname = 'public')), 0);
+select pg_temp.chk('authenticated cannot TRUNCATE the audit log', pg_temp.try_exec('authenticated', pg_temp.id('owner'), 'truncate public.audit_logs'), 'ERR:42501');
 
 -- ===========================================================================
 -- 11. Cascade: deleting the business releases every new row (no trigger blocks it)

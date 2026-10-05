@@ -51,7 +51,7 @@ export type Job = {
 
 export type ProviderResult =
   | { ok: true; id: string | null }
-  | { ok: false; retryable: boolean; code: string | null; message: string };
+  | { ok: false; retryable: boolean; code: string | null; message: string; definite?: boolean };
 
 export type PushOutcome = {
   /** At least one device accepted it. */
@@ -70,6 +70,8 @@ export type EmailMessage = {
   /** Stable per outbox row, so a repeated call can never send twice. */
   idempotencyKey: string;
   unsubscribeUrl: string | null;
+  /** The Edge POST endpoint for the List-Unsubscribe one-click header. */
+  oneClickUrl: string | null;
 };
 
 export type PushMessage = { id: string; token: string; title: string; body: string };
@@ -87,7 +89,7 @@ export type Deps = {
       providerId: string | null,
       deadTokens: string[],
     ): Promise<void>;
-    fail(id: string, error: string, retryable: boolean): Promise<void>;
+    fail(id: string, error: string, retryable: boolean, definite?: boolean): Promise<void>;
     suppress(
       businessId: string,
       channel: 'email' | 'sms',
@@ -104,7 +106,7 @@ export type Deps = {
   config: {
     /** Base URL of the public site, no trailing slash. */
     publicSiteUrl: string;
-    /** Full URL of the unsubscribe function, no trailing slash. */
+    /** Full URL of the unsubscribe Edge function (POST), no trailing slash. */
     unsubscribeUrl: string;
     signingKey: string;
     now: () => number;

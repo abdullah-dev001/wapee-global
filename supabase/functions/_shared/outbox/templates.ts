@@ -140,6 +140,7 @@ export type Links = {
   manageUrl: string | null;
   reviewUrl: string | null;
   unsubscribeUrl: string | null;
+  oneClickUrl?: string | null;
 };
 
 function vars(job: Job, locale: string): Record<string, string> {

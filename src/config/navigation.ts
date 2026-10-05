@@ -68,6 +68,8 @@ export type NavItem = {
    * separate `feature` field to keep in step.
    */
   permission?: PermissionKey;
+  /** A second permission that ALSO opens it (either one is enough). */
+  alsoPermission?: PermissionKey;
   /** Build phase that fills this screen in; shown by the placeholder for now. */
   phase: number;
   /** Shown in the mobile bottom tab bar. Exactly three, plus "More". */
@@ -111,7 +113,16 @@ export const navItems: readonly NavItem[] = [
   { id: 'reports', route: '/reports', icon: BarChart3, permission: 'reports.view_basic', phase: 5 },
   { id: 'reviews', route: '/reviews', icon: Star, permission: 'reviews.view', phase: 7 },
   { id: 'website', route: '/website', icon: Globe, permission: 'website.edit', phase: 7 },
-  { id: 'settings', route: '/settings', icon: Settings, permission: 'settings.business', phase: 1 },
+  // Owner (settings.business) OR a Manager (settings.booking): the hub itself lists only
+  // what the member may open (booking, notifications, SMS credits, message log, own alerts).
+  {
+    id: 'settings',
+    route: '/settings',
+    icon: Settings,
+    permission: 'settings.business',
+    alsoPermission: 'settings.booking',
+    phase: 1,
+  },
 ] as const;
 
 /** The three primary destinations in the mobile tab bar (plus "More"). */

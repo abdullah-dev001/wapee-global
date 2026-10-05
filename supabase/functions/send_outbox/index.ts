@@ -99,11 +99,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
           });
           if (error) throw error;
         },
-        async fail(id, message, retryable) {
+        async fail(id, message, retryable, definite = false) {
           const { error } = await db.rpc('outbox_fail', {
             p_id: id,
             p_error: message,
             p_retryable: retryable,
+            p_definite: definite,
           });
           if (error) throw error;
         },

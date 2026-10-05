@@ -53,8 +53,8 @@ export async function sendEmail(m: EmailMessage): Promise<ProviderResult> {
     };
 
   const headers: Record<string, string> = {};
-  if (m.unsubscribeUrl) {
-    headers['List-Unsubscribe'] = `<${m.unsubscribeUrl}>`;
+  if (m.oneClickUrl) {
+    headers['List-Unsubscribe'] = `<${m.oneClickUrl}>`;
     headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click';
   }
   const res = await fetch('https://api.resend.com/emails', {
@@ -83,6 +83,10 @@ export async function sendEmail(m: EmailMessage): Promise<ProviderResult> {
     retryable: retryableStatus(res.status),
     code: `resend_${res.status}`,
     message: (await errorField(res, 'name')) ?? 'request failed',
+    // A 4xx (other than timeout / conflict) means Resend refused it: no email was
+    // created, so the retry may safely use a fresh idempotency key. Anything
+    // else (5xx, 408, 409, a thrown timeout) is ambiguous and keeps the same key.
+    definite: res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 409,
   };
 }
 

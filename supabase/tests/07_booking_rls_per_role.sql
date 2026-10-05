@@ -411,8 +411,12 @@ declare v_rows int;
 begin
   perform pg_temp.act_as(pg_temp.id('owner'));
   set local role authenticated;
-  delete from public.appointments where business_id = pg_temp.id('biza');
-  get diagnostics v_rows = row_count;
+  begin
+    delete from public.appointments where business_id = pg_temp.id('biza');
+    get diagnostics v_rows = row_count;
+  exception when insufficient_privilege then
+    v_rows := 0;   -- since 2026-10-09 the privilege itself is revoked (no DELETE policy exists)
+  end;
   perform pg_temp.chk('even the owner cannot DELETE an appointment (soft delete only)', v_rows, 0);
   reset role;
 end $$;

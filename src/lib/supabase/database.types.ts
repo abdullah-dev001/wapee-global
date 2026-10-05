@@ -1426,6 +1426,7 @@ export type Database = {
           event: string
           finished_at: string | null
           id: string
+          idem_suffix: number
           idempotency_key: string
           last_error: string | null
           locked_until: string | null
@@ -1452,6 +1453,7 @@ export type Database = {
           event: string
           finished_at?: string | null
           id?: string
+          idem_suffix?: number
           idempotency_key: string
           last_error?: string | null
           locked_until?: string | null
@@ -1478,6 +1480,7 @@ export type Database = {
           event?: string
           finished_at?: string | null
           id?: string
+          idem_suffix?: number
           idempotency_key?: string
           last_error?: string | null
           locked_until?: string | null
@@ -1822,6 +1825,44 @@ export type Database = {
           outcome?: string
         }
         Relationships: []
+      }
+      push_preferences: {
+        Row: {
+          business_id: string
+          cancelled: boolean
+          new_booking: boolean
+          pending_approval: boolean
+          reminder: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          cancelled?: boolean
+          new_booking?: boolean
+          pending_approval?: boolean
+          reminder?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          cancelled?: boolean
+          new_booking?: boolean
+          pending_approval?: boolean
+          reminder?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_preferences_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_tokens: {
         Row: {
@@ -3258,6 +3299,10 @@ export type Database = {
         Args: { p_credit: boolean; p_prefix: string; p_seq: number }
         Returns: string
       }
+      get_appointment_messages: {
+        Args: { p_appointment_id: string }
+        Returns: Json
+      }
       get_basic_report: {
         Args: { p_branch_id?: string; p_business_id: string }
         Returns: Json
@@ -3506,7 +3551,12 @@ export type Database = {
         Returns: string
       }
       outbox_fail: {
-        Args: { p_error: string; p_id: string; p_retryable?: boolean }
+        Args: {
+          p_definite?: boolean
+          p_error: string
+          p_id: string
+          p_retryable?: boolean
+        }
         Returns: Json
       }
       outbox_finish: {
@@ -3633,6 +3683,10 @@ export type Database = {
       rotate_widget_key: { Args: { p_business_id: string }; Returns: Json }
       save_booking_settings: {
         Args: { p_branch_id: string; p_settings: Json }
+        Returns: Json
+      }
+      save_push_preferences: {
+        Args: { p_business: string; p_prefs: Json }
         Returns: Json
       }
       save_website_section: {

@@ -2,6 +2,7 @@ import { useMutation, type UseMutationResult } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
+import { disablePush } from '@/lib/push';
 import { getSupabase } from '@/lib/supabase';
 
 import {
@@ -101,6 +102,10 @@ export function useResendVerification(): UseMutationResult<void, Error, { email:
 export function useSignOut(): UseMutationResult<void, Error, void> {
   return useMutation({
     mutationFn: async () => {
+      // Stop pushes to this device for the user who is leaving. Best effort: a
+      // device without push (web, no permission) has nothing to forget, and a
+      // failure here must never trap someone in a signed-in session.
+      await disablePush().catch(() => undefined);
       // The SessionProvider clears the query cache on the SIGNED_OUT event.
       const { error } = await getSupabase().auth.signOut();
       toError(error);

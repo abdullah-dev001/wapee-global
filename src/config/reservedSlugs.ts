@@ -25,6 +25,7 @@ const RESERVED_SLUGS = [
   'forgot-password',
   'verify',
   'invite',
+  'unsubscribe',
   'onboarding',
   'app',
   'dashboard',

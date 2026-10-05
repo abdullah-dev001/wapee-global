@@ -31,6 +31,7 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
   const slug = encodeURIComponent(job.slug);
   const token = job.token ? encodeURIComponent(job.token) : null;
   let unsubscribeUrl: string | null = null;
+  let oneClickUrl: string | null = null;
 
   if (job.channel === 'email' && OPTIONAL_EVENTS.has(job.event) && job.recipient_hash) {
     const t = await signUnsubscribe(deps.config.signingKey, {
@@ -39,7 +40,9 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
       h: job.recipient_hash,
       e: deps.config.now() + UNSUBSCRIBE_DAYS * 86_400_000,
     });
-    unsubscribeUrl = `${deps.config.unsubscribeUrl}?t=${encodeURIComponent(t)}`;
+    // The email shows the confirm PAGE; the one-click header POSTs to the function.
+    unsubscribeUrl = `${base}/unsubscribe#t=${encodeURIComponent(t)}`;
+    oneClickUrl = `${deps.config.unsubscribeUrl}?t=${encodeURIComponent(t)}`;
   }
 
   return {
@@ -48,6 +51,7 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
     reviewUrl:
       token && job.event === 'review_request' ? `${base}/${slug}/review#token=${token}` : null,
     unsubscribeUrl,
+    oneClickUrl,
   };
 }
 
@@ -56,8 +60,9 @@ async function failJob(
   job: Job,
   message: string,
   retryable: boolean,
+  definite = false,
 ): Promise<Outcome> {
-  await deps.db.fail(job.id, message, retryable);
+  await deps.db.fail(job.id, message, retryable, definite);
   return retryable && job.attempt < 5 ? 'retry' : 'dead';
 }
 
@@ -79,12 +84,19 @@ export async function processJob(job: Job, deps: Deps): Promise<Outcome> {
         html: mail.html,
         idempotencyKey: job.idempotency_key,
         unsubscribeUrl: links.unsubscribeUrl,
+        oneClickUrl: links.oneClickUrl ?? null,
       });
       if (r.ok) {
         await deps.db.complete(job.id, 'resend', r.id, []);
         return 'sent';
       }
-      return await failJob(deps, job, `${r.code ?? 'email'}: ${r.message}`, r.retryable);
+      return await failJob(
+        deps,
+        job,
+        `${r.code ?? 'email'}: ${r.message}`,
+        r.retryable,
+        r.definite === true,
+      );
     }
 
     if (job.channel === 'sms') {

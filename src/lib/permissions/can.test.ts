@@ -184,7 +184,11 @@ function makeSet(grants: Grant[], over: Partial<GrantSet> = {}): GrantSet {
 /** The nav ids `useVisibleNav()` would show, using the same rule. */
 function visibleNav(set: GrantSet): string[] {
   return navItems
-    .filter((item) => (item.permission ? can(set, item.permission) : true))
+    .filter((item) =>
+      item.permission
+        ? can(set, item.permission) || (item.alsoPermission ? can(set, item.alsoPermission) : false)
+        : true,
+    )
     .map((i) => i.id);
 }
 
@@ -225,9 +229,9 @@ describe('navigation per role', () => {
     ]);
   });
 
-  it('gives a manager everything except settings', () => {
-    // Product doc §9: Manager gets "Booking settings", not business settings, so
-    // the Settings screen is Owner-only (migration 20261002170000).
+  it('gives a manager everything, Settings included', () => {
+    // Manager has no business settings (migration 20261002170000) but does hold
+    // settings.booking, which opens the Settings hub (booking, notifications, log).
     expect(visibleNav(makeSet(MANAGER))).toEqual([
       'today',
       'calendar',
@@ -239,6 +243,7 @@ describe('navigation per role', () => {
       'invoices',
       'reports',
       'reviews',
+      'settings',
     ]);
   });
 

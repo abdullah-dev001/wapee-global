@@ -457,6 +457,10 @@ verify_jwt = false
 [functions.unsubscribe]
 verify_jwt = false
 
+# message_preview is called by the signed-in dashboard: JWT verification stays ON.
+[functions.message_preview]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

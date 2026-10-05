@@ -1,5 +1,5 @@
 # Database
-Status: in progress · Phase: 6A · Last updated: 2026-10-08
+Status: in progress · Phase: 6B · Last updated: 2026-10-09
 
 ## Project
 - Supabase project **Wapee Global Development**, ref `rfuovquhultjydtswtqf`, Postgres 17, region ap-south-1.
@@ -461,7 +461,8 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 
 ## Phase 6A migrations (notifications backend)
 `20261008090000_phase6_messaging_schema` (tables, Vault keys, pg_net, `appointments.scheduled_at`), `…100000_phase6_messaging_helpers` (seal, hash, `sms_segments`, ledger post, quiet hours), `…110000_phase6_enqueue_and_hooks` (enqueue, appointments trigger; redefines `create_booking`, `resend_manage_link`, `create_review_request_internal`, `reissue_review_request` ONLY to add an enqueue call), `…120000_phase6_worker_rpcs`, `…130000_phase6_reminders_and_cron`, `…140000_phase6_least_privilege`, `…150000_phase6_worker_tweaks`. Tables: `notification_settings`, `message_outbox`, `messages`, `message_suppressions`, `push_tokens`, `messaging_limits`, `sms_country_rates`, `sms_credit_accounts`, `sms_credit_ledger`. Full detail: `context/notifications.md`. 304 assertions in `17_notifications_backend.sql`. Advisors: no errors; new warnings are the intentional authenticated-DEFINER RPCs and `pg_net` listed in `public` (extension not relocatable).
-**Project-wide privilege gap (not fixed):** Supabase default privileges give `authenticated` ALL (incl. TRUNCATE, which RLS does not govern) on new tables; 41 of 53 older public tables still carry it (incl. `audit_logs`). The new tables are revoked down to what their policies need. Not reachable through PostgREST (no TRUNCATE verb), but worth a follow-up migration.
+**Privileges (fixed 2026-10-09, `20261009100000_revoke_table_privileges`):** `authenticated` no longer holds TRUNCATE/REFERENCES/TRIGGER on any public table; `anon` holds only SELECT on `reserved_slugs`; INSERT/UPDATE/DELETE are revoked from `authenticated` wherever no RLS policy covers that command; default privileges stop new tables getting TRUNCATE/REFERENCES/TRIGGER. A NEW table still gets full DML by default: revoke what no policy needs in the same migration. Re-tested: login, REST reads/writes, RPCs, all SQL suites.
+Phase 6B migrations: `20261009090000_phase6_idempotency_and_slug` (`message_outbox.idem_suffix`, `outbox_fail(…, p_definite)`, reserved slug `unsubscribe`), `20261009100000_revoke_table_privileges`, `20261009110000_phase6b_backend` (log read on `settings.booking`, `push_preferences`, `save_push_preferences`, `get_appointment_messages`, enqueue honours preferences). `17_notifications_backend.sql` now 341 assertions.
 
 ## Phase 5A (invoices backend)
 Full detail in `context/invoices.md`. Four tables with a SELECT-only policy
@@ -495,6 +496,7 @@ performance = no unindexed FKs (new indexes show as unused until used).
   design, not an oversight.
 
 ## Changelog
+- 2026-10-09: Phase 6B backend + project-wide least-privilege revoke (see Phase 6A section).
 - 2026-10-08: **Phase 6A** — notifications backend: outbox, messages log, SMS credits/rates, push tokens, suppressions, reminders (pg_cron), 7 migrations, 304 assertions.
 - 2026-10-07: **Phase 7A** — website, reviews, widget keys, assets bucket (5 migrations, 417 assertions).
 - 2026-10-06: `p_as_of` removed from the public report RPC (internal `report_basic_at`); the two Phase 4 migration files renamed to their remote stamps (`20261004143401_is_owner_or_manager`, `20261004152214_list_appointments_client_filter`), `supabase migration list` matches 63/63. 312 assertions.

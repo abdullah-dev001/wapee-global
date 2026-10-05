@@ -31,9 +31,11 @@ export function useVisibleNav(): VisibleNav {
 
   return useMemo(() => {
     // While loading, show nothing rather than items that may vanish a frame later.
-    const allowed = isPending
-      ? []
-      : navItems.filter((item) => (item.permission ? can(set, item.permission) : true));
+    const allows = (item: (typeof navItems)[number]) =>
+      item.permission
+        ? can(set, item.permission) || (item.alsoPermission ? can(set, item.alsoPermission) : false)
+        : true;
+    const allowed = isPending ? [] : navItems.filter(allows);
 
     const byRoute = new Map(navItems.map((item) => [item.route as string, item]));
 
@@ -46,8 +48,7 @@ export function useVisibleNav(): VisibleNav {
         const item = byRoute.get(route);
         // Not a nav destination (e.g. /more, a detail route): nothing to gate here.
         if (!item) return true;
-        if (!item.permission) return true;
-        return can(set, item.permission);
+        return allows(item);
       },
     };
   }, [set, isPending]);
