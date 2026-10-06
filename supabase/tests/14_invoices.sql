@@ -895,8 +895,13 @@ begin
   perform pg_temp.as_('ownerc', format($q$select public.create_credit_note(%L, 'partial', 100)$q$, v_inv));
   perform pg_temp.chk('business C has a full financial trail', (select count(*)::int from public.invoice_payments where business_id = v_biz), 2);
 
+  set constraints all immediate;   -- flush deferred FK events (role FK is deferrable) so ALTER TABLE is allowed
+
   alter table public.member_role_assignments disable trigger member_role_assignments_last_owner;
+
+  set constraints member_role_assignments_role_id_fkey deferred;
   delete from public.businesses where id = v_biz;
+  set constraints all immediate;
   alter table public.member_role_assignments enable trigger member_role_assignments_last_owner;
   perform pg_temp.chk('delete business cascades invoices/items/payments/credit notes', (select count(*)::int from public.invoices where business_id = v_biz) + (select count(*)::int from public.invoice_items where business_id = v_biz) + (select count(*)::int from public.invoice_payments where business_id = v_biz) + (select count(*)::int from public.credit_notes where business_id = v_biz), 0);
 end $$;

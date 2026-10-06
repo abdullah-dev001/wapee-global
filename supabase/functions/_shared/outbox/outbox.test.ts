@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { processJob } from './process.ts';
+import { formatMinor, isReportPayload } from './report.ts';
 import { escapeHtml, formatWhen, renderEmail, renderPush, renderSms } from './templates.ts';
 import type {
   Deps,
@@ -469,5 +470,96 @@ describe('processJob: push', () => {
     });
     expect(await processJob(push(), d)).toBe('retry');
     expect(calls.removeDead).toHaveLength(0);
+  });
+});
+
+describe('report_summary email', () => {
+  const payload = {
+    frequency: 'weekly',
+    from: '2027-06-07',
+    to: '2027-06-13',
+    prev_from: '2027-05-31',
+    prev_to: '2027-06-06',
+    scope_branch: null,
+    appointments: {
+      total: 40,
+      completed: 30,
+      cancelled: 6,
+      no_show: 4,
+      completed_bp: 7500,
+      cancelled_bp: 1500,
+      no_show_bp: 1000,
+      prev_total: 35,
+      prev_completed: 28,
+    },
+    revenue: [
+      {
+        currency: 'GBP',
+        net_revenue_minor: 123450,
+        collected_minor: 100000,
+        invoice_count: 12,
+        discounts_minor: 500,
+        prev_net_revenue_minor: 100000,
+        prev_collected_minor: 90000,
+      },
+      {
+        currency: 'PKR',
+        net_revenue_minor: 250000,
+        collected_minor: 250000,
+        invoice_count: 3,
+        discounts_minor: 0,
+        prev_net_revenue_minor: 0,
+        prev_collected_minor: 0,
+      },
+    ],
+  };
+  const links = { manageUrl: null, reviewUrl: null, unsubscribeUrl: null };
+  const reportJob = (over: Partial<Job> = {}) =>
+    job({ event: 'report_summary', client_first_name: null, client_name: null, payload, ...over });
+
+  it('renders one block per currency and never adds currencies together', () => {
+    const m = renderEmail(reportJob(), links);
+    expect(m?.subject).toContain('weekly summary');
+    expect(m?.text).toContain('£1,234.50');
+    expect(m?.text).toContain('PKR');
+    // PKR has no minor unit: 250000 minor units are Rs 250,000, not 2,500
+    expect(m?.text).toContain('250,000');
+    expect(m?.text).not.toContain('£3');
+    expect(m?.text).toContain('Completed 75.0%');
+  });
+
+  it('a recipient without revenue permission gets appointments only', () => {
+    const m = renderEmail(reportJob({ payload: { ...payload, revenue: null } }), links);
+    expect(m?.text).toContain('Appointments: 40');
+    expect(m?.text).not.toContain('Revenue');
+    expect(m?.text).not.toContain('£');
+  });
+
+  it('escapes the business name in the html and never shows an unsubscribe link', () => {
+    const m = renderEmail(reportJob({ business_name: 'A <b>& B' }), links);
+    expect(m?.html).toContain('A &lt;b&gt;&amp; B');
+    expect(m?.text).not.toContain('Stop these emails');
+  });
+
+  it('an unrecognised payload cannot be rendered (the job fails, nothing is sent)', async () => {
+    expect(isReportPayload({})).toBe(false);
+    expect(renderEmail(reportJob({ payload: {} }), links)).toBeNull();
+    const { d, calls } = deps();
+    expect(await processJob(reportJob({ payload: {} }), d)).toBe('dead');
+    expect(calls.emails).toHaveLength(0);
+  });
+
+  it('is sent as an email through the normal path with its own idempotency key', async () => {
+    const { d, calls } = deps();
+    expect(
+      await processJob(reportJob({ idempotency_key: 'report_summary:s1:2027-06-13:u1' }), d),
+    ).toBe('sent');
+    expect(calls.emails[0]?.idempotencyKey).toBe('report_summary:s1:2027-06-13:u1');
+    expect(calls.emails[0]?.unsubscribeUrl).toBeNull();
+  });
+
+  it('formats currencies by their real minor unit', () => {
+    expect(formatMinor(1500, 'JPY', 'en')).toContain('1,500');
+    expect(formatMinor(12345, 'USD', 'en')).toContain('123.45');
   });
 });

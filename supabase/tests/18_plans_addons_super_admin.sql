@@ -539,6 +539,9 @@ select pg_temp.chk('...soft-deleting the second branch allows the downgrade', pg
 select pg_temp.chk('...and restoring that branch is now refused',
   pg_temp.msg(format($q$update public.branches set deleted_at = null where business_id = %L and name = 'Second'$q$, pg_temp.id('biza'))), 'branch_limit_reached');
 select pg_temp.chk('...it stays deleted', (select (deleted_at is not null)::text from public.branches where business_id = pg_temp.id('biza') and name = 'Second'), 'true');
+-- Phase 9A: archiving the primary/only branch is refused for a signed-in user (branch_archive_blockers);
+-- this fixture archives it as the service role (no signed-in user) to test the LIMIT maths only.
+select set_config('request.jwt.claims', '', true);
 select pg_temp.chk('a SOFT-DELETED branch does not count toward the limit (insert a different one on solo C)',
   pg_temp.msg(format($q$update public.branches set deleted_at = now() where id = %L$q$, pg_temp.id('branchc'))) || ':' ||
   pg_temp.msg(format($q$insert into public.branches (business_id, name, timezone, currency, country_code, invoice_prefix)
@@ -835,13 +838,16 @@ select pg_temp.chk('...so the owner reads none either',
 -- ===========================================================================
 -- 13. Business delete cascade releases every new row (triggers must not block it)
 -- ===========================================================================
+set constraints all immediate;   -- flush deferred FK events (role FK is deferrable) so ALTER TABLE is allowed
 alter table public.member_role_assignments disable trigger member_role_assignments_last_owner;
+set constraints member_role_assignments_role_id_fkey deferred;
 do $$
 begin
   delete from public.businesses where id in (pg_temp.id('biza'), pg_temp.id('bizb'), pg_temp.id('bizc'), pg_temp.id('bizt'));
 exception when others then
   perform pg_temp.chk('business delete cascade works with subscriptions/add-ons/staff/branches/reviews: ' || sqlerrm, false, true);
 end $$;
+set constraints all immediate;
 alter table public.member_role_assignments enable trigger member_role_assignments_last_owner;
 select pg_temp.chk('cascade removed subscriptions and add-ons',
   (select count(*)::int from public.business_subscriptions where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'), pg_temp.id('bizc'), pg_temp.id('bizt')))

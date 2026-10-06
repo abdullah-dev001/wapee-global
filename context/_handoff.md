@@ -1,6 +1,8 @@
 # Handoff
 Last updated: 2026-10-08 · Branch: `dev`.
 
+**Phase 9A (plan features BACKEND, no UI) is DONE**: custom roles, staff commission, multi-branch lifecycle + combined views, advanced reports, scheduled report email — see `context/plan-features.md` (decisions, rules, the list of single-branch assumptions NOT fixed). `send_outbox` was redeployed (new `report_summary` event). Next: Phase 9B UI + CSV/PDF export. **Test traps:** the role FK is deferrable now, so a suite that runs `alter table member_role_assignments disable trigger` must `set constraints all immediate` first; and a scalar subquery in the same expression as a volatile call does not see that call's writes.
+
 **Phase 6 (notifications, backend + UI) is DONE and DEPLOYED** (`send_outbox`, `unsubscribe`, `message_preview`) — see `context/notifications.md`. **Resend's test sender refuses every address except the Resend account owner's, so no real inbox delivery has been proven**: verify a domain (set `RESEND_FROM_EMAIL`) or use the account owner's address. Twilio secrets are not set (SMS untested over HTTP). Push needs an EAS `projectId` in `app.config.ts` and a real device. Run `npm run ios` is NOT needed for this round (no new native module).
 
 **Phase 7B (website + reviews + widget UI) is DONE** on top of 7A (backend) — see `context/website-reviews-widget.md`. **`/<slug>` is now the WEBSITE; the booking link is `/<slug>/book`.** **Run `npm run ios` once: `expo-image-picker` is a new native module** (the editor's picker is loaded lazily, so an old build still starts; only choosing an image needs the rebuild).

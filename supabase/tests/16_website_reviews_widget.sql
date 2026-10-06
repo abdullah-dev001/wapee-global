@@ -1031,13 +1031,16 @@ select pg_temp.chk('...another business is unaffected by A''s cap', pg_temp.uplo
 -- ===========================================================================
 -- 14. Cascade: deleting the business releases every new row
 -- ===========================================================================
+set constraints all immediate;   -- flush deferred FK events (role FK is deferrable) so ALTER TABLE is allowed
 alter table public.member_role_assignments disable trigger member_role_assignments_last_owner;
+set constraints member_role_assignments_role_id_fkey deferred;
 do $$
 begin
   delete from public.businesses where id = pg_temp.id('biza');
 exception when others then
   perform pg_temp.chk('business delete cascade works with websites/reviews/requests/widget keys: ' || sqlerrm, false, true);
 end $$;
+set constraints all immediate;
 alter table public.member_role_assignments enable trigger member_role_assignments_last_owner;
 select pg_temp.chk('cascade removed websites', (select count(*)::int from public.websites where business_id = pg_temp.id('biza')), 0);
 select pg_temp.chk('cascade removed sections', (select count(*)::int from public.website_sections where business_id = pg_temp.id('biza')), 0);

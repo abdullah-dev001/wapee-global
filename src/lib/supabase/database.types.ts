@@ -750,6 +750,7 @@ export type Database = {
           invited_by: string | null
           invited_email: string | null
           joined_at: string | null
+          permissions_version: number
           status: Database["public"]["Enums"]["member_status"]
           updated_at: string
           user_id: string | null
@@ -764,6 +765,7 @@ export type Database = {
           invited_by?: string | null
           invited_email?: string | null
           joined_at?: string | null
+          permissions_version?: number
           status?: Database["public"]["Enums"]["member_status"]
           updated_at?: string
           user_id?: string | null
@@ -778,6 +780,7 @@ export type Database = {
           invited_by?: string | null
           invited_email?: string | null
           joined_at?: string | null
+          permissions_version?: number
           status?: Database["public"]["Enums"]["member_status"]
           updated_at?: string
           user_id?: string | null
@@ -988,6 +991,272 @@ export type Database = {
             columns: ["first_branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_entries: {
+        Row: {
+          amount_minor: number
+          branch_id: string
+          business_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          invoice_id: string
+          invoice_item_id: string
+          kind: Database["public"]["Enums"]["commission_entry_kind"]
+          reason: string
+          source_credit_note_id: string | null
+          source_payment_id: string | null
+          staff_id: string
+        }
+        Insert: {
+          amount_minor: number
+          branch_id: string
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          id?: string
+          invoice_id: string
+          invoice_item_id: string
+          kind: Database["public"]["Enums"]["commission_entry_kind"]
+          reason: string
+          source_credit_note_id?: string | null
+          source_payment_id?: string | null
+          staff_id: string
+        }
+        Update: {
+          amount_minor?: number
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          invoice_id?: string
+          invoice_item_id?: string
+          kind?: Database["public"]["Enums"]["commission_entry_kind"]
+          reason?: string
+          source_credit_note_id?: string | null
+          source_payment_id?: string | null
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_entries_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_entries_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_entries_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_entries_invoice_item_id_fkey"
+            columns: ["invoice_item_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_entries_source_credit_note_id_fkey"
+            columns: ["source_credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_entries_source_payment_id_fkey"
+            columns: ["source_payment_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_entries_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_lines: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          currency: string
+          flat_minor: number | null
+          full_commission_minor: number
+          invoice_id: string
+          invoice_item_id: string
+          line_net_minor: number
+          percent_bp: number | null
+          quantity: number
+          rule_id: string | null
+          rule_kind: string
+          staff_id: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          currency: string
+          flat_minor?: number | null
+          full_commission_minor: number
+          invoice_id: string
+          invoice_item_id: string
+          line_net_minor: number
+          percent_bp?: number | null
+          quantity: number
+          rule_id?: string | null
+          rule_kind: string
+          staff_id: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          currency?: string
+          flat_minor?: number | null
+          full_commission_minor?: number
+          invoice_id?: string
+          invoice_item_id?: string
+          line_net_minor?: number
+          percent_bp?: number | null
+          quantity?: number
+          rule_id?: string | null
+          rule_kind?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_lines_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_lines_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_lines_invoice_item_id_fkey"
+            columns: ["invoice_item_id"]
+            isOneToOne: true
+            referencedRelation: "invoice_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_lines_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "commission_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_lines_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_rules: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          effective_from: string
+          flat_minor: number | null
+          id: string
+          kind: Database["public"]["Enums"]["commission_rule_kind"]
+          percent_bp: number | null
+          service_id: string | null
+          staff_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          effective_from: string
+          flat_minor?: number | null
+          id?: string
+          kind: Database["public"]["Enums"]["commission_rule_kind"]
+          percent_bp?: number | null
+          service_id?: string | null
+          staff_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          effective_from?: string
+          flat_minor?: number | null
+          id?: string
+          kind?: Database["public"]["Enums"]["commission_rule_kind"]
+          percent_bp?: number | null
+          service_id?: string | null
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_rules_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_rules_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2168,6 +2437,70 @@ export type Database = {
         }
         Relationships: []
       }
+      report_schedules: {
+        Row: {
+          branch_id: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          frequency: string
+          id: string
+          is_enabled: boolean
+          last_period_end: string | null
+          send_hour: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          frequency: string
+          id?: string
+          is_enabled?: boolean
+          last_period_end?: string | null
+          send_hour?: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          frequency?: string
+          id?: string
+          is_enabled?: boolean
+          last_period_end?: string | null
+          send_hour?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_schedules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_schedules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reserved_slugs: {
         Row: {
           slug: string
@@ -2458,6 +2791,8 @@ export type Database = {
         Row: {
           business_id: string | null
           created_at: string
+          created_by: string | null
+          deleted_at: string | null
           id: string
           is_system: boolean
           key: string
@@ -2467,6 +2802,8 @@ export type Database = {
         Insert: {
           business_id?: string | null
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
           id?: string
           is_system?: boolean
           key: string
@@ -2476,6 +2813,8 @@ export type Database = {
         Update: {
           business_id?: string | null
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
           id?: string
           is_system?: boolean
           key?: string
@@ -2488,6 +2827,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3415,7 +3761,94 @@ export type Database = {
         }
         Returns: Json
       }
+      adv_appointments: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_service?: boolean
+          p_to: string
+        }
+        Returns: Json
+      }
+      adv_branches: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_service?: boolean
+          p_to: string
+        }
+        Returns: Json
+      }
+      adv_clients: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_prev_from?: string
+          p_prev_to?: string
+          p_service?: boolean
+          p_to: string
+        }
+        Returns: Json
+      }
+      adv_revenue: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_service?: boolean
+          p_to: string
+        }
+        Returns: Json
+      }
+      adv_services: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_service?: boolean
+          p_to: string
+        }
+        Returns: Json
+      }
+      adv_staff: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_service?: boolean
+          p_to: string
+        }
+        Returns: Json
+      }
+      adv_visible_branches: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_service?: boolean
+          p_to: string
+        }
+        Returns: {
+          archived: boolean
+          branch_id: string
+          can_comm: boolean
+          can_rev: boolean
+          currency: string
+          name: string
+          tz: string
+          we: string
+          ws: string
+        }[]
+      }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
+      archive_branch: { Args: { p_branch_id: string }; Returns: Json }
+      assign_member_role: {
+        Args: { p_branch_id?: string; p_member_id: string; p_role_id: string }
+        Returns: Json
+      }
       assign_plan: {
         Args: {
           p_business_id: string
@@ -3425,11 +3858,47 @@ export type Database = {
         }
         Returns: Json
       }
+      bp_of: { Args: { p_part: number; p_whole: number }; Returns: number }
+      branch_admin_gate: { Args: { p_business_id: string }; Returns: Json }
+      branch_archive_blockers: { Args: { p_branch_id: string }; Returns: Json }
       branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
+      branch_metrics: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_from: string
+          p_to: string
+        }
+        Returns: {
+          appt_cancelled: number
+          appt_completed: number
+          appt_confirmed: number
+          appt_no_show: number
+          appt_pending: number
+          appt_total: number
+          archived: boolean
+          branch_id: string
+          branch_name: string
+          can_basic: boolean
+          can_rev: boolean
+          collected_minor: number
+          country_code: string
+          credited_minor: number
+          currency: string
+          invoice_count: number
+          invoiced_minor: number
+          net_revenue_minor: number
+          tax_minor: number
+          tz: string
+          w_end: string
+          w_start: string
+        }[]
+      }
       build_form_fields_snapshot: {
         Args: { p_business_id: string }
         Returns: Json
       }
+      bump_role_members: { Args: { p_role_id: string }; Returns: undefined }
       business_has_feature: {
         Args: { p_business_id: string; p_key: string }
         Returns: boolean
@@ -3441,6 +3910,23 @@ export type Database = {
           p_branch_id: string
           p_business_id: string
           p_permission: string
+        }
+        Returns: boolean
+      }
+      can_define_at: {
+        Args: {
+          p_business_id: string
+          p_permission: string
+          p_scope: Database["public"]["Enums"]["permission_scope"]
+        }
+        Returns: boolean
+      }
+      can_grant_at: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_permission: string
+          p_scope: Database["public"]["Enums"]["permission_scope"]
         }
         Returns: boolean
       }
@@ -3504,6 +3990,33 @@ export type Database = {
         Args: { p_older_than?: string }
         Returns: number
       }
+      commission_can_see: {
+        Args: { p_branch_id: string; p_business_id: string; p_staff_id: string }
+        Returns: boolean
+      }
+      commission_sync: {
+        Args: {
+          p_credit_note_id?: string
+          p_invoice_id: string
+          p_payment_id?: string
+        }
+        Returns: undefined
+      }
+      commission_visible_branches: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_to: string
+        }
+        Returns: {
+          branch_id: string
+          see_all: boolean
+          tz: string
+          w_end: string
+          w_start: string
+        }[]
+      }
       create_appointment: {
         Args: {
           p_auto_confirm?: boolean
@@ -3536,6 +4049,22 @@ export type Database = {
         }
         Returns: Json
       }
+      create_branch: {
+        Args: {
+          p_address?: string
+          p_business_id: string
+          p_copy_from_branch?: string
+          p_country_code: string
+          p_currency: string
+          p_invoice_prefix?: string
+          p_name: string
+          p_phone?: string
+          p_tax_number?: string
+          p_tax_rate_bp?: number
+          p_timezone: string
+        }
+        Returns: Json
+      }
       create_business_with_owner: {
         Args: {
           p_branch_name?: string
@@ -3553,6 +4082,15 @@ export type Database = {
         Args: { p_invoice_id: string; p_net_minor?: number; p_reason: string }
         Returns: Json
       }
+      create_custom_role: {
+        Args: {
+          p_business_id: string
+          p_clone_from?: string
+          p_name: string
+          p_permissions?: Json
+        }
+        Returns: Json
+      }
       create_invoice_draft: {
         Args: {
           p_appointment_id?: string
@@ -3567,9 +4105,19 @@ export type Database = {
         Args: { p_appointment_id: string }
         Returns: Json
       }
+      delete_custom_role: {
+        Args: { p_replacement_role_id?: string; p_role_id: string }
+        Returns: Json
+      }
+      delete_report_schedule: { Args: { p_schedule_id: string }; Returns: Json }
       discard_invoice_draft: { Args: { p_invoice_id: string }; Returns: Json }
       enqueue_due_reminders: { Args: never; Returns: number }
       enqueue_due_reminders_at: { Args: { p_now: string }; Returns: number }
+      enqueue_due_report_summaries: { Args: never; Returns: number }
+      enqueue_due_report_summaries_at: {
+        Args: { p_now: string }
+        Returns: number
+      }
       ensure_form_version: { Args: { p_business_id: string }; Returns: string }
       ensure_website: { Args: { p_business_id: string }; Returns: Json }
       ensure_widget_key: { Args: { p_business_id: string }; Returns: Json }
@@ -3584,6 +4132,18 @@ export type Database = {
       format_document_number: {
         Args: { p_credit: boolean; p_prefix: string; p_seq: number }
         Returns: string
+      }
+      get_advanced_report: {
+        Args: {
+          p_anchor?: string
+          p_branch_id?: string
+          p_business_id: string
+          p_from?: string
+          p_period: string
+          p_section: string
+          p_to?: string
+        }
+        Returns: Json
       }
       get_appointment_messages: {
         Args: { p_appointment_id: string }
@@ -3610,6 +4170,20 @@ export type Database = {
           p_from_date: string
           p_staff_ids?: string[]
           p_to_date: string
+        }
+        Returns: Json
+      }
+      get_combined_overview: {
+        Args: { p_business_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
+      get_commission_report: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_from: string
+          p_staff_id?: string
+          p_to: string
         }
         Returns: Json
       }
@@ -3765,6 +4339,10 @@ export type Database = {
         }
         Returns: Json
       }
+      list_my_branches: {
+        Args: { p_business_id: string; p_include_archived?: boolean }
+        Returns: Json
+      }
       list_reviews: {
         Args: {
           p_branch_id?: string
@@ -3778,6 +4356,7 @@ export type Database = {
         }
         Returns: Json
       }
+      list_roles: { Args: { p_business_id: string }; Returns: Json }
       mark_completed: { Args: { p_appointment_id: string }; Returns: Json }
       mark_no_show: { Args: { p_appointment_id: string }; Returns: Json }
       mask_email: { Args: { p_email: string }; Returns: string }
@@ -3792,6 +4371,10 @@ export type Database = {
           permission: string
           scope: Database["public"]["Enums"]["permission_scope"]
         }[]
+      }
+      my_permissions_version: {
+        Args: { p_business_id: string }
+        Returns: number
       }
       my_plan_usage: { Args: { p_business_id: string }; Returns: Json }
       my_staff_profile_id: { Args: { p_business_id: string }; Returns: string }
@@ -3808,6 +4391,7 @@ export type Database = {
         Args: { p_default_dial_code?: string; p_input: string }
         Returns: string
       }
+      normalise_role_permissions: { Args: { p_perms: Json }; Returns: Json }
       notification_next_allowed: {
         Args: { p_appointment_start?: string; p_at: string; p_branch: string }
         Returns: string
@@ -3932,6 +4516,7 @@ export type Database = {
         Args: { p_appointment_id: string }
         Returns: Json
       }
+      remove_member_role: { Args: { p_assignment_id: string }; Returns: Json }
       remove_review: {
         Args: { p_reason: string; p_review_id: string }
         Returns: Json
@@ -3961,6 +4546,39 @@ export type Database = {
         Args: { p_as_of?: string; p_branch_id?: string; p_business_id: string }
         Returns: Json
       }
+      report_last_complete_end: {
+        Args: { p_frequency: string; p_local_date: string }
+        Returns: string
+      }
+      report_period: {
+        Args: {
+          p_anchor: string
+          p_from: string
+          p_period: string
+          p_to: string
+        }
+        Returns: Json
+      }
+      report_period_for_end: {
+        Args: { p_end: string; p_frequency: string }
+        Returns: Json
+      }
+      report_schedule_gate: { Args: { p_business_id: string }; Returns: Json }
+      report_schedule_zone: {
+        Args: { p_branch_id: string; p_business_id: string }
+        Returns: string
+      }
+      report_summary_data: {
+        Args: {
+          p_branch_id: string
+          p_business_id: string
+          p_from: string
+          p_pf: string
+          p_pt: string
+          p_to: string
+        }
+        Returns: Json
+      }
       report_windows: {
         Args: { p_as_of: string; p_branch_id: string; p_business_id: string }
         Returns: {
@@ -3984,6 +4602,7 @@ export type Database = {
         Returns: Json
       }
       resolve_manage_token: { Args: { p_token: string }; Returns: string }
+      restore_branch: { Args: { p_branch_id: string }; Returns: Json }
       reverse_payment: {
         Args: {
           p_amount_minor?: number
@@ -3992,6 +4611,8 @@ export type Database = {
         }
         Returns: Json
       }
+      role_permission_set: { Args: { p_role_id: string }; Returns: Json }
+      roles_gate: { Args: { p_business_id: string }; Returns: Json }
       rotate_widget_key: { Args: { p_business_id: string }; Returns: Json }
       save_booking_settings: {
         Args: { p_branch_id: string; p_settings: Json }
@@ -4018,6 +4639,10 @@ export type Database = {
         Args: { p_business_id: string; p_domains: string[] }
         Returns: Json
       }
+      scope_rank: {
+        Args: { p_scope: Database["public"]["Enums"]["permission_scope"] }
+        Returns: number
+      }
       set_addon: {
         Args: { p_addon: string; p_business_id: string; p_enabled: boolean }
         Returns: Json
@@ -4036,6 +4661,18 @@ export type Database = {
         Args: { p_business_id: string; p_note?: string; p_status: string }
         Returns: Json
       }
+      set_commission_rule: {
+        Args: {
+          p_currency?: string
+          p_effective_from?: string
+          p_flat_minor?: number
+          p_kind: string
+          p_percent_bp?: number
+          p_service_id: string
+          p_staff_id: string
+        }
+        Returns: Json
+      }
       set_plan_prices: {
         Args: {
           p_active?: boolean
@@ -4044,6 +4681,17 @@ export type Database = {
           p_key: string
           p_monthly_minor: number
           p_name?: string
+        }
+        Returns: Json
+      }
+      set_primary_branch: { Args: { p_branch_id: string }; Returns: Json }
+      set_report_schedule: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_enabled?: boolean
+          p_frequency: string
+          p_send_hour?: number
         }
         Returns: Json
       }
@@ -4132,6 +4780,14 @@ export type Database = {
         }
         Returns: Json
       }
+      update_branch: {
+        Args: { p_branch_id: string; p_patch: Json }
+        Returns: Json
+      }
+      update_custom_role: {
+        Args: { p_name?: string; p_permissions?: Json; p_role_id: string }
+        Returns: Json
+      }
       update_invoice_draft: {
         Args: {
           p_clear_client?: boolean
@@ -4153,6 +4809,10 @@ export type Database = {
           p_terminology: Json
         }
         Returns: Json
+      }
+      user_holds_all_scope: {
+        Args: { p_business_id: string; p_permission: string; p_user_id: string }
+        Returns: boolean
       }
       validate_widget_origin: {
         Args: { p_origin: string; p_public_key: string }
@@ -4201,6 +4861,8 @@ export type Database = {
       booking_source: "online" | "dashboard" | "walk_in" | "portal"
       business_plan: "solo" | "team" | "business"
       business_status: "trialing" | "active" | "inactive" | "suspended"
+      commission_entry_kind: "earn" | "reversal"
+      commission_rule_kind: "percent" | "flat" | "none"
       custom_field_type:
         | "short_text"
         | "long_text"
@@ -4370,6 +5032,8 @@ export const Constants = {
       booking_source: ["online", "dashboard", "walk_in", "portal"],
       business_plan: ["solo", "team", "business"],
       business_status: ["trialing", "active", "inactive", "suspended"],
+      commission_entry_kind: ["earn", "reversal"],
+      commission_rule_kind: ["percent", "flat", "none"],
       custom_field_type: [
         "short_text",
         "long_text",

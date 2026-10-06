@@ -13,6 +13,7 @@
  * Pure: no Deno, no I/O (tested with vitest).
  */
 
+import { renderReportEmail } from './report.ts';
 import type { Job, OutboxEvent } from './types.ts';
 
 type EmailEntry = { subject: string; lines: string[] };
@@ -158,6 +159,7 @@ function vars(job: Job, locale: string): Record<string, string> {
 export type RenderedEmail = { subject: string; text: string; html: string };
 
 export function renderEmail(job: Job, links: Links): RenderedEmail | null {
+  if (job.event === 'report_summary') return renderReportEmail(job);
   const { cat, locale } = catalogueFor(job.language);
   const entry = cat.email[job.event];
   if (!entry) return null;

@@ -1031,8 +1031,11 @@ begin
   -- enforce_last_owner has no "the business is going too" exemption, so it must
   -- be disabled for the transaction. That is the documented workaround.
   begin
+    set constraints all immediate;   -- flush deferred FK events (role FK is deferrable) so ALTER TABLE is allowed
     alter table public.member_role_assignments disable trigger member_role_assignments_last_owner;
+    set constraints member_role_assignments_role_id_fkey deferred;
     delete from public.businesses where id = v_biz;
+    set constraints all immediate;
     alter table public.member_role_assignments enable trigger member_role_assignments_last_owner;
   exception when others then
     v_err := SQLERRM;

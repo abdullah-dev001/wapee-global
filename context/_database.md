@@ -484,6 +484,9 @@ performance = no unindexed FKs (new indexes show as unused until used).
 
 Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platform_flag()`, `is_super_admin()` = flag AND aal2), `20261010130000_phase8b_admin_reviews_and_plan_usage` (`admin_list_reviews`, `my_plan_usage`). `18_*.sql` is now 356 assertions.
 
+## Phase 9A migrations (plan features backend)
+`20261011090000_phase9_custom_roles`, `…100000_phase9_commission`, `…110000_phase9_multi_branch`, `…120000_phase9_advanced_reports`, `…130000_phase9_report_schedules`, then fixes found by the suite: `…140000_role_update_diff`, `…150000_create_branch_fix`, `…160000_grant_can_grant_at`, `…170000_commission_reason_credited`, `…180000_report_summary_fix`, `…190000_enqueue_count_fix`, `…200000/210000_role_fk_*` (role FK deferred), `…220000_fk_indexes`. New tables: `commission_rules`, `commission_lines`, `commission_entries`, `report_schedules` (RLS select only). New columns: `roles.deleted_at/created_by`, `business_members.permissions_version`. Full detail: `context/plan-features.md`. Suite `19_phase9_plan_features.sql` 543 assertions; suites 08/14/16/17/18 edited (deferred role FK; 18: the primary-branch archive fixture runs as service role). Advisors: no errors; new warnings are the intentional authenticated-DEFINER RPCs.
+
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
 - **Leaked-password protection is OFF** (security advisor). It is a dashboard setting: Authentication → Policies → enable "Check against HaveIBeenPwned". Worth turning on before real users.

@@ -1345,13 +1345,16 @@ select pg_temp.chk('authenticated cannot TRUNCATE the audit log', pg_temp.try_ex
 -- ===========================================================================
 -- 11. Cascade: deleting the business releases every new row (no trigger blocks it)
 -- ===========================================================================
+set constraints all immediate;   -- flush deferred FK events (role FK is deferrable) so ALTER TABLE is allowed
 alter table public.member_role_assignments disable trigger member_role_assignments_last_owner;
+set constraints member_role_assignments_role_id_fkey deferred;
 do $$
 begin
   delete from public.businesses where id = pg_temp.id('biza');
 exception when others then
   perform pg_temp.chk('business delete cascade works with outbox/messages/ledger/settings: ' || sqlerrm, false, true);
 end $$;
+set constraints all immediate;
 alter table public.member_role_assignments enable trigger member_role_assignments_last_owner;
 select pg_temp.chk('cascade removed outbox', (select count(*)::int from public.message_outbox where business_id = pg_temp.id('biza')), 0);
 select pg_temp.chk('cascade removed messages', (select count(*)::int from public.messages where business_id = pg_temp.id('biza')), 0);

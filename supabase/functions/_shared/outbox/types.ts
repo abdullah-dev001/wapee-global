@@ -17,7 +17,8 @@ export type OutboxEvent =
   | 'staff_new_booking'
   | 'staff_pending_approval'
   | 'staff_cancelled'
-  | 'staff_reminder';
+  | 'staff_reminder'
+  | 'report_summary';
 
 export type Job = {
   id: string;

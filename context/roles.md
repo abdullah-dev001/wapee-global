@@ -86,10 +86,11 @@ executed from the scratchpad rather than committed as a suite — see TODO below
 - Add-on gating is a documented stub until Phase 8.
 
 - Members list and invite flow are built (see [members.md](members.md)). Still missing: change a member's role, remove a member, revoke or resend an invite.
-- Custom roles are schema-ready but have no screens (Phase 9).
+- Custom roles: backend done in Phase 9A (`context/plan-features.md`); screens are 9B.
 - Super admin 2FA: enforced in Phase 8A as an `aal2` JWT check in every admin RPC; TOTP enrolment still needs enabling + UI (see plans-super-admin.md).
 
 ## Changelog
+- 2026-10-06: Phase 9A: custom role RPCs, scope+branch-aware escalation guard, billing owner-only, audit triggers, `permissions_version`.
 - 2026-10-02: Invite flow added (see members.md); the escalation guard was verified to block a Manager inviting an Owner.
 - 2026-10-02: App gating built — `my_grants()` RPC, `can()`, `usePermission`, `useFeature`, current-scope store, `useVisibleNav`, `RouteGuard` on every `(app)` screen, sign out wired. Nav `feature` field dropped in favour of the catalogue's `minPlan`/`addon`.
 - 2026-10-02: Database half complete (catalogue, roles, grants, guards, tests). App half not started.
