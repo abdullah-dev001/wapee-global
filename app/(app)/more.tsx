@@ -7,6 +7,7 @@ import { PageContainer, Screen } from '@/components/layout';
 import { Card, Skeleton, Text } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { navLabelKey, type NavItem } from '@/config/navigation';
+import { AdminEntry } from '@/features/admin/components';
 import { RouteGuard, useSignOut } from '@/features/auth';
 import { useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
@@ -40,6 +41,8 @@ export default function MoreScreen() {
               ))}
             </Card>
           ) : null}
+
+          <AdminEntry variant="more" />
 
           {__DEV__ ? <DevGalleryRow /> : null}
 

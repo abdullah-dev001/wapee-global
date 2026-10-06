@@ -29,6 +29,7 @@ import {
   useSetWidgetActive,
   useWidgetKey,
 } from '../api/useWidgetKey';
+import { NotIncludedState } from '@/features/plans/components';
 import { useWidgetFeatureEnabled } from '../api/useWidgetFeature';
 import {
   MAX_WIDGET_DOMAINS,
@@ -63,15 +64,7 @@ export function WidgetSettings({ businessId }: { businessId: string | null }) {
       tone: 'error',
     });
 
-  if (!enabled) {
-    return (
-      <EmptyState
-        icon={Code2}
-        title={t('widget.unavailableTitle')}
-        description={t('widget.unavailableMessage')}
-      />
-    );
-  }
+  if (!enabled) return <NotIncludedState compact />;
   if (key.isPending) return <Skeleton height={160} radius="lg" />;
   if (key.isError) {
     return (

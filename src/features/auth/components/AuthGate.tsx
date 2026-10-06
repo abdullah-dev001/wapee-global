@@ -44,6 +44,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const onVerifyScreen = path.includes(VERIFY_ROUTE);
   const onOnboardingScreen = path.includes(ONBOARDING_ROUTE);
   const onAcceptInviteScreen = path.includes(ACCEPT_INVITE_ROUTE);
+  // The super admin area has its own guard; an admin may own no business at all.
+  const onAdminRoute = group === '(admin)';
 
   // Without Supabase keys there is no auth at all; let the app render so the
   // dev warning and the gallery stay reachable.
@@ -75,7 +77,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     const hasBusiness = (businesses.data?.length ?? 0) > 0;
     // Accepting an invite is how an invited person gets their first business, so
     // that screen is never redirected to onboarding or away from (auth).
-    if (!hasBusiness && !onOnboardingScreen && !onAcceptInviteScreen) {
+    if (!hasBusiness && !onOnboardingScreen && !onAcceptInviteScreen && !onAdminRoute) {
       return <Redirect href="/onboarding" />;
     }
     if (hasBusiness && isAuthGroup && !onAcceptInviteScreen) return <Redirect href="/" />;

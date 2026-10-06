@@ -20,7 +20,8 @@ form interaction — automated taps did not register on the simulator
 (documented limitation, see `clients.md`). Next: Phase 5 (invoices) or
 further Phase 4 polish, once the user says go.
 
-**Phase 8A (plans, add-ons, feature gating, super admin; BACKEND ONLY) is DONE** — see `context/plans-super-admin.md`. Before first real use: enable TOTP in `supabase/config.toml` + enrol the super admin (every admin RPC needs an aal2 session), create the super admin by the documented SQL. Client gating (`can.ts`, `useWidgetFeatureEnabled`) is still the old stub: next UI phase reads `my_features()`.
+**Phase 8B (UI for plans, billing, super admin, 2FA) is DONE** on top of 8A (below), see `context/plans-super-admin.md`: client gating reads `my_features()`, `/settings/billing`, the `(admin)` area. **Super admin 2FA is now forced at sign-in for the flagged account; enable nothing else, but enrol TOTP via /admin/2fa (guide in plans-super-admin.md).**
+**Phase 8A (plans, add-ons, feature gating, super admin; backend) is DONE** — see `context/plans-super-admin.md`. Before first real use: enable TOTP in `supabase/config.toml` + enrol the super admin (every admin RPC needs an aal2 session), create the super admin by the documented SQL. Client gating (`can.ts`, `useWidgetFeatureEnabled`) is still the old stub: next UI phase reads `my_features()`.
 
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.

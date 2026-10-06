@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { FormField } from '@/components/shared';
 import { Button, Text, Toggle, useToast } from '@/components/ui';
+import { planErrorKey } from '@/features/plans/planErrors';
 import { useServices } from '@/features/services/api/useServices';
 import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
@@ -58,7 +59,11 @@ export function StaffForm({
           toast.show({ message: t('staff.saved'), tone: 'success' });
           onDone();
         },
-        onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+        onError: (error) => {
+          // Plan refusals (staff cap) get a specific, calm message.
+          const planKey = planErrorKey(error);
+          toast.show({ message: planKey ? t(planKey) : error.message, tone: 'error' });
+        },
       },
     );
   });

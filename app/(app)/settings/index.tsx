@@ -7,6 +7,7 @@ import {
   CalendarCheck,
   ChevronRight,
   Coins,
+  CreditCard,
   MessageSquareText,
 } from 'lucide-react-native';
 
@@ -31,7 +32,8 @@ type HubItem = {
     | '/settings/notifications'
     | '/settings/sms-credits'
     | '/settings/messages'
-    | '/settings/my-notifications';
+    | '/settings/my-notifications'
+    | '/settings/billing';
   icon: LucideIcon;
   title: string;
   subtitle: string;
@@ -72,6 +74,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const canEditBooking = usePermission('settings.booking');
   const canSeeCredits = usePermission('sms.send');
+  const canSeeBilling = usePermission('settings.billing');
 
   // Each card appears only for a member who may open it (RLS is the real boundary).
   const items: HubItem[] = [
@@ -106,6 +109,16 @@ export default function SettingsScreen() {
             icon: Coins,
             title: t('notifications.hub.creditsTitle'),
             subtitle: t('notifications.hub.creditsSubtitle'),
+          },
+        ]
+      : []),
+    ...(canSeeBilling.allowed
+      ? [
+          {
+            route: '/settings/billing' as const,
+            icon: CreditCard,
+            title: t('plans.hub.billingTitle'),
+            subtitle: t('plans.hub.billingSubtitle'),
           },
         ]
       : []),

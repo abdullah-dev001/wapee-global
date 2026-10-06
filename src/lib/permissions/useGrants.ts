@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
 import { useSession } from '@/features/auth';
+import { useMyFeatures } from '@/features/plans/api/useMyFeatures';
 import { staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 
@@ -65,6 +66,7 @@ export function useGrantSet(): GrantSetResult {
   const { businessId, business, isPending: scopePending } = useCurrentScope();
   const profile = useMyProfile();
   const grants = useGrantRows(businessId);
+  const features = useMyFeatures(businessId);
 
   const isSuperAdmin = profile.data?.is_super_admin === true;
 
@@ -72,14 +74,17 @@ export function useGrantSet(): GrantSetResult {
     businessId: businessId ?? '',
     grants: grants.data ?? [],
     isActive: isBusinessActive(business?.status ?? null, business?.trial_ends_at ?? null),
-    // null during a trial: no plan assigned, so nothing is plan-gated.
-    plan: business?.plan ?? null,
+    // The server's answer; null (loading / failed) keeps every gated feature off.
+    features: features.data?.features ?? null,
     isSuperAdmin,
   };
 
   return {
     set,
-    isPending: scopePending || profile.isPending || (Boolean(businessId) && grants.isPending),
+    isPending:
+      scopePending ||
+      profile.isPending ||
+      (Boolean(businessId) && (grants.isPending || features.isPending)),
     error: grants.error ?? (profile.error as Error | null) ?? null,
   };
 }

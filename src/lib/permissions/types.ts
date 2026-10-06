@@ -1,4 +1,5 @@
 import { type PermissionKey } from '@/config/permissions';
+import { type FeatureMap } from '@/features/plans/featureLogic';
 import { type Database } from '@/lib/supabase/database.types';
 
 /** own / branch / all (product doc §9). */
@@ -21,14 +22,11 @@ export type GrantSet = {
   /** `business_is_active()`: false once a trial has ended (product doc §10). */
   isActive: boolean;
   /**
-   * The business plan, for `minPlan` gating.
-   *
-   * **`null` means no plan is assigned yet**, which is the normal state during
-   * the 14-day trial — the super admin assigns a plan manually (product doc §10).
-   * A trial must show every feature, so `null` passes plan gating rather than
-   * being treated as the cheapest tier.
+   * `my_features().features` from the server: which plan / add-on features are on.
+   * **`null` = not known yet (loading or failed): every gated feature is OFF.**
+   * A trial arrives with everything on; the database decides, not the client.
    */
-  plan: Database['public']['Enums']['business_plan'] | null;
+  features: FeatureMap | null;
   /** Platform flag: a super admin passes every check. */
   isSuperAdmin: boolean;
 };

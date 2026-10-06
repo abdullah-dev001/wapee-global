@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { navItems } from '@/config/navigation';
+import { FEATURE_KEYS, type FeatureMap } from '@/features/plans/featureLogic';
 
 import { can, hasFeature, hasPermission } from './can';
 import { type Grant, type GrantSet } from './types';
@@ -169,13 +170,38 @@ const STAFF = grantsFor(
   'own',
 );
 
+const ALL_FEATURES_ON: FeatureMap = Object.fromEntries(FEATURE_KEYS.map((key) => [key, true]));
+/** What `my_features()` returns for each plan with no add-ons enabled. */
+const SOLO_FEATURES: FeatureMap = {
+  ...ALL_FEATURES_ON,
+  default_roles: false,
+  commission: false,
+  embed_widget: false,
+  advanced_reports: false,
+  custom_roles: false,
+  multi_branch: false,
+  branch_comparison: false,
+  packages: false,
+  inventory: false,
+  files_photos: false,
+  forms_consent: false,
+  client_portal: false,
+};
+const TEAM_FEATURES: FeatureMap = {
+  ...SOLO_FEATURES,
+  default_roles: true,
+  commission: true,
+  embed_widget: true,
+  advanced_reports: true,
+};
+
 function makeSet(grants: Grant[], over: Partial<GrantSet> = {}): GrantSet {
   return {
     businessId: 'business-1',
     grants,
     isActive: true,
-    // null = on trial, no plan assigned yet.
-    plan: null,
+    // A trial: the server reports every feature on.
+    features: ALL_FEATURES_ON,
     isSuperAdmin: false,
     ...over,
   };
@@ -322,37 +348,67 @@ describe('inactive business (trial over)', () => {
   });
 });
 
-describe('plan gating', () => {
+describe('plan gating (server feature map)', () => {
   it('hides Team features on Solo', () => {
-    expect(hasFeature(makeSet(OWNER, { plan: 'solo' }), 'commission.view_all')).toBe(false);
-    expect(hasFeature(makeSet(OWNER, { plan: 'solo' }), 'reports.view_advanced')).toBe(false);
+    const solo = makeSet(OWNER, { features: SOLO_FEATURES });
+    expect(hasFeature(solo, 'commission.view_all')).toBe(false);
+    expect(hasFeature(solo, 'reports.view_advanced')).toBe(false);
   });
 
-  it('allows Team features on Team and Business', () => {
-    expect(hasFeature(makeSet(OWNER, { plan: 'team' }), 'commission.view_all')).toBe(true);
-    expect(hasFeature(makeSet(OWNER, { plan: 'business' }), 'commission.view_all')).toBe(true);
+  it('allows Team features on Team', () => {
+    const team = makeSet(OWNER, { features: TEAM_FEATURES });
+    expect(hasFeature(team, 'commission.view_all')).toBe(true);
+    expect(hasFeature(team, 'reports.view_advanced')).toBe(true);
   });
 
-  it('treats no plan as a trial that includes everything', () => {
-    // `businesses.plan` is null until a super admin assigns one (product doc §10).
-    expect(hasFeature(makeSet(OWNER, { plan: null }), 'commission.view_all')).toBe(true);
+  it('allows everything on a trial (the server reports all on)', () => {
+    expect(hasFeature(makeSet(OWNER), 'commission.view_all')).toBe(true);
+    expect(hasFeature(makeSet(OWNER), 'packages.sell')).toBe(true);
   });
 
-  it('leaves unrestricted features alone on Solo', () => {
-    expect(hasFeature(makeSet(OWNER, { plan: 'solo' }), 'reports.view_basic')).toBe(true);
+  it('leaves unrestricted permissions alone on Solo', () => {
+    expect(hasFeature(makeSet(OWNER, { features: SOLO_FEATURES }), 'reports.view_basic')).toBe(
+      true,
+    );
   });
 
-  it('counts an add-on as on until Phase 8, but respects an explicit off', () => {
-    expect(hasFeature(makeSet(OWNER, { plan: 'solo' }), 'packages.sell')).toBe(true);
-    expect(hasFeature(makeSet(OWNER, { plan: 'solo' }), 'packages.sell', { packages: false })).toBe(
-      false,
+  it('gates an add-on permission by the add-on flag', () => {
+    expect(hasFeature(makeSet(OWNER, { features: SOLO_FEATURES }), 'packages.sell')).toBe(false);
+    expect(
+      hasFeature(
+        makeSet(OWNER, { features: { ...SOLO_FEATURES, packages: true } }),
+        'packages.sell',
+      ),
+    ).toBe(true);
+    expect(
+      hasFeature(
+        makeSet(OWNER, { features: { ...SOLO_FEATURES, packages: true } }),
+        'inventory.view',
+      ),
+    ).toBe(false);
+  });
+
+  it('keeps every gated permission OFF while the feature map is unknown', () => {
+    const unknown = makeSet(OWNER, { features: null });
+    expect(hasFeature(unknown, 'commission.view_all')).toBe(false);
+    expect(hasFeature(unknown, 'files.view')).toBe(false);
+    // ...but does not touch permissions that need no plan or add-on.
+    expect(hasFeature(unknown, 'appointments.view')).toBe(true);
+    expect(can(unknown, 'appointments.view')).toBe(true);
+    expect(can(unknown, 'inventory.view')).toBe(false);
+  });
+
+  it('hides gated nav destinations only through can()', () => {
+    // No nav item is plan-gated today; the nav must be identical on Solo and trial.
+    expect(visibleNav(makeSet(OWNER, { features: SOLO_FEATURES }))).toEqual(
+      visibleNav(makeSet(OWNER)),
     );
   });
 });
 
 describe('super admin', () => {
   // No grants, dead business, cheapest plan: the platform flag still wins.
-  const su = makeSet([], { isActive: false, plan: 'solo', isSuperAdmin: true });
+  const su = makeSet([], { isActive: false, features: SOLO_FEATURES, isSuperAdmin: true });
 
   it('passes permission, plan and trial checks', () => {
     expect(can(su, 'invoices.credit_note')).toBe(true);

@@ -3397,6 +3397,15 @@ export type Database = {
         Returns: Json
       }
       admin_gate: { Args: never; Returns: string }
+      admin_list_reviews: {
+        Args: {
+          p_business_id: string
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       admin_set_sms_rate: {
         Args: {
           p_country: string
@@ -3784,6 +3793,7 @@ export type Database = {
           scope: Database["public"]["Enums"]["permission_scope"]
         }[]
       }
+      my_plan_usage: { Args: { p_business_id: string }; Returns: Json }
       my_staff_profile_id: { Args: { p_business_id: string }; Returns: string }
       normalise_invoice_items: {
         Args: {
@@ -3899,6 +3909,7 @@ export type Database = {
         }
         Returns: Json
       }
+      platform_flag: { Args: never; Returns: boolean }
       push_recipient_users: {
         Args: {
           p_branch: string

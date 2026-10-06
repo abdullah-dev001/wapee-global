@@ -208,7 +208,8 @@ select x.name, replace(x.sql, '@A', pg_temp.id('biza')::text) from (values
   ('set_addon_prices', $$select public.set_addon_prices('inventory', 1, 'USD')$$),
   ('upsert_industry_preset', $$select public.upsert_industry_preset('salon', 'Salon', '{}', '[]', 'default')$$),
   ('remove_review', $$select public.remove_review(gen_random_uuid(), 'because')$$),
-  ('support_view_business', $$select public.support_view_business('@A')$$)) x(name, sql);
+  ('support_view_business', $$select public.support_view_business('@A')$$),
+  ('admin_list_reviews', $$select public.admin_list_reviews('@A')$$)) x(name, sql);
 grant select on calls to authenticated, anon;
 
 create temporary table before_state (k text primary key, v text) on commit drop;
@@ -740,6 +741,26 @@ select pg_temp.chk('...stored: removed, un-featured, customer words intact',
   (select status || ':' || featured_on_website::text || ':' || rating::text || ':' || comment || ':' || reviewer_first_name from public.reviews where id = pg_temp.id('review')), 'removed:false:2:rude staff:Rita');
 select pg_temp.chk('...audit stores the reason and the business',
   (select (after ->> 'reason') || ':' || (before ->> 'status') || ':' || (business_id = pg_temp.id('bizb'))::text from public.audit_logs where action = 'admin.remove_review' and entity_id = pg_temp.id('review')::text), 'abusive language:published:true');
+do $$
+declare v_before int := pg_temp.audits('admin.list_reviews'); r jsonb;
+begin
+  r := pg_temp.adm(format('select public.admin_list_reviews(%L)', pg_temp.id('bizb')));
+  perform pg_temp.chk('admin_list_reviews: the removed review is listed with its status', (r -> 'items' -> 0 ->> 'status') || ':' || (r -> 'items' -> 0 ->> 'reviewer_first_name') || ':' || (r -> 'items' -> 0 ->> 'rating'), 'removed:Rita:2');
+  perform pg_temp.chk('...first page audited once', pg_temp.audits('admin.list_reviews') - v_before, 1);
+  perform pg_temp.chk('...unknown business', pg_temp.adm(format('select public.admin_list_reviews(%L)', gen_random_uuid())) ->> 'code', 'not_found');
+  perform pg_temp.chk('...half a cursor refused', pg_temp.adm(format('select public.admin_list_reviews(%L, 20, now(), null)', pg_temp.id('bizb'))) ->> 'code', 'invalid_cursor');
+  perform pg_temp.chk('...a later page is not audited', (pg_temp.adm(format('select public.admin_list_reviews(%L, 20, now() + interval ''1 day'', %L)', pg_temp.id('bizb'), gen_random_uuid())) ->> 'ok') || ':' || (pg_temp.audits('admin.list_reviews') - v_before), 'true:1');
+end $$;
+-- my_plan_usage
+do $$
+declare r jsonb;
+begin
+  r := pg_temp.call_as(pg_temp.id('owner'), false, format('select public.my_plan_usage(%L)', pg_temp.id('biza')));
+  perform pg_temp.chk('my_plan_usage (owner): plan, cap, branch count', (r ->> 'plan') || ':' || (r ->> 'staff_cap') || ':' || (r ->> 'branch_count'), 'team:5:1');
+  perform pg_temp.chk('...per-location active staff uses the cap rule (5 assigned, Team 6 has no location)', (r -> 'branches' -> 0 ->> 'active_staff'), '5');
+  perform pg_temp.chk('...another business gets null', coalesce(pg_temp.call_as(pg_temp.id('ownerb'), false, format('select public.my_plan_usage(%L)', pg_temp.id('biza')))::text, 'null'), 'null');
+  perform pg_temp.chk('...anon refused', pg_temp.call_as(null, false, format('select public.my_plan_usage(%L)', pg_temp.id('biza'))) ->> 'error', '42501');
+end $$;
 select pg_temp.chk('remove_review twice: already_removed', pg_temp.adm(format($q$select public.remove_review(%L, 'again')$q$, pg_temp.id('review'))) ->> 'code', 'already_removed');
 select pg_temp.chk('a removed review cannot be re-featured',
   pg_temp.msg(format($q$update public.reviews set featured_on_website = true where id = %L$q$, pg_temp.id('review'))) like '%featured_needs_published%', 'true');
@@ -767,10 +788,10 @@ select pg_temp.chk('anon: no table privilege on the new tables',
 select pg_temp.chk('authenticated holds only SELECT on the new tables',
   (select count(*)::int from information_schema.role_table_grants where grantee = 'authenticated' and table_schema = 'public'
     and table_name in ('plans', 'addons', 'business_subscriptions', 'business_addons', 'industry_presets') and privilege_type <> 'SELECT'), 0);
-select pg_temp.chk('all 13 super admin RPCs: authenticated yes, anon no',
+select pg_temp.chk('all 14 super admin RPCs: authenticated yes, anon no',
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.proname in ('list_businesses','get_business_detail','assign_plan','set_business_status','set_addon','extend_trial','admin_add_sms_credits','admin_set_sms_rate','set_plan_prices','set_addon_prices','upsert_industry_preset','remove_review','support_view_business')
-      and has_function_privilege('authenticated', p.oid, 'execute') and not has_function_privilege('anon', p.oid, 'execute') and p.prosecdef), 13);
+    where n.nspname = 'public' and p.proname in ('list_businesses','get_business_detail','assign_plan','set_business_status','set_addon','extend_trial','admin_add_sms_credits','admin_set_sms_rate','set_plan_prices','set_addon_prices','upsert_industry_preset','remove_review','support_view_business','admin_list_reviews')
+      and has_function_privilege('authenticated', p.oid, 'execute') and not has_function_privilege('anon', p.oid, 'execute') and p.prosecdef), 14);
 select pg_temp.chk('internal gating helpers are not callable by anon/authenticated',
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname in ('admin_gate','business_has_feature','business_plan_limits','feature_gate_error','plan_limit_violations','check_staff_cap','widget_feature_enabled','create_business_subscription','sync_business_from_subscription')

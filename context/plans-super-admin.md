@@ -1,5 +1,5 @@
 # Plans, add-ons, feature gating, super admin (backend)
-Status: **Phase 8A backend done, NO UI** · Last updated: 2026-10-06
+Status: **Phase 8A backend + Phase 8B UI done** · Last updated: 2026-10-06
 
 ## Business rules (decided with the user)
 - Plans per location: **solo** (1 staff, 1 location), **team** (5 staff, 1 location), **business** (unlimited). Staff cap is **per location**: active, non-deleted staff assigned (`staff_branches`) to a branch. Inactive/soft-deleted staff do not count. A staff member in two locations counts in each.
@@ -46,12 +46,25 @@ Then enrol TOTP for that user (see above) so a session can reach `aal2`.
 ## Tests
 `supabase/tests/18_plans_addons_super_admin.sql`: 341 assertions (all 13 RPCs refused for owner/manager/staff/other business/no-aal2/anon with state proven unchanged; feature matrix per plan; add-on on/off; trial expiry/extend/assign/suspend; staff cap 1/5/unlimited, inactive, reactivation; downgrade refusal; branch limit incl. soft delete; custom roles; widget; module example; audit stored values; list keyset/search; presets; review takedown; grants; delete cascade). Suite 17 now uses an aal2 helper for its admin calls (341). Regression 06-08, 10-14, 16, 17 unchanged and green.
 
+## UI (Phase 8B)
+- **Client gating reads the server**: `features/plans/` (`useMyFeatures` -> `my_features()`, key `my-features`, 60 s stale + app focus + invalidated by `useMembers` role/membership changes; `useFeatureFlag(key)`; `RequireFeature`; `NotIncludedState`; pure `featureLogic.ts`, `planErrors.ts`). `GrantSet.features` replaced `plan`; `can()/hasFeature()` map a permission to a feature key via the catalogue (`featureForPermission`); unknown map = gated features OFF. `useWidgetFeatureEnabled` now reads `embed_widget`. `RouteGuard` shows the calm **"Not included in your plan"** state (no pricing) when a route is denied only by plan (`isRouteBlockedByPlan`); the widget tab uses the same state. **No nav item is plan-gated today**, so the route-level state is exercised only once a gated route exists (`ROUTE_FEATURES`).
+- **DB refusals mapped** (`planErrors.ts`): `staff_cap_reached`, `branch_limit_reached`, `feature_unavailable` (+ custom roles) -> messages; wired into the staff form (a refused new profile is soft-deleted so no location-less ghost is left). No UI exists yet for adding a branch or a custom role: use `planErrorKey(error)` there.
+- **Billing** `/settings/billing` (`settings.billing`, hub card): plan, status badge, trial end / period end, staff per location vs cap (`my_plan_usage`), locations vs limit, add-ons on/off, "Contact us" mailto. No payments, no prices.
+- **Super admin** `app/(admin)/admin/{index,business/[id],platform,2fa}`. Visibility = platform flag (own profile row) AND aal2 (read from the access-token `aal` claim): `adminAccess()` / `adminRedirect()` in `adminLogic.ts` (tested). `AdminAccessGate` (root, outside `AuthGate`) forces a flagged aal1 account to `/admin/2fa` at sign-in and sends a business-less admin to `/admin` instead of onboarding; `AdminGuard` wraps each admin SCREEN (the layout must always render the navigator, or Expo Router loses the route) and shows "not found" to everyone else. Menu entry `AdminEntry` (Sidebar + More) renders only at flag + aal2.
+- Screens: businesses list (server search, plan/status filters, keyset 20), business detail (subscription, usage, add-on toggles with confirm, assign plan / set status / extend trial / add SMS credits dialogs, reviews + remove with reason via `admin_list_reviews`, support view that says it is logged and audits every press), platform (plan + add-on prices in major units, SMS rates, industry presets with `term = Label` and `Label | type | required | options` line editors). Every dialog says the action is recorded. All 22 reason codes map to messages (`ADMIN_ERROR_KEYS`, tested); `over_limit` lists the offending locations.
+- 2FA screen: enrol (QR via `react-native-svg` `SvgXml`, secret shown, abandoned unverified factors removed first) or enter the 6-digit code; `challengeAndVerify` upgrades the session. No new dependency.
+- Backend added for the UI: `admin_list_reviews` (audited on the first page) and `my_plan_usage` (migration `20261010130000`).
+- **Verified 2026-10-06 on web (375 + 1440), real data, throwaway users (deleted by id afterwards)**: Owner billing (Team 3 of 5, Solo at cap), admin list / detail / platform at both widths, 2FA gate (aal1 lands on it; typed a real TOTP code in the UI and landed on /admin), an owner and an aal1 admin cannot see the admin area (not found / 2FA), a real server refusal (`not_extendable`) rendered as a message through the dialog, Solo widget tab shows the not-included state. **MFA was completed in automation** by computing the TOTP from the enrolment secret in Node (REST `/auth/v1/factors`), so the full enrol-by-QR-scan UI path was NOT clicked (only the verify path); the QR rendering was not screenshotted. Real HTTP: anon key refused (42501), owner `forbidden`, aal1 `mfa_required`, aal2 ok.
+- **Not verified**: iOS/Android (written review below), RTL, hardware back, the other dialogs' submit paths (assign plan, status, credits, remove review, prices, rates, presets) were not clicked (their RPCs and schemas are tested), the enrol-by-QR screen.
+- Android review (code only): screens use `Screen`/`PageContainer` + `edges` defaults (admin has no tab bar), dialogs are the shared `Dialog` (Android back via `useOverlayDismiss`), `SvgXml` works on native, inputs use `keyboardType`/`autoComplete="one-time-code"`, touch targets from shared primitives.
+
 ## Known limits / TODO
-- No UI at all (admin screens, plan picker, upgrade prompts, `/billing`); client gating still the old stub.
+- No payments, no plan picker, no upgrade prompts (decided: calm "not included" only).
 - `list_businesses` search covers name + slug only (no owner email).
 - Staff cap counts per location; a staff profile with no location is not counted until assigned.
 - **Solo "owner only" is not enforced** (a Solo business can still invite members; only the 1-staff cap applies).
 - Appointments-this-month uses the UTC month.
 
 ## Changelog
+- 2026-10-06: Phase 8B UI (gating from `my_features`, billing, admin area, 2FA) + `admin_list_reviews`, `my_plan_usage`; `is_super_admin()` requires aal2; TOTP enabled in config.
 - 2026-10-06: Phase 8A backend (3 migrations `20261010090000/100000/110000`, suite 18).

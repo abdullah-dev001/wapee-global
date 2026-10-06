@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { brand } from '@/config/brand';
 import { navLabelKey, type NavItem } from '@/config/navigation';
+import { AdminEntry } from '@/features/admin/components';
 import { useSignOut } from '@/features/auth';
 import { useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
@@ -74,6 +75,7 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
                 onNavigate={onNavigate}
               />
             ))}
+        <AdminEntry variant="sidebar" onNavigate={onNavigate} />
       </ScrollView>
 
       <View style={[styles.account, { paddingBottom: theme.spacing[12] + insets.bottom }]}>

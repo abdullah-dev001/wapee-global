@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ServiceWorkerUpdater } from '@/components/layout/ServiceWorkerUpdater';
 import { ToastProvider } from '@/components/ui';
+import { AdminAccessGate } from '@/features/admin/components';
 import { AuthGate, SessionProvider } from '@/features/auth';
 import { useTabletOrientation } from '@/lib/device/useTabletOrientation';
 import { applyDirection, i18n } from '@/lib/i18n';
@@ -55,14 +56,16 @@ export default function RootLayout() {
                 <ServiceWorkerUpdater />
                 <StatusBar style="dark" />
                 <SessionProvider>
-                  <AuthGate>
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                        contentStyle: { backgroundColor: theme.colors.background },
-                      }}
-                    />
-                  </AuthGate>
+                  <AdminAccessGate>
+                    <AuthGate>
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
+                          contentStyle: { backgroundColor: theme.colors.background },
+                        }}
+                      />
+                    </AuthGate>
+                  </AdminAccessGate>
                 </SessionProvider>
               </ToastProvider>
             </QueryClientProvider>

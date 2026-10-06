@@ -1,11 +1,10 @@
+import { useFeatureFlag } from '@/lib/permissions';
+
 /**
- * Plan gating seam for the embed widget (doc §7.4: Team and above).
- *
- * Phase 8 replaces this with `useFeature('widget')`-style gating from the plan
- * catalogue. Until then every business may use it, matching the database seam
- * `widget_feature_enabled()` (always true). Keep call sites going through this
- * hook so Phase 8 is a one-file change.
+ * Plan gating for the embed widget (doc §7.4: Team and Business). Reads the
+ * server's `my_features()` answer; the database seam `widget_feature_enabled()`
+ * and the widget RPCs refuse regardless of what this returns.
  */
 export function useWidgetFeatureEnabled(): boolean {
-  return true;
+  return useFeatureFlag('embed_widget').enabled;
 }

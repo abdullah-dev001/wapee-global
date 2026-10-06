@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
 import { EmptyState, Skeleton } from '@/components/ui';
+import { NotIncludedState } from '@/features/plans/components';
 import { ActiveBusinessGate } from '@/features/billing/components/ActiveBusinessGate';
 import { useVisibleNav } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
@@ -33,13 +34,15 @@ export function RouteGuard({ children }: { children: ReactNode }) {
 
 function PermissionGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { isRouteAllowed, isPending } = useVisibleNav();
+  const { isRouteAllowed, isRouteBlockedByPlan, isPending } = useVisibleNav();
 
   // Wait for the permission set: denying first and allowing a frame later would
   // flash "no access" on every cold start.
   if (isPending) return <RouteGuardSkeleton />;
 
-  if (!isRouteAllowed(pathname)) return <NoAccessScreen />;
+  if (!isRouteAllowed(pathname)) {
+    return isRouteBlockedByPlan(pathname) ? <NotIncludedState /> : <NoAccessScreen />;
+  }
 
   return <>{children}</>;
 }

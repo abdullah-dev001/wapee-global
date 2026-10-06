@@ -103,6 +103,9 @@ bundle are verified.
 ## Phase 8A (backend) update
 Plans, subscriptions, trial rules, the super admin lifecycle RPCs (`assign_plan`, `set_business_status`, `extend_trial`) and the "locked until a plan is assigned" behaviour are now real database objects: see [plans-super-admin.md](plans-super-admin.md). A trial behaves as Business-level; an expired one is inactive with every feature off. Still no `/billing` UI.
 
+## Phase 8B (UI)
+`/settings/billing` exists now (Owner, `settings.billing`): plan, status, trial/period end, staff usage, add-ons, Contact us. The trial banner still points at `/settings`. See [plans-super-admin.md](plans-super-admin.md).
+
 ## Known limits / TODO
 - No `/billing` route exists yet — it is in the allowed list ready for Phase 8. Today the owner reaches Settings only.
 - `brand.supportEmail` is `support@wapee.com`, a **placeholder** like the domains.

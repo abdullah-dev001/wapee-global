@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { navItems, type AppRoute, type NavItem } from '@/config/navigation';
 
-import { can } from './can';
+import { can, hasFeature, hasPermission } from './can';
 import { useGrantSet } from './useGrants';
 
 /**
@@ -24,6 +24,8 @@ export type VisibleNav = {
   isPending: boolean;
   /** Is this route allowed? Unknown routes are allowed (they are not nav destinations). */
   isRouteAllowed: (route: string) => boolean;
+  /** Denied only because the plan / add-on does not include it (the member holds the permission). */
+  isRouteBlockedByPlan: (route: string) => boolean;
 };
 
 export function useVisibleNav(): VisibleNav {
@@ -49,6 +51,17 @@ export function useVisibleNav(): VisibleNav {
         // Not a nav destination (e.g. /more, a detail route): nothing to gate here.
         if (!item) return true;
         return allows(item);
+      },
+      isRouteBlockedByPlan: (route: string) => {
+        const item = byRoute.get(route);
+        if (!item || isPending || allows(item)) return false;
+        return [item.permission, item.alsoPermission].some(
+          (permission) =>
+            permission !== undefined &&
+            set.isActive &&
+            hasPermission(set, permission) &&
+            !hasFeature(set, permission),
+        );
       },
     };
   }, [set, isPending]);

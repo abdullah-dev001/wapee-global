@@ -141,7 +141,17 @@ export function useSaveStaff(businessId: string | null) {
             business_id: businessId,
           })),
         );
-        if (error) throw new Error(error.message);
+        if (error) {
+          // A refused assignment (e.g. the plan's staff cap) must not leave a new,
+          // active profile with no location behind: undo the profile we just made.
+          if (!values.id) {
+            await supabase
+              .from('staff_profiles')
+              .update({ is_active: false, deleted_at: new Date().toISOString() })
+              .eq('id', staffId);
+          }
+          throw new Error(error.message);
+        }
       }
 
       const { error: clearServices } = await supabase
