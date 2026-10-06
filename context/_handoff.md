@@ -20,6 +20,8 @@ form interaction — automated taps did not register on the simulator
 (documented limitation, see `clients.md`). Next: Phase 5 (invoices) or
 further Phase 4 polish, once the user says go.
 
+**Phase 8A (plans, add-ons, feature gating, super admin; BACKEND ONLY) is DONE** — see `context/plans-super-admin.md`. Before first real use: enable TOTP in `supabase/config.toml` + enrol the super admin (every admin RPC needs an aal2 session), create the super admin by the documented SQL. Client gating (`can.ts`, `useWidgetFeatureEnabled`) is still the old stub: next UI phase reads `my_features()`.
+
 ## Done
 - **Phase 0:** Expo SDK 57 app (iOS/Android/web+PWA), theme from DESIGN_GUIDE, 13 UI primitives, responsive shell (bottom tabs / sidebar / header), i18n, PWA install hint + update toast.
 - **Phase 2 — complete.** Catalogue and schedule: 13 tables with 5 exclusion constraints and Own-scope RLS; services UI (per-branch prices, server-side search); staff UI (login optional, branch + service assignment); schedule UI (per-person weeks, branch hours, time off, holidays, rooms). Five shared components built with **no new dependency**: MoneyInput, SearchInput, TimePicker, DayHoursRow, DateRangePicker. `lib/money` and `lib/time` partly implemented (75 unit tests).

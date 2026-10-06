@@ -479,10 +479,13 @@ written by the invoice RPCs (trigger + flag `wapee.invoice_link`).
 SECURITY DEFINER" warning (the explicit check inside is the boundary);
 performance = no unindexed FKs (new indexes show as unused until used).
 
+## Phase 8A migrations (plans, add-ons, super admin)
+`20261010090000_phase8_plans_schema` (plans, addons, business_subscriptions, business_addons, industry_presets, seeds, backfill, mirror triggers, tightened `enforce_business_guard`), `…100000_phase8_feature_gating` (`business_has_feature`, `business_plan_limits`, `feature_gate_error`, `my_features`, `plan_limit_violations`, staff-cap / branch-limit / custom-roles triggers, real `widget_feature_enabled`), `…110000_phase8_super_admin_rpcs` (`admin_gate` + 13 RPCs). Applied with `db query --linked` + `migration repair`. 341 assertions in `18_plans_addons_super_admin.sql`. Advisors: no errors; new warnings are the intentional authenticated-DEFINER admin RPCs. Detail: `context/plans-super-admin.md`. NOTE: 100000 and 110000 were applied once before 090000 (which first failed on a duplicate index and was fixed and re-applied); function bodies are late-bound so the end state is correct.
+
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
 - **Leaked-password protection is OFF** (security advisor). It is a dashboard setting: Authentication → Policies → enable "Check against HaveIBeenPwned". Worth turning on before real users.
-- Plan/add-on gating (`min_plan`, `addon` on `permissions`) is stored but **not enforced**; that lands in Phase 8.
+- Plan/add-on gating: enforced in the DB since Phase 8A for staff cap, branches, custom roles, widget; `permissions.min_plan/addon` themselves are still not consulted by `can()`.
 - **Group capacity has no DB guarantee.** `people_per_slot > 1` and
   `resources.capacity > 1` need a counted check under
   `pg_advisory_xact_lock(branch, service, staff, starts_at)` inside

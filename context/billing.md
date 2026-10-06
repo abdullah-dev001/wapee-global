@@ -100,6 +100,9 @@ The test business's trial was restored afterwards.
 session, so the lock screen's appearance is unconfirmed. The logic, routes and
 bundle are verified.
 
+## Phase 8A (backend) update
+Plans, subscriptions, trial rules, the super admin lifecycle RPCs (`assign_plan`, `set_business_status`, `extend_trial`) and the "locked until a plan is assigned" behaviour are now real database objects: see [plans-super-admin.md](plans-super-admin.md). A trial behaves as Business-level; an expired one is inactive with every feature off. Still no `/billing` UI.
+
 ## Known limits / TODO
 - No `/billing` route exists yet — it is in the allowed list ready for Phase 8. Today the owner reaches Settings only.
 - `brand.supportEmail` is `support@wapee.com`, a **placeholder** like the domains.

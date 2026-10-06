@@ -55,6 +55,8 @@ pg_cron: `outbox-worker` every minute (calls the worker only if something is due
 - `smoke:public`: 34 pass, 2 fail with 429 (the e2e run had already spent the per-IP `create_booking` budget; known trap), 1 skipped.
 - Throwaway business/user deleted by id; the 3 original businesses and 4 users are untouched; outbox, log, ledger, suppressions and push tokens are empty.
 
+- 2026-10-06 (Phase 8A): `admin_add_sms_credits` / `admin_set_sms_rate` now sit behind `admin_gate()` (super admin + aal2).
+
 ## Known limits / TODO
 - **A crashed SMS send is never re-sent** (debit taken, outcome unknown: `dead` / `ambiguous_send`, no refund), so the customer may get no message.
 - **Email spam vector:** anyone can book with a victim's email; the per-phone (5/day), per-business (30/h, 120/day) and per-recipient (5/day) caps are the only brake.

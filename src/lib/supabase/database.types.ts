@@ -39,6 +39,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      addons: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          key: string
+          name: string
+          price_monthly_minor: number
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          key: string
+          name: string
+          price_monthly_minor: number
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          key?: string
+          name?: string
+          price_monthly_minor?: number
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addons_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_field_values: {
         Row: {
           appointment_id: string
@@ -646,6 +690,55 @@ export type Database = {
           },
         ]
       }
+      business_addons: {
+        Row: {
+          addon_key: string
+          business_id: string
+          created_at: string
+          enabled: boolean
+          enabled_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          addon_key: string
+          business_id: string
+          created_at?: string
+          enabled?: boolean
+          enabled_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          addon_key?: string
+          business_id?: string
+          created_at?: string
+          enabled?: boolean
+          enabled_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_addons_addon_key_fkey"
+            columns: ["addon_key"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "business_addons_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_addons_enabled_by_fkey"
+            columns: ["enabled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_members: {
         Row: {
           business_id: string
@@ -709,6 +802,60 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_subscriptions: {
+        Row: {
+          assigned_by: string | null
+          business_id: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          notes: string | null
+          plan: Database["public"]["Enums"]["business_plan"] | null
+          status: Database["public"]["Enums"]["business_status"]
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          business_id: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          notes?: string | null
+          plan?: Database["public"]["Enums"]["business_plan"] | null
+          status?: Database["public"]["Enums"]["business_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          business_id?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          notes?: string | null
+          plan?: Database["public"]["Enums"]["business_plan"] | null
+          status?: Database["public"]["Enums"]["business_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_subscriptions_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1064,6 +1211,53 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      industry_presets: {
+        Row: {
+          active: boolean
+          created_at: string
+          key: string
+          name: string
+          sort_order: number
+          starter_custom_fields: Json
+          template_key: string
+          terminology: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          key: string
+          name: string
+          sort_order?: number
+          starter_custom_fields?: Json
+          template_key?: string
+          terminology?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          key?: string
+          name?: string
+          sort_order?: number
+          starter_custom_fields?: Json
+          template_key?: string
+          terminology?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "industry_presets_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1751,6 +1945,62 @@ export type Database = {
           min_plan?: Database["public"]["Enums"]["business_plan"] | null
         }
         Relationships: []
+      }
+      plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          features: Json
+          key: Database["public"]["Enums"]["business_plan"]
+          max_branches: number | null
+          name: string
+          price_annual_minor: number
+          price_monthly_minor: number
+          sort_order: number
+          staff_cap: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          features?: Json
+          key: Database["public"]["Enums"]["business_plan"]
+          max_branches?: number | null
+          name: string
+          price_annual_minor: number
+          price_monthly_minor: number
+          sort_order?: number
+          staff_cap?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          features?: Json
+          key?: Database["public"]["Enums"]["business_plan"]
+          max_branches?: number | null
+          name?: string
+          price_annual_minor?: number
+          price_monthly_minor?: number
+          sort_order?: number
+          staff_cap?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plans_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -3146,6 +3396,7 @@ export type Database = {
         Args: { p_business: string; p_credits: number; p_note?: string }
         Returns: Json
       }
+      admin_gate: { Args: never; Returns: string }
       admin_set_sms_rate: {
         Args: {
           p_country: string
@@ -3156,12 +3407,26 @@ export type Database = {
         Returns: Json
       }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
+      assign_plan: {
+        Args: {
+          p_business_id: string
+          p_notes?: string
+          p_period_end?: string
+          p_plan: string
+        }
+        Returns: Json
+      }
       branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
       build_form_fields_snapshot: {
         Args: { p_business_id: string }
         Returns: Json
       }
+      business_has_feature: {
+        Args: { p_business_id: string; p_key: string }
+        Returns: boolean
+      }
       business_is_active: { Args: { p_business_id: string }; Returns: boolean }
+      business_plan_limits: { Args: { p_business_id: string }; Returns: Json }
       can: {
         Args: {
           p_branch_id: string
@@ -3221,6 +3486,10 @@ export type Database = {
           p_outcome?: string
         }
         Returns: Json
+      }
+      check_staff_cap: {
+        Args: { p_branch_id: string; p_business_id: string; p_extra: number }
+        Returns: undefined
       }
       cleanup_public_request_attempts: {
         Args: { p_older_than?: string }
@@ -3295,6 +3564,14 @@ export type Database = {
       ensure_form_version: { Args: { p_business_id: string }; Returns: string }
       ensure_website: { Args: { p_business_id: string }; Returns: Json }
       ensure_widget_key: { Args: { p_business_id: string }; Returns: Json }
+      extend_trial: {
+        Args: { p_business_id: string; p_days: number }
+        Returns: Json
+      }
+      feature_gate_error: {
+        Args: { p_business_id: string; p_key: string }
+        Returns: Json
+      }
       format_document_number: {
         Args: { p_credit: boolean; p_prefix: string; p_seq: number }
         Returns: string
@@ -3316,6 +3593,7 @@ export type Database = {
         Args: { p_from_date?: string; p_to_date?: string; p_token: string }
         Returns: Json
       }
+      get_business_detail: { Args: { p_business_id: string }; Returns: Json }
       get_calendar_appointments: {
         Args: {
           p_branch_id: string
@@ -3451,6 +3729,17 @@ export type Database = {
         }
         Returns: Json
       }
+      list_businesses: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_plan?: string
+          p_search?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
       list_invoices: {
         Args: {
           p_branch_id?: string
@@ -3486,6 +3775,7 @@ export type Database = {
       mask_phone: { Args: { p_phone: string }; Returns: string }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
       message_recipient_hash: { Args: { p_address: string }; Returns: string }
+      my_features: { Args: { p_business_id: string }; Returns: Json }
       my_grants: {
         Args: { p_business_id: string }
         Returns: {
@@ -3602,6 +3892,13 @@ export type Database = {
         }
         Returns: string
       }
+      plan_limit_violations: {
+        Args: {
+          p_business_id: string
+          p_plan: Database["public"]["Enums"]["business_plan"]
+        }
+        Returns: Json
+      }
       push_recipient_users: {
         Args: {
           p_branch: string
@@ -3622,6 +3919,10 @@ export type Database = {
       }
       reissue_review_request: {
         Args: { p_appointment_id: string }
+        Returns: Json
+      }
+      remove_review: {
+        Args: { p_reason: string; p_review_id: string }
         Returns: Json
       }
       reopen_appointment: { Args: { p_appointment_id: string }; Returns: Json }
@@ -3706,6 +4007,35 @@ export type Database = {
         Args: { p_business_id: string; p_domains: string[] }
         Returns: Json
       }
+      set_addon: {
+        Args: { p_addon: string; p_business_id: string; p_enabled: boolean }
+        Returns: Json
+      }
+      set_addon_prices: {
+        Args: {
+          p_active?: boolean
+          p_currency: string
+          p_key: string
+          p_monthly_minor: number
+          p_name?: string
+        }
+        Returns: Json
+      }
+      set_business_status: {
+        Args: { p_business_id: string; p_note?: string; p_status: string }
+        Returns: Json
+      }
+      set_plan_prices: {
+        Args: {
+          p_active?: boolean
+          p_annual_minor: number
+          p_currency: string
+          p_key: string
+          p_monthly_minor: number
+          p_name?: string
+        }
+        Returns: Json
+      }
       set_review_featured: {
         Args: { p_featured: boolean; p_review_id: string }
         Returns: Json
@@ -3767,6 +4097,7 @@ export type Database = {
         Args: { p_business_id: string; p_name: string }
         Returns: string
       }
+      support_view_business: { Args: { p_business_id: string }; Returns: Json }
       suppress_recipient: {
         Args: {
           p_business: string
@@ -3798,6 +4129,17 @@ export type Database = {
           p_invoice_id: string
           p_items?: Json
           p_notes?: string
+        }
+        Returns: Json
+      }
+      upsert_industry_preset: {
+        Args: {
+          p_active?: boolean
+          p_key: string
+          p_name: string
+          p_starter_fields: Json
+          p_template_key: string
+          p_terminology: Json
         }
         Returns: Json
       }

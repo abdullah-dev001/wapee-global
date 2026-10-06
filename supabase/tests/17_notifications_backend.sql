@@ -39,7 +39,14 @@ end; $$;
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims',
-    json_build_object('sub', p_user, 'role', 'authenticated')::text, true);
+    json_build_object('sub', p_user, 'role', 'authenticated',
+      'aal', case when (select is_super_admin from public.profiles where id = p_user) then 'aal2' else 'aal1' end)::text, true);
+end; $$;
+-- Phase 8: super admin RPCs need a TOTP-verified (aal2) session.
+create or replace function pg_temp.act_as_mfa(p_user uuid) returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal2')::text, true);
 end; $$;
 
 do $$
@@ -866,16 +873,16 @@ begin
   r := public.admin_add_sms_credits(pg_temp.id('biza'), 5000, 'owner tries'); reset role;
   perform pg_temp.chk('business owner cannot add credits', r->>'code', 'forbidden');
   perform pg_temp.chk('...ledger untouched', (select count(*)::int from public.sms_credit_ledger where business_id = pg_temp.id('biza')), 0);
-  perform pg_temp.act_as(pg_temp.id('sadmin')); set local role authenticated;
+  perform pg_temp.act_as_mfa(pg_temp.id('sadmin')); set local role authenticated;
   r := public.admin_add_sms_credits(pg_temp.id('biza'), 0, null); reset role;
   perform pg_temp.chk('zero credits refused', r->>'code', 'invalid_amount');
-  perform pg_temp.act_as(pg_temp.id('sadmin')); set local role authenticated;
+  perform pg_temp.act_as_mfa(pg_temp.id('sadmin')); set local role authenticated;
   r := public.admin_add_sms_credits(gen_random_uuid(), 100, null); reset role;
   perform pg_temp.chk('unknown business refused', r->>'code', 'not_found');
-  perform pg_temp.act_as(pg_temp.id('sadmin')); set local role authenticated;
+  perform pg_temp.act_as_mfa(pg_temp.id('sadmin')); set local role authenticated;
   r := public.admin_add_sms_credits(pg_temp.id('biza'), -1, null); reset role;
   perform pg_temp.chk('a correction below zero is refused, balance never negative', r->>'code', 'insufficient');
-  perform pg_temp.act_as(pg_temp.id('sadmin')); set local role authenticated;
+  perform pg_temp.act_as_mfa(pg_temp.id('sadmin')); set local role authenticated;
   r := public.admin_add_sms_credits(pg_temp.id('biza'), 1000, 'pack'); reset role;
   perform pg_temp.chk('super admin adds 1000', r->>'balance', '1000');
   perform pg_temp.chk('...ledger row stored: purchase, +1000, balance_after 1000, note, actor',
