@@ -15,6 +15,7 @@ import {
   Text,
   useToast,
 } from '@/components/ui';
+import { ClientPackagesSection } from '@/features/packages/components/ClientPackagesSection';
 import { useAppointmentList } from '@/features/appointments/api/useAppointments';
 import { type AppointmentRow } from '@/features/appointments/types';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
@@ -147,6 +148,9 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
               </Text>
             </View>
           </Card>
+
+          {/* Add-on "Packages & Sessions": renders nothing when the add-on is off. */}
+          <ClientPackagesSection clientId={clientId} />
 
           {canViewAppointments ? (
             <>

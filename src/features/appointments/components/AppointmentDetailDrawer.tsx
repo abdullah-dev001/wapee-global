@@ -18,6 +18,7 @@ import {
 } from '../api/useAppointments';
 import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
+import { AppointmentPackageSection } from '@/features/packages/components/AppointmentPackageSection';
 import { AppointmentMessages } from '@/features/notifications/components/AppointmentMessages';
 import { ReviewLinkAction } from '@/features/reviews/components/ReviewLinkAction';
 import { showReviewLink } from '@/features/reviews/reviewLinkStore';
@@ -155,6 +156,15 @@ export function AppointmentDetailDrawer({
                 onNavigate={onClose}
               />
             ) : null}
+
+            {/* Add-on "Packages & Sessions": balance + use/undo a session (hidden when the add-on is off). */}
+            <AppointmentPackageSection
+              appointmentId={appointment.id}
+              branchId={appointment.branchId}
+              clientId={appointment.clientId}
+              serviceId={appointment.serviceId}
+              status={appointment.status}
+            />
 
             {/* "Did the customer get a message?" (branch-scope viewers only). */}
             <AppointmentMessages

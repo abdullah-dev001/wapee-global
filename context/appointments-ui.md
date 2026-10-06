@@ -160,6 +160,7 @@ Namespace `common`, group `appointments.*`.
   `setQueryData` — fine given Realtime already re-invalidates.
 
 ## Changelog
+- 2026-10-07: Phase 10A: the detail drawer has a Package sessions block (`AppointmentPackageSection`: use a session, Undo within 10 min, Reverse with a reason) while the add-on is on; Today and the tablet/desktop header show the `LowStockBadge`.
 - 2026-10-07 (Phase 7B): "Mark completed" (Today and the detail drawer) now shows the customer's review link in a dialog (`ReviewLinkDialogHost`); the drawer's completed state offers "Get review link again". See [website-reviews-widget.md](website-reviews-widget.md).
 - 2026-10-05 (UI polish): layout fixes, no behaviour change. The dead
   vertical gap under the Day/Week/List tabs came from `PageContainer`'s

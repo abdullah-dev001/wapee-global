@@ -563,3 +563,57 @@ describe('report_summary email', () => {
     expect(formatMinor(12345, 'USD', 'en')).toContain('123.45');
   });
 });
+
+describe('low stock alerts', () => {
+  const payload = {
+    product: 'Shampoo <b>',
+    stock: 3,
+    threshold: 5,
+    unit: 'bottle',
+    branch: 'Main',
+  };
+  const links = { manageUrl: null, reviewUrl: null, unsubscribeUrl: null };
+  const emailJob = (over: Partial<Job> = {}) =>
+    job({
+      event: 'low_stock',
+      client_first_name: null,
+      client_name: null,
+      starts_at: null,
+      payload,
+      ...over,
+    });
+
+  it('email: names the product, the stock and the alert level, never an unsubscribe link', () => {
+    const m = renderEmail(emailJob(), links);
+    expect(m?.subject).toBe('Nova Hair Studio: Shampoo <b> is running low');
+    expect(m?.text).toContain('In stock: 3 bottle (alert level: 5)');
+    expect(m?.text).toContain('Location: Main');
+    expect(m?.text).not.toContain('Stop these emails');
+  });
+
+  it('email: escapes the product name in the html', () => {
+    expect(renderEmail(emailJob(), links)?.html).toContain('Shampoo &lt;b&gt;');
+  });
+
+  it('email: a malformed payload cannot be rendered (the job fails, nothing is sent)', async () => {
+    expect(renderEmail(emailJob({ payload: {} }), links)).toBeNull();
+    const { d, calls } = deps();
+    expect(await processJob(emailJob({ payload: {} }), d)).toBe('dead');
+    expect(calls.emails).toHaveLength(0);
+  });
+
+  it('push: a short title and the product with its stock', () => {
+    const p = renderPush(
+      job({ channel: 'push', event: 'staff_low_stock', starts_at: null, payload }),
+    );
+    expect(p?.title).toBe('Low stock');
+    expect(p?.body).toBe('Shampoo <b> · 3 left');
+  });
+
+  it('is sent as an email through the normal path with its own idempotency key', async () => {
+    const { d, calls } = deps();
+    expect(await processJob(emailJob({ idempotency_key: 'low_stock:p1:m1:u1' }), d)).toBe('sent');
+    expect(calls.emails[0]?.idempotencyKey).toBe('low_stock:p1:m1:u1');
+    expect(calls.emails[0]?.unsubscribeUrl).toBeNull();
+  });
+});

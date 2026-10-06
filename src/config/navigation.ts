@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   Percent,
   BarChart3,
+  Boxes,
+  Package,
   Receipt,
   Globe,
   Scissors,
@@ -38,6 +40,8 @@ export type AppRoute =
   | '/invoices'
   | '/reports'
   | '/commission'
+  | '/packages'
+  | '/inventory'
   | '/reviews'
   | '/website'
   | '/settings'
@@ -55,6 +59,8 @@ export type NavId =
   | 'invoices'
   | 'reports'
   | 'commission'
+  | 'packages'
+  | 'inventory'
   | 'reviews'
   | 'website'
   | 'settings'
@@ -122,6 +128,10 @@ export const navItems: readonly NavItem[] = [
     permission: 'commission.view_own',
     phase: 9,
   },
+  // Add-ons (Phase 10): hidden, with their screens, while the add-on is off. The plan gate comes
+  // from the permission catalogue (`packages.*` / `inventory.*` carry their add-on).
+  { id: 'packages', route: '/packages', icon: Package, permission: 'packages.sell', phase: 10 },
+  { id: 'inventory', route: '/inventory', icon: Boxes, permission: 'inventory.view', phase: 10 },
   { id: 'reviews', route: '/reviews', icon: Star, permission: 'reviews.view', phase: 7 },
   { id: 'website', route: '/website', icon: Globe, permission: 'website.edit', phase: 7 },
   // Owner (settings.business) OR a Manager (settings.booking): the hub itself lists only

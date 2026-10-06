@@ -56,7 +56,9 @@
     "members": "Team",
     "schedule": "Schedule",
     "website": "Website",
-    "commission": "Commission"
+    "commission": "Commission",
+    "packages": "Packages",
+    "inventory": "Inventory"
   },
   "screens": {
     "comingSoon": "Coming in phase {{phase}}",
@@ -904,7 +906,8 @@
       "phoneInvalid": "Enter a valid phone number.",
       "notesTooLong": "Notes are too long.",
       "duplicatePhone": "This phone number already belongs to another client."
-    }
+    },
+    "packagesSection": "Packages"
   },
   "invoices": {
     "title": "Invoices",
@@ -1039,7 +1042,14 @@
       "freeLine": "Free-text line",
       "saved": "Draft saved",
       "created": "Draft created",
-      "discountNeedsPermission": "You don't have permission to give discounts."
+      "discountNeedsPermission": "You don't have permission to give discounts.",
+      "addPackage": "Add package",
+      "pickPackage": "Choose a package",
+      "addProduct": "Add product",
+      "pickProduct": "Choose a product",
+      "packageNeedsClient": "A package is sold to a client. Choose the client above before issuing.",
+      "packageLine": "Package: sessions are added to the client when the invoice is issued.",
+      "productLine": "Product: stock is reduced when the invoice is issued."
     },
     "payment": {
       "title": "Add payment",
@@ -1131,7 +1141,14 @@
       "not_a_payment": "Only a payment can be reversed.",
       "reason_required": "A reason is required (at least 3 characters).",
       "invalid_filter": "That filter isn't valid.",
-      "unknown": "Something went wrong. Please try again."
+      "unknown": "Something went wrong. Please try again.",
+      "unknown_package": "That package is no longer available.",
+      "unknown_product": "That product is no longer available.",
+      "package_quantity": "A package line is always quantity 1. Add another line for a second package.",
+      "client_required_for_package": "Choose the client before issuing: a package is sold to a client.",
+      "insufficient_stock": "Not enough stock for one of the products. Check the stock in Inventory.",
+      "package_sessions_used": "Sessions of a package on this invoice were already used. Reverse them first, or credit only part of the invoice.",
+      "feature_unavailable": "That item type is not part of your plan."
     },
     "loadMore": "Load more"
   },
@@ -2548,6 +2565,231 @@
       "returningClients": "Returning clients",
       "retention": "Retention (%)",
       "branch": "Location"
+    }
+  },
+  "packages": {
+    "title": "Packages",
+    "create": "New package",
+    "edit": "Edit package",
+    "searchPlaceholder": "Search packages",
+    "count": "{{count}} packages",
+    "empty": {
+      "title": "No packages yet",
+      "description": "Create a package of sessions (for example 10 massages) to sell to clients."
+    },
+    "emptySearch": {
+      "title": "No packages match your search",
+      "description": "Try a different name."
+    },
+    "error": {
+      "title": "Couldn't load packages"
+    },
+    "loadMore": "Load more",
+    "card": {
+      "sessions_one": "{{count}} session",
+      "sessions_other": "{{count}} sessions",
+      "bonus": "+ {{count}} bonus",
+      "price": "{{price}}",
+      "expires": "Valid for {{days}} days after the sale",
+      "noExpiry": "Never expires",
+      "inactive": "Inactive",
+      "services_one": "{{count}} service",
+      "services_other": "{{count}} services"
+    },
+    "form": {
+      "name": "Name",
+      "description": "Description (optional)",
+      "sessions": "Sessions",
+      "bonusSessions": "Bonus sessions",
+      "bonusHint": "Free extra sessions on top of the ones bought.",
+      "price": "Price",
+      "expiryDays": "Valid for (days)",
+      "expiryHint": "Leave empty for no expiry. Counted from the day it is sold.",
+      "services": "Services it can be used for",
+      "servicesHint": "Choose at least one.",
+      "noServices": "Create a service first.",
+      "active": "Active (can be sold)",
+      "save": "Save package",
+      "saved": "Package saved",
+      "deleted": "Package deleted",
+      "currencyFixed": "Prices are in {{currency}} (the branch currency).",
+      "soldNote": "Changes apply to new sales only. Packages already sold keep what the client bought."
+    },
+    "delete": {
+      "title": "Delete this package?",
+      "message": "It can no longer be sold. Packages already sold to clients are not affected.",
+      "confirm": "Delete package"
+    },
+    "state": {
+      "active": "Active",
+      "used_up": "Used up",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "client": {
+      "title": "Packages",
+      "empty": "This client has no packages.",
+      "remaining": "{{remaining}} of {{total}} left",
+      "expiresOn": "Expires {{date}}",
+      "neverExpires": "Never expires",
+      "soldOn": "Sold {{date}}",
+      "bonusIncluded": "incl. {{count}} bonus",
+      "error": "Couldn't load packages"
+    },
+    "appointment": {
+      "title": "Package sessions",
+      "useSession": "Use a session",
+      "choose": "Package to use",
+      "noPackage": "This client has no usable package for this service.",
+      "usedFrom": "Session used from {{name}}",
+      "undo": "Undo",
+      "reverse": "Reverse",
+      "used": "Session used",
+      "undone": "Session returned to the package",
+      "deductedToast": "Session used. {{remaining}} left.",
+      "confirmTitle": "Use one session?",
+      "confirmMessage": "One session is taken from {{name}} for this appointment.",
+      "confirm": "Use session",
+      "reverseTitle": "Return this session?",
+      "reverseMessage": "The session goes back to the package. The deduction stays in the history.",
+      "reasonLabel": "Reason",
+      "reasonHint": "Required after the 10-minute undo window.",
+      "reverseConfirm": "Return session",
+      "history": "History",
+      "reversed": "Returned",
+      "notEligible": "A session can be used on a confirmed or completed appointment."
+    },
+    "errors": {
+      "forbidden": "You don't have permission to do that.",
+      "feature_unavailable": "Packages are not part of your plan.",
+      "not_found": "That could not be found.",
+      "invalid_name": "Enter a name (up to 120 characters).",
+      "invalid_description": "The description is too long.",
+      "invalid_sessions": "Sessions must be a whole number from 1 to 999.",
+      "invalid_bonus": "Bonus sessions must be a whole number from 0 to 999.",
+      "invalid_price": "Check the price.",
+      "invalid_expiry": "Validity must be from 1 to 3650 days, or empty.",
+      "services_required": "Choose at least one service.",
+      "unknown_service": "One of the services is not available.",
+      "duplicate_name": "A package with that name already exists here.",
+      "currency_changed": "The branch currency changed. Contact support.",
+      "appointment_not_eligible": "A session can only be used on a confirmed or completed appointment.",
+      "client_mismatch": "That package belongs to a different client.",
+      "package_cancelled": "That package was cancelled.",
+      "expired": "That package has expired.",
+      "service_not_covered": "That package doesn't cover this service.",
+      "already_deducted": "A session was already used for this appointment.",
+      "no_sessions_left": "No sessions left on that package.",
+      "already_reversed": "That session was already returned.",
+      "not_a_usage": "That entry can't be reversed.",
+      "undo_window_passed": "The 10-minute undo window has passed. Ask someone who can reverse sessions.",
+      "reason_required": "A reason is required (at least 3 characters).",
+      "unknown": "Something went wrong. Please try again."
+    }
+  },
+  "inventory": {
+    "title": "Inventory",
+    "create": "New product",
+    "edit": "Edit product",
+    "searchPlaceholder": "Search by name or SKU",
+    "count": "{{count}} products",
+    "empty": {
+      "title": "No products yet",
+      "description": "Add the products you sell, then sell them on invoices. Stock goes down by itself."
+    },
+    "emptySearch": {
+      "title": "No products match your search",
+      "description": "Try a different name or SKU."
+    },
+    "error": {
+      "title": "Couldn't load products"
+    },
+    "loadMore": "Load more",
+    "lowOnly": "Low stock only",
+    "lowBadge_one": "{{count}} product low on stock",
+    "lowBadge_other": "{{count}} products low on stock",
+    "lowBadgeOpen": "Review stock",
+    "card": {
+      "inStock": "{{qty}} {{unit}} in stock",
+      "skuLabel": "SKU {{sku}}",
+      "level": "Alert at {{level}}",
+      "noLevel": "No alert level",
+      "inactive": "Inactive"
+    },
+    "state": {
+      "ok": "In stock",
+      "low": "Low stock",
+      "out": "Out of stock"
+    },
+    "form": {
+      "name": "Name",
+      "sku": "SKU (optional)",
+      "unit": "Unit",
+      "unitHint": "For example bottle, piece, box.",
+      "price": "Selling price",
+      "level": "Low-stock alert level",
+      "levelHint": "You are alerted when stock falls to this number. Leave empty for no alert.",
+      "opening": "Opening stock",
+      "openingHint": "How many you have right now. Later changes are recorded as movements.",
+      "active": "Active (can be sold)",
+      "save": "Save product",
+      "saved": "Product saved",
+      "deleted": "Product deleted",
+      "currencyFixed": "Prices are in {{currency}} (the branch currency)."
+    },
+    "delete": {
+      "title": "Delete this product?",
+      "message": "It can no longer be sold. Its stock history is kept.",
+      "confirm": "Delete product"
+    },
+    "stock": {
+      "title": "Stock",
+      "current": "{{qty}} {{unit}} in stock",
+      "move": "Change stock",
+      "kind": "Type",
+      "kindPurchase": "Stock in",
+      "kindAdjustment": "Correction",
+      "kindReturn": "Customer return",
+      "direction": "Direction",
+      "directionIn": "Add",
+      "directionOut": "Remove",
+      "quantity": "Quantity",
+      "reason": "Reason",
+      "reasonOptional": "Reason (optional)",
+      "apply": "Record movement",
+      "recorded": "Stock updated",
+      "log": "History",
+      "logEmpty": "No movements yet.",
+      "logError": "Couldn't load the history",
+      "kind_purchase": "Stock in",
+      "kind_adjustment": "Correction",
+      "kind_sale": "Sale",
+      "kind_return": "Return",
+      "afterStock": "Stock after: {{qty}}",
+      "invoice": "On an invoice"
+    },
+    "settings": {
+      "title": "Stock rules",
+      "allowNegative": "Allow selling below zero",
+      "allowNegativeHint": "Off: an invoice with more than the stock is refused. On: it goes through and stock shows a negative number until you restock.",
+      "saved": "Setting saved"
+    },
+    "errors": {
+      "forbidden": "You don't have permission to do that.",
+      "feature_unavailable": "Inventory is not part of your plan.",
+      "not_found": "That could not be found.",
+      "invalid_name": "Enter a name (up to 120 characters).",
+      "invalid_sku": "The SKU is too long (60 characters).",
+      "invalid_unit": "Enter a unit (up to 20 characters).",
+      "invalid_price": "Check the price.",
+      "invalid_threshold": "The alert level must be a whole number, 0 or more.",
+      "invalid_quantity": "Enter a whole number greater than zero.",
+      "invalid_kind": "Choose a movement type.",
+      "invalid_value": "That value isn't valid.",
+      "duplicate_sku": "Another product here already uses that SKU.",
+      "reason_required": "A reason is required (at least 3 characters).",
+      "insufficient_stock": "There is not enough stock for that.",
+      "unknown": "Something went wrong. Please try again."
     }
   }
 }

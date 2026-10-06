@@ -5,6 +5,7 @@ export { DataTable, type DataTableColumn, type DataTableProps } from './DataTabl
 export { DateRangePicker, type DateRangePickerProps } from './DateRangePicker';
 export { DayHoursRow, type DayHoursRowProps, type DayInterval } from './DayHoursRow';
 export { FormField, type FormFieldProps } from './FormField';
+export { IntegerInput, type IntegerInputProps } from './IntegerInput';
 export { MoneyInput, type MoneyInputProps } from './MoneyInput';
 export { PhoneInput, type PhoneInputProps } from './PhoneInput';
 export { PlaceholderScreen } from './PlaceholderScreen';

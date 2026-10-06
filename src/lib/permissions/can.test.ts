@@ -153,7 +153,7 @@ const RECEPTIONIST = grantsFor(
   'branch',
 );
 
-/** Staff: 10 permissions at `own` scope. */
+/** Staff: 11 permissions at `own` scope (Phase 10 added packages.deduct_session). */
 const STAFF = grantsFor(
   [
     'appointments.create',
@@ -163,6 +163,7 @@ const STAFF = grantsFor(
     'clients.view_sensitive',
     'commission.view_own',
     'files.view',
+    'packages.deduct_session',
     'reviews.view',
     'staff.manage_schedule',
     'staff.view',
@@ -223,7 +224,7 @@ describe('seeded role fixtures match the database', () => {
     expect(OWNER).toHaveLength(46);
     expect(MANAGER).toHaveLength(39);
     expect(RECEPTIONIST).toHaveLength(20);
-    expect(STAFF).toHaveLength(10);
+    expect(STAFF).toHaveLength(11);
   });
 
   it('gives Manager booking settings but not business settings or the website', () => {
@@ -250,6 +251,8 @@ describe('navigation per role', () => {
       'invoices',
       'reports',
       'commission',
+      'packages',
+      'inventory',
       'reviews',
       'website',
       'settings',
@@ -270,6 +273,8 @@ describe('navigation per role', () => {
       'invoices',
       'reports',
       'commission',
+      'packages',
+      'inventory',
       'reviews',
       'settings',
     ]);
@@ -284,6 +289,8 @@ describe('navigation per role', () => {
       'members',
       'schedule',
       'invoices',
+      'packages',
+      'inventory',
       'reviews',
     ]);
   });
@@ -402,12 +409,54 @@ describe('plan gating (server feature map)', () => {
   });
 
   it('hides gated nav destinations only through can()', () => {
-    // Commission is the one plan-gated nav item (commission.view_own needs the Team plan):
-    // on Solo it is the ONLY difference from the trial / Business nav.
+    // Commission needs the Team plan; Packages and Inventory need their add-on. On Solo with no
+    // add-ons those three are the ONLY difference from the trial / Business nav.
     const trial = visibleNav(makeSet(OWNER));
     const solo = visibleNav(makeSet(OWNER, { features: SOLO_FEATURES }));
-    expect(trial.filter((id) => !solo.includes(id))).toEqual(['commission']);
+    expect(trial.filter((id) => !solo.includes(id))).toEqual([
+      'commission',
+      'packages',
+      'inventory',
+    ]);
     expect(solo.filter((id) => !trial.includes(id))).toEqual([]);
+  });
+
+  it('shows Packages and Inventory only while their own add-on is on', () => {
+    const packagesOnly = visibleNav(
+      makeSet(OWNER, { features: { ...SOLO_FEATURES, packages: true } }),
+    );
+    expect(packagesOnly).toContain('packages');
+    expect(packagesOnly).not.toContain('inventory');
+    const inventoryOnly = visibleNav(
+      makeSet(OWNER, { features: { ...SOLO_FEATURES, inventory: true } }),
+    );
+    expect(inventoryOnly).toContain('inventory');
+    expect(inventoryOnly).not.toContain('packages');
+  });
+
+  it('keeps both add-on screens hidden while the feature map is unknown', () => {
+    const unknown = visibleNav(makeSet(OWNER, { features: null }));
+    expect(unknown).not.toContain('packages');
+    expect(unknown).not.toContain('inventory');
+  });
+
+  it('Staff may deduct sessions (own scope) but never sees Packages or Inventory screens', () => {
+    const staff = makeSet(STAFF);
+    expect(can(staff, 'packages.deduct_session')).toBe(true);
+    expect(can(staff, 'packages.sell')).toBe(false);
+    expect(can(staff, 'packages.reverse_session')).toBe(false);
+    expect(can(staff, 'inventory.view')).toBe(false);
+    expect(visibleNav(staff)).not.toContain('packages');
+    expect(visibleNav(staff)).not.toContain('inventory');
+  });
+
+  it('a Receptionist sells and deducts but cannot reverse or adjust stock', () => {
+    const recep = makeSet(RECEPTIONIST);
+    expect(can(recep, 'packages.sell')).toBe(true);
+    expect(can(recep, 'packages.deduct_session')).toBe(true);
+    expect(can(recep, 'packages.reverse_session')).toBe(false);
+    expect(can(recep, 'inventory.view')).toBe(true);
+    expect(can(recep, 'inventory.adjust')).toBe(false);
   });
 });
 

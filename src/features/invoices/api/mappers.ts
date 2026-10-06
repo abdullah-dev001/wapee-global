@@ -44,6 +44,8 @@ function mapItem(row: Raw): InvoiceItem {
   return {
     id: String(row.id),
     serviceId: str(row.service_id),
+    packageId: str(row.package_id),
+    productId: str(row.product_id),
     description: String(row.description),
     quantity: num(row.quantity),
     unitPriceMinor: num(row.unit_price_minor),

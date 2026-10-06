@@ -26,10 +26,11 @@ Owner: roles (list, edit drawer, view, create, delete dialog), members manage + 
 
 ## Known limits / TODO
 - Mobile has no switcher on Today/Calendar (More only).
-- The Team list shows "Unknown" for other people (see plan-features.md).
+- (Fixed 2026-10-07) The Team list now shows teammates' names through `list_business_member_names` (`useMembers`).
 - Native export shares the CSV text (no attachment); a real PDF/attachment needs expo-print + expo-sharing.
 - The matrix renders 46 segmented controls (fine on web; not profiled on a low-end Android).
 - A dev-only React warning about `accessibilityElementsHidden` on lucide icons appears on web (pre-existing pattern in the Settings hub).
 
 ## Changelog
+- 2026-10-07: Team names fixed (`useMembers` merges `list_business_member_names`); the permission matrix hides add-on permissions while the add-on is off.
 - 2026-10-07: Phase 9B UI built.

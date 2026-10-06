@@ -13,6 +13,7 @@
  * Pure: no Deno, no I/O (tested with vitest).
  */
 
+import { lowStockPushVars, renderLowStockEmail } from './lowStock.ts';
 import { renderReportEmail } from './report.ts';
 import type { Job, OutboxEvent } from './types.ts';
 
@@ -87,6 +88,7 @@ const en: Catalogue = {
     },
     staff_cancelled: { title: 'Booking cancelled', body: '{client} · {service} · {when}' },
     staff_reminder: { title: 'Coming up', body: '{client} · {service} · {when}' },
+    staff_low_stock: { title: 'Low stock', body: '{product} · {stock} left' },
   },
   lines: {
     manage: 'Need to change it? {url}',
@@ -153,6 +155,7 @@ function vars(job: Job, locale: string): Record<string, string> {
     when: formatWhen(job.starts_at, job.timezone, locale),
     branch: job.branch_name || '',
     address: job.branch_address || '',
+    ...lowStockPushVars(job.payload),
   };
 }
 
@@ -160,6 +163,7 @@ export type RenderedEmail = { subject: string; text: string; html: string };
 
 export function renderEmail(job: Job, links: Links): RenderedEmail | null {
   if (job.event === 'report_summary') return renderReportEmail(job);
+  if (job.event === 'low_stock') return renderLowStockEmail(job);
   const { cat, locale } = catalogueFor(job.language);
   const entry = cat.email[job.event];
   if (!entry) return null;

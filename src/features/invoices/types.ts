@@ -33,6 +33,9 @@ export type InvoiceListRow = {
 export type InvoiceItem = {
   id: string;
   serviceId: string | null;
+  /** Phase 10: a line may sell a package (sessions on issue) or a product (stock on issue). */
+  packageId: string | null;
+  productId: string | null;
   description: string;
   quantity: number;
   unitPriceMinor: number;
@@ -135,6 +138,13 @@ export const INVOICE_ERROR_CODES = [
   'not_a_payment',
   'reason_required',
   'invalid_filter',
+  'unknown_package',
+  'unknown_product',
+  'package_quantity',
+  'client_required_for_package',
+  'insufficient_stock',
+  'package_sessions_used',
+  'feature_unavailable',
 ] as const;
 
 export type InvoiceErrorCode = (typeof INVOICE_ERROR_CODES)[number];

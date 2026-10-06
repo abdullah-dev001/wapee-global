@@ -7,8 +7,10 @@ import { StyleSheet, View } from 'react-native';
 
 import { FormField, MoneyInput } from '@/components/shared';
 import { Button, Card, NumberStepper, Select, Text, useToast } from '@/components/ui';
+import { useProductOptions } from '@/features/inventory/api/useInventory';
+import { usePackageOptions } from '@/features/packages/api/usePackages';
 import { useServices } from '@/features/services/api/useServices';
-import { useCurrentScope, usePermission } from '@/lib/permissions';
+import { useCurrentScope, useFeatureFlag, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useBranchTax } from '../api/useBranchTax';
@@ -45,6 +47,8 @@ function initialValues(draft?: InvoiceDetail): InvoiceEditorValues {
     notes: draft.notes ?? '',
     lines: draft.items.map((item) => ({
       serviceId: item.serviceId,
+      packageId: item.packageId,
+      productId: item.productId,
       description: item.description,
       quantity: item.quantity,
       unitPriceMinor: item.unitPriceMinor,
@@ -66,6 +70,9 @@ export function InvoiceEditor({
   const toast = useToast();
   const { business } = useCurrentScope();
   const canDiscount = usePermission('invoices.discount').allowed;
+  // Add-on lines: hidden entirely when the add-on is off or the permission is missing.
+  const canSellPackages = usePermission('packages.sell').allowed;
+  const inventoryOn = useFeatureFlag('inventory').enabled;
 
   const [chosenBranch, setChosenBranch] = useState<string | null>(branchId);
   const effectiveBranch = draft ? (branchId ?? chosenBranch) : chosenBranch;
@@ -73,6 +80,8 @@ export function InvoiceEditor({
     business?.branches.find((b) => b.id === effectiveBranch)?.currency ?? draft?.currency ?? '';
   const tax = useBranchTax(businessId, effectiveBranch);
   const services = useServices(businessId, effectiveBranch, { includeInactive: false });
+  const packages = usePackageOptions(businessId, effectiveBranch, canSellPackages);
+  const products = useProductOptions(businessId, effectiveBranch, inventoryOn);
   const createDraft = useCreateInvoiceDraft(businessId);
   const updateDraft = useUpdateInvoiceDraft(businessId);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -101,6 +110,15 @@ export function InvoiceEditor({
     () => (services.data ?? []).map((s) => ({ value: s.id, label: s.name })),
     [services.data],
   );
+  const packageOptions = useMemo(
+    () => (packages.data ?? []).map((p) => ({ value: p.id, label: p.name })),
+    [packages.data],
+  );
+  const productOptions = useMemo(
+    () => (products.data ?? []).map((p) => ({ value: p.id, label: p.name })),
+    [products.data],
+  );
+  const hasPackageLine = (lines ?? []).some((l) => l.packageId);
   const branchOptions = (business?.branches ?? []).map((b) => ({ value: b.id, label: b.name }));
   const pending = createDraft.isPending || updateDraft.isPending;
 
@@ -108,6 +126,8 @@ export function InvoiceEditor({
     setServerError(null);
     const items: DraftLineInput[] = values.lines.map((line) => ({
       serviceId: line.serviceId,
+      packageId: line.packageId,
+      productId: line.productId,
       description: line.description,
       quantity: line.quantity,
       unitPriceMinor: line.unitPriceMinor,
@@ -194,19 +214,21 @@ export function InvoiceEditor({
               label={t('invoices.form.description')}
             />
             <View style={styles.lineRow}>
-              <Controller
-                control={control}
-                name={`lines.${index}.quantity`}
-                render={({ field: f }) => (
-                  <NumberStepper
-                    label={t('invoices.form.quantity')}
-                    value={f.value}
-                    onChange={f.onChange}
-                    min={1}
-                    max={9999}
-                  />
-                )}
-              />
+              {lines?.[index]?.packageId ? null : (
+                <Controller
+                  control={control}
+                  name={`lines.${index}.quantity`}
+                  render={({ field: f }) => (
+                    <NumberStepper
+                      label={t('invoices.form.quantity')}
+                      value={f.value}
+                      onChange={f.onChange}
+                      min={1}
+                      max={9999}
+                    />
+                  )}
+                />
+              )}
               <View style={styles.price}>
                 <Controller
                   control={control}
@@ -259,6 +281,16 @@ export function InvoiceEditor({
                 </View>
               </View>
             ) : null}
+            {lines?.[index]?.packageId ? (
+              <Text variant="caption" color="textMuted">
+                {t('invoices.form.packageLine')}
+              </Text>
+            ) : null}
+            {lines?.[index]?.productId ? (
+              <Text variant="caption" color="textMuted">
+                {t('invoices.form.productLine')}
+              </Text>
+            ) : null}
             <View style={styles.lineFooter}>
               <Text variant="bodyStrong">
                 {formatMinor(lineNetMinor(lines?.[index] ?? emptyLine), currency, i18n.language)}
@@ -296,6 +328,46 @@ export function InvoiceEditor({
             }}
           />
         </View>
+        {canSellPackages && packageOptions.length > 0 ? (
+          <View style={styles.addService}>
+            <Select
+              placeholder={t('invoices.form.addPackage')}
+              title={t('invoices.form.pickPackage')}
+              options={packageOptions}
+              value={null}
+              onChange={(packageId) => {
+                const pkg = packages.data?.find((p) => p.id === packageId);
+                if (!pkg) return;
+                append({
+                  ...emptyLine,
+                  packageId: pkg.id,
+                  description: pkg.name,
+                  unitPriceMinor: pkg.priceMinor,
+                });
+              }}
+            />
+          </View>
+        ) : null}
+        {inventoryOn && productOptions.length > 0 ? (
+          <View style={styles.addService}>
+            <Select
+              placeholder={t('invoices.form.addProduct')}
+              title={t('invoices.form.pickProduct')}
+              options={productOptions}
+              value={null}
+              onChange={(productId) => {
+                const product = products.data?.find((p) => p.id === productId);
+                if (!product) return;
+                append({
+                  ...emptyLine,
+                  productId: product.id,
+                  description: product.name,
+                  unitPriceMinor: product.priceMinor,
+                });
+              }}
+            />
+          </View>
+        ) : null}
         <Button variant="secondary" startIcon={Plus} onPress={() => append({ ...emptyLine })}>
           {t('invoices.form.addFreeLine')}
         </Button>
@@ -331,6 +403,11 @@ export function InvoiceEditor({
         </Text>
       </Card>
 
+      {hasPackageLine && !clientName ? (
+        <Text variant="helper" color="warning">
+          {t('invoices.form.packageNeedsClient')}
+        </Text>
+      ) : null}
       {blockedByDiscount ? (
         <Text variant="helper" color="error">
           {t('invoices.form.discountNeedsPermission')}

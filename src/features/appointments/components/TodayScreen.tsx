@@ -16,6 +16,7 @@ import {
   useToast,
 } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
+import { LowStockBadge } from '@/features/inventory/components/LowStockBadge';
 import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
 import { showReviewLink } from '@/features/reviews/reviewLinkStore';
@@ -124,6 +125,7 @@ export function TodayScreen() {
           ) : null}
           <CountTile label={t('appointments.status.completed')} value={counts.completed} />
         </View>
+        <LowStockBadge />
       </PageContainer>
 
       <View style={[styles.body, { paddingHorizontal: pagePadding }]}>

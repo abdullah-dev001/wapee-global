@@ -90,6 +90,7 @@ executed from the scratchpad rather than committed as a suite — see TODO below
 - Super admin 2FA: enforced in Phase 8A as an `aal2` JWT check in every admin RPC; TOTP enrolment still needs enabling + UI (see plans-super-admin.md).
 
 ## Changelog
+- 2026-10-07: Phase 10A: Staff seed gains `packages.deduct_session` at own scope (migration `20261013100000`); the permission matrix HIDES add-on permissions (`packages.*`, `inventory.*`, files, forms, portal) while their add-on is off (values in the draft are kept). Nav items Packages (`packages.sell`) and Inventory (`inventory.view`).
 - 2026-10-07: Phase 9B: roles screen, scope-aware invite picker, branch-scope RLS fixes. See plan-features-ui.md.
 - 2026-10-06: Phase 9A: custom role RPCs, scope+branch-aware escalation guard, billing owner-only, audit triggers, `permissions_version`.
 - 2026-10-02: Invite flow added (see members.md); the escalation guard was verified to block a Manager inviting an Owner.

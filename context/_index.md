@@ -29,4 +29,6 @@ Shared files:
 | Today | today.md | done (part B2) | 4 | Mobile home: today's appointments, counts, quick actions |
 | Invoices (backend) | invoices.md | backend done, no UI | 5A | Draft→issued invoices, gapless numbers, tax snapshot, payments, credit notes, reversals, list/print RPCs, basic reports |
 | Website, reviews, widget | website-reviews-widget.md | backend + UI done | 7A/7B | Public website at `/<slug>` (booking moved to `/<slug>/book`), editor, reviews screen + review page, widget settings + embed gate, 4 Edge Functions, assets bucket |
+| Packages & Sessions | packages-sessions.md | backend + UI done | 10A | Add-on: package definitions, sold as invoice lines at issue, session deduct/undo/reverse (immutable, concurrency-safe), balance on client + appointment |
+| Inventory | inventory.md | backend + UI done | 10A | Add-on: products, immutable stock movements, stock drops at invoice issue and is restored by an exhausting credit note, low-stock badge + push/email alert |
 | Notifications | notifications.md | backend + UI done, deployed | 6A/6B | Outbox, Resend email, Twilio SMS + credits, Expo push, reminders (pg_cron), unsubscribe, 3 Edge Functions, settings/credits/log/push screens |

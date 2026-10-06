@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { brand } from '@/config/brand';
+import { LowStockBadge } from '@/features/inventory/components/LowStockBadge';
 import { usePendingApprovalCount } from '@/features/appointments/api/usePendingApprovalCount';
 import { BranchSwitcher } from '@/features/branches/components';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
@@ -65,6 +66,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
             </Badge>
           </Pressable>
         ) : null}
+        <LowStockBadge />
         {/* TODO(phase 1): user menu (profile, switch business, sign out). */}
         <View
           style={styles.avatar}

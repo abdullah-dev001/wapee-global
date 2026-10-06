@@ -8,6 +8,8 @@ const MAX_PRICE = 100_000_000_000;
 export const invoiceLineSchema = z
   .object({
     serviceId: z.string().nullable(),
+    packageId: z.string().nullable(),
+    productId: z.string().nullable(),
     description: z
       .string()
       .trim()
@@ -62,6 +64,8 @@ export const emptyInvoiceEditor: InvoiceEditorValues = {
 
 export const emptyLine: InvoiceLineValues = {
   serviceId: null,
+  packageId: null,
+  productId: null,
   description: '',
   quantity: 1,
   unitPriceMinor: 0,

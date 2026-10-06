@@ -37,3 +37,12 @@ export function unwrapRpc<T extends Record<string, unknown>>(
 export function rpcCode(error: unknown): string | null {
   return error instanceof RpcError ? error.code : null;
 }
+
+/**
+ * Generated Supabase types make every argument WITHOUT a SQL default non-nullable, even when the
+ * function accepts null (`save_package(p_package_id uuid, ...)` meaning "create"). This is the one
+ * documented place that says "pass SQL null here" instead of a cast scattered over the call sites.
+ */
+export function rpcNull<T>(): T {
+  return null as unknown as T;
+}

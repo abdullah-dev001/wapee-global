@@ -8,6 +8,8 @@ import {
 
 import { appointmentKeys } from '@/features/appointments/api/useAppointments';
 import { useSession } from '@/features/auth';
+import { lowStockKeys, movementKeys, productKeys } from '@/features/inventory/api/useInventory';
+import { clientPackageKeys } from '@/features/packages/api/usePackages';
 import { createQueryKeys, staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 
@@ -121,8 +123,17 @@ export function useInvoiceDetail(
 function useInvalidate(businessId: string | null) {
   const queryClient = useQueryClient();
   const scope = { businessId: businessId ?? 'none' };
-  return (opts: { appointments?: boolean; reports?: boolean } = {}) => {
+  return (opts: { appointments?: boolean; reports?: boolean; addons?: boolean } = {}) => {
     void queryClient.invalidateQueries({ queryKey: invoiceKeys.scope(scope) });
+    // Issuing sells packages and drops stock; a credit note cancels / restores them (Phase 10).
+    if (opts.addons) {
+      void queryClient.invalidateQueries({
+        queryKey: clientPackageKeys.business(scope.businessId),
+      });
+      void queryClient.invalidateQueries({ queryKey: productKeys.business(scope.businessId) });
+      void queryClient.invalidateQueries({ queryKey: movementKeys.business(scope.businessId) });
+      void queryClient.invalidateQueries({ queryKey: lowStockKeys.business(scope.businessId) });
+    }
     if (opts.reports) void queryClient.invalidateQueries({ queryKey: reportKeys.scope(scope) });
     if (opts.appointments) {
       void queryClient.invalidateQueries({ queryKey: appointmentKeys.scope(scope) });
@@ -132,6 +143,8 @@ function useInvalidate(businessId: string | null) {
 
 export type DraftLineInput = {
   serviceId?: string | null;
+  packageId?: string | null;
+  productId?: string | null;
   description?: string;
   quantity: number;
   unitPriceMinor?: number;
@@ -142,6 +155,8 @@ export type DraftLineInput = {
 function itemsJson(items: readonly DraftLineInput[]) {
   return items.map((item) => ({
     service_id: item.serviceId ?? null,
+    package_id: item.packageId ?? null,
+    product_id: item.productId ?? null,
     description: item.description,
     quantity: item.quantity,
     unit_price_minor: item.unitPriceMinor,
@@ -226,7 +241,7 @@ export function useIssueInvoice(businessId: string | null) {
       const { data, error } = await getSupabase().rpc('issue_invoice', { p_invoice_id: invoiceId });
       return { number: String(unwrap(data, error).number) };
     },
-    onSuccess: () => invalidate({ reports: true }),
+    onSuccess: () => invalidate({ reports: true, addons: true }),
   });
 }
 
@@ -294,6 +309,6 @@ export function useCreateCreditNote(businessId: string | null) {
       unwrap(data, error);
       return undefined;
     },
-    onSuccess: () => invalidate({ reports: true }),
+    onSuccess: () => invalidate({ reports: true, addons: true }),
   });
 }

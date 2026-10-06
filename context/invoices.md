@@ -23,6 +23,9 @@ is a SECURITY DEFINER RPC; the tables are read-only to the API.
 - **Immutability**: issued invoices and their items, payments, credit notes refuse UPDATE/DELETE for every role (guard triggers). All four guards release the row when the BUSINESS is being deleted (cascade trap) — tested.
 - **Audit log**: `invoice.issued`, `invoice.payment_added`, `invoice.payment_reversed`, `invoice.credit_note_created`, `invoice.draft_discarded`.
 
+## Phase 10A: package and product lines
+A line may sell a PACKAGE (`package_id`, quantity 1) or a PRODUCT (`product_id`) instead of a service (at most one source per line). The price is prefilled from the definition and editable like a service price; discounts follow the normal rules. At ISSUE (all checks before any write): package lines create `client_packages` (the invoice needs a client: `client_required_for_package`), product lines drop stock (`insufficient_stock` refuses the whole issue; unless the branch allows negative stock). The credit note that exhausts the invoice net cancels unused packages (`package_sessions_used` refuses it when sessions were used) and restores product lines; a partial credit does neither. Add-on off => `feature_unavailable` on a draft with those lines; a credit note still works with the add-on off. New codes: `unknown_package unknown_product package_quantity client_required_for_package insufficient_stock package_sessions_used feature_unavailable`. `get_invoice_print_data` items carry `package_id`/`product_id`. UI: "Add package" / "Add product" in the editor (hidden unless the add-on is on); issue/credit mutations invalidate packages, products, movements and the low-stock count. Detail: `packages-sessions.md`, `inventory.md`.
+
 ## Permissions (Branch/All scope; Own does not count; Staff holds none)
 | Action | Permission | Roles that hold it |
 |---|---|---|
@@ -90,5 +93,6 @@ Migrations: `20261006130000_report_basic_at_internal` (removed the public `p_as_
 - Draft invoices are not audited on create (only discard), by choice.
 
 ## Changelog
+- 2026-10-07: Phase 10A: package and product lines (see above).
 - 2026-10-06: Phase 5B UI (Invoices, detail/editor drawer, payments/reversal/credit note, print/share, Reports, appointment invoice buttons). Removed public `p_as_of` (`report_basic_at` internal).
 - 2026-10-06: Phase 5A backend built (schema, 10 RPCs, immutability, currency lock, reports). 310 SQL assertions + real concurrent-issue test.

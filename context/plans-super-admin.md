@@ -66,5 +66,6 @@ Then enrol TOTP for that user (see above) so a session can reach `aal2`.
 - Appointments-this-month uses the UTC month.
 
 ## Changelog
+- 2026-10-07: Phase 10A uses the module-RPC pattern for real (`feature_gate_error` in every Packages/Inventory RPC, `my_features()` in the UI): nav items, screens, invoice-editor pickers, appointment/client blocks and matrix rows disappear while the add-on is off.
 - 2026-10-06: Phase 8B UI (gating from `my_features`, billing, admin area, 2FA) + `admin_list_reviews`, `my_plan_usage`; `is_super_admin()` requires aal2; TOTP enabled in config.
 - 2026-10-06: Phase 8A backend (3 migrations `20261010090000/100000/110000`, suite 18).

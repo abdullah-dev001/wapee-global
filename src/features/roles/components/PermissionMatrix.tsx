@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { type PermissionKey } from '@/config/permissions';
+import { permissionMeta, type PermissionKey } from '@/config/permissions';
 import { SegmentedControl, Text } from '@/components/ui';
 import { featureForPermission, isFeatureOn } from '@/features/plans/featureLogic';
 import { type Grant } from '@/lib/permissions/types';
@@ -43,7 +43,22 @@ export function PermissionMatrix({
   features: FeatureMap | null;
 }) {
   const { t } = useTranslation();
-  const groups = useMemo(() => groupPermissions(), []);
+  // An add-on permission is hidden (not just labelled) while its add-on is off. Its value stays
+  // in the draft untouched, so saving a role never silently drops it.
+  const groups = useMemo(
+    () =>
+      groupPermissions()
+        .map((group) => ({
+          ...group,
+          keys: group.keys.filter((permission) => {
+            if (!permissionMeta(permission).addon) return true;
+            const feature = featureForPermission(permission);
+            return feature === null || isFeatureOn(features, feature);
+          }),
+        }))
+        .filter((group) => group.keys.length > 0),
+    [features],
+  );
 
   return (
     <View style={styles.matrix}>
