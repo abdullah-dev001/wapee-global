@@ -1,11 +1,12 @@
-import { BarChart3 } from 'lucide-react-native';
+import { BarChart3, ChartNoAxesCombined } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
-import { Card, EmptyState, ErrorState, Skeleton, Tabs, Text } from '@/components/ui';
-import { useCurrentScope } from '@/lib/permissions';
+import { Button, Card, EmptyState, ErrorState, Skeleton, Tabs, Text } from '@/components/ui';
+import { useCurrentScope, useFeatureFlag, usePermission } from '@/lib/permissions';
 import { theme, useBreakpoint } from '@/lib/theme';
 
 import {
@@ -29,10 +30,27 @@ export function ReportsScreen() {
   const { businessId, branchId } = useCurrentScope();
   const [period, setPeriod] = useState<ReportPeriod>('today');
   const report = useBasicReport(businessId, branchId);
+  const router = useRouter();
+  const advanced = usePermission('reports.view_advanced');
+  const advancedPlan = useFeatureFlag('advanced_reports');
 
   return (
     <Screen edges={['top']}>
-      <PageContainer title={t('reports.title')}>
+      <PageContainer
+        title={t('reports.title')}
+        actions={
+          advanced.allowed && advancedPlan.enabled ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              startIcon={ChartNoAxesCombined}
+              onPress={() => router.push('/settings/advanced-reports')}
+            >
+              {t('advReports.openFromReports')}
+            </Button>
+          ) : null
+        }
+      >
         <View style={styles.tabs}>
           <Tabs
             items={[

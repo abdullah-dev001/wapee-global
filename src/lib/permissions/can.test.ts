@@ -249,6 +249,7 @@ describe('navigation per role', () => {
       'schedule',
       'invoices',
       'reports',
+      'commission',
       'reviews',
       'website',
       'settings',
@@ -268,6 +269,7 @@ describe('navigation per role', () => {
       'schedule',
       'invoices',
       'reports',
+      'commission',
       'reviews',
       'settings',
     ]);
@@ -294,6 +296,7 @@ describe('navigation per role', () => {
       'staff',
       'members',
       'schedule',
+      'commission',
       'reviews',
     ]);
   });
@@ -399,10 +402,12 @@ describe('plan gating (server feature map)', () => {
   });
 
   it('hides gated nav destinations only through can()', () => {
-    // No nav item is plan-gated today; the nav must be identical on Solo and trial.
-    expect(visibleNav(makeSet(OWNER, { features: SOLO_FEATURES }))).toEqual(
-      visibleNav(makeSet(OWNER)),
-    );
+    // Commission is the one plan-gated nav item (commission.view_own needs the Team plan):
+    // on Solo it is the ONLY difference from the trial / Business nav.
+    const trial = visibleNav(makeSet(OWNER));
+    const solo = visibleNav(makeSet(OWNER, { features: SOLO_FEATURES }));
+    expect(trial.filter((id) => !solo.includes(id))).toEqual(['commission']);
+    expect(solo.filter((id) => !trial.includes(id))).toEqual([]);
   });
 });
 

@@ -4,17 +4,20 @@ import { useRouter } from 'expo-router';
 import {
   Bell,
   BellRing,
+  Building2,
   CalendarCheck,
+  ChartNoAxesCombined,
   ChevronRight,
   Coins,
   CreditCard,
   MessageSquareText,
+  ShieldCheck,
 } from 'lucide-react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
 import { Card, Text } from '@/components/ui';
 import { RouteGuard } from '@/features/auth';
-import { usePermission } from '@/lib/permissions';
+import { useFeatureFlag, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import type { LucideIcon } from 'lucide-react-native';
@@ -33,7 +36,10 @@ type HubItem = {
     | '/settings/sms-credits'
     | '/settings/messages'
     | '/settings/my-notifications'
-    | '/settings/billing';
+    | '/settings/billing'
+    | '/settings/roles'
+    | '/settings/branches'
+    | '/settings/advanced-reports';
   icon: LucideIcon;
   title: string;
   subtitle: string;
@@ -75,6 +81,12 @@ export default function SettingsScreen() {
   const canEditBooking = usePermission('settings.booking');
   const canSeeCredits = usePermission('sms.send');
   const canSeeBilling = usePermission('settings.billing');
+  const canRoles = usePermission('roles.manage');
+  const canBranches = usePermission('settings.business');
+  const canAdvanced = usePermission('reports.view_advanced');
+  const customRoles = useFeatureFlag('custom_roles');
+  const multiBranch = useFeatureFlag('multi_branch');
+  const advancedReports = useFeatureFlag('advanced_reports');
 
   // Each card appears only for a member who may open it (RLS is the real boundary).
   const items: HubItem[] = [
@@ -119,6 +131,37 @@ export default function SettingsScreen() {
             icon: CreditCard,
             title: t('plans.hub.billingTitle'),
             subtitle: t('plans.hub.billingSubtitle'),
+          },
+        ]
+      : []),
+    // Plan features appear only when the plan has them AND the person may use them.
+    ...(canRoles.allowed && customRoles.enabled
+      ? [
+          {
+            route: '/settings/roles' as const,
+            icon: ShieldCheck,
+            title: t('roles.hubTitle'),
+            subtitle: t('roles.hubSubtitle'),
+          },
+        ]
+      : []),
+    ...(canBranches.allowed && multiBranch.enabled
+      ? [
+          {
+            route: '/settings/branches' as const,
+            icon: Building2,
+            title: t('branches.hubTitle'),
+            subtitle: t('branches.hubSubtitle'),
+          },
+        ]
+      : []),
+    ...(canAdvanced.allowed && advancedReports.enabled
+      ? [
+          {
+            route: '/settings/advanced-reports' as const,
+            icon: ChartNoAxesCombined,
+            title: t('advReports.hubTitle'),
+            subtitle: t('advReports.hubSubtitle'),
           },
         ]
       : []),

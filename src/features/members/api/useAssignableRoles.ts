@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 
 import { type PermissionKey } from '@/config/permissions';
-import { hasPermission, useGrantSet } from '@/lib/permissions';
+import { heldRank, scopeRank } from '@/features/roles/rolesLogic';
+import { useGrantSet } from '@/lib/permissions';
 
 import { useRoles, type AssignableRole } from './useMembers';
 
@@ -26,7 +27,7 @@ export type AssignableRolesResult = {
  */
 export function useAssignableRoles(
   businessId: string | null,
-  branchId: string | null = null,
+  _branchId: string | null = null,
 ): AssignableRolesResult {
   const roles = useRoles(businessId);
   const { set, isPending: grantsPending } = useGrantSet();
@@ -35,16 +36,19 @@ export function useAssignableRoles(
     const list = roles.data ?? [];
     if (set.isSuperAdmin) return { roles: list, blocked: [] as AssignableRole[] };
 
+    // Scope-aware, like the database: you may grant a permission only at a reach
+    // you hold yourself (a Branch-scope manager cannot hand out All).
     const canGrant = (role: AssignableRole) =>
-      role.permissions.every((permission) =>
-        hasPermission(set, permission as PermissionKey, branchId),
+      role.permissionRows.every(
+        (row) =>
+          heldRank(set.grants, row.permission as PermissionKey, false) >= scopeRank(row.scope),
       );
 
     return {
       roles: list.filter(canGrant),
       blocked: list.filter((role) => !canGrant(role)),
     };
-  }, [roles.data, set, branchId]);
+  }, [roles.data, set]);
 
   return {
     roles: allowed,

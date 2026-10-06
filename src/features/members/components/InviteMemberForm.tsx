@@ -117,7 +117,7 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
 }
 
 /** The one-time invite link, with a copy button. */
-function InviteLink({ result, onDone }: { result: InviteResult; onDone: () => void }) {
+export function InviteLink({ result, onDone }: { result: InviteResult; onDone: () => void }) {
   const { t } = useTranslation();
   const toast = useToast();
   const [copied, setCopied] = useState(false);

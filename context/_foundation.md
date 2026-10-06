@@ -237,6 +237,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+- 2026-10-07 (Phase 9B): `MonthStepper` shared composite; `lib/supabase/rpcResult.ts` (`unwrapRpc`, `RpcError`); `lib/i18n/stepIcons.ts` (RTL chevrons); `lib/files/saveTextFile.ts` (web download / native share); nav item `commission` (permission `commission.view_own`, plan-gated through the catalogue); `useCurrentScope` now falls back to the primary branch when the stored one disappears, and `useMyBusinesses` drops archived branches. See plan-features-ui.md.
 - 2026-10-09: `src/lib/push` (lazy Expo push registration), `NavItem.alsoPermission` (either permission opens a nav item), `RequirePermission` (feature-level screen gate), `settings/_layout.tsx`. See notifications.md.
 - 2026-10-08: Edge shared module `supabase/functions/_shared/outbox/` (templates, signed unsubscribe, job processor, providers) for Phase 6A; vitest now also runs `supabase/functions/**/*.test.ts`.
 - 2026-10-07: Phase 7B — `StarRating`/`StarRatingInput`; `expo-image-picker` added (native module, plugin in `app.config.ts`, lazy-imported); `formatDuration` guarded against Hermes' wrong unit output (`sensibleUnitText`); nav item `website`.

@@ -113,11 +113,14 @@ select is(
 -- The prefix is locked once numbering has started
 -- ---------------------------------------------------------------------------
 
--- Simulate an issued invoice by advancing the counter.
+-- Simulate an issued invoice by advancing the counter. The counters move only
+-- inside the invoice RPCs (transaction-local flag), so the fixture sets it.
+select set_config('wapee.numbering', 'on', true);
 update public.branches b
 set invoice_next_no = 2
 from public.businesses biz
 where biz.id = b.business_id and biz.slug = 'clinica-ba' and b.invoice_prefix = 'PAL';
+select set_config('wapee.numbering', 'off', true);
 
 select throws_ok(
   $$ update public.branches b

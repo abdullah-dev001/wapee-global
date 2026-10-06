@@ -2,7 +2,7 @@ import { Clock, UserX } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { Badge, Card, EmptyState, Skeleton, Text } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Skeleton, Text } from '@/components/ui';
 import { theme } from '@/lib/theme';
 
 import { type MemberRow } from '../api/useMembers';
@@ -13,7 +13,16 @@ function isExpired(member: MemberRow, now: Date): boolean {
   return new Date(member.inviteExpiresAt) <= now;
 }
 
-export function MemberList({ members, isPending }: { members: MemberRow[]; isPending: boolean }) {
+export function MemberList({
+  members,
+  isPending,
+  onManage,
+}: {
+  members: MemberRow[];
+  isPending: boolean;
+  /** Opens the manage drawer; omitted when the viewer may not manage anyone. */
+  onManage?: (member: MemberRow) => void;
+}) {
   const { t } = useTranslation();
   const now = new Date();
 
@@ -47,6 +56,7 @@ export function MemberList({ members, isPending }: { members: MemberRow[]; isPen
           member={member}
           expired={isExpired(member, now)}
           isLast={index === members.length - 1}
+          onManage={onManage}
         />
       ))}
     </Card>
@@ -57,10 +67,12 @@ function MemberRowView({
   member,
   expired,
   isLast,
+  onManage,
 }: {
   member: MemberRow;
   expired: boolean;
   isLast: boolean;
+  onManage?: (member: MemberRow) => void;
 }) {
   const { t } = useTranslation();
   const roleNames = member.roles
@@ -87,6 +99,11 @@ function MemberRowView({
       </View>
 
       <StatusBadge status={member.status} expired={expired} />
+      {onManage && member.status !== 'disabled' ? (
+        <Button size="sm" variant="ghost" onPress={() => onManage(member)}>
+          {t('members.manage.action')}
+        </Button>
+      ) : null}
     </View>
   );
 }

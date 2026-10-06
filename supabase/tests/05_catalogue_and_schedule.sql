@@ -13,6 +13,11 @@ begin;
 select plan(23);
 
 create temporary table t (k text primary key, v uuid) on commit drop;
+do $g$ declare s text; begin
+  select nspname into s from pg_namespace where oid = pg_my_temp_schema();
+  execute format('grant usage on schema %I to authenticated, anon', s);
+  execute format('grant select, insert on %I.t to authenticated, anon', s);
+end $g$;
 
 -- Two businesses, so cross-tenant checks are real.
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -43,6 +48,7 @@ set local role authenticated;
 insert into t values ('biz_a', public.create_business_with_owner(
   'Cat Test A','cat-test-a','GB','GBP','Europe/London','en',null,'Main'));
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 select set_config('request.jwt.claims',
   json_build_object('sub',(select v from t where k='owner_b'),'role','authenticated')::text, true);
@@ -50,6 +56,7 @@ set local role authenticated;
 insert into t values ('biz_b', public.create_business_with_owner(
   'Cat Test B','cat-test-b','GB','GBP','Europe/London','en',null,'Main'));
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 insert into t values ('branch_a', (select id from public.branches where business_id=(select v from t where k='biz_a') limit 1));
 insert into t values ('branch_b', (select id from public.branches where business_id=(select v from t where k='biz_b') limit 1));
@@ -176,6 +183,7 @@ select throws_ok(
   '23P01', null, 'an overlapping closure is refused');
 
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- RLS: tenant isolation and the Own scope
@@ -193,6 +201,7 @@ select is(
   (select count(*)::int from public.staff_working_hours where business_id=(select v from t where k='biz_a')),
   0, 'another business cannot read our schedule');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- A Staff member (own scope) may edit their OWN hours but nobody else's.
 -- Link the staff user to a profile so is_own_staff_profile() can match.
@@ -221,6 +230,7 @@ select throws_ok(
     (select v from t where k='biz_a')),
   '42501', null, 'a Staff member cannot add a staff profile (needs staff.manage)');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 8. The replace-a-week RPCs are transactional
@@ -251,6 +261,7 @@ select is(
   1, 'the refused call rolled back: the previous week is still there');
 
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 select * from finish();
 rollback;

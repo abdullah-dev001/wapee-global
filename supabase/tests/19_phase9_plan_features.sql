@@ -1612,3 +1612,7 @@ select pg_temp.chk('cascade removed commission rules, lines, entries, schedules 
         + (select count(*) from public.report_schedules where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'), pg_temp.id('bizt'), pg_temp.id('bizs')))
         + (select count(*) from public.roles where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'), pg_temp.id('bizt'), pg_temp.id('bizs')))
         + (select count(*) from public.message_outbox where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'), pg_temp.id('bizt'), pg_temp.id('bizs'))))::text, '0');
+
+select jsonb_build_object('passed', count(*) filter (where pass), 'failed', count(*) filter (where not pass), 'total', count(*),
+  'failures', coalesce(jsonb_agg(jsonb_build_object('n', n, 'name', name, 'detail', detail) order by n) filter (where not pass), '[]'::jsonb)) as result from res;
+rollback;

@@ -8,6 +8,7 @@ import { Card, Skeleton, Text } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { navLabelKey, type NavItem } from '@/config/navigation';
 import { AdminEntry } from '@/features/admin/components';
+import { BranchSwitcher } from '@/features/branches/components';
 import { RouteGuard, useSignOut } from '@/features/auth';
 import { useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
@@ -26,6 +27,9 @@ export default function MoreScreen() {
     <RouteGuard>
       <Screen edges={['top']}>
         <PageContainer title={t('nav.more')}>
+          <View style={styles.switcher}>
+            <BranchSwitcher />
+          </View>
           {isPending ? (
             <Card noPadding>
               {[0, 1, 2].map((row) => (
@@ -137,6 +141,7 @@ function SignOutRow() {
 }
 
 const styles = StyleSheet.create({
+  switcher: { marginBottom: theme.spacing[12] },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

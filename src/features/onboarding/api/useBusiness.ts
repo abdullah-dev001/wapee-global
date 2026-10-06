@@ -48,13 +48,19 @@ export function useMyBusinesses(): UseQueryResult<MyBusiness[], Error> {
       const { data, error } = await getSupabase()
         .from('businesses')
         .select(
-          'id, name, slug, status, plan, trial_ends_at, language,' +
-            ' branches(id, name, is_primary, country_code, currency, timezone, invoice_prefix)',
+          'id, name, slug, status, plan, trial_ends_at, language, branches(id, name, is_primary, country_code, currency, timezone, invoice_prefix, deleted_at)',
         )
         .is('deleted_at', null)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
-      return data ?? [];
+      // An archived location is not a place to work in: every branch picker and the
+      // current-scope default read this list, so drop archived ones here, once.
+      return (data ?? []).map((business) => ({
+        ...business,
+        branches: (business.branches ?? [])
+          .filter((branch) => branch.deleted_at === null)
+          .map(({ deleted_at: _deletedAt, ...branch }) => branch),
+      }));
     },
   });
 }

@@ -3990,6 +3990,15 @@ export type Database = {
         Args: { p_older_than?: string }
         Returns: number
       }
+      client_in_scope: {
+        Args: {
+          p_business_id: string
+          p_client_id: string
+          p_first_branch: string
+          p_permission: string
+        }
+        Returns: boolean
+      }
       commission_can_see: {
         Args: { p_branch_id: string; p_business_id: string; p_staff_id: string }
         Returns: boolean
@@ -4477,6 +4486,10 @@ export type Database = {
       outbox_seal: { Args: { p_token: string }; Returns: string }
       outbox_unseal: { Args: { p_sealed: string }; Returns: string }
       outbox_worker_authorize: { Args: { p_token: string }; Returns: boolean }
+      perm_all_branches: {
+        Args: { p_business_id: string; p_permission: string }
+        Returns: boolean
+      }
       pick_staff_for_slot: {
         Args: {
           p_branch_id: string
@@ -4516,6 +4529,7 @@ export type Database = {
         Args: { p_appointment_id: string }
         Returns: Json
       }
+      remove_member: { Args: { p_member_id: string }; Returns: Json }
       remove_member_role: { Args: { p_assignment_id: string }; Returns: Json }
       remove_review: {
         Args: { p_reason: string; p_review_id: string }
@@ -4611,6 +4625,7 @@ export type Database = {
         }
         Returns: Json
       }
+      revoke_invite: { Args: { p_member_id: string }; Returns: Json }
       role_permission_set: { Args: { p_role_id: string }; Returns: Json }
       roles_gate: { Args: { p_business_id: string }; Returns: Json }
       rotate_widget_key: { Args: { p_business_id: string }; Returns: Json }
@@ -4747,6 +4762,14 @@ export type Database = {
           out_segments: number
           out_units: number
         }[]
+      }
+      staff_in_scope: {
+        Args: {
+          p_business_id: string
+          p_permission: string
+          p_staff_id: string
+        }
+        Returns: boolean
       }
       submit_review: {
         Args: { p_comment?: string; p_rating: number; p_token: string }

@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 
 import { PageContainer, Screen } from '@/components/layout';
 import { Button, Drawer, ErrorState } from '@/components/ui';
-import { RouteGuard } from '@/features/auth';
-import { useMembers } from '@/features/members/api/useMembers';
+import { RouteGuard, useSession } from '@/features/auth';
+import { useMembers, type MemberRow } from '@/features/members/api/useMembers';
 import { InviteMemberForm } from '@/features/members/components/InviteMemberForm';
 import { MemberList } from '@/features/members/components/MemberList';
+import { MemberManageDrawer } from '@/features/members/components/MemberManageDrawer';
 import { usePermission, useCurrentScope } from '@/lib/permissions';
 
 /**
@@ -20,7 +21,10 @@ export default function MembersScreen() {
   const { businessId } = useCurrentScope();
   const members = useMembers(businessId);
   const canInvite = usePermission('users.invite');
+  const canManage = usePermission('roles.manage');
+  const { user } = useSession();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [managing, setManaging] = useState<MemberRow | null>(null);
 
   return (
     <RouteGuard>
@@ -44,7 +48,11 @@ export default function MembersScreen() {
               retryLabel={t('actions.retry')}
             />
           ) : (
-            <MemberList members={members.data ?? []} isPending={members.isPending} />
+            <MemberList
+              members={members.data ?? []}
+              isPending={members.isPending}
+              onManage={canManage.allowed || canInvite.allowed ? setManaging : undefined}
+            />
           )}
         </PageContainer>
 
@@ -56,6 +64,11 @@ export default function MembersScreen() {
         >
           <InviteMemberForm onDone={() => setInviteOpen(false)} />
         </Drawer>
+        <MemberManageDrawer
+          member={managing}
+          isSelf={Boolean(managing?.userId && managing.userId === user?.id)}
+          onClose={() => setManaging(null)}
+        />
       </Screen>
     </RouteGuard>
   );

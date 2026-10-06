@@ -129,11 +129,12 @@ select is(
 );
 
 -- Writing to another business must be impossible.
-select throws_ok(
-  $$ update public.businesses set name = 'Hacked' where slug = 'clinic-b' $$,
-  null,
-  null,
-  'owner A cannot rename business B'
+-- RLS hides business B from owner A, so the UPDATE matches no row (no error).
+update public.businesses set name = 'Hacked' where slug = 'clinic-b';
+select is(
+  (select count(*)::int from public.businesses where name = 'Hacked'),
+  0,
+  'owner A cannot rename business B (the update touches no row)'
 );
 select is(
   (select count(*)::int from public.businesses where name = 'Hacked'),
@@ -224,10 +225,13 @@ select is(
 set local role anon;
 set local request.jwt.claims = '{"role":"anon"}';
 
-select is(
-  (select count(*)::int from public.businesses),
-  0,
-  'an anonymous visitor sees no businesses'
+-- Since 2026-10-03 anon holds NO table privileges at all (RLS used to be the only
+-- barrier), so the answer is a refusal rather than an empty result.
+select throws_ok(
+  $$ select count(*) from public.businesses $$,
+  '42501',
+  null,
+  'an anonymous visitor cannot read businesses at all (no table privilege)'
 );
 
 select * from finish();

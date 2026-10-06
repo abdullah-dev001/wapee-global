@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { brand } from '@/config/brand';
 import { usePendingApprovalCount } from '@/features/appointments/api/usePendingApprovalCount';
+import { BranchSwitcher } from '@/features/branches/components';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
@@ -46,6 +47,8 @@ export function Header({ onOpenMenu }: HeaderProps) {
         {/* TODO(phase 1): the signed-in business name. */}
         {brand.name}
       </Text>
+
+      <BranchSwitcher compact />
 
       <View style={styles.right}>
         {canApprove.allowed && pendingApproval.data ? (

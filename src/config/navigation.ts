@@ -2,6 +2,7 @@ import {
   CalendarClock,
   CalendarDays,
   LayoutDashboard,
+  Percent,
   BarChart3,
   Receipt,
   Globe,
@@ -36,6 +37,7 @@ export type AppRoute =
   | '/schedule'
   | '/invoices'
   | '/reports'
+  | '/commission'
   | '/reviews'
   | '/website'
   | '/settings'
@@ -52,6 +54,7 @@ export type NavId =
   | 'schedule'
   | 'invoices'
   | 'reports'
+  | 'commission'
   | 'reviews'
   | 'website'
   | 'settings'
@@ -111,6 +114,14 @@ export const navItems: readonly NavItem[] = [
   },
   { id: 'invoices', route: '/invoices', icon: Receipt, permission: 'invoices.view', phase: 5 },
   { id: 'reports', route: '/reports', icon: BarChart3, permission: 'reports.view_basic', phase: 5 },
+  {
+    id: 'commission',
+    route: '/commission',
+    icon: Percent,
+    // Own earnings for everyone on a plan with commission (plan gating comes from the catalogue).
+    permission: 'commission.view_own',
+    phase: 9,
+  },
   { id: 'reviews', route: '/reviews', icon: Star, permission: 'reviews.view', phase: 7 },
   { id: 'website', route: '/website', icon: Globe, permission: 'website.edit', phase: 7 },
   // Owner (settings.business) OR a Manager (settings.booking): the hub itself lists only

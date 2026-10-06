@@ -91,7 +91,10 @@ export function useCurrentScope(): CurrentScope {
     if (!list || list.length === 0) return;
     // Already pointed at a business the user really belongs to.
     if (selected) {
-      if (!branchId) useScopeSelection.getState().setBranch(primaryBranchId(selected));
+      // No branch yet, or the stored one was archived/removed since: use the primary.
+      const stillThere =
+        branchId !== null && selected.branches.some((branch) => branch.id === branchId);
+      if (!stillThere) useScopeSelection.getState().setBranch(primaryBranchId(selected));
       return;
     }
     const preferredId = profile.data?.default_business_id;

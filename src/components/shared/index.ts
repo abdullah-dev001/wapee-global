@@ -22,3 +22,4 @@ export {
   type StarRatingInputProps,
   type StarRatingProps,
 } from './StarRating';
+export { MonthStepper } from './MonthStepper';

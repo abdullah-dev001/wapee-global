@@ -127,6 +127,9 @@ select throws_ok(
 -- ---------------------------------------------------------------------------
 
 reset role;
+-- The fixture below is written as the table owner: clear the previous test's JWT,
+-- or the escalation guard (which trusts only "no signed-in user") judges the insert.
+select set_config('request.jwt.claims', '', true);
 insert into public.business_members (id, business_id, user_id, status, joined_at)
 select '11110000-0000-0000-0000-000000000011', b.id,
        'dddd0000-0000-0000-0000-00000000000d', 'active', now()

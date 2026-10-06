@@ -20,6 +20,11 @@ select plan(19);
 -- Fixtures: two businesses, an owner each, plus a manager and a receptionist.
 -- ---------------------------------------------------------------------------
 create temporary table t (k text primary key, v uuid) on commit drop;
+do $g$ declare s text; begin
+  select nspname into s from pg_namespace where oid = pg_my_temp_schema();
+  execute format('grant usage on schema %I to authenticated, anon', s);
+  execute format('grant select, insert on %I.t to authenticated, anon', s);
+end $g$;
 
 -- Business A with its founding owner.
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -60,6 +65,7 @@ set local role authenticated;
 insert into t values ('biz_a', public.create_business_with_owner(
   'Invite Test A', 'invite-test-a', 'GB', 'GBP', 'Europe/London', 'en', null, 'Main'));
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 select set_config('request.jwt.claims',
   json_build_object('sub', (select v from t where k='owner_b'), 'role','authenticated')::text, true);
@@ -67,6 +73,7 @@ set local role authenticated;
 insert into t values ('biz_b', public.create_business_with_owner(
   'Invite Test B', 'invite-test-b', 'GB', 'GBP', 'Europe/London', 'en', null, 'Main'));
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 insert into t values ('branch_a', (select id from public.branches where business_id = (select v from t where k='biz_a') limit 1));
 insert into t values ('role_staff', (select id from public.roles where business_id is null and key='staff'));
@@ -87,6 +94,10 @@ values ((select v from t where k='member_recep'),
 -- 1. Happy path: owner invites, invitee accepts once.
 -- ---------------------------------------------------------------------------
 create temporary table tok (k text primary key, token text) on commit drop;
+do $g$ declare s text; begin
+  select nspname into s from pg_namespace where oid = pg_my_temp_schema();
+  execute format('grant select, insert, update on %I.tok to authenticated, anon', s);
+end $g$;
 
 select set_config('request.jwt.claims',
   json_build_object('sub', (select v from t where k='owner_a'), 'role','authenticated')::text, true);
@@ -124,6 +135,7 @@ select is(
   1, 'the role is assigned at invite time');
 
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- The preview names the business without any sign-in.
 set local role anon;
@@ -131,6 +143,7 @@ select is(
   (select business_name from public.invite_preview((select token from tok where k='good'))),
   'Invite Test A', 'invite_preview names the business for anon');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 2. Wrong email: a signed-in stranger cannot use someone else's token.
@@ -142,6 +155,7 @@ select is(
   public.accept_invite((select token from tok where k='good')), null,
   'a different signed-in account cannot accept the invite');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 3. Not signed in: the link alone must never attach a membership.
@@ -153,6 +167,7 @@ select throws_ok(
   '42501', null,
   'an anonymous caller cannot accept an invite');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 4. The real invitee accepts, and the token is then single-use.
@@ -187,6 +202,7 @@ select ok(public.has_permission((select v from t where k='biz_a'), (select v fro
 select ok(not public.has_permission((select v from t where k='biz_a'), (select v from t where k='branch_a'), 'invoices.view'),
   'the new member does not hold permissions Staff lacks');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 5. Expired invite.
@@ -199,6 +215,7 @@ select 'expired', out_token from public.invite_member(
   (select v from t where k='biz_a'), 'inv.expired@example.com',
   (select v from t where k='role_staff'), (select v from t where k='branch_a'));
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- Backdate it past its expiry.
 update public.business_members
@@ -218,6 +235,7 @@ select is(
   public.accept_invite((select token from tok where k='expired')), null,
   'an expired invite is refused');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- An expired token also reveals nothing through the preview.
 set local role anon;
@@ -225,6 +243,7 @@ select is(
   (select count(*)::int from public.invite_preview((select token from tok where k='expired'))),
   0, 'invite_preview returns nothing for an expired token');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 6. The escalation guard still applies: a Manager cannot invite an Owner.
@@ -246,6 +265,7 @@ select throws_ok(
   '42501', null,
   'a manager cannot invite someone as Owner (escalation guard holds)');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 7. Other-business access: owner B cannot invite into business A.
@@ -260,6 +280,7 @@ select throws_ok(
   '42501', 'You do not have permission to invite people',
   'an owner of another business cannot invite into this one');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- A receptionist (no users.invite) is refused too.
 delete from public.member_role_assignments where member_id = (select v from t where k='member_recep');
@@ -278,6 +299,7 @@ select throws_ok(
   '42501', 'You do not have permission to invite people',
   'a receptionist cannot invite (no users.invite)');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 -- ---------------------------------------------------------------------------
 -- 8. Rate limit: the 11th attempt on one token hash is throttled.
@@ -298,6 +320,7 @@ select throws_ok(
   '54000', 'Too many attempts. Try again later.',
   'the 11th attempt on one token is throttled');
 reset role;
+select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
 
 select * from finish();
 rollback;

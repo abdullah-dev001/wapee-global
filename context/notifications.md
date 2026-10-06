@@ -70,5 +70,6 @@ pg_cron: `outbox-worker` every minute (calls the worker only if something is due
 - Not deployed-tested: Twilio (no secrets), push on a real device, Resend inbox delivery (needs a verified domain or the account owner's address as the test recipient).
 
 ## Changelog
+- 2026-10-07: `report_summary` payloads (revenue figures) are emptied the moment the row reaches sent / dead / skipped / cancelled (trigger `purge_report_payload` + CHECK `message_outbox_report_payload_only_while_open`), like the sealed token. One real report email was sent to the Resend account owner's address and confirmed with a provider id (throwaway business deleted).
 - 2026-10-09: Phase 6B + fixes: confirm-page unsubscribe, project-wide privilege revoke, Resend fresh-key retries, 3 Edge Functions deployed, settings/credits/log/push screens, appointment send status, push_preferences, message_preview.
 - 2026-10-08: Phase 6A built (7 migrations, 2 Edge Functions + shared module, 304 SQL assertions, 31 unit tests).
