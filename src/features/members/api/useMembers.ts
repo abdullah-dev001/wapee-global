@@ -52,6 +52,14 @@ export function useMembers(businessId: string | null): UseQueryResult<MemberRow[
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
 
+      // `profiles` RLS shows only your own row, so teammates' names come from a
+      // function that returns name + email of THIS business's active members only.
+      const names = await getSupabase().rpc('list_business_member_names', {
+        p_business_id: businessId ?? '',
+      });
+      if (names.error) throw new Error(names.error.message);
+      const nameByUser = new Map((names.data ?? []).map((n) => [n.user_id, n]));
+
       return (data ?? []).map((row) => ({
         id: row.id,
         status: row.status,
@@ -60,8 +68,14 @@ export function useMembers(businessId: string | null): UseQueryResult<MemberRow[
         inviteExpiresAt: row.invite_expires_at,
         joinedAt: row.joined_at,
         userId: row.user_id,
-        fullName: row.profiles?.full_name ?? null,
-        email: row.profiles?.email ?? row.invited_email,
+        fullName:
+          (row.user_id ? nameByUser.get(row.user_id)?.full_name : null) ??
+          row.profiles?.full_name ??
+          null,
+        email:
+          (row.user_id ? nameByUser.get(row.user_id)?.email : null) ??
+          row.profiles?.email ??
+          row.invited_email,
         roles: (row.member_role_assignments ?? []).map((assignment) => ({
           assignmentId: assignment.id,
           roleId: assignment.role_id,

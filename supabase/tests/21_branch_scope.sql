@@ -381,6 +381,49 @@ begin
   perform pg_temp.chk('...but the staff member of THEIR branch (only B main) is still theirs', pg_temp.upd('mgrb', format($q$update public.staff_profiles set job_title = 'y' where id = %L$q$, v_st)), '1');
 end $$;
 
+-- ============ Phase 10 prelude (a): teammates' names, own business only ============
+do $$
+declare r jsonb;
+begin
+  update public.profiles set full_name = 'Name ' || u.k from (select k, v from ids where k in ('owner','mgra','recep','ownerb','mgrb')) u where profiles.id = u.v;
+  perform pg_temp.act_as(pg_temp.id('recep')); set local role authenticated;
+  perform pg_temp.chk('team names: a receptionist sees every active member of THEIR business and nobody else',
+    (select string_agg(full_name, ',' order by full_name) from public.list_business_member_names(pg_temp.id('biza'))),
+    (select string_agg(p.full_name, ',' order by p.full_name) from public.business_members m join public.profiles p on p.id = m.user_id where m.business_id = pg_temp.id('biza') and m.status = 'active' and m.deleted_at is null));
+  perform pg_temp.chk('...none of business B''s people appear', (select count(*)::text from public.list_business_member_names(pg_temp.id('biza')) where full_name in ('Name ownerb','Name mgrb')), '0');
+  perform pg_temp.chk('...asking for business B returns nothing (not a member there)', (select count(*)::text from public.list_business_member_names(pg_temp.id('bizb'))), '0');
+  perform pg_temp.chk('...and profiles RLS is unchanged: a teammate row is still unreadable directly', (select count(*)::text from public.profiles where id = pg_temp.id('mgra')), '0');
+  reset role;
+  perform pg_temp.act_as(pg_temp.id('ownerb')); set local role authenticated;
+  perform pg_temp.chk('team names: business B''s owner sees only B (2 members) and none of A''s', (select count(*)::text from public.list_business_member_names(pg_temp.id('bizb'))) || '/' || (select count(*)::text from public.list_business_member_names(pg_temp.id('biza'))), '2/0');
+  reset role;
+  perform pg_temp.chk('team names: anon is refused', pg_temp.as_anon(format($q$select to_jsonb(count(*)) from public.list_business_member_names(%L)$q$, pg_temp.id('biza')))->>'state', '42501');
+end $$;
+
+-- ============ Phase 10 prelude (b): a staff profile with NO branch is editable by any staff.manage holder
+--               until it has a branch; after that, branch-scope rules apply ============
+do $$
+declare v_st uuid;
+begin
+  insert into public.staff_profiles (business_id, display_name, is_active) values (pg_temp.id('biza'), 'Fresh', true) returning id into v_st;
+  perform pg_temp.chk('no-branch profile: manager A, manager B and the all-scope custom role can each edit it',
+    pg_temp.upd('mgra', format($q$update public.staff_profiles set job_title = 'a' where id = %L$q$, v_st)) || '/' ||
+    pg_temp.upd('mgrk', format($q$update public.staff_profiles set job_title = 'k' where id = %L$q$, v_st)) || '/' ||
+    pg_temp.upd('custall', format($q$update public.staff_profiles set job_title = 'c' where id = %L$q$, v_st)), '1/1/1');
+  perform pg_temp.chk('...a receptionist and a staff member (no staff.manage) cannot',
+    pg_temp.upd('recep', format($q$update public.staff_profiles set job_title = 'r' where id = %L$q$, v_st)) || '/' || pg_temp.upd('staffa', format($q$update public.staff_profiles set job_title = 's' where id = %L$q$, v_st)), '0/0');
+  perform pg_temp.chk('...and another business cannot', pg_temp.upd('ownerb', format($q$update public.staff_profiles set job_title = 'b' where id = %L$q$, v_st)), '0');
+  -- manager A gives it branch A: from now on manager B (Karachi) is out
+  insert into public.staff_branches (staff_id, branch_id, business_id) values (v_st, pg_temp.id('bra'), pg_temp.id('biza'));
+  perform pg_temp.chk('once it has branch A: manager A still edits, manager B no longer does',
+    pg_temp.upd('mgra', format($q$update public.staff_profiles set job_title = 'a2' where id = %L$q$, v_st)) || '/' || pg_temp.upd('mgrk', format($q$update public.staff_profiles set job_title = 'k2' where id = %L$q$, v_st)), '1/0');
+  perform pg_temp.chk('...and the stored value is manager A''s edit, not manager B''s', (select job_title from public.staff_profiles where id = v_st), 'a2');
+  -- shared with branch B: manager A alone no longer covers every branch of the profile
+  insert into public.staff_branches (staff_id, branch_id, business_id) values (v_st, pg_temp.id('brb'), pg_temp.id('biza'));
+  perform pg_temp.chk('once it also has branch B: neither single-branch manager edits it, the all-scope custom role does',
+    pg_temp.upd('mgra', format($q$update public.staff_profiles set job_title = 'a3' where id = %L$q$, v_st)) || '/' || pg_temp.upd('mgrk', format($q$update public.staff_profiles set job_title = 'k3' where id = %L$q$, v_st)) || '/' || pg_temp.upd('custall', format($q$update public.staff_profiles set job_title = 'c3' where id = %L$q$, v_st)), '0/0/1');
+end $$;
+
 select jsonb_build_object('passed', count(*) filter (where pass), 'failed', count(*) filter (where not pass), 'total', count(*),
   'failures', coalesce(jsonb_agg(jsonb_build_object('n', n, 'name', name, 'detail', detail) order by n) filter (where not pass), '[]'::jsonb)) as result from res;
 rollback;
