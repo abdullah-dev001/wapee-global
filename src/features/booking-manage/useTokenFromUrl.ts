@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import * as ExpoLinking from 'expo-linking';
 
-import { parseTokenFromFragment } from './tokenFragment';
+import { parseTokenFromFragment, stripTokenFromUrl } from './tokenFragment';
 
 /**
  * Reads the manage token from the URL FRAGMENT and keeps it in memory only —
@@ -44,6 +44,23 @@ export function useTokenFromUrl(): string | null | undefined {
 
     const { pathname, search } = window.location;
     window.history.replaceState(null, '', `${pathname}${search}`);
+
+    // Expo Router re-writes the address bar from its own saved URL (measured: it put `#token=`
+    // back right after the strip above). So for as long as this page is mounted, any history
+    // write is cleaned of the token before it reaches the address bar or the history.
+    const history = window.history;
+    const originalReplace = history.replaceState.bind(history);
+    const originalPush = history.pushState.bind(history);
+    const clean = (url: string | URL | null | undefined) =>
+      url === null || url === undefined ? url : stripTokenFromUrl(String(url));
+    history.replaceState = (state: unknown, title: string, url?: string | URL | null) =>
+      originalReplace(state, title, clean(url));
+    history.pushState = (state: unknown, title: string, url?: string | URL | null) =>
+      originalPush(state, title, clean(url));
+    return () => {
+      history.replaceState = originalReplace;
+      history.pushState = originalPush;
+    };
   }, [token]);
 
   // Native: no fragment is available until a deep-link URL resolves.

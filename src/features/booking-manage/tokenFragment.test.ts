@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseTokenFromFragment } from './tokenFragment';
+import { parseTokenFromFragment, stripTokenFromUrl } from './tokenFragment';
 
 describe('parseTokenFromFragment', () => {
   it('reads the token from a fragment with the leading #', () => {
@@ -37,5 +37,17 @@ describe('parseTokenFromFragment', () => {
 
   it('returns null when the token is only whitespace', () => {
     expect(parseTokenFromFragment('#token=%20%20')).toBeNull();
+  });
+});
+
+describe('stripTokenFromUrl', () => {
+  it('removes the token and an emptied fragment', () => {
+    expect(stripTokenFromUrl('/ink/manage#token=abc')).toBe('/ink/manage');
+    expect(stripTokenFromUrl('https://x.test/a?b=1#token=abc')).toBe('https://x.test/a?b=1');
+  });
+  it('keeps other fragment params and URLs without a token', () => {
+    expect(stripTokenFromUrl('/a#token=abc&x=1')).toBe('/a#x=1');
+    expect(stripTokenFromUrl('/a#section')).toBe('/a#section');
+    expect(stripTokenFromUrl('/a')).toBe('/a');
   });
 });

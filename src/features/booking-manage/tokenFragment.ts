@@ -18,3 +18,19 @@ export function parseTokenFromFragment(fragment: string | null | undefined): str
   const trimmed = token.trim();
   return trimmed.length > 0 ? trimmed : null;
 }
+
+/**
+ * Removes the `token` parameter from the fragment of a URL or path ("/x#token=abc" -> "/x"; other
+ * fragment params are kept; an emptied fragment loses its "#"). Used to keep the secret out of the
+ * address bar and browser history.
+ */
+export function stripTokenFromUrl(url: string): string {
+  const hashIndex = url.indexOf('#');
+  if (hashIndex < 0) return url;
+  const base = url.slice(0, hashIndex);
+  const params = new URLSearchParams(url.slice(hashIndex + 1));
+  if (!params.has('token')) return url;
+  params.delete('token');
+  const rest = params.toString();
+  return rest ? `${base}#${rest}` : base;
+}

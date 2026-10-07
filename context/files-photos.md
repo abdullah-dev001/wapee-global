@@ -25,7 +25,7 @@ Soft delete (`delete_file`, audited `file.deleted`): the row is kept, the object
 `src/features/files/` (`filesLogic.ts` tested, `api/useFiles.ts`, `pickDocument.ts`, `components/ClientFilesSection.tsx`). Query keys `client-files`, `client-file-urls` (invalidate with `.business()`). The URL query goes stale after 4 minutes and refetches before the 5-minute expiry.
 
 ## Limits / not done
-- **PDF upload from the device works on WEB only**: native needs `expo-document-picker`, which is not installed (would be a new dependency: ask). Native can add photos.
+- PDFs are chosen with `expo-document-picker` (added 2026-10-07, approved): **a NATIVE MODULE, the dev build needs `npm run ios`** (loaded lazily, so an older build still starts and shows "needs an app update"). Not run on iOS/Android.
 - Pending rows older than an hour stop counting toward the cap but are never cleaned up; objects of a deleted BUSINESS stay in the bucket (no FK): remove them with the Storage API (see `25_files_forms_http.mjs` header / the cleanup note in _handoff.md).
 - No thumbnails/resizing (the full image is loaded); no per-file captions; no virus scan.
 - Photo withdrawal does not hide earlier photos.

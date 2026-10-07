@@ -116,7 +116,13 @@ export function ClientFilesSection({
   };
 
   const choosePdf = async () => {
-    const doc = await pickPdf();
+    let doc: Awaited<ReturnType<typeof pickPdf>>;
+    try {
+      doc = await pickPdf();
+    } catch {
+      toast.show({ message: t('files.errors.picker_unavailable'), tone: 'error' });
+      return;
+    }
     if (!doc) return;
     upload.mutate(
       {
