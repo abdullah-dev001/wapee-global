@@ -11,6 +11,8 @@ import {
   ClipboardSignature,
   Coins,
   CreditCard,
+  Inbox,
+  Trash2,
   MessageSquareText,
   ShieldCheck,
 } from 'lucide-react-native';
@@ -41,7 +43,9 @@ type HubItem = {
     | '/settings/roles'
     | '/settings/branches'
     | '/settings/advanced-reports'
-    | '/settings/forms';
+    | '/settings/forms'
+    | '/settings/data-requests'
+    | '/settings/delete-business';
   icon: LucideIcon;
   title: string;
   subtitle: string;
@@ -87,6 +91,8 @@ export default function SettingsScreen() {
   const canBranches = usePermission('settings.business');
   const canAdvanced = usePermission('reports.view_advanced');
   const canForms = usePermission('forms.manage');
+  const canRequests = usePermission('clients.export');
+  const canEraseBusiness = usePermission('clients.erase');
   const formsOn = useFeatureFlag('forms_consent');
   const customRoles = useFeatureFlag('custom_roles');
   const multiBranch = useFeatureFlag('multi_branch');
@@ -176,6 +182,26 @@ export default function SettingsScreen() {
             icon: ChartNoAxesCombined,
             title: t('advReports.hubTitle'),
             subtitle: t('advReports.hubSubtitle'),
+          },
+        ]
+      : []),
+    ...(canRequests.allowed
+      ? [
+          {
+            route: '/settings/data-requests' as const,
+            icon: Inbox,
+            title: t('dataRights.hub.requestsTitle'),
+            subtitle: t('dataRights.hub.requestsSubtitle'),
+          },
+        ]
+      : []),
+    ...(canEraseBusiness.allowed
+      ? [
+          {
+            route: '/settings/delete-business' as const,
+            icon: Trash2,
+            title: t('dataRights.hub.deleteTitle'),
+            subtitle: t('dataRights.hub.deleteSubtitle'),
           },
         ]
       : []),

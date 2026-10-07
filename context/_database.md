@@ -510,6 +510,8 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 - `20261016130000` / `…140000` / `…150000` / `…160000` (RLS performance): STABLE set functions `perm_branch_ids(perm, branch_scope_only)`, `perm_business_ids`, `perm_cover_business_ids`, `member_business_ids`, `own_staff_ids`, `scoped_client_ids`, `own_client_ids`, `client_has_live_appt`; SELECT policies of appointments, invoices, invoice_items, invoice_payments, credit_notes, messages, clients, services, staff_profiles, branches, service_branches, staff_branches test membership of those sets (computed once per statement) instead of calling `can()` per row; `clients_v` becomes a security-barrier definer view carrying the clients_select rule (kept equal by suite 31); `client_phone` / `client_email` dropped.
 - `20261016170000_phase11a_list_indexes`: `appointments(business_id, starts_at desc, id desc)`, `messages(business_id, id desc)`, `clients(business_id, full_name, id)`.
 - `20261016180000_phase11a_list_appointments_fast`: name from `clients`, phone search / phone shown through one lookup in `clients_v`.
+- `20261017090000_phase11b_clients_notes_lock`: `clients.notes` not granted; `clients_v` blanks it without `clients.view_contact`.
+- `20261017100000_phase11b_invoice_payment_state`: side table `invoice_payment_state` (triggers on invoices / payments / credit notes, backfilled; no grants), `list_invoices` filters on it and computes `invoice_money()` for page rows only (payment filter 4 s to 48 ms at 20k invoices).
 - Rule for new tables: a policy that checks a permission on ROW columns must use the set functions (`col IN (select perm_branch_ids('x.y', true))`), never `can(business_id, branch_id, ...)` per row (about 1 ms per row; see docs/performance-review.md).
 
 ## Known limits / TODO
@@ -557,3 +559,4 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 - 2026-10-02: Phase 1 schema: 10 tables, 46 permissions, 4 roles, all RLS + guards, advisors clean, 21 security tests passing.
 - 2026-10-07: **Phase 10C client portal** — 2 tables, 20 service-only RPCs, 5 migrations; details in `client-portal.md`.
 - 2026-10-07: **Phase 11A** — contact columns locked at the database, GDPR export / erase / business erase + portal requests, security review fixes, RLS rewritten set-based (list_appointments from >25 s to < 1 s on 50k rows), 3 list indexes; 9 migrations. See `gdpr.md`, `docs/security-review.md`, `docs/performance-review.md`.
+- 2026-10-07: **Phase 11B** — `clients.notes` locked behind `clients.view_contact`; `invoice_payment_state` side table for the invoice payment filter; 2 migrations.

@@ -348,3 +348,15 @@ export function usePortalSignOut(slug: string, session: string | null) {
     },
   });
 }
+
+/**
+ * "Request my data" / "Request erasure": creates a REQUEST for the business to act on (it changes nothing about
+ * the customer's data by itself). A second request of the same kind while one is open is accepted as a duplicate.
+ */
+export function usePortalRequestData(slug: string, session: string | null) {
+  void slug;
+  return useMutation({
+    mutationFn: (kind: 'export' | 'erase') =>
+      call<{ requested: boolean; duplicate: boolean }>({ session, action: 'request_data', kind }),
+  });
+}

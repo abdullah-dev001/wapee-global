@@ -17,7 +17,7 @@ Phase 4 placeholder.
   clear message with a link to it, never a raw DB error.
 - **Contact details (phone/email) need `clients.view_contact`, enforced by the DATABASE (Phase 11A).**
   `authenticated` has no privilege on `clients.phone_e164` / `email`; the app reads
-  `clients_v`, which returns them only for callers holding the permission in that
+  `clients_v` (also `notes`), which returns them only for callers holding the permission in that
   business and NULL for everyone else (Staff Own scope, custom roles without it).
   Row visibility is unchanged (`clients_select`; the view carries the same rule,
   suite 31 keeps them equal). Phone search is closed to blocked roles too (the view
@@ -97,7 +97,6 @@ with a confirm dialog, edit opens the same `ClientForm` in a Drawer.
 Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
 
 ## Known limits / TODO
-- `clients.notes` is still column-readable by every `clients.view` holder (the UI hides it without view_contact / view_sensitive): product decision pending (docs/security-review.md L3).
 - **Click-tested on the iOS simulator (2026-10-05)**: `/clients` confirmed
   by screenshot with real seeded data — search input, "Show archived"
   toggle, "New client" button, client rows (avatar, name, phone) all
@@ -128,6 +127,7 @@ Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
   other mutation in Phase 4.
 
 ## Changelog
+- 2026-10-07: Phase 11B: `notes` is blanked by `clients_v` without `clients.view_contact`; the edit form for a caller without it shows the name only and sends only the name.
 - 2026-10-07: Phase 11A: contact lock is a database boundary (`clients_v`), profile gets Export data / Erase personal data (`gdpr.md`), list reads indexed `(business_id, full_name, id)`.
 - 2026-10-07: Phase 10B: the profile shows Files and photos (consent, gallery, upload) and Forms (sign here, send link, signed copies, void) sections while the add-ons are on.
 - 2026-10-07: Phase 10A: the profile shows a Packages section (`ClientPackagesSection`: balance, state, expiry) when the add-on is on and the member holds a packages permission.

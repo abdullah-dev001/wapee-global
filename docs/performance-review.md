@@ -48,8 +48,21 @@ Every RLS policy of the big tables called `can(business_id, branch_id, ...)` (bu
 List-appointments inner query as the Owner, 50k appointments: `Index Scan using appointments_business_starts_idx` returns the first 21 rows, the policy filter is one hashed set plus an `InitPlan` for super admin (executed once), clients joined through a Memoize node (5 index probes for 21 rows). Clients search uses `clients_name_trgm_idx` / the visible-set filter; messages log reads `messages_business_id_desc_idx` in order.
 
 ## Still slow / not done
-- `list_invoices` with the payment filter (`pending`): 3.7 s at 20,000 invoices. It computes `invoice_money(id)` for every invoice before it can filter by payment state. The default page, search, and date range are 30-130 ms. Fix when needed: store the payment state on the invoice (a trigger-maintained column), a design change.
+- ~~`list_invoices` with the payment filter~~ fixed in Phase 11B, see below.
 - `list_appointments` page 1 still takes about 650 ms although its inner plan is an index scan; the rest is inside the function (window + aggregation + the phone look-up). Under 1 s, so left.
 - The reports (`get_basic_report` 175 ms, `get_advanced_report` 65-230 ms) scan the year of data per call; fine at this size, re-measure above 200k appointments per business.
 - Unused-index advisor notices (37) are data-volume noise on a mostly empty project; none dropped.
 - Numbers are from the dev instance on one run day; production hardware will differ. Not measured: network, Realtime, the app's rendering.
+
+## Phase 11B: `list_invoices` payment filter
+Measured on a second throwaway business with 20,000 issued invoices and 16,000 payments (deleted by recorded id afterwards).
+
+| query | before | after |
+|---|---|---|
+| list_invoices, payment = pending | 4.0 s | 48 ms |
+| list_invoices page 1 | 58 ms | 69 ms |
+| list_invoices, search number | 151 ms | 147 ms |
+| list_invoices, search client name | 131 ms | 147 ms |
+| list_invoices, date range | 28 ms | 30 ms |
+
+Cause: the filter computed `invoice_money()` for all 20,000 invoices. Fix (`20261017100000`): a side table `invoice_payment_state(invoice_id, business_id, payment_status)` kept in step by AFTER triggers on `invoices`, `invoice_payments` and `credit_notes` (a side table because issued invoices are immutable), backfilled once; `list_invoices` filters on it and calls `invoice_money()` for the page rows only. `invoice_money()` stays the single definition. Suite 32 (17 checks): the state equals `invoice_money()` after draft, issue, part payment, a refused overpayment, full payment, reversal, partial and full credit notes, the filter returns exactly the matching invoices, no drift, the table is closed to API roles, and a business delete still works.

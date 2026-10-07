@@ -14,6 +14,8 @@ export type DialogAction = {
   onPress: () => void;
   variant?: ButtonVariant;
   loading?: boolean;
+  /** Keeps the action visible but inactive (e.g. until a typed confirmation matches). */
+  disabled?: boolean;
 };
 
 export type DialogProps = {
@@ -91,6 +93,7 @@ export function Dialog({
                 variant={confirm.variant ?? 'danger'}
                 onPress={confirm.onPress}
                 loading={confirm.loading}
+                disabled={confirm.disabled}
               >
                 {confirm.label}
               </Button>

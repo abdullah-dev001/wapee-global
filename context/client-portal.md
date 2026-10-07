@@ -34,3 +34,4 @@ Customers of a business sign in WITHOUT a password at `/<slug>/portal` and see t
 
 ## Changelog
 - 2026-10-07: Phase 10C built (migrations `20261015090000`, `…100000`, `…110000`, `…120000`, `…130000`; Edge `portal`; outbox `portal_login`; UI; suite 26; HTTP proof 26).
+- 2026-10-07: Phase 11B: tab **My data** (`PortalData`) with "Request a copy" / "Request erasure" (action `request_data`; creates a request row only; rate limit `portal_data_request`, 5 per customer per day in the database). See `gdpr.md`.

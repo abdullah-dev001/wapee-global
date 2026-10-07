@@ -24,9 +24,14 @@ import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 import { formatDateTime, todayInZone } from '@/lib/time';
 
-import { DataRightsError, useEraseClient, useExportClient } from '../api/useClientData';
+import {
+  DataRightsError,
+  EraseClientDialog,
+  dataRightsErrorKey,
+  deliverExport,
+  useExportClient,
+} from '@/features/data-rights';
 import { useArchiveClient, useClient } from '../api/useClients';
-import { deliverExport } from '../deliverExport';
 import { ClientForm } from './ClientForm';
 
 export type ClientProfileScreenProps = {
@@ -45,7 +50,6 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
   const client = useClient(businessId, clientId);
   const archiveClient = useArchiveClient(businessId);
   const exportClient = useExportClient();
-  const eraseClient = useEraseClient();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
@@ -99,9 +103,7 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
   const data = client.data;
 
   const failureMessage = (error: Error) =>
-    error instanceof DataRightsError && error.code in ERROR_KEYS
-      ? t(ERROR_KEYS[error.code as keyof typeof ERROR_KEYS])
-      : t('clients.data.errors.unknown');
+    t(dataRightsErrorKey(error instanceof DataRightsError ? error.code : null));
 
   const onExport = () =>
     exportClient.mutate(clientId, {
@@ -186,42 +188,46 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
               </Text>
             ) : null}
 
-            <View style={styles.section}>
-              <Text variant="label" color="textSecondary">
-                {t('clients.profile.contact')}
-              </Text>
-              {canViewContact ? (
-                <>
-                  <Text variant="body">{data.phoneE164}</Text>
-                  {data.email ? <Text variant="body">{data.email}</Text> : null}
-                </>
-              ) : (
-                <View style={styles.hiddenContact}>
-                  <Lock size={14} strokeWidth={1.75} color={theme.colors.textMuted} />
-                  <Text variant="helper" color="textMuted">
-                    {t('clients.contactHidden')}
+            {data.isErased ? null : (
+              <>
+                <View style={styles.section}>
+                  <Text variant="label" color="textSecondary">
+                    {t('clients.profile.contact')}
                   </Text>
+                  {canViewContact ? (
+                    <>
+                      <Text variant="body">{data.phoneE164}</Text>
+                      {data.email ? <Text variant="body">{data.email}</Text> : null}
+                    </>
+                  ) : (
+                    <View style={styles.hiddenContact}>
+                      <Lock size={14} strokeWidth={1.75} color={theme.colors.textMuted} />
+                      <Text variant="helper" color="textMuted">
+                        {t('clients.contactHidden')}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
 
-            <View style={styles.section}>
-              <Text variant="label" color="textSecondary">
-                {t('clients.profile.notes')}
-              </Text>
-              {canViewContact ? (
-                <Text variant="body" color={data.notes ? 'textPrimary' : 'textMuted'}>
-                  {data.notes ?? t('clients.profile.noNotes')}
-                </Text>
-              ) : (
-                <View style={styles.hiddenContact}>
-                  <Lock size={14} strokeWidth={1.75} color={theme.colors.textMuted} />
-                  <Text variant="helper" color="textMuted">
-                    {t('clients.notesHidden')}
+                <View style={styles.section}>
+                  <Text variant="label" color="textSecondary">
+                    {t('clients.profile.notes')}
                   </Text>
+                  {canViewContact ? (
+                    <Text variant="body" color={data.notes ? 'textPrimary' : 'textMuted'}>
+                      {data.notes ?? t('clients.profile.noNotes')}
+                    </Text>
+                  ) : (
+                    <View style={styles.hiddenContact}>
+                      <Lock size={14} strokeWidth={1.75} color={theme.colors.textMuted} />
+                      <Text variant="helper" color="textMuted">
+                        {t('clients.notesHidden')}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
+              </>
+            )}
           </Card>
 
           {/* Add-on "Packages & Sessions": renders nothing when the add-on is off. */}
@@ -340,45 +346,15 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
         }}
       />
 
-      <Dialog
+      <EraseClientDialog
         open={confirmErase}
         onClose={() => setConfirmErase(false)}
-        title={t('clients.data.eraseTitle')}
-        message={t('clients.data.eraseMessage')}
-        confirm={{
-          label: t('clients.data.erase'),
-          variant: 'danger',
-          loading: eraseClient.isPending,
-          onPress: () =>
-            eraseClient.mutate(clientId, {
-              onSuccess: (result) => {
-                setConfirmErase(false);
-                toast.show({
-                  message:
-                    result.storagePending > 0
-                      ? t('clients.data.erasedStoragePending')
-                      : t('clients.data.erased'),
-                  tone: result.storagePending > 0 ? 'error' : 'success',
-                });
-              },
-              onError: (error) => {
-                setConfirmErase(false);
-                toast.show({ message: failureMessage(error), tone: 'error' });
-              },
-            }),
-        }}
+        clientId={clientId}
+        clientName={data.fullName}
       />
     </Screen>
   );
 }
-
-const ERROR_KEYS = {
-  has_future_appointment: 'clients.data.errors.has_future_appointment',
-  has_draft_invoice: 'clients.data.errors.has_draft_invoice',
-  not_found: 'clients.data.errors.not_found',
-  forbidden: 'clients.data.errors.forbidden',
-  unknown: 'clients.data.errors.unknown',
-} as const;
 
 function AppointmentRowSummary({
   appointment,

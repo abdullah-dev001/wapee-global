@@ -2333,6 +2333,39 @@ export type Database = {
           },
         ]
       }
+      invoice_payment_state: {
+        Row: {
+          business_id: string
+          invoice_id: string
+          payment_status: string | null
+        }
+        Insert: {
+          business_id: string
+          invoice_id: string
+          payment_status?: string | null
+        }
+        Update: {
+          business_id?: string
+          invoice_id?: string
+          payment_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_payment_state_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payment_state_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: true
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_payments: {
         Row: {
           amount_minor: number
@@ -5101,7 +5134,7 @@ export type Database = {
           first_branch_id?: string | null
           full_name?: string | null
           id?: string | null
-          notes?: string | null
+          notes?: never
           phone_e164?: never
           source?: Database["public"]["Enums"]["booking_source"] | null
           updated_at?: string | null
@@ -5116,7 +5149,7 @@ export type Database = {
           first_branch_id?: string | null
           full_name?: string | null
           id?: string | null
-          notes?: string | null
+          notes?: never
           phone_e164?: never
           source?: Database["public"]["Enums"]["booking_source"] | null
           updated_at?: string | null
@@ -6287,6 +6320,10 @@ export type Database = {
           p_template_id: string
         }
         Returns: Json
+      }
+      refresh_invoice_payment_state: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
       }
       register_push_token: {
         Args: { p_platform: string; p_token: string }

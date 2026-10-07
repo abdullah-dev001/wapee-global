@@ -897,18 +897,7 @@
       "export": "Export data",
       "exported": "Client data exported",
       "erase": "Erase personal data",
-      "eraseTitle": "Erase this client's personal data?",
-      "eraseMessage": "Their name, phone, email, notes, answers, signed forms, review text, messages and photos are permanently removed. Invoices and payments are kept with the amounts, dates and numbers, without their name. This cannot be undone.",
-      "erased": "Personal data erased",
-      "erasedStoragePending": "Personal data erased. Some files could not be removed yet: erase again to finish.",
-      "erasedProfile": "This client's personal data was erased. Their invoices and payments are kept without a name.",
-      "errors": {
-        "has_future_appointment": "This client has an upcoming appointment. Cancel or complete it first.",
-        "has_draft_invoice": "This client has a draft invoice. Issue or discard it first.",
-        "not_found": "You can't do this for this client.",
-        "forbidden": "You can't do this for this client.",
-        "unknown": "That didn't work. Try again."
-      }
+      "erasedProfile": "This client's personal data was erased. Their invoices and payments are kept without a name."
     },
     "profile": {
       "contact": "Contact",
@@ -3061,7 +3050,8 @@
       "packages": "Packages",
       "invoices": "Invoices",
       "photos": "Photos",
-      "forms": "Forms"
+      "forms": "Forms",
+      "data": "My data"
     },
     "bookings": {
       "upcoming": "Upcoming",
@@ -3158,6 +3148,111 @@
       "not_found": "We couldn't find that.",
       "rate_limited": "Too many attempts. Please wait a little and try again.",
       "unknown": "Something went wrong. Please try again."
+    },
+    "data": {
+      "title": "Your data",
+      "intro": "You can ask the business for a copy of the information it holds about you, or ask it to erase that information. The business will handle your request and may contact you.",
+      "exportTitle": "Get a copy of my data",
+      "exportBody": "Your details, bookings, invoices and forms in one file.",
+      "exportButton": "Request a copy",
+      "eraseTitle": "Erase my data",
+      "eraseBody": "Your name, contact details, notes and photos are removed. Invoices and payments are kept without your name, as the law requires.",
+      "eraseButton": "Request erasure",
+      "sentTitle": "Request received",
+      "sentBody": "Thank you. The business has your request and will be in touch. You don't need to do anything else.",
+      "alreadySent": "You already have an open request of this kind. The business has it."
+    }
+  },
+  "dataRights": {
+    "errors": {
+      "has_future_appointment": "This client has an upcoming appointment. Cancel or complete it first.",
+      "has_draft_invoice": "This client has a draft invoice. Issue or discard it first.",
+      "name_mismatch": "The name you typed does not match.",
+      "storage_not_clean": "Some files could not be removed yet. Nothing was deleted. Try again in a moment.",
+      "not_found": "You can't do this for this client.",
+      "forbidden": "Only the business Owner can do this.",
+      "already_resolved": "This request was already closed.",
+      "unknown": "That didn't work. Try again."
+    },
+    "erase": {
+      "title": "Erase {{name}}'s personal data?",
+      "intro": "This anonymises the client. It cannot be undone.",
+      "removedTitle": "Removed",
+      "removedBody": "Name, phone, email, notes, appointment notes, form answers, signed forms and signatures, review text, message recipients and all photos and files.",
+      "keptTitle": "Kept",
+      "keptBody": "Invoices, payments and credit notes with their amounts, dates and numbers (the name on them becomes \"Erased client\"), and the appointments themselves.",
+      "blockedNote": "A client with an upcoming appointment or a draft invoice cannot be erased until those are dealt with.",
+      "typeName": "Type \"{{name}}\" to confirm",
+      "confirm": "Erase personal data",
+      "done": "Personal data erased",
+      "doneStoragePending": "Personal data erased. Some files could not be removed yet: erase again to finish."
+    },
+    "hub": {
+      "requestsTitle": "Data requests",
+      "requestsSubtitle": "Customers asking for a copy of their data or for it to be erased",
+      "deleteTitle": "Delete this business",
+      "deleteSubtitle": "Permanently remove the business and everything in it"
+    },
+    "requests": {
+      "title": "Data requests",
+      "subtitle": "Requests made by customers in their account page.",
+      "statusLabel": "Show",
+      "status": {
+        "open": "Open",
+        "done": "Done",
+        "declined": "Declined"
+      },
+      "kind": {
+        "export": "Copy of their data",
+        "erase": "Erase their data"
+      },
+      "emailForgotten": "Email removed after closing",
+      "noMatch": "No client matches this email any more. You can only decline this request.",
+      "matches_one": "Matches 1 client.",
+      "matches_other": "Matches {{count}} clients.",
+      "ownerOnly": "Only an Owner can erase personal data.",
+      "runExport": "Export {{name}}",
+      "runExportFor": "Export the data of {{name}} and close the request",
+      "runErase": "Erase {{name}}",
+      "runEraseFor": "Erase the personal data of {{name}}",
+      "decline": "Decline",
+      "declineTitle": "Decline this request?",
+      "declineBody": "The request is closed without doing anything and the customer's email is forgotten. Tell the customer yourself if they are waiting.",
+      "declined": "Request declined",
+      "exported": "Export downloaded and the request closed",
+      "loadError": "Couldn't load the requests",
+      "loadErrorBody": "Something went wrong. Please try again.",
+      "empty": {
+        "open": {
+          "title": "No open requests",
+          "body": "When a customer asks for their data from their account page, it appears here."
+        },
+        "done": {
+          "title": "Nothing closed yet",
+          "body": "Requests you have handled appear here."
+        },
+        "declined": {
+          "title": "Nothing declined",
+          "body": "Requests you declined appear here."
+        }
+      }
+    },
+    "business": {
+      "title": "Delete this business",
+      "subtitle": "Owner only.",
+      "warningTitle": "This cannot be undone",
+      "warningBody": "Deleting the business removes everything in it for good, for you and for your team. There is no backup to restore from.",
+      "removedTitle": "Removed",
+      "removedBody": "Every client, appointment, invoice and payment, review, message log, form and signed form, and every photo and file, plus the website and the team's access.",
+      "keptTitle": "Kept",
+      "keptBody": "Your own sign-in account, and a record that this business was deleted (no names or contact details).",
+      "typeName": "Type \"{{name}}\" to confirm",
+      "confirm": "Delete the business",
+      "progress": "Removing files, then the data. Keep this page open.",
+      "doneTitle": "Business deleted",
+      "doneBody": "The business and its data were removed.",
+      "doneCounts": "{{clients}} clients, {{appointments}} appointments, {{invoices}} invoices and {{files}} files were removed.",
+      "continue": "Continue"
     }
   }
 }

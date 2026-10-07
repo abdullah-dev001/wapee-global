@@ -21,6 +21,7 @@ import {
 import { visibleTabs, type PortalTab } from '../portalLogic';
 import { PortalBook } from './PortalBook';
 import { PortalBookings } from './PortalBookings';
+import { PortalData } from './PortalData';
 import { PortalForms } from './PortalForms';
 import { PortalInvoices } from './PortalInvoices';
 import { PortalLogin } from './PortalLogin';
@@ -162,6 +163,7 @@ function PortalSignedIn({ slug, session }: { slug: string; session: string }) {
       {tab === 'invoices' ? <PortalInvoices slug={slug} session={session} /> : null}
       {tab === 'photos' ? <PortalPhotos slug={slug} session={session} /> : null}
       {tab === 'forms' ? <PortalForms slug={slug} session={session} /> : null}
+      {tab === 'data' ? <PortalData slug={slug} session={session} /> : null}
     </View>
   );
 }

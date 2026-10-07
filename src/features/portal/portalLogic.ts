@@ -7,9 +7,9 @@ export function cleanEmail(input: string): string | null {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : null;
 }
 
-export type PortalTab = 'bookings' | 'packages' | 'invoices' | 'photos' | 'forms';
+export type PortalTab = 'bookings' | 'packages' | 'invoices' | 'photos' | 'forms' | 'data';
 
-/** Tabs to show: the add-on tabs only when the business has them. */
+/** Tabs to show: the add-on tabs only when the business has them; "My data" is always last (a legal right, not a feature). */
 export function visibleTabs(
   features: { packages: boolean; files: boolean; forms: boolean } | null,
 ): PortalTab[] {
@@ -17,6 +17,7 @@ export function visibleTabs(
   if (features?.packages) tabs.splice(1, 0, 'packages');
   if (features?.files) tabs.push('photos');
   if (features?.forms) tabs.push('forms');
+  tabs.push('data');
   return tabs;
 }
 

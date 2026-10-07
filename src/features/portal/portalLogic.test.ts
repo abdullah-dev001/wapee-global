@@ -15,18 +15,20 @@ describe('cleanEmail', () => {
 
 describe('visibleTabs', () => {
   it('always bookings + invoices; add-on tabs only when on', () => {
-    expect(visibleTabs(null)).toEqual(['bookings', 'invoices']);
+    expect(visibleTabs(null)).toEqual(['bookings', 'invoices', 'data']);
     expect(visibleTabs({ packages: true, files: true, forms: true })).toEqual([
       'bookings',
       'packages',
       'invoices',
       'photos',
       'forms',
+      'data',
     ]);
     expect(visibleTabs({ packages: false, files: true, forms: false })).toEqual([
       'bookings',
       'invoices',
       'photos',
+      'data',
     ]);
   });
 });
