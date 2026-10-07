@@ -27,6 +27,7 @@ type Catalogue = {
     manage_pending: string;
     review: string;
     form: string;
+    portal: string;
     unsubscribe: string;
     address: string;
   };
@@ -62,6 +63,14 @@ const en: Catalogue = {
       lines: [
         'Hi {first},',
         'Here is the link to view, change or cancel your {service} on {when}.',
+      ],
+    },
+    portal_login: {
+      subject: 'Your sign-in link for {business}',
+      lines: [
+        'Hi {first},',
+        'Use this link to sign in to your {business} account. It works once and expires in 15 minutes.',
+        'If you did not ask for it, you can ignore this email: nothing will happen.',
       ],
     },
     form_request: {
@@ -104,6 +113,7 @@ const en: Catalogue = {
     manage_pending: 'View or change your request: {url}',
     review: 'Rate your visit: {url}',
     form: 'Open the form: {url}',
+    portal: 'Sign in: {url}',
     unsubscribe: 'Stop these emails: {url}',
     address: '{address}',
   },
@@ -153,6 +163,7 @@ export type Links = {
   manageUrl: string | null;
   reviewUrl: string | null;
   formUrl?: string | null;
+  portalUrl?: string | null;
   unsubscribeUrl: string | null;
   oneClickUrl?: string | null;
 };
@@ -199,6 +210,8 @@ export function renderEmail(job: Job, links: Links): RenderedEmail | null {
     lines.push(fill(cat.lines.review, { url: links.reviewUrl }));
   if (links.formUrl && job.event === 'form_request')
     lines.push(fill(cat.lines.form, { url: links.formUrl }));
+  if (links.portalUrl && job.event === 'portal_login')
+    lines.push(fill(cat.lines.portal, { url: links.portalUrl }));
   if (links.unsubscribeUrl) lines.push(fill(cat.lines.unsubscribe, { url: links.unsubscribeUrl }));
 
   const subject = fill(entry.subject, v);

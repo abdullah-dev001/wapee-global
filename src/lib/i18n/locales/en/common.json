@@ -3006,5 +3006,135 @@
       "rate_limited": "Too many attempts. Please wait a few minutes.",
       "unknown": "Something went wrong. Please try again."
     }
+  },
+  "portal": {
+    "metaTitle": "Your account",
+    "metaDescription": "See and manage your bookings.",
+    "title": "Your bookings and records",
+    "welcome": "Hi {{name}}",
+    "invalidTitle": "This link is not valid or has expired",
+    "invalidBody": "Ask for a new sign-in link below.",
+    "notAvailableTitle": "This page is not available",
+    "notAvailableBody": "The business has not turned on client accounts.",
+    "loadErrorTitle": "Couldn't load this page",
+    "loadErrorBody": "Something went wrong. Please try again.",
+    "login": {
+      "title": "Sign in to {{business}}",
+      "body": "Enter the email you booked with. We will send you a one-time link.",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "emailInvalid": "Enter a valid email address.",
+      "send": "Send me a link",
+      "sentTitle": "Check your email",
+      "sentBody": "If that email is registered with this business, a sign-in link is on its way. It works once and expires in 15 minutes.",
+      "again": "Use another email",
+      "exchanging": "Signing you in…",
+      "rateLimited": "Too many attempts. Please wait a little and try again."
+    },
+    "signOut": "Sign out",
+    "signOutAll": "Sign out everywhere",
+    "tabs": {
+      "bookings": "Bookings",
+      "packages": "Packages",
+      "invoices": "Invoices",
+      "photos": "Photos",
+      "forms": "Forms"
+    },
+    "bookings": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "emptyUpcoming": "No upcoming bookings",
+      "emptyUpcomingBody": "Book your next visit below.",
+      "emptyPast": "No past bookings",
+      "book": "Book a visit",
+      "with": "with {{name}}",
+      "at": "{{branch}}",
+      "yourNote": "Your note: {{note}}",
+      "reschedule": "Change time",
+      "cancel": "Cancel booking",
+      "cancelTitle": "Cancel this booking?",
+      "cancelBody": "The business will be told.",
+      "cancelConfirm": "Yes, cancel",
+      "cancelKeep": "Keep it",
+      "cancelCutoff": "Cancelling closes {{hours}} h before the start. Contact the business to change it.",
+      "cancelled": "Booking cancelled",
+      "rescheduled": "Booking moved",
+      "rescheduleConfirmTitle": "Move to this time?",
+      "rescheduleConfirmBody": "Your booking will be moved to the time you picked.",
+      "rescheduleConfirm": "Move booking",
+      "slotGone": "That time was just taken. Pick another.",
+      "status": {
+        "pending": "Awaiting confirmation",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "Missed"
+      }
+    },
+    "book": {
+      "title": "Book a visit",
+      "who": "Who is it for?",
+      "service": "Service",
+      "staffAny": "Any available",
+      "pickTime": "Pick a time",
+      "note": "Note for the business (optional)",
+      "confirm": "Book now",
+      "booked": "Booking sent",
+      "noServices": "Online booking is not available right now.",
+      "confirmTitle": "Book this time?",
+      "confirmBody": "{{service}} on {{when}}"
+    },
+    "packages": {
+      "empty": "No packages",
+      "emptyBody": "Packages you buy will show here.",
+      "remaining": "{{count}} of {{total}} sessions left",
+      "expires": "Valid until {{date}}",
+      "expired": "Expired",
+      "cancelled": "Cancelled",
+      "history": "Usage",
+      "used": "Used",
+      "restored": "Restored"
+    },
+    "invoices": {
+      "empty": "No invoices",
+      "emptyBody": "Issued invoices will show here.",
+      "paid": "Paid",
+      "partial": "Part paid",
+      "pending": "Unpaid",
+      "credited": "Credited",
+      "number": "Invoice {{number}}",
+      "balance": "Balance due",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "tax": "Tax",
+      "payments": "Payments",
+      "creditNotes": "Credit notes",
+      "print": "Print",
+      "back": "All invoices",
+      "billTo": "Billed to",
+      "reversal": "Reversal"
+    },
+    "photos": {
+      "empty": "No photos shared with you",
+      "emptyBody": "Photos the business shares will show here.",
+      "alt": "Shared photo"
+    },
+    "forms": {
+      "empty": "No signed forms",
+      "emptyBody": "Forms you sign will show here.",
+      "signedBy": "Signed by {{name}}",
+      "voided": "Voided"
+    },
+    "errors": {
+      "cancel_window_passed": "It is too late to cancel online. Please contact the business.",
+      "not_cancellable": "This booking can't be cancelled.",
+      "slot_unavailable": "That time is no longer available.",
+      "not_bookable": "Online booking is not available.",
+      "needs_details": "The business needs more details. Please contact them to book.",
+      "not_found": "We couldn't find that.",
+      "rate_limited": "Too many attempts. Please wait a little and try again.",
+      "unknown": "Something went wrong. Please try again."
+    }
   }
 }

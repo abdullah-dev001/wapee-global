@@ -470,6 +470,11 @@ verify_jwt = true
 [functions.sign_form]
 verify_jwt = false
 
+# Phase 10C. The client portal is PUBLIC (a customer has no Supabase account): its own session tokens are
+# the credential and every RPC behind it is service_role only.
+[functions.portal]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

@@ -121,7 +121,10 @@ export type PublicErrorCode =
   | 'not_found'
   // --- the form signing page (sign_form) ---
   | 'signature_required'
-  | 'invalid_signature';
+  | 'invalid_signature'
+  // --- the client portal ---
+  | 'invalid_session'
+  | 'needs_details';
 
 export class PublicApiError extends Error {
   code: PublicErrorCode;

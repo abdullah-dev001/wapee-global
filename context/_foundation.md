@@ -291,3 +291,4 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - 2026-10-01: Responsive shell (Screen, PageContainer, AppShell, Sidebar, Header, BottomTabBar), navigation config, app routes, PWA install hint + update toast.
 - 2026-10-01: Base UI components (Button, Input, Card, Badge, Skeleton, Spinner, EmptyState, Toggle, Tabs, Dialog, Drawer, Toast) + dev gallery; reserved slugs; NetInfo online manager; tablet orientation.
 - 2026-10-01: Phase 0 initial setup (project, libs, theme, providers, env, query, supabase client, i18n, PWA basics, placeholder routes).
+- 2026-10-07: Phase 10C: `callPublicFunction` knows `portal`; `PublicErrorCode` gained `invalid_session` / `needs_details`; `features/portal/portalSession.ts` (session token: sessionStorage on web, secure store on native, always try/catch). `useTokenFromUrl` is reused for the sign-in link.

@@ -21,7 +21,8 @@ type FunctionName =
   | 'get_review_request'
   | 'submit_review'
   | 'validate_widget'
-  | 'sign_form';
+  | 'sign_form'
+  | 'portal';
 
 type FailureBody = { ok: false; code?: string; field_id?: string };
 type SuccessBody<T> = { ok: true; data: T };
@@ -92,6 +93,8 @@ const KNOWN_CODES: readonly PublicErrorCode[] = [
   'not_found',
   'signature_required',
   'invalid_signature',
+  'invalid_session',
+  'needs_details',
 ];
 
 function toKnownCode(code: string | undefined): PublicErrorCode {

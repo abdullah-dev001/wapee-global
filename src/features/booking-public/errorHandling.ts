@@ -47,6 +47,7 @@ export function actionFor(
     case 'email_required':
     case 'signature_required':
     case 'invalid_signature':
+    case 'needs_details':
       return { kind: 'highlight_field', fieldId: opts?.fieldId ?? null, message: 'invalid' };
     case 'not_bookable':
     case 'not_found':
@@ -56,6 +57,7 @@ export function actionFor(
     case 'network_error':
       return { kind: 'retry_button' };
     case 'invalid_token':
+    case 'invalid_session':
       return { kind: 'invalid_link' };
     case 'cancel_window_passed':
     case 'not_cancellable':

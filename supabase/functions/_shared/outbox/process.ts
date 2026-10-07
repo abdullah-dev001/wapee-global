@@ -51,6 +51,8 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
     reviewUrl:
       token && job.event === 'review_request' ? `${base}/${slug}/review#token=${token}` : null,
     formUrl: token && job.event === 'form_request' ? `${base}/${slug}/sign#token=${token}` : null,
+    portalUrl:
+      token && job.event === 'portal_login' ? `${base}/${slug}/portal#token=${token}` : null,
     unsubscribeUrl,
     oneClickUrl,
   };
@@ -73,7 +75,8 @@ export async function processJob(job: Job, deps: Deps): Promise<Outcome> {
     if (
       (job.event === 'manage_link' ||
         job.event === 'review_request' ||
-        job.event === 'form_request') &&
+        job.event === 'form_request' ||
+        job.event === 'portal_login') &&
       !job.token
     ) {
       return await failJob(deps, job, 'missing_token', false);

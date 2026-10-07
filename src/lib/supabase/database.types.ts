@@ -2968,6 +2968,91 @@ export type Database = {
           },
         ]
       }
+      portal_login_tokens: {
+        Row: {
+          business_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          revoked_at?: string | null
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_login_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_sessions: {
+        Row: {
+          business_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          ip_hash: string | null
+          last_seen_at: string
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          ip_hash?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          ip_hash?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_sessions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           branch_id: string
@@ -5785,6 +5870,108 @@ export type Database = {
         Returns: Json
       }
       platform_flag: { Args: never; Returns: boolean }
+      portal_audit: {
+        Args: {
+          p_action: string
+          p_after: Json
+          p_business_id: string
+          p_entity_id: string
+          p_entity_type: string
+        }
+        Returns: undefined
+      }
+      portal_bookings: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_scope?: string
+          p_session: string
+        }
+        Returns: Json
+      }
+      portal_cancel_booking: {
+        Args: { p_appointment_id: string; p_reason?: string; p_session: string }
+        Returns: Json
+      }
+      portal_client_ids: {
+        Args: { p_business_id: string; p_email: string }
+        Returns: string[]
+      }
+      portal_create_booking: {
+        Args: {
+          p_client_id: string
+          p_notes?: string
+          p_service_id: string
+          p_session: string
+          p_staff_id?: string
+          p_starts_at: string
+        }
+        Returns: Json
+      }
+      portal_ctx: { Args: { p_session: string }; Returns: Json }
+      portal_exchange_token: {
+        Args: { p_ip_hash?: string; p_token: string }
+        Returns: Json
+      }
+      portal_forms: { Args: { p_session: string }; Returns: Json }
+      portal_info: { Args: { p_slug: string }; Returns: Json }
+      portal_invoice: {
+        Args: { p_invoice_id: string; p_session: string }
+        Returns: Json
+      }
+      portal_invoices: {
+        Args: { p_limit?: number; p_offset?: number; p_session: string }
+        Returns: Json
+      }
+      portal_mint_manage_token: {
+        Args: { p_appointment_id: string; p_business_id: string }
+        Returns: string
+      }
+      portal_norm_email: { Args: { p_email: string }; Returns: string }
+      portal_overview: { Args: { p_session: string }; Returns: Json }
+      portal_own_appointment: {
+        Args: { p_appointment_id: string; p_ctx: Json }
+        Returns: string
+      }
+      portal_packages: { Args: { p_session: string }; Returns: Json }
+      portal_photo_paths: {
+        Args: { p_file_ids: string[]; p_session: string }
+        Returns: {
+          file_id: string
+          path: string
+        }[]
+      }
+      portal_photos: { Args: { p_session: string }; Returns: Json }
+      portal_request_login: {
+        Args: { p_email: string; p_ip_hash?: string; p_slug: string }
+        Returns: Json
+      }
+      portal_reschedule_booking: {
+        Args: {
+          p_appointment_id: string
+          p_session: string
+          p_staff_id?: string
+          p_starts_at: string
+        }
+        Returns: Json
+      }
+      portal_reschedule_slots: {
+        Args: {
+          p_appointment_id: string
+          p_from?: string
+          p_session: string
+          p_to?: string
+        }
+        Returns: Json
+      }
+      portal_revoke_manage_token: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
+      portal_sign_out: {
+        Args: { p_all?: boolean; p_session: string }
+        Returns: Json
+      }
       push_recipient_users: {
         Args: {
           p_branch: string

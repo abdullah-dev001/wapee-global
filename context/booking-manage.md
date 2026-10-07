@@ -147,3 +147,4 @@ confirm dialogs, error copy). Reuses `bookingPublic.form.*` and
   sub-view had no hardware-back handler, so Android back would have exited
   the manage page instead of returning to the view screen — fixed with
   `useOverlayDismiss`.
+- 2026-10-07: Phase 10C: the client portal borrows the manage engine through a short-lived token; it steps the booking's own live token aside for the transaction and restores exactly that one (`portal_mint/revoke_manage_token`).

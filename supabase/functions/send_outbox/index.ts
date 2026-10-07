@@ -100,6 +100,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
           if (error) throw error;
         },
         async fail(id, message, retryable, definite = false) {
+          // the reason is otherwise lost (the row keeps only 'rejected'); provider messages carry no recipient data
+          logUnexpected(
+            'send_outbox',
+            null,
+            new Error(`outbox ${id} failed (retryable=${retryable}): ${message.slice(0, 200)}`),
+          );
           const { error } = await db.rpc('outbox_fail', {
             p_id: id,
             p_error: message,

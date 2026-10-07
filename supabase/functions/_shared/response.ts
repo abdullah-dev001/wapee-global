@@ -61,6 +61,9 @@ export type PublicErrorCode =
   // the signature is missing / not a valid drawing
   | 'signature_required'
   | 'invalid_signature'
+  // --- the client portal ---
+  | 'invalid_session'
+  | 'needs_details'
   // something broke on our side
   | 'server_error';
 
@@ -108,8 +111,11 @@ function statusFor(code: PublicErrorCode): number {
     case 'invalid_name':
     case 'signature_required':
     case 'invalid_signature':
+    case 'needs_details':
     case 'too_fast':
       return 400;
+    case 'invalid_session':
+      return 401;
     case 'not_bookable':
       // 404, not 403: "there is nothing bookable here" without confirming that
       // a business exists behind the slug.

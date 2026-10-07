@@ -648,3 +648,28 @@ describe('form_request email', () => {
     expect(calls.emails).toHaveLength(0);
   });
 });
+
+describe('portal_login email', () => {
+  const links = (url: string | null) => ({
+    manageUrl: null,
+    reviewUrl: null,
+    formUrl: null,
+    portalUrl: url,
+    unsubscribeUrl: null,
+  });
+  it('carries the sign-in link, says it works once, and is not an optional/unsubscribable email', () => {
+    const m = renderEmail(
+      job({ event: 'portal_login', starts_at: null }),
+      links('https://x.test/nova-hair/portal#token=abc'),
+    );
+    expect(m?.subject).toBe('Your sign-in link for Nova Hair Studio');
+    expect(m?.text).toContain('Sign in: https://x.test/nova-hair/portal#token=abc');
+    expect(m?.text).toContain('works once and expires in 15 minutes');
+    expect(m?.text).not.toContain('Stop these emails');
+  });
+  it('a portal_login without its token fails and nothing is sent', async () => {
+    const { d, calls } = deps();
+    expect(await processJob(job({ event: 'portal_login', token: null }), d)).toBe('dead');
+    expect(calls.emails).toHaveLength(0);
+  });
+});

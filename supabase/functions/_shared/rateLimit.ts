@@ -49,7 +49,12 @@ export type PublicEndpoint =
   | 'validate_widget'
   | 'unsubscribe'
   | 'get_form_request'
-  | 'submit_form_request';
+  | 'submit_form_request'
+  | 'portal_info'
+  | 'portal_request_login'
+  | 'portal_exchange'
+  | 'portal_read'
+  | 'portal_write';
 
 export type RateLimitResult = {
   allowed: boolean;
@@ -139,7 +144,7 @@ export async function checkRateLimit(
   req: Request,
   db: SupabaseClient,
   endpoint: PublicEndpoint,
-  opts?: { phone?: string | null; businessId?: string | null },
+  opts?: { phone?: string | null; key?: string | null; businessId?: string | null },
 ): Promise<RateLimitResult> {
   try {
     const ip = clientIp(req);
@@ -147,7 +152,12 @@ export async function checkRateLimit(
 
     // The phone is hashed with the same salt: the per-phone cap must work
     // without the attempt table holding a list of customers' phone numbers.
-    const keyHash = opts?.phone ? await hashWithSalt(normalisePhoneForKey(opts.phone)) : null;
+    // `key` is any other identity worth capping (the portal uses the EMAIL), hashed the same way.
+    const keyHash = opts?.key
+      ? await hashWithSalt('k:' + opts.key.trim().toLowerCase())
+      : opts?.phone
+        ? await hashWithSalt(normalisePhoneForKey(opts.phone))
+        : null;
 
     const { data, error } = await db.rpc('check_rate_limit', {
       p_endpoint: endpoint,
