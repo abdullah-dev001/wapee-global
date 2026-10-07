@@ -10,7 +10,7 @@ primary          #024751   primary-hover #013640   primary-light #e6f0f2
 secondary (lime) #d8ff29   secondary-hover #c4eb1a secondary-light #f6ffd6
 background       #f8fafb   surface #ffffff         surface-hover #f3f4f6
 border           #e5e7eb   border-subtle #f0f0f0
-text-primary     #111827   text-secondary #6b7280  text-muted #9ca3af
+text-primary     #111827   text-secondary #4b5563  text-muted #6b7280
 text-on-primary  #ffffff   text-on-secondary #024751
 sidebar-bg #024751  sidebar-text #a8c5ca  sidebar-active #d8ff29  sidebar-active-text #024751  sidebar-hover #035f6e
 success #10b981 / light #ecfdf5 / border #a7f3d0

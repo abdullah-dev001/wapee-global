@@ -891,6 +891,7 @@
     "duplicatePhone": "This phone number already belongs to {{name}}.",
     "viewExisting": "View existing client",
     "contactHidden": "Contact details hidden",
+    "notesHidden": "Notes hidden",
     "erasedBadge": "Erased",
     "data": {
       "export": "Export data",

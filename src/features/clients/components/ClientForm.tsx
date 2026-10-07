@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormField, PhoneInput } from '@/components/shared';
 import { Button, Text, useToast } from '@/components/ui';
+import { usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useFindClientByPhone, useSaveClient, type ClientListItem } from '../api/useClients';
@@ -24,6 +25,10 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
   const { t } = useTranslation();
   const toast = useToast();
   const save = useSaveClient(businessId);
+  // Without clients.view_contact the database blanks phone / email / notes: an edit must not overwrite what the
+  // person cannot see, so those fields are not shown and not sent.
+  const canViewContact = usePermission('clients.view_contact').allowed;
+  const contactLocked = Boolean(client) && !canViewContact;
   const [duplicateOf, setDuplicateOf] = useState<{ id: string; name: string } | null>(null);
 
   const { control, handleSubmit, setError } = useForm<ClientValues>({
@@ -35,7 +40,7 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
           // Manager/Receptionist hold — the same roles that hold
           // clients.view_contact, so phoneE164 is never actually null here
           // in practice. The fallback is defensive, not a real case.
-          phoneE164: client.phoneE164 ?? '',
+          phoneE164: client.phoneE164 ?? (contactLocked ? '+10000000000' : ''),
           email: client.email,
           notes: client.notes,
         }
@@ -51,7 +56,7 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
   const onSubmit = handleSubmit((values) => {
     setDuplicateOf(null);
     save.mutate(
-      { ...values, id: client?.id },
+      contactLocked ? { fullName: values.fullName, id: client?.id } : { ...values, id: client?.id },
       {
         onSuccess: () => {
           toast.show({ message: t('clients.saved'), tone: 'success' });
@@ -81,41 +86,45 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
         returnKeyType="next"
       />
 
-      <PhoneInput
-        label={t('clients.phone')}
-        value={phoneField.value}
-        onChange={phoneField.onChange}
-      />
+      {contactLocked ? null : (
+        <>
+          <PhoneInput
+            label={t('clients.phone')}
+            value={phoneField.value}
+            onChange={phoneField.onChange}
+          />
 
-      {duplicateOf ? (
-        <View style={styles.duplicateBanner}>
-          <Text variant="helper" color="error">
-            {t('clients.duplicatePhone', { name: duplicateOf.name })}
-          </Text>
-          <Pressable
-            onPress={() => onOpenExisting(duplicateOf.id)}
-            accessibilityRole="link"
-            hitSlop={12}
-          >
-            <Text variant="helper" color="primary">
-              {t('clients.viewExisting')}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
+          {duplicateOf ? (
+            <View style={styles.duplicateBanner}>
+              <Text variant="helper" color="error">
+                {t('clients.duplicatePhone', { name: duplicateOf.name })}
+              </Text>
+              <Pressable
+                onPress={() => onOpenExisting(duplicateOf.id)}
+                accessibilityRole="link"
+                hitSlop={12}
+              >
+                <Text variant="helper" color="primary">
+                  {t('clients.viewExisting')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
 
-      <FormField
-        control={control}
-        name="email"
-        label={t('clients.emailFieldLabel')}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
-        textContentType="emailAddress"
-        returnKeyType="next"
-      />
+          <FormField
+            control={control}
+            name="email"
+            label={t('clients.emailFieldLabel')}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            textContentType="emailAddress"
+            returnKeyType="next"
+          />
 
-      <FormField control={control} name="notes" label={t('clients.notes')} multiline />
+          <FormField control={control} name="notes" label={t('clients.notes')} multiline />
+        </>
+      )}
 
       <Button onPress={onSubmit} loading={save.isPending}>
         {t('clients.save')}

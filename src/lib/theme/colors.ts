@@ -15,8 +15,8 @@ export const colors = {
   borderSubtle: '#f0f0f0',
 
   textPrimary: '#111827',
-  textSecondary: '#6b7280',
-  textMuted: '#9ca3af',
+  textSecondary: '#4b5563', // 7.6:1 on white (was #6b7280; darkened so muted can be AA)
+  textMuted: '#6b7280', // 4.8:1 on white, 4.6:1 on background (was #9ca3af, 2.5:1: failed WCAG AA)
   textOnPrimary: '#ffffff',
   textOnSecondary: '#024751',
 

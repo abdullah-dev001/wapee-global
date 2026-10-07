@@ -7,7 +7,7 @@
 #
 # A rolled-back SQL suite cannot hold two backends at once, so this commits a small fixture, runs
 # the sessions through `supabase db query --linked` (one backend each), then deletes the fixture.
-# EVERY session does its work and then HOLDS its transaction open for 5 s (a refusal holds the row
+# EVERY session does its work and then HOLDS its transaction open for HOLD_SECONDS (12 s) (a refusal holds the row
 # lock too, because the lock is taken before the check), so whichever session the CLI starts first
 # makes the others queue behind it, whatever the start-up jitter.
 # Asserted per scenario: exactly ONE success (whoever it is), the others refused with the right
@@ -87,12 +87,15 @@ USER_ID="$(J '["user"]')"; BIZ="$(J '["biz"]')"; BRANCH="$(J '["branch"]')"; CP=
 AP0="$(J '["ap"][0]')"; AP1="$(J '["ap"][1]')"; AP2="$(J '["ap"][2]')"
 INV0="$(J '["inv"][0]')"; INV1="$(J '["inv"][1]')"; INV2="$(J '["inv"][2]')"
 
-# $1 = statement for A, $2 for B, $3 for C (each holds its transaction 5 s)
+# $1 = statement for A, $2 for B, $3 for C (each holds its transaction HOLD_SECONDS). The hold is long on purpose:
+# each `supabase db query` first logs in (1-4 s, variable), and a session that starts after the winner released its
+# lock never waits, which made this check flaky with a 5 s hold.
+HOLD_SECONDS="${HOLD_SECONDS:-12}"
 run3() {
   local name="$1" sa="$2" sb="$3" sc="$4" n stmt
   for n in A B C; do
     case $n in A) stmt="$sa";; B) stmt="$sb";; C) stmt="$sc";; esac
-    local sleep_part=", 'slept', (select count(*) from pg_sleep(5))"
+    local sleep_part=", 'slept', (select count(*) from pg_sleep(${HOLD_SECONDS}))"
     cat >"$TMP/$name.$n.sql" <<SQL
 select set_config('request.jwt.claims', '{"sub":"$USER_ID","role":"authenticated"}', true);
 set local role authenticated;

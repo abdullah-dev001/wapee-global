@@ -174,9 +174,10 @@ function invalidateClients(
 export type SaveClientInput = {
   id?: string;
   fullName: string;
-  phoneE164: string;
-  email: string | null;
-  notes: string | null;
+  /** Left out (with email and notes) when the caller cannot see contact data: an edit then changes the name only. */
+  phoneE164?: string;
+  email?: string | null;
+  notes?: string | null;
 };
 
 /** `clients.create`/`clients.edit` RLS is the boundary; the phone-uniqueness constraint surfaces as a `23505` the caller maps to a clear message. */
@@ -187,21 +188,33 @@ export function useSaveClient(businessId: string | null) {
     mutationFn: async (values) => {
       if (!businessId) throw new Error('No business selected');
       const supabase = getSupabase();
-      const fields = {
-        business_id: businessId,
-        full_name: values.fullName,
-        phone_e164: values.phoneE164,
-        email: values.email,
-        notes: values.notes,
-      };
-
       if (values.id) {
+        const fields =
+          values.phoneE164 === undefined
+            ? { full_name: values.fullName }
+            : {
+                business_id: businessId,
+                full_name: values.fullName,
+                phone_e164: values.phoneE164,
+                email: values.email ?? null,
+                notes: values.notes ?? null,
+              };
         const { error } = await supabase.from('clients').update(fields).eq('id', values.id);
         if (error) throw Object.assign(new Error(error.message), { code: error.code });
         return values.id;
       }
 
-      const { data, error } = await supabase.from('clients').insert(fields).select('id').single();
+      const { data, error } = await supabase
+        .from('clients')
+        .insert({
+          business_id: businessId,
+          full_name: values.fullName,
+          phone_e164: values.phoneE164 ?? '',
+          email: values.email ?? null,
+          notes: values.notes ?? null,
+        })
+        .select('id')
+        .single();
       if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return data.id;
     },

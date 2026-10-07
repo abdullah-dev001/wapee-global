@@ -224,6 +224,8 @@ begin
   values (v_biz, v_br, pg_temp.id('brown'), v_svc, null, now() + interval '3 days', now() + interval '3 days 1 hour', 60, 0, 'confirmed', 'dashboard', v_fv, 4000);
 end $$;
 
+update public.clients set notes = 'NOTE-' || full_name where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'));
+
 -- ===========================================================================
 -- 1. The columns are NOT granted: direct reads fail for every role, including the Owner
 -- ===========================================================================
@@ -233,10 +235,10 @@ begin
   foreach u in array array['owner','mgr','recep','staff','ownerb'] loop
     perform pg_temp.chk(u || ': select phone_e164 / email / * from clients is refused (42501)',
       pg_temp.try_as(u, 'select phone_e164 from public.clients') || pg_temp.try_as(u, 'select email from public.clients') || pg_temp.try_as(u, 'select * from public.clients')
-      || pg_temp.try_as(u, 'select id from public.clients where phone_e164 = ''+447700910001''') || pg_temp.try_as(u, 'select id from public.clients where email = ''alice@example.com'''),
-      '4250142501425014250142501');
+      || pg_temp.try_as(u, 'select id from public.clients where phone_e164 = ''+447700910001''') || pg_temp.try_as(u, 'select id from public.clients where email = ''alice@example.com''') || pg_temp.try_as(u, 'select notes from public.clients') || pg_temp.try_as(u, 'select id from public.clients where notes is not null'),
+      '42501425014250142501425014250142501');
     perform pg_temp.chk(u || ': non-contact columns of clients are still readable',
-      pg_temp.try_as(u, 'select id, business_id, full_name, notes, first_branch_id, source, created_at, updated_at, deleted_at, created_by from public.clients'), 'ok');
+      pg_temp.try_as(u, 'select id, business_id, full_name, first_branch_id, source, created_at, updated_at, deleted_at, created_by from public.clients'), 'ok');
   end loop;
   perform pg_temp.chk('anon has no access to clients or clients_v', (pg_temp.as_anon('select to_jsonb(count(*)) from public.clients')->>'state') || (pg_temp.as_anon('select to_jsonb(count(*)) from public.clients_v')->>'state'), '4250142501');
 end $$;
@@ -281,6 +283,28 @@ begin
     pg_temp.try_as('owner', 'select count(*) from public.clients_v where 1 / (case when full_name = ''Carol Clarke'' then 0 else 1 end) = 1'), '22012');
   perform pg_temp.chk('the view is a barrier view and not security_invoker (the owner reads the columns, the rule is in the view)',
     (select array_to_string(reloptions, ',') from pg_class where relname = 'clients_v'), 'security_barrier=true');
+end $$;
+
+-- ===========================================================================
+-- 4b. clients.notes follows clients.view_contact; the view returns only the rows RLS lets the caller see
+-- ===========================================================================
+do $$
+declare u text; o text; n text; bad text := '';
+begin
+  perform pg_temp.chk('owner / manager / receptionist read notes through the view (all 3 clients)',
+    pg_temp.as_q('owner', 'select count(notes)::text from public.clients_v') || pg_temp.as_q('mgr', 'select count(notes)::text from public.clients_v') || pg_temp.as_q('recep', 'select count(notes)::text from public.clients_v'), '333');
+  perform pg_temp.chk('staff sees their own client row but the notes are NULL; searching notes finds nothing',
+    pg_temp.as_q('staff', 'select count(*)::text || count(notes)::text from public.clients_v') || '/' || pg_temp.as_q('staff', 'select count(*)::text from public.clients_v where notes ilike ''%NOTE-%'''), '10/0');
+  perform pg_temp.chk('the other business sees only its own notes; anon cannot read the view', pg_temp.as_q('ownerb', 'select string_agg(notes, '','') from public.clients_v') || '/' || (pg_temp.as_anon('select to_jsonb(count(*)) from public.clients_v')->>'state'), 'NOTE-Bob Beta/42501');
+  perform pg_temp.chk('the stored text is exact', pg_temp.as_q('owner', 'select notes from public.clients_v where full_name = ''Alice Adams'''), 'NOTE-Alice Adams');
+  foreach u in array array['owner','mgr','recep','staff','ownerb'] loop
+    o := pg_temp.as_q(u, 'select coalesce(md5(string_agg(id::text, '','' order by id)), ''none'') from public.clients');
+    n := pg_temp.as_q(u, 'select coalesce(md5(string_agg(id::text, '','' order by id)), ''none'') from public.clients_v');
+    if o is distinct from n then bad := bad || u || ' '; end if;
+  end loop;
+  perform pg_temp.chk('clients_v returns only (and all of) the rows the caller can see under RLS on clients: owner, manager, receptionist, staff, other business', bad, '');
+  perform pg_temp.chk('...and the sets differ per caller (3 / 3 / 3 / 1 / 1), so the comparison means something',
+    pg_temp.vis('owner', 'select 1 from public.clients') || pg_temp.vis('mgr', 'select 1 from public.clients') || pg_temp.vis('recep', 'select 1 from public.clients') || pg_temp.vis('staff', 'select 1 from public.clients') || pg_temp.vis('ownerb', 'select 1 from public.clients'), '33311');
 end $$;
 
 -- ===========================================================================

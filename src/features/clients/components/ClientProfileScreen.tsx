@@ -209,9 +209,18 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
               <Text variant="label" color="textSecondary">
                 {t('clients.profile.notes')}
               </Text>
-              <Text variant="body" color={data.notes ? 'textPrimary' : 'textMuted'}>
-                {data.notes ?? t('clients.profile.noNotes')}
-              </Text>
+              {canViewContact ? (
+                <Text variant="body" color={data.notes ? 'textPrimary' : 'textMuted'}>
+                  {data.notes ?? t('clients.profile.noNotes')}
+                </Text>
+              ) : (
+                <View style={styles.hiddenContact}>
+                  <Lock size={14} strokeWidth={1.75} color={theme.colors.textMuted} />
+                  <Text variant="helper" color="textMuted">
+                    {t('clients.notesHidden')}
+                  </Text>
+                </View>
+              )}
             </View>
           </Card>
 

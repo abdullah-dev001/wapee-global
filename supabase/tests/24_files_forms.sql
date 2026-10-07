@@ -100,7 +100,7 @@ create or replace function pg_temp.perms(p_role uuid) returns text language sql 
   select coalesce(string_agg(permission || ':' || scope, ',' order by permission), '') from public.role_permissions where role_id = p_role
 $$;
 create or replace function pg_temp.audit_n(p_action text) returns text language sql as $$
-  select count(*)::text from public.audit_logs where action = p_action
+  select count(*)::text from public.audit_logs where action = p_action and business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))
 $$;
 create or replace function pg_temp.member(p_biz text, p_user text) returns uuid language sql as $$
   select id from public.business_members where business_id = pg_temp.id(p_biz) and user_id = pg_temp.id(p_user)
@@ -263,7 +263,7 @@ begin
   perform pg_temp.chk('consent: a staff member (no clients.edit) is refused', pg_temp.as_('staffa', format($q$select public.set_photo_consent(%L, true)$q$, pg_temp.id('c1')))->>'code', 'forbidden');
   perform pg_temp.chk('consent: another business and a stranger are refused', (pg_temp.as_('ownerb', format($q$select public.set_photo_consent(%L, true)$q$, pg_temp.id('c1')))->>'code') || (pg_temp.as_('stranger', format($q$select public.set_photo_consent(%L, true)$q$, pg_temp.id('c1')))->>'code'), 'forbiddenforbidden');
   perform pg_temp.chk('consent: anon has no EXECUTE', pg_temp.as_anon(format($q$select public.set_photo_consent(%L, true)$q$, pg_temp.id('c1')))->>'state', '42501');
-  perform pg_temp.chk('...refusals stored nothing', (select count(*)::text from public.client_consents) || '/' || pg_temp.audit_n('client.photo_consent_changed'), '0/0');
+  perform pg_temp.chk('...refusals stored nothing', (select count(*)::text from public.client_consents where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))) || '/' || pg_temp.audit_n('client.photo_consent_changed'), '0/0');
   perform pg_temp.chk('consent: invalid value', pg_temp.as_('recep', format($q$select public.set_photo_consent(%L, null)$q$, pg_temp.id('c1')))->>'code', 'invalid_value');
   perform pg_temp.chk('consent: the receptionist records it', pg_temp.as_('recep', format($q$select public.set_photo_consent(%L, true)$q$, pg_temp.id('c1')))->>'ok', 'true');
   perform pg_temp.chk('stored: consent on, date set, recorded_by = the receptionist, audited', (select concat_ws('|', photo_consent, recorded_at > now() - interval '1 minute', recorded_by = pg_temp.id('recep')) from public.client_consents where client_id = pg_temp.id('c1')) || '/' || pg_temp.audit_n('client.photo_consent_changed'), 't|t|t/1');
@@ -280,7 +280,7 @@ do $$
 declare r jsonb; v_id uuid; v_before text;
 begin
   -- c2 has NO consent: a photo is refused, a PDF is fine
-  perform pg_temp.chk('photo without consent is refused (and nothing is stored)', (pg_temp.as_('recep', format($q$select public.files_prepare_upload(%L, null, 'before', 'a.jpg', 'image/jpeg', 1000)$q$, pg_temp.id('c2')))->>'code') || '/' || (select count(*)::text from public.files), 'photo_consent_required/0');
+  perform pg_temp.chk('photo without consent is refused (and nothing is stored)', (pg_temp.as_('recep', format($q$select public.files_prepare_upload(%L, null, 'before', 'a.jpg', 'image/jpeg', 1000)$q$, pg_temp.id('c2')))->>'code') || '/' || (select count(*)::text from public.files where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))), 'photo_consent_required/0');
   r := pg_temp.as_('recep', format($q$select public.files_prepare_upload(%L, null, 'document', 'Referral letter.pdf', 'application/pdf', 5000)$q$, pg_temp.id('c2')));
   perform pg_temp.chk('a PDF is allowed without photo consent', r->>'ok', 'true');
   insert into ids values ('f_pdf', (r->>'file_id')::uuid);
@@ -291,7 +291,7 @@ begin
   insert into ids values ('f_jpg_pending', (r->>'file_id')::uuid);
   perform pg_temp.chk('...path is <biz>/<client>/<uuid>.jpg and the file name is NEVER part of the path', (select (storage_path ~ ('^' || pg_temp.id('biza')::text || '/' || pg_temp.id('c1')::text || '/[0-9a-f-]{36}\.jpg$'))::text from public.files where id = pg_temp.id('f_jpg_pending')), 'true');
   -- every refusal
-  v_before := (select count(*)::text from public.files);
+  v_before := (select count(*)::text from public.files where business_id in (pg_temp.id('biza'), pg_temp.id('bizb')));
   perform pg_temp.chk('unsupported type (heic)', pg_temp.as_('recep', format($q$select public.files_prepare_upload(%L, null, 'before', 'a.heic', 'image/heic', 1000)$q$, pg_temp.id('c1')))->>'code', 'unsupported_type');
   perform pg_temp.chk('unsupported type (svg)', pg_temp.as_('recep', format($q$select public.files_prepare_upload(%L, null, 'other', 'a.svg', 'image/svg+xml', 1000)$q$, pg_temp.id('c1')))->>'code', 'unsupported_type');
   perform pg_temp.chk('too large (10 MB + 1)', pg_temp.as_('recep', format($q$select public.files_prepare_upload(%L, null, 'before', 'a.jpg', 'image/jpeg', 10485761)$q$, pg_temp.id('c1')))->>'code', 'file_too_large');
@@ -303,7 +303,7 @@ begin
   perform pg_temp.chk('staff B (no appointment with c1) is refused; staff A (own appointment) is allowed', (pg_temp.as_('staffb', format($q$select public.files_prepare_upload(%L, null, 'before', 'a.jpg', 'image/jpeg', 1000)$q$, pg_temp.id('c1')))->>'code') || '/' || (pg_temp.as_('staffa', format($q$select public.files_prepare_upload(%L, %L, 'after', 'sa.jpg', 'image/jpeg', 1000)$q$, pg_temp.id('c1'), pg_temp.id('ap1')))->>'ok'), 'forbidden/true');
   perform pg_temp.chk('staff A on a colleague''s client (c2) is refused (own scope)', pg_temp.as_('staffa', format($q$select public.files_prepare_upload(%L, null, 'document', 'a.pdf', 'application/pdf', 1000)$q$, pg_temp.id('c2')))->>'code', 'forbidden');
   perform pg_temp.chk('another business, a stranger, anon', (pg_temp.as_('ownerb', format($q$select public.files_prepare_upload(%L, null, 'before', 'a.jpg', 'image/jpeg', 1000)$q$, pg_temp.id('c1')))->>'code') || (pg_temp.as_('stranger', format($q$select public.files_prepare_upload(%L, null, 'before', 'a.jpg', 'image/jpeg', 1000)$q$, pg_temp.id('c1')))->>'code') || (pg_temp.as_anon(format($q$select public.files_prepare_upload(%L, null, 'before', 'a.jpg', 'image/jpeg', 1000)$q$, pg_temp.id('c1')))->>'state'), 'forbiddenforbidden42501');
-  perform pg_temp.chk('...refused calls stored nothing new (only the 2 allowed above + the earlier ones)', (select count(*)::text from public.files), (v_before::int + 2)::text);
+  perform pg_temp.chk('...refused calls stored nothing new (only the 2 allowed above + the earlier ones)', (select count(*)::text from public.files where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))), (v_before::int + 2)::text);
   -- finalize
   perform pg_temp.chk('finalize is NOT callable by authenticated or anon', (select has_function_privilege('authenticated', 'public.files_finalize(uuid,uuid,text,bigint)', 'execute') or has_function_privilege('anon', 'public.files_finalize(uuid,uuid,text,bigint)', 'execute'))::text, 'false');
   perform pg_temp.chk('finalize by the WRONG user: not_found, row stays pending', (pg_temp.svc(format($q$select public.files_finalize(%L, %L, 'image/jpeg', 1000)$q$, pg_temp.id('f_jpg_pending'), pg_temp.id('owner')))->>'code') || '/' || (select status from public.files where id = pg_temp.id('f_jpg_pending')), 'not_found/pending');
@@ -374,13 +374,13 @@ begin
   v_fields := $f$[{"id":"allergy","type":"long_text","label":"Allergies","required":false,"sensitive":true},{"id":"age18","type":"yes_no","label":"I am over 18","required":true},{"id":"skin","type":"dropdown","label":"Skin type","options":["Dry","Oily"],"required":false},{"id":"weight","type":"number","label":"Weight (kg)"}]$f$;
   v_args := format($a$%L, null, 'consent', 'Tattoo consent', %L::jsonb, '[{"type":"heading","text":"Consent"},{"type":"paragraph","text":"I agree to the procedure."},{"type":"bullet","text":"Aftercare was explained"}]'::jsonb, true, array[%L]::uuid[], true$a$, pg_temp.id('biza'), v_fields, pg_temp.id('svc'));
   perform pg_temp.chk('save_form_template: receptionist, staff, other business, stranger refused', (pg_temp.savef('recep', v_args)->>'code') || (pg_temp.savef('staffa', v_args)->>'code') || (pg_temp.savef('ownerb', v_args)->>'code') || (pg_temp.savef('stranger', v_args)->>'code'), 'forbiddenforbiddenforbiddenforbidden');
-  perform pg_temp.chk('...anon has no EXECUTE; nothing stored', (pg_temp.as_anon(format($q$select public.save_form_template(%L, null, 'consent', 't', '[]', '[]', true, '{}', true)$q$, pg_temp.id('biza')))->>'state') || '/' || (select count(*)::text from public.form_templates), '42501/0');
+  perform pg_temp.chk('...anon has no EXECUTE; nothing stored', (pg_temp.as_anon(format($q$select public.save_form_template(%L, null, 'consent', 't', '[]', '[]', true, '{}', true)$q$, pg_temp.id('biza')))->>'state') || '/' || (select count(*)::text from public.form_templates where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))), '42501/0');
   perform pg_temp.chk('invalid field type', pg_temp.savef('owner', format($a$%L, null, 'consent', 'T', '[{"type":"date","label":"x"}]'::jsonb, '[]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code', 'invalid_field_type');
   perform pg_temp.chk('dropdown needs 2+ unique options', (pg_temp.savef('owner', format($a$%L, null, 'consent', 'T', '[{"type":"dropdown","label":"x","options":["a"]}]'::jsonb, '[]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code') || (pg_temp.savef('owner', format($a$%L, null, 'consent', 'T', '[{"type":"dropdown","label":"x","options":["a","a"]}]'::jsonb, '[]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code'), 'invalid_optionsinvalid_options');
   perform pg_temp.chk('duplicate field ids / empty label', (pg_temp.savef('owner', format($a$%L, null, 'consent', 'T', '[{"id":"a","type":"short_text","label":"x"},{"id":"a","type":"short_text","label":"y"}]'::jsonb, '[]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code') || (pg_temp.savef('owner', format($a$%L, null, 'consent', 'T', '[{"type":"short_text","label":" "}]'::jsonb, '[]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code'), 'invalid_field_idinvalid_field_label');
   perform pg_temp.chk('consent body is plain blocks only (html / unknown type refused)', pg_temp.savef('owner', format($a$%L, null, 'consent', 'T', '[]'::jsonb, '[{"type":"html","text":"<script>x</script>"}]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code', 'invalid_body');
   perform pg_temp.chk('unknown / other business service; bad kind; bad title', (pg_temp.savef('owner', format($a$%L, null, 'consent', 'T', '[]'::jsonb, '[]'::jsonb, true, array[%L]::uuid[], true$a$, pg_temp.id('biza'), pg_temp.id('svcb')))->>'code') || (pg_temp.savef('owner', format($a$%L, null, 'waiver', 'T', '[]'::jsonb, '[]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code') || (pg_temp.savef('owner', format($a$%L, null, 'consent', '  ', '[]'::jsonb, '[]'::jsonb, true, '{}', true$a$, pg_temp.id('biza')))->>'code'), 'unknown_serviceinvalid_kindinvalid_title');
-  perform pg_temp.chk('...none of the invalid calls stored a template', (select count(*)::text from public.form_templates), '0');
+  perform pg_temp.chk('...none of the invalid calls stored a template', (select count(*)::text from public.form_templates where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))), '0');
   r := pg_temp.savef('mgr', v_args);
   perform pg_temp.chk('manager (forms.manage, covers the only branch) creates a template', (r->>'ok') || '/' || (r->>'version'), 'true/1');
   insert into ids values ('t1', (r->>'template_id')::uuid), ('v1', (r->>'version_id')::uuid);
@@ -411,12 +411,12 @@ declare r jsonb; v_sig text := '[[[0.1,0.2],[0.5,0.6],[0.9,0.4]],[[0.2,0.8],[0.3
 begin
   perform pg_temp.chk('forms: appointment_forms shows the attached template as PENDING (service Tattoo)', (pg_temp.as_('recep', format($q$select public.appointment_forms(%L)$q$, pg_temp.id('ap1')))->'rows'->0->>'status') || '/' || (pg_temp.as_('recep', format($q$select public.appointment_forms(%L)$q$, pg_temp.id('ap3')))->'rows')::text, 'pending/[]');
   perform pg_temp.chk('sign: a manager-less case: staff B (colleague) cannot sign for c1; staff A on c2 cannot; other business / stranger / anon refused', (pg_temp.rec('staffb', 'c1', null, v_ok, 'Client One', v_sig)->>'code') || (pg_temp.rec('staffa', 'c2', null, v_ok, 'Client Two', v_sig)->>'code') || (pg_temp.rec('ownerb', 'c1', null, v_ok, 'Client One', v_sig)->>'code') || (pg_temp.rec('stranger', 'c1', null, v_ok, 'Client One', v_sig)->>'code') || (pg_temp.as_anon(format($q$select public.record_signed_consent(%L, null, %L, '{}', 'Client One', null)$q$, pg_temp.id('c1'), pg_temp.id('t1')))->>'state'), 'forbiddenforbiddenforbiddenforbidden42501');
-  perform pg_temp.chk('...nothing stored by refusals', (select count(*)::text from public.signed_consents), '0');
+  perform pg_temp.chk('...nothing stored by refusals', (select count(*)::text from public.signed_consents where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))), '0');
   perform pg_temp.chk('missing required answer names the field', (pg_temp.rec('recep', 'c1', null, '{"allergy":"x"}', 'Client One', v_sig)->>'code') || '/' || (pg_temp.rec('recep', 'c1', null, '{"allergy":"x"}', 'Client One', v_sig)->>'field_id'), 'missing_answer/age18');
   perform pg_temp.chk('wrong types / unknown field / dropdown outside the options', (pg_temp.rec('recep', 'c1', null, '{"age18":"yes"}', 'Client One', v_sig)->>'code') || (pg_temp.rec('recep', 'c1', null, '{"age18":true,"nope":1}', 'Client One', v_sig)->>'code') || (pg_temp.rec('recep', 'c1', null, '{"age18":true,"skin":"Green"}', 'Client One', v_sig)->>'code') || (pg_temp.rec('recep', 'c1', null, '{"age18":true,"weight":"heavy"}', 'Client One', v_sig)->>'code'), 'invalid_answerinvalid_answerinvalid_answerinvalid_answer');
   perform pg_temp.chk('signature required / invalid points / too short a name', (pg_temp.rec('recep', 'c1', null, v_ok, 'Client One', null)->>'code') || (pg_temp.rec('recep', 'c1', null, v_ok, 'Client One', '[[[1.5,0.2]]]')->>'code') || (pg_temp.rec('recep', 'c1', null, v_ok, 'Client One', '"scribble"')->>'code') || (pg_temp.rec('recep', 'c1', null, v_ok, 'X', v_sig)->>'code'), 'signature_requiredinvalid_signatureinvalid_signatureinvalid_name');
   perform pg_temp.chk('an appointment of another client', pg_temp.rec('recep', 'c1', 'ap2', v_ok, 'Client One', v_sig)->>'code', 'appointment_mismatch');
-  perform pg_temp.chk('...still nothing stored after every failure path', (select count(*)::text from public.signed_consents), '0');
+  perform pg_temp.chk('...still nothing stored after every failure path', (select count(*)::text from public.signed_consents where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))), '0');
   r := pg_temp.rec('staffa', 'c1', 'ap1', v_ok, 'Client One', v_sig);
   perform pg_temp.chk('staff A (appointments.edit, OWN client) signs on the device', r->>'ok', 'true');
   insert into ids values ('sc1', (r->>'signed_consent_id')::uuid);
@@ -477,7 +477,7 @@ begin
   alter table public.form_requests disable trigger form_requests_guard;
   update public.form_requests set expires_at = now() - interval '1 second' where token_hash = encode(extensions.digest(v_tok2, 'sha256'), 'hex');
   alter table public.form_requests enable trigger form_requests_guard;
-  perform pg_temp.chk('EXPIRED link: read and submit => invalid_token, nothing signed', (pg_temp.svc(format($q$select public.get_form_request(%L)$q$, v_tok2))->>'code') || (pg_temp.svc(format($q$select public.submit_form_request(%L, '{"age18":true}', 'Client One', '[[[0.1,0.1]]]', 'h')$q$, v_tok2))->>'code') || '/' || (select count(*)::text from public.signed_consents), 'invalid_tokeninvalid_token/2');
+  perform pg_temp.chk('EXPIRED link: read and submit => invalid_token, nothing signed', (pg_temp.svc(format($q$select public.get_form_request(%L)$q$, v_tok2))->>'code') || (pg_temp.svc(format($q$select public.submit_form_request(%L, '{"age18":true}', 'Client One', '[[[0.1,0.1]]]', 'h')$q$, v_tok2))->>'code') || '/' || (select count(*)::text from public.signed_consents where business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))), 'invalid_tokeninvalid_token/2');
   r := pg_temp.as_('recep', format($q$select public.create_form_request(%L, null, %L, false)$q$, pg_temp.id('c1'), pg_temp.id('t1')));
   v_tok := r->>'token';
   r2 := pg_temp.as_('recep', format($q$select public.create_form_request(%L, null, %L, false)$q$, pg_temp.id('c1'), pg_temp.id('t1')));

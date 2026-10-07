@@ -236,7 +236,7 @@ Rules: soft delete only; financial records immutable (fix via credit notes/rever
 
 ## 12. Design system
 New Wapee uses the exact visual language of the earlier Wapee web app. Full guide: DESIGN_GUIDE.md.
-Core tokens: Primary #024751 (hover #013640, light #e6f0f2); Secondary lime #d8ff29 (hover #c4eb1a, light #f6ffd6); Background #f8fafb; Surface #fff; Border #e5e7eb; Text #111827 / #6b7280 / #9ca3af; Sidebar bg #024751, text #a8c5ca, active pill #d8ff29 with #024751 text, hover #035f6e; Success #10b981, Warning #f59e0b, Error #ef4444, Info #3b82f6 (each with light and border variants, see Appendix A). Font DM Sans, letter-spacing -0.02em (-0.03em headings). Radius 6/8/12/16/full. Motion 120/180/260ms, colour changes only. Layout: sidebar 240, header 64, page padding 24 (16 mobile), card padding 24 (18 mobile), drawer 480.
+Core tokens: Primary #024751 (hover #013640, light #e6f0f2); Secondary lime #d8ff29 (hover #c4eb1a, light #f6ffd6); Background #f8fafb; Surface #fff; Border #e5e7eb; Text #111827 / #4b5563 / #6b7280; Sidebar bg #024751, text #a8c5ca, active pill #d8ff29 with #024751 text, hover #035f6e; Success #10b981, Warning #f59e0b, Error #ef4444, Info #3b82f6 (each with light and border variants, see Appendix A). Font DM Sans, letter-spacing -0.02em (-0.03em headings). Radius 6/8/12/16/full. Motion 120/180/260ms, colour changes only. Layout: sidebar 240, header 64, page padding 24 (16 mobile), card padding 24 (18 mobile), drawer 480.
 Component specs: Button (primary, secondary lime, ghost, danger; sm 34, md 41, lg 48; radius 8; disabled 0.55); Input (label above 13/600, 1px border, radius 8, ~40px, focus primary border + 3px #e6f0f2 ring, error red); Card (white, 1px border, radius 12, flat); Badge (pill 11/600 tinted); Drawer 480 right (full screen mobile); Dialog max 26rem; Tabs underline; Segmented; Toggle 36x20; Empty states; skeleton loaders (never list spinners).
 Expo translation: all tokens in one typed theme object, no hard-coded hex; shadow() helper per level (iOS shadow*, Android elevation, web boxShadow); hover only on web via Pressable; web keyboard focus ring kept; rem -> numbers with 16px base, mobile scale-down in theme; one icon library (lucide, stroke 1.75, sizes 14-22).
 New components to design: calendar/scheduler (day/week, multi-staff columns, **no drag**), date and date-range pickers, time-slot picker, phone input with country code, checkbox/radio, toasts, charts (one library for web+native), bottom tab bar, website section templates, booking flow screens, signature pad. Dark mode: not at launch. Fix old inconsistencies: one focus style, one disabled opacity (0.55), one spinner speed (600ms).
@@ -278,7 +278,7 @@ primary #024751 | primary-hover #013640 | primary-light #e6f0f2
 secondary #d8ff29 | secondary-hover #c4eb1a | secondary-light #f6ffd6
 background #f8fafb | surface #ffffff | surface-hover #f3f4f6
 border #e5e7eb | border-subtle #f0f0f0
-text-primary #111827 | text-secondary #6b7280 | text-muted #9ca3af
+text-primary #111827 | text-secondary #4b5563 | text-muted #6b7280
 text-on-primary #ffffff | text-on-secondary #024751
 sidebar-bg #024751 | sidebar-text #a8c5ca | sidebar-active #d8ff29
 sidebar-active-text #024751 | sidebar-hover #035f6e

@@ -101,7 +101,7 @@ create or replace function pg_temp.perms(p_role uuid) returns text language sql 
   select coalesce(string_agg(permission || ':' || scope, ',' order by permission), '') from public.role_permissions where role_id = p_role
 $$;
 create or replace function pg_temp.audit_n(p_action text) returns text language sql as $$
-  select count(*)::text from public.audit_logs where action = p_action
+  select count(*)::text from public.audit_logs where action = p_action and business_id in (pg_temp.id('biza'), pg_temp.id('bizb'))
 $$;
 create or replace function pg_temp.member(p_biz text, p_user text) returns uuid language sql as $$
   select id from public.business_members where business_id = pg_temp.id(p_biz) and user_id = pg_temp.id(p_user)
