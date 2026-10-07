@@ -75,7 +75,7 @@ export function useSetCommissionRule(businessId: string | null) {
     },
     onSuccess: () => {
       if (businessId)
-        void queryClient.invalidateQueries({ queryKey: commissionKeys.scope({ businessId }) });
+        void queryClient.invalidateQueries({ queryKey: commissionKeys.business(businessId) });
     },
   });
 }

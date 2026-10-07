@@ -74,7 +74,7 @@ export function useSavePushPreferences(businessId: string | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: pushKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: pushKeys.business(businessId ?? 'none'),
       });
     },
   });

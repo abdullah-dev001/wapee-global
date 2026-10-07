@@ -124,7 +124,7 @@ function useInvalidate(businessId: string | null) {
   const queryClient = useQueryClient();
   const scope = { businessId: businessId ?? 'none' };
   return (opts: { appointments?: boolean; reports?: boolean; addons?: boolean } = {}) => {
-    void queryClient.invalidateQueries({ queryKey: invoiceKeys.scope(scope) });
+    void queryClient.invalidateQueries({ queryKey: invoiceKeys.business(scope.businessId) });
     // Issuing sells packages and drops stock; a credit note cancels / restores them (Phase 10).
     if (opts.addons) {
       void queryClient.invalidateQueries({
@@ -134,9 +134,10 @@ function useInvalidate(businessId: string | null) {
       void queryClient.invalidateQueries({ queryKey: movementKeys.business(scope.businessId) });
       void queryClient.invalidateQueries({ queryKey: lowStockKeys.business(scope.businessId) });
     }
-    if (opts.reports) void queryClient.invalidateQueries({ queryKey: reportKeys.scope(scope) });
+    if (opts.reports)
+      void queryClient.invalidateQueries({ queryKey: reportKeys.business(scope.businessId) });
     if (opts.appointments) {
-      void queryClient.invalidateQueries({ queryKey: appointmentKeys.scope(scope) });
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.business(scope.businessId) });
     }
   };
 }

@@ -50,7 +50,7 @@ export function useAppointmentsRealtime(businessId: string | null, branchId: str
         },
         () => {
           void queryClient.invalidateQueries({
-            queryKey: appointmentKeys.scope({ businessId, branchId }),
+            queryKey: appointmentKeys.business(businessId),
           });
         },
       )

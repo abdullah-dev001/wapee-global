@@ -92,7 +92,7 @@ function useInvalidate(businessId: string | null) {
   const queryClient = useQueryClient();
   return () =>
     void queryClient.invalidateQueries({
-      queryKey: websiteKeys.scope({ businessId: businessId ?? 'none' }),
+      queryKey: websiteKeys.business(businessId ?? 'none'),
     });
 }
 

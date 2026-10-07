@@ -251,8 +251,8 @@ function refreshAfterMemberChange(
   queryClient: ReturnType<typeof useQueryClient>,
   businessId: string,
 ) {
-  void queryClient.invalidateQueries({ queryKey: memberKeys.scope({ businessId }) });
-  void queryClient.invalidateQueries({ queryKey: roleKeys.scope({ businessId }) });
+  void queryClient.invalidateQueries({ queryKey: memberKeys.business(businessId) });
+  void queryClient.invalidateQueries({ queryKey: roleKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
   void invalidateMyFeatures(queryClient, businessId);
 }

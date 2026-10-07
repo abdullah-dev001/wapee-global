@@ -117,7 +117,7 @@ function useInvalidate(businessId: string | null) {
   const queryClient = useQueryClient();
   return () =>
     void queryClient.invalidateQueries({
-      queryKey: reviewKeys.scope({ businessId: businessId ?? 'none' }),
+      queryKey: reviewKeys.business(businessId ?? 'none'),
     });
 }
 
@@ -167,7 +167,7 @@ export function useReissueReviewLink(businessId: string | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: appointmentKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: appointmentKeys.business(businessId ?? 'none'),
       });
     },
   });

@@ -131,7 +131,7 @@ function invalidateServices(
   businessId: string | null,
 ) {
   void queryClient.invalidateQueries({
-    queryKey: serviceKeys.scope({ businessId: businessId ?? 'none' }),
+    queryKey: serviceKeys.business(businessId ?? 'none'),
   });
 }
 
@@ -250,7 +250,7 @@ export function useCreateCategory(businessId: string | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: categoryKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: categoryKeys.business(businessId ?? 'none'),
       });
     },
   });

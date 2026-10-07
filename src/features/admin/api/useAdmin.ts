@@ -370,7 +370,7 @@ export function useAdminReviews(id: string, enabled: boolean) {
 }
 
 function invalidateBusiness(qc: QueryClient, id: string) {
-  void qc.invalidateQueries({ queryKey: adminKeys.scope({ businessId: id }) });
+  void qc.invalidateQueries({ queryKey: adminKeys.business(id) });
   void qc.invalidateQueries({ queryKey: adminKeys.lists(PLATFORM) });
 }
 

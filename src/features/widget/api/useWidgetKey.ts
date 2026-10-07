@@ -62,7 +62,7 @@ function useInvalidate(businessId: string | null) {
   const queryClient = useQueryClient();
   return () =>
     void queryClient.invalidateQueries({
-      queryKey: widgetKeys.scope({ businessId: businessId ?? 'none' }),
+      queryKey: widgetKeys.business(businessId ?? 'none'),
     });
 }
 

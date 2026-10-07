@@ -88,7 +88,7 @@ function invalidateStaff(
   businessId: string | null,
 ) {
   void queryClient.invalidateQueries({
-    queryKey: staffKeys.scope({ businessId: businessId ?? 'none' }),
+    queryKey: staffKeys.business(businessId ?? 'none'),
   });
 }
 

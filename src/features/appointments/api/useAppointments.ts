@@ -248,7 +248,7 @@ function invalidateAppointments(
   businessId: string | null,
 ) {
   void queryClient.invalidateQueries({
-    queryKey: appointmentKeys.scope({ businessId: businessId ?? 'none' }),
+    queryKey: appointmentKeys.business(businessId ?? 'none'),
   });
 }
 

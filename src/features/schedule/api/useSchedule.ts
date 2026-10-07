@@ -204,7 +204,7 @@ export function useSaveTimeOff(businessId: string | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: scheduleKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: scheduleKeys.business(businessId ?? 'none'),
       });
     },
   });
@@ -222,7 +222,7 @@ export function useDeleteTimeOff(businessId: string | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: scheduleKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: scheduleKeys.business(businessId ?? 'none'),
       });
     },
   });

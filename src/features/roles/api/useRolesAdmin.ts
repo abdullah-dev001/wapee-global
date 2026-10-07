@@ -65,8 +65,8 @@ export function useRolesAdmin(businessId: string | null) {
 
 /** A role change can change what people may do: refresh every cache that shows it. */
 export function invalidateAfterRoleChange(queryClient: QueryClient, businessId: string) {
-  void queryClient.invalidateQueries({ queryKey: roleKeys.scope({ businessId }) });
-  void queryClient.invalidateQueries({ queryKey: memberKeys.scope({ businessId }) });
+  void queryClient.invalidateQueries({ queryKey: roleKeys.business(businessId) });
+  void queryClient.invalidateQueries({ queryKey: memberKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
   void invalidateMyFeatures(queryClient, businessId);
 }

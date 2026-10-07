@@ -89,10 +89,10 @@ export function useBranchAdmin(businessId: string | null) {
 }
 
 function refresh(queryClient: QueryClient, businessId: string) {
-  void queryClient.invalidateQueries({ queryKey: branchKeys.scope({ businessId }) });
+  void queryClient.invalidateQueries({ queryKey: branchKeys.business(businessId) });
   // The shell's business list carries each branch (names, primary flag).
   void queryClient.invalidateQueries({ queryKey: ['businesses', 'mine'] });
-  void queryClient.invalidateQueries({ queryKey: planUsageKeys.scope({ businessId }) });
+  void queryClient.invalidateQueries({ queryKey: planUsageKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
   // Reports and combined views depend on which branches exist.
   void queryClient.invalidateQueries({ queryKey: ['advanced-report'] });

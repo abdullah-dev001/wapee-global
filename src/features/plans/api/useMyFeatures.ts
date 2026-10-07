@@ -34,7 +34,7 @@ export function useMyFeatures(businessId: string | null) {
 }
 
 export function invalidateMyFeatures(queryClient: QueryClient, businessId: string): Promise<void> {
-  return queryClient.invalidateQueries({ queryKey: featureKeys.scope({ businessId }) });
+  return queryClient.invalidateQueries({ queryKey: featureKeys.business(businessId) });
 }
 
 export type PlanUsageBranch = { id: string; name: string; activeStaff: number };

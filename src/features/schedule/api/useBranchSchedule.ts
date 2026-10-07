@@ -105,7 +105,7 @@ export function useSaveBranchHours(businessId: string | null, branchId: string |
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: branchScheduleKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: branchScheduleKeys.business(businessId ?? 'none'),
       });
     },
   });
@@ -134,7 +134,7 @@ export function useSaveClosure(businessId: string | null, branchId: string | nul
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: branchScheduleKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: branchScheduleKeys.business(businessId ?? 'none'),
       });
     },
   });
@@ -152,7 +152,7 @@ export function useDeleteClosure(businessId: string | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: branchScheduleKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: branchScheduleKeys.business(businessId ?? 'none'),
       });
     },
   });
@@ -216,7 +216,7 @@ export function useSaveResource(businessId: string | null, branchId: string | nu
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: resourceKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: resourceKeys.business(businessId ?? 'none'),
       });
     },
   });
@@ -237,7 +237,7 @@ export function useDeleteResource(businessId: string | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: resourceKeys.scope({ businessId: businessId ?? 'none' }),
+        queryKey: resourceKeys.business(businessId ?? 'none'),
       });
     },
   });

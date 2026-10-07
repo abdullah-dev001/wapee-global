@@ -172,7 +172,7 @@ function invalidateClients(
   businessId: string | null,
 ) {
   void queryClient.invalidateQueries({
-    queryKey: clientKeys.scope({ businessId: businessId ?? 'none' }),
+    queryKey: clientKeys.business(businessId ?? 'none'),
   });
 }
 

@@ -66,7 +66,7 @@ export function useSetReportSchedule(businessId: string | null) {
     },
     onSuccess: () => {
       if (businessId)
-        void queryClient.invalidateQueries({ queryKey: scheduleKeys.scope({ businessId }) });
+        void queryClient.invalidateQueries({ queryKey: scheduleKeys.business(businessId) });
     },
   });
 }
