@@ -9,7 +9,8 @@ export const clientSearchKeys = createQueryKeys('client-search');
 export type ClientSearchResult = {
   id: string;
   fullName: string;
-  phoneE164: string;
+  /** Null without `clients.view_contact` (the database blanks it). */
+  phoneE164: string | null;
   email: string | null;
 };
 
@@ -33,7 +34,7 @@ export function useClientSearch(
     staleTime: staleTimes.list,
     queryFn: async () => {
       const { data, error } = await getSupabase()
-        .from('clients')
+        .from('clients_v')
         .select('id, full_name, phone_e164, email')
         .eq('business_id', businessId ?? '')
         .is('deleted_at', null)
@@ -41,12 +42,11 @@ export function useClientSearch(
         .order('full_name')
         .limit(20);
       if (error) throw new Error(error.message);
-      return (data ?? []).map((row) => ({
-        id: row.id,
-        fullName: row.full_name,
-        phoneE164: row.phone_e164,
-        email: row.email,
-      }));
+      return (data ?? []).flatMap((row) =>
+        row.id && row.full_name
+          ? [{ id: row.id, fullName: row.full_name, phoneE164: row.phone_e164, email: row.email }]
+          : [],
+      );
     },
   });
 }

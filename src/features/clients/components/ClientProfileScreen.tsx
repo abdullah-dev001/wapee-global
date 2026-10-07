@@ -1,4 +1,4 @@
-import { Lock, Pencil } from 'lucide-react-native';
+import { Download, Lock, Pencil, ShieldOff } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -24,7 +24,9 @@ import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 import { formatDateTime, todayInZone } from '@/lib/time';
 
+import { DataRightsError, useEraseClient, useExportClient } from '../api/useClientData';
 import { useArchiveClient, useClient } from '../api/useClients';
+import { deliverExport } from '../deliverExport';
 import { ClientForm } from './ClientForm';
 
 export type ClientProfileScreenProps = {
@@ -36,13 +38,18 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
   const { businessId, business, branchId } = useCurrentScope();
   const canEdit = usePermission('clients.edit').allowed;
   const canViewContact = usePermission('clients.view_contact').allowed;
+  const canExport = usePermission('clients.export').allowed;
+  const canErase = usePermission('clients.erase').allowed;
   const canViewAppointments = usePermission('appointments.view').allowed;
 
-  const client = useClient(businessId, clientId, canViewContact);
+  const client = useClient(businessId, clientId);
   const archiveClient = useArchiveClient(businessId);
+  const exportClient = useExportClient();
+  const eraseClient = useEraseClient();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [confirmErase, setConfirmErase] = useState(false);
 
   const timeZone = useMemo(() => {
     const branch = business?.branches.find((b) => b.id === branchId);
@@ -90,6 +97,22 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
   }
 
   const data = client.data;
+
+  const failureMessage = (error: Error) =>
+    error instanceof DataRightsError && error.code in ERROR_KEYS
+      ? t(ERROR_KEYS[error.code as keyof typeof ERROR_KEYS])
+      : t('clients.data.errors.unknown');
+
+  const onExport = () =>
+    exportClient.mutate(clientId, {
+      onSuccess: (json) => {
+        void deliverExport(json, `client-${clientId}.json`).then(() =>
+          toast.show({ message: t('clients.data.exported'), tone: 'success' }),
+        );
+      },
+      onError: (error) => toast.show({ message: failureMessage(error), tone: 'error' }),
+    });
+
   // Upcoming shows soonest-first; the RPC's fixed sort is starts_at DESC,
   // so this one page's rows are reversed for display only.
   const upcomingRows = (upcoming.data?.pages.flatMap((page) => page.rows) ?? []).slice().reverse();
@@ -100,14 +123,44 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
       <PageContainer
         title={data.fullName}
         actions={
-          canEdit ? (
+          canEdit || canExport || canErase ? (
             <View style={styles.actionsRow}>
-              <Button variant="ghost" size="sm" startIcon={Pencil} onPress={() => setEditing(true)}>
-                {t('clients.edit')}
-              </Button>
-              <Button variant="ghost" size="sm" onPress={() => setConfirmArchive(true)}>
-                {data.isArchived ? t('clients.unarchive') : t('clients.archive')}
-              </Button>
+              {canEdit && !data.isErased ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    startIcon={Pencil}
+                    onPress={() => setEditing(true)}
+                  >
+                    {t('clients.edit')}
+                  </Button>
+                  <Button variant="ghost" size="sm" onPress={() => setConfirmArchive(true)}>
+                    {data.isArchived ? t('clients.unarchive') : t('clients.archive')}
+                  </Button>
+                </>
+              ) : null}
+              {canExport ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  startIcon={Download}
+                  loading={exportClient.isPending}
+                  onPress={() => onExport()}
+                >
+                  {t('clients.data.export')}
+                </Button>
+              ) : null}
+              {canErase && !data.isErased ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  startIcon={ShieldOff}
+                  onPress={() => setConfirmErase(true)}
+                >
+                  {t('clients.data.erase')}
+                </Button>
+              ) : null}
             </View>
           ) : null
         }
@@ -118,9 +171,20 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
               <Avatar name={data.fullName} size={48} />
               <View style={styles.headerText}>
                 <Text variant="cardTitle">{data.fullName}</Text>
-                {data.isArchived ? <StatusBadge status="cancelled" /> : null}
+                {data.isErased ? (
+                  <Text variant="helper" color="textMuted">
+                    {t('clients.erasedBadge')}
+                  </Text>
+                ) : data.isArchived ? (
+                  <StatusBadge status="cancelled" />
+                ) : null}
               </View>
             </View>
+            {data.isErased ? (
+              <Text variant="helper" color="textMuted">
+                {t('clients.data.erasedProfile')}
+              </Text>
+            ) : null}
 
             <View style={styles.section}>
               <Text variant="label" color="textSecondary">
@@ -266,9 +330,46 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
             ),
         }}
       />
+
+      <Dialog
+        open={confirmErase}
+        onClose={() => setConfirmErase(false)}
+        title={t('clients.data.eraseTitle')}
+        message={t('clients.data.eraseMessage')}
+        confirm={{
+          label: t('clients.data.erase'),
+          variant: 'danger',
+          loading: eraseClient.isPending,
+          onPress: () =>
+            eraseClient.mutate(clientId, {
+              onSuccess: (result) => {
+                setConfirmErase(false);
+                toast.show({
+                  message:
+                    result.storagePending > 0
+                      ? t('clients.data.erasedStoragePending')
+                      : t('clients.data.erased'),
+                  tone: result.storagePending > 0 ? 'error' : 'success',
+                });
+              },
+              onError: (error) => {
+                setConfirmErase(false);
+                toast.show({ message: failureMessage(error), tone: 'error' });
+              },
+            }),
+        }}
+      />
     </Screen>
   );
 }
+
+const ERROR_KEYS = {
+  has_future_appointment: 'clients.data.errors.has_future_appointment',
+  has_draft_invoice: 'clients.data.errors.has_draft_invoice',
+  not_found: 'clients.data.errors.not_found',
+  forbidden: 'clients.data.errors.forbidden',
+  unknown: 'clients.data.errors.unknown',
+} as const;
 
 function AppointmentRowSummary({
   appointment,

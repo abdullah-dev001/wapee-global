@@ -10,7 +10,7 @@
  *                { action: 'request_login', slug, email, company_website? (honeypot) }   always ok for a valid email
  *                { action: 'exchange', token }                                           -> { session_token, ... }
  *   session:     { session, action: 'overview' | 'bookings' | 'packages' | 'invoices' | 'invoice' | 'photos' |
- *                  'photo_urls' | 'forms' | 'slots' | 'cancel' | 'reschedule' | 'book' | 'sign_out', ... }
+ *                  'photo_urls' | 'forms' | 'slots' | 'cancel' | 'reschedule' | 'book' | 'request_data' | 'sign_out', ... }
  *
  * Rate limits live in the database and fail closed: login requests 10/h per IP and 3/h per EMAIL; exchange
  * 30/h; reads 1200/h; writes 60/h. The raw IP is never stored (sha256 with a secret salt).
@@ -120,6 +120,10 @@ const SignOut = z
   .object({ ...S, action: z.literal('sign_out'), all: z.boolean().optional() })
   .strict();
 
+const RequestData = z
+  .object({ ...S, action: z.literal('request_data'), kind: z.enum(['export', 'erase']) })
+  .strict();
+
 const RequestSchema = z.discriminatedUnion('action', [
   Info,
   RequestLogin,
@@ -137,6 +141,7 @@ const RequestSchema = z.discriminatedUnion('action', [
   Reschedule,
   Book,
   SignOut,
+  RequestData,
 ]);
 
 const READS = new Set([
@@ -157,6 +162,8 @@ function mapCode(code: string | null | undefined): Parameters<typeof jsonError>[
   switch (code) {
     case 'invalid_session':
       return 'invalid_session';
+    case 'rate_limited':
+      return 'rate_limited';
     case 'invalid_token':
       return 'invalid_token';
     case 'not_found':
@@ -214,9 +221,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
           ? 'portal_request_login'
           : action === 'exchange'
             ? 'portal_exchange'
-            : READS.has(action)
-              ? 'portal_read'
-              : 'portal_write';
+            : action === 'request_data'
+              ? 'portal_data_request'
+              : READS.has(action)
+                ? 'portal_read'
+                : 'portal_write';
 
     const emailForKey =
       action === 'request_login' && body && typeof body === 'object'
@@ -390,6 +399,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
               ends_at: r.ends_at,
               service_name: r.service_name,
             })
+          : fail(r);
+      }
+      case 'request_data': {
+        // A REQUEST only: staff with clients.export / clients.erase act on it from the dashboard.
+        const r = await call('portal_create_data_request', {
+          p_session: input.session,
+          p_kind: input.kind,
+        });
+        return r.ok === true
+          ? jsonOk(req, { requested: true, duplicate: r.duplicate === true })
           : fail(r);
       }
       case 'sign_out': {

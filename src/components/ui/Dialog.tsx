@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { type ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,9 +42,10 @@ export function Dialog({
   message,
   children,
   confirm,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   busy = false,
 }: DialogProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const dismiss = () => {
     if (!busy) onClose();
@@ -62,7 +64,7 @@ export function Dialog({
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={dismiss}
-          accessibilityLabel="Close dialog"
+          accessibilityLabel={t('actions.closeDialog')}
         />
         <View
           accessibilityViewIsModal
@@ -82,7 +84,7 @@ export function Dialog({
           {children}
           <View style={styles.actions}>
             <Button variant="ghost" onPress={dismiss} disabled={busy}>
-              {cancelLabel}
+              {cancelLabel ?? t('actions.cancel')}
             </Button>
             {confirm ? (
               <Button

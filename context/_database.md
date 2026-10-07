@@ -17,7 +17,7 @@ Status: in progress · Phase: 6B · Last updated: 2026-10-09
 | `roles` | business_id (**null = system role**), key, name, is_system | 4 system roles; custom roles (Phase 9) carry a business_id. |
 | `role_permissions` | role_id, permission→permissions.key, **scope** | scope = own / branch / all. |
 | `member_role_assignments` | member_id, role_id, **branch_id (null = all branches)** | The per-branch role. **branch_id is the whole multi-branch mechanism.** |
-| `permissions` | key, area, min_plan, addon | 46-row catalogue from product doc §9. Read-only to the app. |
+| `permissions` | key, area, min_plan, addon | 47-row catalogue (product doc §9 + `clients.erase`, Phase 11A). Read-only to the app. |
 | `audit_logs` | business_id, actor_user_id, action, entity_type, entity_id, before/after jsonb | **Append-only**: no INSERT/UPDATE/DELETE policy exists. |
 | `reserved_slugs` | slug | 112 rows, mirrors `src/config/reservedSlugs.ts`. Readable by anon so signup can check availability. |
 | `invite_accept_attempts` | token_hash, attempts, first/last_attempt_at | Rate limit for `accept_invite()`. RLS on with **no policy**: only the SECURITY DEFINER function touches it. |
@@ -261,7 +261,7 @@ it is safe to publish.
 ## Default roles (product doc §9)
 | Role | Grants | Scope |
 |---|---|---|
-| Owner | 46 (all) | all |
+| Owner | 47 (all, incl. `clients.erase`) | all |
 | Manager | 39 — no billing, roles.manage, website.publish, **website.edit**, **settings.business**, commission.manage_rules, sms.buy_credits. Keeps `settings.booking` (doc §9: "Booking settings"). | branch |
 | Receptionist | 20 — no discounts, credit notes, revenue reports, staff management, settings | branch |
 | Staff | 10 — own appointments, own schedule, own commission | own |
@@ -400,7 +400,7 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 |---|---|
 | `20261001182500_foundation_profiles.sql` | extensions, `set_updated_at`, profiles, new-user trigger, `is_super_admin()` |
 | `20261001183000_businesses_branches.sql` | enums, reserved_slugs (112), businesses, branches, slug guard |
-| `20261001184000_permissions_and_roles.sql` | permission catalogue (46), 4 system roles, grants |
+| `20261001184000_permissions_and_roles.sql` | permission catalogue (46; 47 since 11A), 4 system roles, grants |
 | `20261001184500_members_assignments_audit_helpers.sql` | business_members, member_role_assignments, audit_logs, all RLS helpers |
 | `20261001190000_phase1_rls_policies.sql` | every policy + the role/owner guard triggers |
 | `20261001190500_fix_rls_and_function_grants.sql` | **fixed: RLS was missing on `business_members`**; revoked EXECUTE on trigger fns |
@@ -502,6 +502,16 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 - `20261015110000_phase10c_outbox_portal_login.sql`: `outbox_guard` drops a stale `portal_login` email.
 - `20261015120000` + `20261015130000`: the borrowed manage token coexists with the booking's own live token (exact restore).
 
+## Phase 11A migrations (hardening: GDPR, contact lock, security, performance)
+- `20261016090000_phase11a_view_contact_lock`: `authenticated` loses SELECT on `clients.phone_e164` / `email` (column grants on the rest), `contact_business_ids()`, view `clients_v`, `list_appointments` reads the view.
+- `20261016100000_phase11a_gdpr_schema`: permission `clients.erase` (Owner), `clients.erased_at`, tables `storage_cleanup_queue`, `erasure_log` (no grants), `data_requests` (RLS select `clients.export`), `gdpr_erasing()` flag + exemptions in `enforce_invoice_guard` / `enforce_addon_ledger_guard` (signed_consents only) / `enforce_review_guard` / portal guards / `enforce_last_owner` (`wapee.erase_business`), RPCs `gdpr_export_client`, `gdpr_erase_client`, `gdpr_business_erase_check`, `gdpr_erase_business_commit`, `gdpr_storage_done`, `portal_create_data_request`, `list_data_requests`, `resolve_data_request`, rate rule `portal_data_request`.
+- `20261016110000_phase11a_gdpr_fixes`: `enforce_last_owner` handles the cascade (member row already gone), `data_requests.email_hash` for the daily cap.
+- `20261016120000_phase11a_security_hardening`: anon loses `is_slug_available` / `my_grants`; API roles lose `business_is_active` / `suggest_invoice_prefix`.
+- `20261016130000` / `…140000` / `…150000` / `…160000` (RLS performance): STABLE set functions `perm_branch_ids(perm, branch_scope_only)`, `perm_business_ids`, `perm_cover_business_ids`, `member_business_ids`, `own_staff_ids`, `scoped_client_ids`, `own_client_ids`, `client_has_live_appt`; SELECT policies of appointments, invoices, invoice_items, invoice_payments, credit_notes, messages, clients, services, staff_profiles, branches, service_branches, staff_branches test membership of those sets (computed once per statement) instead of calling `can()` per row; `clients_v` becomes a security-barrier definer view carrying the clients_select rule (kept equal by suite 31); `client_phone` / `client_email` dropped.
+- `20261016170000_phase11a_list_indexes`: `appointments(business_id, starts_at desc, id desc)`, `messages(business_id, id desc)`, `clients(business_id, full_name, id)`.
+- `20261016180000_phase11a_list_appointments_fast`: name from `clients`, phone search / phone shown through one lookup in `clients_v`.
+- Rule for new tables: a policy that checks a permission on ROW columns must use the set functions (`col IN (select perm_branch_ids('x.y', true))`), never `can(business_id, branch_id, ...)` per row (about 1 ms per row; see docs/performance-review.md).
+
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
 - **Leaked-password protection is OFF** (security advisor). It is a dashboard setting: Authentication → Policies → enable "Check against HaveIBeenPwned". Worth turning on before real users.
@@ -546,3 +556,4 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 - 2026-10-02: **Branch now owns country, currency, timezone and tax** (decisions 23–25). Invoice numbering is per branch with a unique prefix. Business keeps `default_*` for pre-fill only. CLI linked; migration history repaired; pending performance migration applied.
 - 2026-10-02: Phase 1 schema: 10 tables, 46 permissions, 4 roles, all RLS + guards, advisors clean, 21 security tests passing.
 - 2026-10-07: **Phase 10C client portal** — 2 tables, 20 service-only RPCs, 5 migrations; details in `client-portal.md`.
+- 2026-10-07: **Phase 11A** — contact columns locked at the database, GDPR export / erase / business erase + portal requests, security review fixes, RLS rewritten set-based (list_appointments from >25 s to < 1 s on 50k rows), 3 list indexes; 9 migrations. See `gdpr.md`, `docs/security-review.md`, `docs/performance-review.md`.

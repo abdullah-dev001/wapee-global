@@ -15,7 +15,7 @@ export const clientKeys = createQueryKeys('clients');
 export type ClientListItem = {
   id: string;
   fullName: string;
-  /** Null when the caller lacks `clients.view_contact` — never fetched in that case, not merely hidden in the render. */
+  /** Null when the caller lacks `clients.view_contact` — the database returns NULL for it (clients_v), it is not merely hidden in the render. */
   phoneE164: string | null;
   email: string | null;
   isArchived: boolean;
@@ -58,13 +58,11 @@ function mapRow(row: {
  * JS. RLS (`clients_select`) is the scope boundary: an Own-scope Staff
  * member only ever gets back clients they have an appointment with.
  *
- * `canViewContact` controls whether `phone_e164`/`email` are even SELECTed
- * (doc §9: "Client contact details" is Yes/Yes/Yes/No — Staff Own-scope
- * does not get them even for a client row they CAN see). There is no
- * column-level RLS for this; omitting the columns from the query itself,
- * rather than hiding them after the fact in the render, is the closest a
- * client-side query gets to a real boundary without new backend surface
- * (asked the user, 2026-10-05: no new RPC this round).
+ * Reads `clients_v`, never `clients`: `authenticated` has no privilege on
+ * `clients.phone_e164`/`email` (Phase 11A). The view returns them only for
+ * callers holding `clients.view_contact` and NULL otherwise, so the gate is
+ * the database's. `canViewContact` only decides whether phone search is
+ * offered (the view would match nothing anyway) and keys the cache.
  */
 export function useClients(
   businessId: string | null,
@@ -86,20 +84,16 @@ export function useClients(
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }) => {
       const cursor = pageParam as { fullName: string; id: string } | null;
-      const columns = canViewContact
-        ? 'id, full_name, phone_e164, email, deleted_at, created_at'
-        : 'id, full_name, deleted_at, created_at';
-
       let query = getSupabase()
-        .from('clients')
-        .select(columns)
+        .from('clients_v')
+        .select('id, full_name, phone_e164, email, deleted_at, created_at')
         .eq('business_id', businessId ?? '');
 
       if (!includeArchived) query = query.is('deleted_at', null);
       if (search.length >= 2) {
-        // Filtering on phone_e164 is fine even when it is not SELECTed — a
-        // WHERE clause does not require the column in the projection.
-        query = query.or(`full_name.ilike.%${search}%,phone_e164.ilike.%${search}%`);
+        query = canViewContact
+          ? query.or(`full_name.ilike.%${search}%,phone_e164.ilike.%${search}%`)
+          : query.ilike('full_name', `%${search}%`);
       }
       if (cursor) {
         // Keyset on (full_name, id) ascending: strictly after the cursor row.
@@ -130,12 +124,13 @@ export function useClients(
 export type ClientDetail = ClientListItem & {
   notes: string | null;
   firstBranchId: string | null;
+  /** Set once the client's personal data was erased (GDPR): the row stays, anonymised. */
+  isErased: boolean;
 };
 
 export function useClient(
   businessId: string | null,
   clientId: string | null,
-  canViewContact: boolean,
 ): UseQueryResult<ClientDetail, Error> {
   const { isAuthenticated } = useSession();
 
@@ -144,24 +139,24 @@ export function useClient(
     enabled: isAuthenticated && Boolean(businessId && clientId),
     staleTime: staleTimes.list,
     queryFn: async () => {
-      const columns = canViewContact
-        ? 'id, full_name, phone_e164, email, notes, deleted_at, created_at, first_branch_id'
-        : 'id, full_name, notes, deleted_at, created_at, first_branch_id';
-
       const { data, error } = await getSupabase()
-        .from('clients')
-        .select(columns)
+        .from('clients_v')
+        .select(
+          'id, full_name, phone_e164, email, notes, deleted_at, created_at, first_branch_id, erased_at',
+        )
         .eq('id', clientId ?? '')
         .single();
       if (error) throw new Error(error.message);
       const row = data as unknown as Parameters<typeof mapRow>[0] & {
         notes: string | null;
         first_branch_id: string | null;
+        erased_at: string | null;
       };
       return {
         ...mapRow(row),
         notes: row.notes,
         firstBranchId: row.first_branch_id,
+        isErased: row.erased_at !== null,
       };
     },
   });
@@ -244,14 +239,14 @@ export function useFindClientByPhone(businessId: string | null, phoneE164: strin
     staleTime: staleTimes.list,
     queryFn: async () => {
       const { data, error } = await getSupabase()
-        .from('clients')
+        .from('clients_v')
         .select('id, full_name')
         .eq('business_id', businessId ?? '')
         .eq('phone_e164', phoneE164 ?? '')
         .is('deleted_at', null)
         .maybeSingle();
       if (error) throw new Error(error.message);
-      return data;
+      return data && data.id && data.full_name ? { id: data.id, full_name: data.full_name } : null;
     },
   });
 }

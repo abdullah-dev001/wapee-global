@@ -21,7 +21,7 @@ function grantsFor(permissions: readonly string[], scope: Grant['scope']): Grant
   return permissions.map((permission) => ({ permission, scope, branchId: BRANCH }));
 }
 
-/** Owner: all 46 permissions at `all` scope. */
+/** Owner: all 47 permissions at `all` scope. */
 const OWNER = grantsFor(
   [
     'appointments.approve',
@@ -32,6 +32,7 @@ const OWNER = grantsFor(
     'calendar.view_all_staff',
     'clients.create',
     'clients.edit',
+    'clients.erase',
     'clients.export',
     'clients.view',
     'clients.view_contact',
@@ -222,7 +223,7 @@ function visibleNav(set: GrantSet): string[] {
 
 describe('seeded role fixtures match the database', () => {
   it('has the documented permission counts', () => {
-    expect(OWNER).toHaveLength(46);
+    expect(OWNER).toHaveLength(47);
     expect(MANAGER).toHaveLength(39);
     expect(RECEPTIONIST).toHaveLength(20);
     expect(STAFF).toHaveLength(12);

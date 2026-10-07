@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
@@ -29,6 +30,7 @@ export type DrawerProps = {
  * so the body scrolls while the footer stays pinned above the safe area.
  */
 export function Drawer({ open, onClose, title, subtitle, children, footer }: DrawerProps) {
+  const { t } = useTranslation();
   const { isMobile } = useBreakpoint();
   const insets = useSafeAreaInsets();
   useOverlayDismiss(open, onClose);
@@ -55,7 +57,7 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
-          accessibilityLabel="Close panel"
+          accessibilityLabel={t('actions.closePanel')}
         />
         <View
           accessibilityViewIsModal
@@ -108,13 +110,14 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
 }
 
 function CloseButton({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
   const { handlers, showHover, showFocusRing } = useInteractionState(false);
   return (
     <Pressable
       {...handlers}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="Close"
+      accessibilityLabel={t('actions.close')}
       style={[
         styles.closeButton,
         showHover ? { backgroundColor: theme.colors.surfaceHover } : null,

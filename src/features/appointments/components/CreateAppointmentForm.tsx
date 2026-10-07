@@ -155,6 +155,11 @@ export function CreateAppointmentForm({
               {clientResults.data.map((result) => (
                 <Pressable
                   key={result.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    result.phoneE164 ? `${result.fullName}, ${result.phoneE164}` : result.fullName
+                  }
+                  accessibilityState={{ selected: clientId === result.id }}
                   onPress={() => setValue('clientId', result.id, { shouldDirty: true })}
                   style={[
                     styles.clientRow,

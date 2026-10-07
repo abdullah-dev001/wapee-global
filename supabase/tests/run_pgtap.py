@@ -9,7 +9,7 @@ pgTAP (it still runs unchanged under `supabase test db` where Docker exists).
 
     python3 supabase/tests/run_pgtap.py supabase/tests/02_role_assignment_guard.sql
 """
-import json, re, subprocess, sys
+import json, os, re, subprocess, sys
 
 FN = r"(?:ok|is|isnt|is_empty|isa_ok|throws_ok|throws_like|lives_ok|results_eq|set_eq|cmp_ok|matches|has_table|has_column|has_function|has_index|policies_are|hasnt_table|col_is_pk|col_has_default|function_returns|is_definer|isnt_definer|pass|fail|row_eq|bag_eq|performs_ok|has_trigger|trigger_is|has_pk|has_fk|index_is_unique|table_privs_are|col_not_null|has_view|has_type|has_enum|has_extension)"
 src = open(sys.argv[1]).read()
@@ -25,7 +25,9 @@ src = src.replace("begin;", "begin;\ncreate temporary table pgt_out (n serial, l
 src += "\nselect jsonb_build_object('passed', count(*) filter (where line like 'ok%'), 'failed', count(*) filter (where line not like 'ok%'), " \
        "'total', count(*), 'failures', coalesce(jsonb_agg(line order by n) filter (where line not like 'ok%'), '[]'::jsonb)) as result from pgt_out;\nrollback;\n"
 open("/tmp/pgtap_run.sql", "w").write(src)
-out = subprocess.run(["supabase", "db", "query", "--linked", "-f", "/tmp/pgtap_run.sql"], capture_output=True, text=True)
+# WAPEE_DB_FLAG="" targets the LOCAL database (CI); unset = the linked project.
+flag = os.environ.get("WAPEE_DB_FLAG", "--linked")
+out = subprocess.run(["supabase", "db", "query", *([flag] if flag else []), "-f", "/tmp/pgtap_run.sql"], capture_output=True, text=True)
 txt = out.stdout + out.stderr
 try:
     d, _ = json.JSONDecoder().raw_decode(txt[txt.index("{"):])

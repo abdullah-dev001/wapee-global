@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   CircleAlert,
   CircleCheck,
@@ -168,6 +169,7 @@ function ToastViewport({
 }
 
 function ToastRow({ toast, onDismiss }: { toast: ToastEntry; onDismiss: () => void }) {
+  const { t } = useTranslation();
   const palette = toneStyles[toast.tone];
   const Icon = palette.icon;
   const { handlers, showHover } = useInteractionState(false);
@@ -213,7 +215,7 @@ function ToastRow({ toast, onDismiss }: { toast: ToastEntry; onDismiss: () => vo
         {...handlers}
         onPress={onDismiss}
         accessibilityRole="button"
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={t('actions.dismiss')}
         style={[styles.close, showHover ? { opacity: 0.7 } : null]}
       >
         <X size={theme.iconSize.xs} strokeWidth={2} color={theme.colors[palette.color]} />

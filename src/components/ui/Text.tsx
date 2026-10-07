@@ -15,6 +15,24 @@ export type TextProps = RNTextProps & {
  * The only text component. Always pick a `variant` so font, size, line-height and
  * letter-spacing stay on the scale. Never set `fontWeight` (weight = font family).
  */
+const textColor: Partial<Record<ColorToken, ColorToken>> = {
+  error: 'errorText',
+  success: 'successText',
+  warning: 'warningText',
+  info: 'infoText',
+};
+
+/** Variants that are headings: announced as headings by screen readers unless the caller sets a role. */
+const headingVariants: ReadonlySet<TextVariant> = new Set([
+  'headline',
+  'headlineMobile',
+  'pageTitle',
+  'pageTitleMobile',
+  'authTitle',
+  'sectionTitle',
+  'dialogTitle',
+]);
+
 export function Text({
   variant = 'body',
   color = 'textPrimary',
@@ -24,10 +42,12 @@ export function Text({
 }: TextProps) {
   return (
     <RNText
+      accessibilityRole={headingVariants.has(variant) ? 'header' : undefined}
       {...rest}
       style={[
         theme.text[variant],
-        { color: theme.colors[color] },
+        // Status colours are for fills, borders and icons; as TEXT they use the AA-contrast variant.
+        { color: theme.colors[textColor[color] ?? color] },
         align ? { textAlign: align } : null,
         style,
       ]}

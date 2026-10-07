@@ -15,17 +15,13 @@ Phase 4 placeholder.
   `deleted_at is null`). A collision surfaces as Postgres `23505`; the form
   catches it and looks up the existing client by the same phone to show a
   clear message with a link to it, never a raw DB error.
-- **Contact details (phone/email) need `clients.view_contact`.** Doc §9:
-  "Client contact details: Yes/Yes/Yes/No" — Staff (Own scope) does NOT get
-  them even for a client row they CAN otherwise see via `clients_select`
-  (RLS is row-level; phone/email are columns on that same visible row).
-  There is no column-level RLS for this. **Decided with the user,
-  2026-10-05**: rather than add a new masking RPC this round, the client
-  simply never `SELECT`s `phone_e164`/`email` when the caller lacks the
-  permission (`useClients`/`useClient` take `canViewContact` and build a
-  narrower column list) — closer to a real boundary than hiding the field
-  after fetching it, though still not a server-enforced guarantee (a
-  crafted request could still ask for the columns). Noted as a known limit.
+- **Contact details (phone/email) need `clients.view_contact`, enforced by the DATABASE (Phase 11A).**
+  `authenticated` has no privilege on `clients.phone_e164` / `email`; the app reads
+  `clients_v`, which returns them only for callers holding the permission in that
+  business and NULL for everyone else (Staff Own scope, custom roles without it).
+  Row visibility is unchanged (`clients_select`; the view carries the same rule,
+  suite 31 keeps them equal). Phone search is closed to blocked roles too (the view
+  matches nothing). `list_appointments.client_phone` follows the same rule. See `gdpr.md`.
 - **Sensitive custom-field answers need `clients.view_sensitive`** — this
   is unchanged, pre-existing RLS on `appointment_field_values` (a SEPARATE
   table, each row with its own `is_sensitive` flag copied at answer time);
@@ -53,7 +49,7 @@ Phase 4 placeholder.
 | supabase/tests/13_clients_dashboard.sql | 15 assertions: insert/update RLS gating, phone uniqueness (same + different business), archive/unarchive, Own-scope "only clients I have an appointment with" (proven against the new query path), another business, anon (no table grant), `list_appointments(p_client_id)` spanning branches |
 | supabase/tests/12_dashboard_appointments.sql | +2 assertions for `p_client_id`; re-run clean (150/150) after the migration |
 | app/(app)/clients/index.tsx, [id].tsx | list route + profile route (nested stack under the `clients` tab — `clients.tsx` moved to `clients/index.tsx`) |
-| src/features/clients/api/useClients.ts | `useClients` (keyset list, `canViewContact`-gated columns), `useClient` (profile), `useSaveClient`, `useArchiveClient`, `useFindClientByPhone` (duplicate-phone lookup) |
+| src/features/clients/api/useClients.ts | `useClients` (keyset list over `clients_v`), `useClient` (profile), `useSaveClient`, `useArchiveClient`, `useFindClientByPhone` (duplicate-phone lookup) |
 | src/features/clients/schemas/client.schemas.ts | zod schema mirroring the CHECK constraints |
 | src/features/clients/components/ClientsScreen.tsx | list screen: search + archived toggle in URL params, create Drawer |
 | src/features/clients/components/ClientListView.tsx | mobile cards / desktop `DataTable`, same `useClients` hook (CLAUDE.md §5) |
@@ -78,8 +74,8 @@ entry needed.
 
 ## Permissions & gating
 `clients.view` (RLS boundary via `clients_select`), `clients.create`/`.edit`
-(RLS + UI), `clients.view_contact` (UI query-column gate, see Business
-rules), `clients.view_sensitive` (unchanged, a different table). No plan or
+(RLS + UI), `clients.view_contact` (database column lock via `clients_v`, see Business
+rules), `clients.export` / `clients.erase` (GDPR, `gdpr.md`), `clients.view_sensitive` (unchanged, a different table). No plan or
 add-on gate.
 
 ## UI
@@ -101,12 +97,7 @@ with a confirm dialog, edit opens the same `ClientForm` in a Drawer.
 Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
 
 ## Known limits / TODO
-- **`clients.view_contact`'s gate is client-side column omission, not a
-  server-enforced boundary** (decided with the user, see Business rules).
-  A technically-crafted request could still ask Postgres for those
-  columns directly — RLS does not mask columns, only rows. A real fix
-  would be a server-side view or RPC that strips the columns for callers
-  without the permission; out of scope this session.
+- `clients.notes` is still column-readable by every `clients.view` holder (the UI hides it without view_contact / view_sensitive): product decision pending (docs/security-review.md L3).
 - **Click-tested on the iOS simulator (2026-10-05)**: `/clients` confirmed
   by screenshot with real seeded data — search input, "Show archived"
   toggle, "New client" button, client rows (avatar, name, phone) all
@@ -137,6 +128,7 @@ Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
   other mutation in Phase 4.
 
 ## Changelog
+- 2026-10-07: Phase 11A: contact lock is a database boundary (`clients_v`), profile gets Export data / Erase personal data (`gdpr.md`), list reads indexed `(business_id, full_name, id)`.
 - 2026-10-07: Phase 10B: the profile shows Files and photos (consent, gallery, upload) and Forms (sign here, send link, signed copies, void) sections while the add-ons are on.
 - 2026-10-07: Phase 10A: the profile shows a Packages section (`ClientPackagesSection`: balance, state, expiry) when the add-on is on and the member holds a packages permission.
 - 2026-10-05 (UI polish): layout fixes, no behaviour change. The dead

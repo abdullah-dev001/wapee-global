@@ -40,6 +40,15 @@ export const colors = {
   infoLight: '#eff6ff',
   infoBorder: '#bfdbfe',
 
+  /**
+   * Text-on-tint variants of the status colours. The base tokens are for fills, borders and icons: as small text
+   * on their Light backgrounds they are 2.1-3.4:1. These are 5.2-6.8:1 (WCAG AA needs 4.5:1).
+   */
+  successText: '#047857',
+  warningText: '#92400e',
+  errorText: '#b91c1c',
+  infoText: '#1d4ed8',
+
   overlay: 'rgba(0, 0, 0, 0.5)',
   lockedScrimTop: 'rgba(248, 250, 251, 0.72)',
   lockedScrimBottom: 'rgba(248, 250, 251, 0.92)',

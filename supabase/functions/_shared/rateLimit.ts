@@ -54,7 +54,8 @@ export type PublicEndpoint =
   | 'portal_request_login'
   | 'portal_exchange'
   | 'portal_read'
-  | 'portal_write';
+  | 'portal_write'
+  | 'portal_data_request';
 
 export type RateLimitResult = {
   allowed: boolean;

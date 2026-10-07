@@ -25,7 +25,7 @@ type PermissionMeta = {
 };
 
 /**
- * All 46 permissions. The key order follows the table (area, then action).
+ * All 47 permissions. The key order follows the table (area, then action).
  * A permission with neither `minPlan` nor `addon` is available to every plan.
  */
 export const PERMISSIONS = {
@@ -37,6 +37,7 @@ export const PERMISSIONS = {
   'calendar.view_all_staff': {},
   'clients.create': {},
   'clients.edit': {},
+  'clients.erase': {},
   'clients.export': {},
   'clients.view': {},
   'clients.view_contact': {},

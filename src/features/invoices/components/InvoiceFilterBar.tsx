@@ -39,7 +39,7 @@ export function InvoiceFilterBar({
   const { business } = useCurrentScope();
   const { isDesktop } = useBreakpoint();
   const branches = useMemo(() => business?.branches ?? [], [business]);
-  const client = useClient(businessId, filters.clientId ?? null, false);
+  const client = useClient(businessId, filters.clientId ?? null);
   const zone = branches.find((branch) => branch.id === filters.branchId)?.timezone ?? 'UTC';
 
   const branchOptions = useMemo(

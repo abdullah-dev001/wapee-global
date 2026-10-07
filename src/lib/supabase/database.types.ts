@@ -277,6 +277,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -965,6 +972,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "client_consents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       client_package_cancellations: {
@@ -1131,6 +1145,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "client_packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_packages_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
@@ -1160,6 +1181,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           email: string | null
+          erased_at: string | null
           first_branch_id: string | null
           full_name: string
           id: string
@@ -1174,6 +1196,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           email?: string | null
+          erased_at?: string | null
           first_branch_id?: string | null
           full_name: string
           id?: string
@@ -1188,6 +1211,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           email?: string | null
+          erased_at?: string | null
           first_branch_id?: string | null
           full_name?: string
           id?: string
@@ -1674,6 +1698,84 @@ export type Database = {
           },
         ]
       }
+      data_requests: {
+        Row: {
+          business_id: string
+          created_at: string
+          email_hash: string | null
+          id: string
+          kind: string
+          requester_email: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email_hash?: string | null
+          id?: string
+          kind: string
+          requester_email?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          status?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email_hash?: string | null
+          id?: string
+          kind?: string
+          requester_email?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      erasure_log: {
+        Row: {
+          business_id: string
+          counts: Json
+          erased_at: string
+          id: string
+          requested_by: string | null
+        }
+        Insert: {
+          business_id: string
+          counts?: Json
+          erased_at?: string
+          id?: string
+          requested_by?: string | null
+        }
+        Update: {
+          business_id?: string
+          counts?: Json
+          erased_at?: string
+          id?: string
+          requested_by?: string | null
+        }
+        Relationships: []
+      }
       files: {
         Row: {
           appointment_id: string | null
@@ -1751,6 +1853,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       form_requests: {
@@ -1823,6 +1932,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
             referencedColumns: ["id"]
           },
           {
@@ -2405,6 +2521,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       member_role_assignments: {
@@ -2572,6 +2695,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
             referencedColumns: ["id"]
           },
           {
@@ -3487,6 +3617,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "review_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       reviews: {
@@ -3580,6 +3717,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
             referencedColumns: ["id"]
           },
           {
@@ -4157,6 +4301,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "signed_consents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "signed_consents_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: true
@@ -4695,6 +4846,36 @@ export type Database = {
           },
         ]
       }
+      storage_cleanup_queue: {
+        Row: {
+          bucket: string
+          business_id: string
+          client_id: string | null
+          created_at: string
+          done_at: string | null
+          id: string
+          path: string
+        }
+        Insert: {
+          bucket: string
+          business_id: string
+          client_id?: string | null
+          created_at?: string
+          done_at?: string | null
+          id?: string
+          path: string
+        }
+        Update: {
+          bucket?: string
+          business_id?: string
+          client_id?: string | null
+          created_at?: string
+          done_at?: string | null
+          id?: string
+          path?: string
+        }
+        Relationships: []
+      }
       website_sections: {
         Row: {
           business_id: string
@@ -4894,7 +5075,76 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clients_v: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          erased_at: string | null
+          first_branch_id: string | null
+          full_name: string | null
+          id: string | null
+          notes: string | null
+          phone_e164: string | null
+          source: Database["public"]["Enums"]["booking_source"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: never
+          erased_at?: string | null
+          first_branch_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          notes?: string | null
+          phone_e164?: never
+          source?: Database["public"]["Enums"]["booking_source"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: never
+          erased_at?: string | null
+          first_branch_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          notes?: string | null
+          phone_e164?: never
+          source?: Database["public"]["Enums"]["booking_source"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_first_branch_id_fkey"
+            columns: ["first_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
@@ -5195,6 +5445,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      client_has_live_appt: { Args: { p_client_id: string }; Returns: boolean }
       client_in_scope: {
         Args: {
           p_business_id: string
@@ -5235,6 +5486,7 @@ export type Database = {
           w_start: string
         }[]
       }
+      contact_business_ids: { Args: never; Returns: string[] }
       covers_every_branch: {
         Args: { p_business_id: string; p_permission: string }
         Returns: boolean
@@ -5440,6 +5692,22 @@ export type Database = {
         Returns: boolean
       }
       forms_read_access: { Args: { p_business_id: string }; Returns: boolean }
+      gdpr_allowed: {
+        Args: { p_business_id: string; p_permission: string }
+        Returns: boolean
+      }
+      gdpr_business_erase_check: {
+        Args: { p_business_id: string; p_confirm_name: string }
+        Returns: Json
+      }
+      gdpr_erase_business_commit: {
+        Args: { p_business_id: string; p_confirm_name: string }
+        Returns: Json
+      }
+      gdpr_erase_client: { Args: { p_client_id: string }; Returns: Json }
+      gdpr_erasing: { Args: never; Returns: boolean }
+      gdpr_export_client: { Args: { p_client_id: string }; Returns: Json }
+      gdpr_storage_done: { Args: { p_ids: string[] }; Returns: number }
       get_advanced_report: {
         Args: {
           p_anchor?: string
@@ -5675,6 +5943,10 @@ export type Database = {
           used: number
         }[]
       }
+      list_data_requests: {
+        Args: { p_business_id: string; p_status?: string }
+        Returns: Json
+      }
       list_invoices: {
         Args: {
           p_branch_id?: string
@@ -5726,6 +5998,7 @@ export type Database = {
       mask_email: { Args: { p_email: string }; Returns: string }
       mask_phone: { Args: { p_phone: string }; Returns: string }
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
+      member_business_ids: { Args: never; Returns: string[] }
       message_recipient_hash: { Args: { p_address: string }; Returns: string }
       my_features: { Args: { p_business_id: string }; Returns: Json }
       my_grants: {
@@ -5841,6 +6114,8 @@ export type Database = {
       outbox_seal: { Args: { p_token: string }; Returns: string }
       outbox_unseal: { Args: { p_sealed: string }; Returns: string }
       outbox_worker_authorize: { Args: { p_token: string }; Returns: boolean }
+      own_client_ids: { Args: never; Returns: string[] }
+      own_staff_ids: { Args: never; Returns: string[] }
       package_visible: {
         Args: {
           p_branch_id: string
@@ -5852,6 +6127,18 @@ export type Database = {
       perm_all_branches: {
         Args: { p_business_id: string; p_permission: string }
         Returns: boolean
+      }
+      perm_branch_ids: {
+        Args: { p_branch_scope_only: boolean; p_permission: string }
+        Returns: string[]
+      }
+      perm_business_ids: {
+        Args: { p_branch_scope_only: boolean; p_permission: string }
+        Returns: string[]
+      }
+      perm_cover_business_ids: {
+        Args: { p_permission: string }
+        Returns: string[]
       }
       pick_staff_for_slot: {
         Args: {
@@ -5906,6 +6193,10 @@ export type Database = {
           p_staff_id?: string
           p_starts_at: string
         }
+        Returns: Json
+      }
+      portal_create_data_request: {
+        Args: { p_kind: string; p_session: string }
         Returns: Json
       }
       portal_ctx: { Args: { p_session: string }; Returns: Json }
@@ -6091,6 +6382,10 @@ export type Database = {
         Args: { p_appointment_id: string; p_new_token: string }
         Returns: Json
       }
+      resolve_data_request: {
+        Args: { p_id: string; p_outcome: string }
+        Returns: Json
+      }
       resolve_manage_token: { Args: { p_token: string }; Returns: string }
       restore_branch: { Args: { p_branch_id: string }; Returns: Json }
       reverse_payment: {
@@ -6185,6 +6480,7 @@ export type Database = {
         Args: { p_scope: Database["public"]["Enums"]["permission_scope"] }
         Returns: number
       }
+      scoped_client_ids: { Args: { p_permission: string }; Returns: string[] }
       set_addon: {
         Args: { p_addon: string; p_business_id: string; p_enabled: boolean }
         Returns: Json

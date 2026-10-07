@@ -1,0 +1,87 @@
+# CI for Wapee. STATUS: written, not run (no GitHub runner was available when this was authored).
+#
+# Jobs
+#   checks    typecheck, lint, prettier, unit tests. Needs no secrets.
+#   database  `supabase start` (Docker is available on GitHub-hosted runners) applies every migration to a fresh
+#             local Postgres, then runs all SQL suites and the concurrency scripts against it. Needs no secrets.
+#   smoke     `npm run smoke:public` against a TEST Supabase project. Runs only when the repository secrets below
+#             exist; otherwise the job is skipped. NEVER point it at the dev project that holds real data:
+#             it creates bookings.
+#
+# Repository secrets to add later (Settings > Secrets and variables > Actions), all for the TEST project:
+#   SMOKE_SUPABASE_URL        https://<test-ref>.supabase.co
+#   SMOKE_SUPABASE_ANON_KEY   its publishable (anon) key. Never the service-role key.
+#   SMOKE_BUSINESS_SLUG       slug of a seeded business with online booking on
+#   SMOKE_SERVICE_ID          id of one of its bookable services
+# No other secret is needed. Edge Function secrets live in Supabase, not here.
+name: ci
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # An empty flag makes `supabase db query` and the suite runners target the LOCAL database.
+      WAPEE_DB_FLAG: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start the local stack and apply every migration
+        run: supabase start -x studio,imgproxy,inbucket,edge-runtime,vector,logflare
+      - name: SQL suites (01-05 pgTAP, 06-29 plain SQL) and concurrency scripts
+        run: scripts/run-sql-suites.sh
+      - name: Stop
+        if: always()
+        run: supabase stop --no-backup
+
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: checks
+    # Secrets cannot be tested in `if:` directly; the step below skips itself when they are missing.
+    env:
+      SMOKE_SUPABASE_URL: ${{ secrets.SMOKE_SUPABASE_URL }}
+      SMOKE_SUPABASE_ANON_KEY: ${{ secrets.SMOKE_SUPABASE_ANON_KEY }}
+      SMOKE_BUSINESS_SLUG: ${{ secrets.SMOKE_BUSINESS_SLUG }}
+      SMOKE_SERVICE_ID: ${{ secrets.SMOKE_SERVICE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: smoke:public (skipped without the SMOKE_* secrets)
+        run: |
+          if [ -z "$SMOKE_SUPABASE_URL" ] || [ -z "$SMOKE_SUPABASE_ANON_KEY" ]; then
+            echo "SMOKE_* secrets are not set: skipping."
+            exit 0
+          fi
+          npm run smoke:public

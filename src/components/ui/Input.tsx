@@ -115,7 +115,7 @@ export function Input({
       </View>
 
       {hasError ? (
-        <Text variant="helper" color="error" nativeID={messageId} role="alert">
+        <Text variant="helper" color="errorText" nativeID={messageId} role="alert">
           {error}
         </Text>
       ) : hint ? (

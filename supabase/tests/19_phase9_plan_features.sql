@@ -197,7 +197,7 @@ select pg_temp.add_member('biza', 'owner2', 'receptionist', 'brancha');
 -- ===========================================================================
 select pg_temp.chk('default roles intact: owner/manager/receptionist/staff permission counts',
   (select string_agg(r.key || ':' || (select count(*) from public.role_permissions rp where rp.role_id = r.id), ',' order by r.key)
-   from public.roles r where r.business_id is null), 'manager:39,owner:46,receptionist:20,staff:12');
+   from public.roles r where r.business_id is null), 'manager:39,owner:47,receptionist:20,staff:12');
 
 do $$
 declare r jsonb; v_role uuid; v_n0 int; v_snap text;
@@ -241,7 +241,7 @@ begin
   insert into ids values ('role_clone', (r->>'role_id')::uuid);
   r := pg_temp.as_('owner', format($q$select public.create_custom_role(%L, 'Owner Copy', null, %L)$q$, pg_temp.id('biza'), pg_temp.rid('owner')));
   perform pg_temp.chk('clone owner ok, billing stripped and reported', (r->>'ok') || '/' || (r->'stripped'->>0), 'true/settings.billing');
-  perform pg_temp.chk('clone owner: 45 permissions, no billing', (select count(*)::text || '/' || bool_or(permission = 'settings.billing')::text from public.role_permissions where role_id = (r->>'role_id')::uuid), '45/false');
+  perform pg_temp.chk('clone owner: 46 permissions, no billing', (select count(*)::text || '/' || bool_or(permission = 'settings.billing')::text from public.role_permissions where role_id = (r->>'role_id')::uuid), '46/false');
   insert into ids values ('role_ownercopy', (r->>'role_id')::uuid);
   -- explicit permissions override the clone source
   r := pg_temp.as_('owner', format($q$select public.create_custom_role(%L, 'Override Copy', %L::jsonb, %L)$q$, pg_temp.id('biza'), '[{"permission":"clients.view","scope":"own"}]', pg_temp.rid('manager')));
@@ -252,7 +252,7 @@ begin
   perform pg_temp.chk('cloning another business''s custom role -> not_found',
     pg_temp.as_('owner', format($q$select public.create_custom_role(%L, 'Steal', null, %L)$q$, pg_temp.id('biza'),
       (select id from public.roles where business_id = pg_temp.id('bizb') and name = 'B Role')))->>'code', 'not_found');
-  perform pg_temp.chk('system role permissions unchanged after all this', (select count(*)::text from public.role_permissions where role_id = pg_temp.rid('owner')), '46');
+  perform pg_temp.chk('system role permissions unchanged after all this', (select count(*)::text from public.role_permissions where role_id = pg_temp.rid('owner')), '47');
 end $$;
 
 -- the delegate: roles.manage (branch) + appointments.view (branch) + clients.view (own), at branch A only
@@ -1584,7 +1584,7 @@ begin
   perform pg_temp.chk('anon holds nothing on them', (select count(*)::text from information_schema.role_table_grants where grantee = 'anon' and table_schema = 'public' and table_name in ('commission_rules','commission_lines','commission_entries','report_schedules')), '0');
   perform pg_temp.chk('anon cannot read them', pg_temp.as_anon('select to_jsonb(count(*)) from public.report_schedules')->>'state', '42501');
   perform pg_temp.chk('pg_cron job report-schedules exists, every 15 minutes', (select schedule from cron.job where jobname = 'report-schedules'), '*/15 * * * *');
-  perform pg_temp.chk('the 46-permission catalogue is untouched', (select count(*)::text from public.permissions), '46');
+  perform pg_temp.chk('the 47-permission catalogue is untouched (46 + clients.erase)', (select count(*)::text from public.permissions), '47');
   perform pg_temp.chk('my_permissions_version: a member sees their own counter, a stranger gets 0', (pg_temp.as_q('staffa', format($q$select public.my_permissions_version(%L) > 0$q$, pg_temp.id('biza')))) || '/' || pg_temp.as_q('ownerb', format($q$select public.my_permissions_version(%L)::text$q$, pg_temp.id('biza'))), 'true/0');
   perform pg_temp.chk('list_roles: owner sees default + custom roles with member counts', (select (jsonb_array_length(x->'roles') > 4)::text from (select pg_temp.as_('owner', format($q$select public.list_roles(%L)$q$, pg_temp.id('biza'))) x) q), 'true');
   perform pg_temp.chk('list_roles: staff forbidden', pg_temp.as_('staffa', format($q$select public.list_roles(%L)$q$, pg_temp.id('biza')))->>'code', 'forbidden');

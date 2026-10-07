@@ -22,7 +22,7 @@ trap 'rm -rf "$TMP"' EXIT
 q() {
   local out i
   for i in 1 2 3 4 5; do
-    out="$(supabase db query --linked -f "$1" 2>&1 | grep -v "^Initialising")"
+    out="$(supabase db query ${WAPEE_DB_FLAG---linked} -f "$1" 2>&1 | grep -v "^Initialising")"
     case "$out" in *LegacyDbConfigConnectTempRoleError*) sleep 0.5; continue;; esac
     break
   done

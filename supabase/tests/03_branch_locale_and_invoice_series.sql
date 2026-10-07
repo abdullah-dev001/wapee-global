@@ -95,6 +95,8 @@ select throws_ok(
   'two branches cannot share an invoice prefix'
 );
 
+-- suggest_invoice_prefix is internal since Phase 11A (not executable by API roles): check it as the owner role.
+reset role;
 select is(
   public.suggest_invoice_prefix(
     (select id from public.businesses where slug = 'clinica-ba'), 'Palermo Two'),
@@ -108,6 +110,7 @@ select is(
   'BR',
   'a name with no letters falls back to BR'
 );
+set local role authenticated;
 
 -- ---------------------------------------------------------------------------
 -- The prefix is locked once numbering has started

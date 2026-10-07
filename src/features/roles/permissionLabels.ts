@@ -16,6 +16,7 @@ export const PERMISSION_LABEL_KEYS = {
   'clients.edit': 'roles.perm.clients_edit',
   'clients.view_contact': 'roles.perm.clients_view_contact',
   'clients.view_sensitive': 'roles.perm.clients_view_sensitive',
+  'clients.erase': 'roles.perm.clients_erase',
   'clients.export': 'roles.perm.clients_export',
   'services.manage': 'roles.perm.services_manage',
   'staff.view': 'roles.perm.staff_view',

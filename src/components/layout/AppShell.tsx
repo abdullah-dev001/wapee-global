@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
@@ -21,6 +22,7 @@ export type AppShellProps = {
  * - desktop (>=1024): fixed 240px sidebar + 64px header
  */
 export function AppShell({ children }: AppShellProps) {
+  const { t } = useTranslation();
   const { isMobile, isDesktop } = useBreakpoint();
   const bannerVisible = useTrialBannerVisible();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -73,7 +75,7 @@ export function AppShell({ children }: AppShellProps) {
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={closeMenu}
-            accessibilityLabel="Close menu"
+            accessibilityLabel={t('nav.closeMenu')}
           />
           <View style={[styles.sidebarOverlay, shadow('lg')]}>
             <Sidebar onNavigate={closeMenu} onClose={closeMenu} />

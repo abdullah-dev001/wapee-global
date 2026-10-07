@@ -10,7 +10,7 @@ to every feature.
 ## Business rules
 - Permission = `area.action` + scope (**own / branch / all**), product doc §9.
 - A member holds a role **per branch**; `branch_id = null` means every branch.
-- Four system roles, seeded and undeletable: Owner (46 perms, `all`), **Manager (39, `branch`)**, Receptionist (20, `branch`), Staff (10, `own`).
+- Four system roles, seeded and undeletable: Owner (47 perms, `all`; `clients.erase` is Owner only), **Manager (39, `branch`)**, Receptionist (20, `branch`), Staff (10, `own`).
 - Custom roles (Phase 9) carry a `business_id`; system roles have `business_id IS NULL` and cannot be edited by tenants.
 - **Nobody may grant a permission they do not hold.** The only exemption is the founding Owner — the first role assignment in a brand-new business — because the signing-up user holds nothing at that moment.
 - A business always keeps at least one active Owner.
@@ -23,7 +23,7 @@ to every feature.
 ## Files
 | Path | Purpose |
 |---|---|
-| src/config/permissions.ts | The 46-permission catalogue mirroring the table: `PermissionKey` type, `minPlan`, `addon`, `PLAN_ORDER`, `planAtLeast()` |
+| src/config/permissions.ts | The 47-permission catalogue mirroring the table: `PermissionKey` type, `minPlan`, `addon`, `PLAN_ORDER`, `planAtLeast()` |
 | src/lib/permissions/can.ts | Pure logic: `hasPermission()`, `hasFeature()`, `can()`, `ALWAYS_ALLOWED_WHEN_INACTIVE` |
 | src/lib/permissions/types.ts | `Grant`, `GrantSet`, `PermissionScope` |
 | src/lib/permissions/useGrants.ts | `my_grants()` query, `useGrantSet()`, `isBusinessActive()`, `grantKeys` |
@@ -65,7 +65,7 @@ than reading `roles.name`.
 
 ## Verification (2026-10-02)
 `my_grants()` checked against the live database:
-- Agrees with `has_permission()` for **all 46 permissions** for an Owner (SQL cross-check, zero mismatches).
+- Agrees with `has_permission()` for **all 46 original permissions** for an Owner (SQL cross-check, zero mismatches).
 - Returns **0 rows** for a non-member and for `anon`.
 
 The real `can()` / `hasFeature()` / `navItems` run against real grant rows pulled
@@ -90,6 +90,7 @@ executed from the scratchpad rather than committed as a suite — see TODO below
 - Super admin 2FA: enforced in Phase 8A as an `aal2` JWT check in every admin RPC; TOTP enrolment still needs enabling + UI (see plans-super-admin.md).
 
 ## Changelog
+- 2026-10-07: Phase 11A: new permission `clients.erase` (47th; Owner only, `all` scope; Manager / Receptionist / Staff unchanged at 39 / 20 / 12). Label `roles.perm.clients_erase`.
 - 2026-10-07: Phase 10B: Staff seed gains `files.upload` at own scope (`20261014090000`); `forms.manage` stays Owner/Manager; signing a form needs `appointments.edit`; the matrix hides `files.*` / `forms.*` while their add-on is off.
 - 2026-10-07: Phase 10A: Staff seed gains `packages.deduct_session` at own scope (migration `20261013100000`); the permission matrix HIDES add-on permissions (`packages.*`, `inventory.*`, files, forms, portal) while their add-on is off (values in the draft are kept). Nav items Packages (`packages.sell`) and Inventory (`inventory.view`).
 - 2026-10-07: Phase 9B: roles screen, scope-aware invite picker, branch-scope RLS fixes. See plan-features-ui.md.

@@ -13,6 +13,9 @@
     "cancel": "Cancel",
     "save": "Save",
     "close": "Close",
+    "closePanel": "Close panel",
+    "closeDialog": "Close dialog",
+    "dismiss": "Dismiss",
     "done": "Done",
     "search": "Search",
     "clear": "Clear",
@@ -888,6 +891,24 @@
     "duplicatePhone": "This phone number already belongs to {{name}}.",
     "viewExisting": "View existing client",
     "contactHidden": "Contact details hidden",
+    "erasedBadge": "Erased",
+    "data": {
+      "export": "Export data",
+      "exported": "Client data exported",
+      "erase": "Erase personal data",
+      "eraseTitle": "Erase this client's personal data?",
+      "eraseMessage": "Their name, phone, email, notes, answers, signed forms, review text, messages and photos are permanently removed. Invoices and payments are kept with the amounts, dates and numbers, without their name. This cannot be undone.",
+      "erased": "Personal data erased",
+      "erasedStoragePending": "Personal data erased. Some files could not be removed yet: erase again to finish.",
+      "erasedProfile": "This client's personal data was erased. Their invoices and payments are kept without a name.",
+      "errors": {
+        "has_future_appointment": "This client has an upcoming appointment. Cancel or complete it first.",
+        "has_draft_invoice": "This client has a draft invoice. Issue or discard it first.",
+        "not_found": "You can't do this for this client.",
+        "forbidden": "You can't do this for this client.",
+        "unknown": "That didn't work. Try again."
+      }
+    },
     "profile": {
       "contact": "Contact",
       "notes": "Notes",
@@ -2026,6 +2047,7 @@
       "clients_view_contact": "See client phone and email",
       "clients_view_sensitive": "See sensitive client fields",
       "clients_export": "Export clients",
+      "clients_erase": "Permanently erase a client's personal data",
       "services_manage": "Manage services and prices",
       "staff_view": "View the team",
       "staff_manage": "Manage staff profiles",

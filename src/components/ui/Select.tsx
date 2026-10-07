@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Keyboard, Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -52,6 +53,7 @@ export function Select<TValue extends string = string>({
   title,
   testID,
 }: SelectProps<TValue>) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   // Stable identity: useOverlayDismiss keeps onDismiss in its effect deps, so a
   // fresh arrow each render would tear the effect down and re-run it forever
@@ -136,7 +138,11 @@ export function Select<TValue extends string = string>({
         statusBarTranslucent
       >
         <View style={styles.overlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close" />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={close}
+            accessibilityLabel={t('actions.close')}
+          />
           <View style={[styles.sheet, shadow('lg'), { paddingBottom: insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <Text variant="dialogTitle">{title ?? label ?? ''}</Text>

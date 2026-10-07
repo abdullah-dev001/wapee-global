@@ -85,8 +85,8 @@ select ok(
   'owner A is NOT a member of business B'
 );
 select ok(
-  public.business_is_active('aaaaaaaa-0000-0000-0000-000000000001'),
-  'a trialing business inside its trial window is active'
+  public.can('aaaaaaaa-0000-0000-0000-000000000001', null, 'settings.billing'),
+  'a trialing business inside its trial window is active (can() requires an active business)'
 );
 select ok(
   public.has_permission('aaaaaaaa-0000-0000-0000-000000000001', null, 'settings.billing'),

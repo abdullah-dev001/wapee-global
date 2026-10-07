@@ -140,7 +140,11 @@ export function PhoneInput({
         statusBarTranslucent
       >
         <View style={styles.overlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close" />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={close}
+            accessibilityLabel={t('actions.close')}
+          />
           <View style={[styles.sheet, shadow('lg'), { paddingBottom: insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <Text variant="dialogTitle">{t('phoneInput.countryCode')}</Text>

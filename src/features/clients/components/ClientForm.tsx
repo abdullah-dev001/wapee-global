@@ -92,7 +92,11 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
           <Text variant="helper" color="error">
             {t('clients.duplicatePhone', { name: duplicateOf.name })}
           </Text>
-          <Pressable onPress={() => onOpenExisting(duplicateOf.id)}>
+          <Pressable
+            onPress={() => onOpenExisting(duplicateOf.id)}
+            accessibilityRole="link"
+            hitSlop={12}
+          >
             <Text variant="helper" color="primary">
               {t('clients.viewExisting')}
             </Text>
