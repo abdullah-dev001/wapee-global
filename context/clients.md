@@ -137,6 +137,7 @@ Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
   other mutation in Phase 4.
 
 ## Changelog
+- 2026-10-07: Phase 10B: the profile shows Files and photos (consent, gallery, upload) and Forms (sign here, send link, signed copies, void) sections while the add-ons are on.
 - 2026-10-07: Phase 10A: the profile shows a Packages section (`ClientPackagesSection`: balance, state, expiry) when the add-on is on and the member holds a packages permission.
 - 2026-10-05 (UI polish): layout fixes, no behaviour change. The dead
   vertical gap above the table was `PageContainer`'s `flex: 1` (fixed in the

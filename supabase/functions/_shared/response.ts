@@ -57,6 +57,10 @@ export type PublicErrorCode =
   // Nothing public lives here. ONE code for "no such slug", "unpublished",
   // "inactive business", "widget key/origin not allowed" so none can be told apart.
   | 'not_found'
+  // --- Forms & Consent signing page ---
+  // the signature is missing / not a valid drawing
+  | 'signature_required'
+  | 'invalid_signature'
   // something broke on our side
   | 'server_error';
 
@@ -102,6 +106,8 @@ function statusFor(code: PublicErrorCode): number {
     case 'missing_answer':
     case 'invalid_phone':
     case 'invalid_name':
+    case 'signature_required':
+    case 'invalid_signature':
     case 'too_fast':
       return 400;
     case 'not_bookable':

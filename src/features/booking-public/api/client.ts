@@ -20,7 +20,8 @@ type FunctionName =
   | 'get_website'
   | 'get_review_request'
   | 'submit_review'
-  | 'validate_widget';
+  | 'validate_widget'
+  | 'sign_form';
 
 type FailureBody = { ok: false; code?: string; field_id?: string };
 type SuccessBody<T> = { ok: true; data: T };
@@ -89,6 +90,8 @@ const KNOWN_CODES: readonly PublicErrorCode[] = [
   'cancel_window_passed',
   'not_cancellable',
   'not_found',
+  'signature_required',
+  'invalid_signature',
 ];
 
 function toKnownCode(code: string | undefined): PublicErrorCode {

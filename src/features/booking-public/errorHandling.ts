@@ -45,6 +45,8 @@ export function actionFor(
     case 'invalid_phone':
     case 'invalid_name':
     case 'email_required':
+    case 'signature_required':
+    case 'invalid_signature':
       return { kind: 'highlight_field', fieldId: opts?.fieldId ?? null, message: 'invalid' };
     case 'not_bookable':
     case 'not_found':

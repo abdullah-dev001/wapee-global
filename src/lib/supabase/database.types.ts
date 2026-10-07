@@ -928,6 +928,45 @@ export type Database = {
           },
         ]
       }
+      client_consents: {
+        Row: {
+          business_id: string
+          client_id: string
+          photo_consent: boolean
+          recorded_at: string
+          recorded_by: string | null
+        }
+        Insert: {
+          business_id: string
+          client_id: string
+          photo_consent?: boolean
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Update: {
+          business_id?: string
+          client_id?: string
+          photo_consent?: boolean
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_consents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_consents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_package_cancellations: {
         Row: {
           business_id: string
@@ -1631,6 +1670,310 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      files: {
+        Row: {
+          appointment_id: string | null
+          business_id: string
+          category: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          kind: string
+          mime_type: string
+          original_name: string
+          ready_at: string | null
+          size_bytes: number
+          status: string
+          storage_path: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          business_id: string
+          category: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          kind: string
+          mime_type: string
+          original_name: string
+          ready_at?: string | null
+          size_bytes: number
+          status?: string
+          storage_path: string
+        }
+        Update: {
+          appointment_id?: string | null
+          business_id?: string
+          category?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          kind?: string
+          mime_type?: string
+          original_name?: string
+          ready_at?: string | null
+          size_bytes?: number
+          status?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_requests: {
+        Row: {
+          appointment_id: string | null
+          branch_id: string
+          business_id: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          template_version_id: string
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          branch_id: string
+          business_id: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          revoked_at?: string | null
+          template_version_id: string
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          branch_id?: string
+          business_id?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          template_version_id?: string
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_requests_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_requests_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "form_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_template_services: {
+        Row: {
+          business_id: string
+          service_id: string
+          template_id: string
+        }
+        Insert: {
+          business_id: string
+          service_id: string
+          template_id: string
+        }
+        Update: {
+          business_id?: string
+          service_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_template_services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_template_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_template_services_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_template_versions: {
+        Row: {
+          body: Json
+          business_id: string
+          created_at: string
+          created_by: string | null
+          digest: string
+          fields: Json
+          id: string
+          kind: string
+          requires_signature: boolean
+          template_id: string
+          title: string
+          version: number
+        }
+        Insert: {
+          body?: Json
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          digest: string
+          fields?: Json
+          id?: string
+          kind: string
+          requires_signature?: boolean
+          template_id: string
+          title: string
+          version: number
+        }
+        Update: {
+          body?: Json
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          digest?: string
+          fields?: Json
+          id?: string
+          kind?: string
+          requires_signature?: boolean
+          template_id?: string
+          title?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_template_versions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          kind: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -3608,6 +3951,149 @@ export type Database = {
           },
         ]
       }
+      signed_consent_voids: {
+        Row: {
+          business_id: string
+          reason: string
+          signed_consent_id: string
+          voided_at: string
+          voided_by: string | null
+        }
+        Insert: {
+          business_id: string
+          reason: string
+          signed_consent_id: string
+          voided_at?: string
+          voided_by?: string | null
+        }
+        Update: {
+          business_id?: string
+          reason?: string
+          signed_consent_id?: string
+          voided_at?: string
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signed_consent_voids_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_consent_voids_signed_consent_id_fkey"
+            columns: ["signed_consent_id"]
+            isOneToOne: true
+            referencedRelation: "signed_consents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signed_consents: {
+        Row: {
+          answers: Json
+          appointment_id: string | null
+          branch_id: string
+          business_id: string
+          captured_by: string | null
+          client_id: string
+          id: string
+          ip_hash: string | null
+          request_id: string | null
+          signature: Json | null
+          signed_at: string
+          signed_via: string
+          signer_name: string
+          template_id: string
+          template_version_id: string
+        }
+        Insert: {
+          answers?: Json
+          appointment_id?: string | null
+          branch_id: string
+          business_id: string
+          captured_by?: string | null
+          client_id: string
+          id?: string
+          ip_hash?: string | null
+          request_id?: string | null
+          signature?: Json | null
+          signed_at?: string
+          signed_via: string
+          signer_name: string
+          template_id: string
+          template_version_id: string
+        }
+        Update: {
+          answers?: Json
+          appointment_id?: string | null
+          branch_id?: string
+          business_id?: string
+          captured_by?: string | null
+          client_id?: string
+          id?: string
+          ip_hash?: string | null
+          request_id?: string | null
+          signature?: Json | null
+          signed_at?: string
+          signed_via?: string
+          signer_name?: string
+          template_id?: string
+          template_version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signed_consents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_consents_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_consents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_consents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_consents_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "form_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_consents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_consents_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "form_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_country_rates: {
         Row: {
           country_code: string
@@ -4468,6 +4954,7 @@ export type Database = {
           ws: string
         }[]
       }
+      appointment_forms: { Args: { p_appointment_id: string }; Returns: Json }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       archive_branch: { Args: { p_branch_id: string }; Returns: Json }
       assign_member_role: {
@@ -4615,6 +5102,14 @@ export type Database = {
         Args: { p_older_than?: string }
         Returns: number
       }
+      client_access: {
+        Args: {
+          p_business_id: string
+          p_client_id: string
+          p_permission: string
+        }
+        Returns: boolean
+      }
       client_in_scope: {
         Args: {
           p_business_id: string
@@ -4733,6 +5228,15 @@ export type Database = {
         }
         Returns: Json
       }
+      create_form_request: {
+        Args: {
+          p_appointment_id: string
+          p_client_id: string
+          p_send?: boolean
+          p_template_id: string
+        }
+        Returns: Json
+      }
       create_invoice_draft: {
         Args: {
           p_appointment_id?: string
@@ -4745,6 +5249,21 @@ export type Database = {
       }
       create_review_request_internal: {
         Args: { p_appointment_id: string }
+        Returns: Json
+      }
+      create_signed_consent: {
+        Args: {
+          p_answers: Json
+          p_appointment_id: string
+          p_by: string
+          p_client_id: string
+          p_ip_hash: string
+          p_request_id: string
+          p_signature: Json
+          p_signer_name: string
+          p_version_id: string
+          p_via: string
+        }
         Returns: Json
       }
       deduct_session: {
@@ -4763,6 +5282,11 @@ export type Database = {
         Args: { p_replacement_role_id?: string; p_role_id: string }
         Returns: Json
       }
+      delete_file: {
+        Args: { p_file_id: string; p_reason?: string }
+        Returns: Json
+      }
+      delete_form_template: { Args: { p_template_id: string }; Returns: Json }
       delete_package: { Args: { p_package_id: string }; Returns: Json }
       delete_product: { Args: { p_product_id: string }; Returns: Json }
       delete_report_schedule: { Args: { p_schedule_id: string }; Returns: Json }
@@ -4789,10 +5313,48 @@ export type Database = {
         Args: { p_business_id: string; p_key: string }
         Returns: Json
       }
+      file_visible: {
+        Args: { p_business_id: string; p_client_id: string }
+        Returns: boolean
+      }
+      files_access: {
+        Args: { p_file_ids: string[] }
+        Returns: {
+          file_id: string
+          mime: string
+          name: string
+          path: string
+        }[]
+      }
+      files_finalize: {
+        Args: {
+          p_detected_mime: string
+          p_file_id: string
+          p_size: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      files_prepare_upload: {
+        Args: {
+          p_appointment_id: string
+          p_category: string
+          p_client_id: string
+          p_mime: string
+          p_original_name: string
+          p_size: number
+        }
+        Returns: Json
+      }
       format_document_number: {
         Args: { p_credit: boolean; p_prefix: string; p_seq: number }
         Returns: string
       }
+      forms_can_sign: {
+        Args: { p_business_id: string; p_client_id: string }
+        Returns: boolean
+      }
+      forms_read_access: { Args: { p_business_id: string }; Returns: boolean }
       get_advanced_report: {
         Args: {
           p_anchor?: string
@@ -4833,6 +5395,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_client_files_state: { Args: { p_client_id: string }; Returns: Json }
       get_combined_overview: {
         Args: { p_business_id: string; p_from: string; p_to: string }
         Returns: Json
@@ -4847,6 +5410,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_form_request: { Args: { p_token: string }; Returns: Json }
       get_free_slots: {
         Args: {
           p_branch_id: string
@@ -4867,6 +5431,7 @@ export type Database = {
       }
       get_invoice_print_data: { Args: { p_invoice_id: string }; Returns: Json }
       get_review_request: { Args: { p_token: string }; Returns: Json }
+      get_signed_consent: { Args: { p_id: string }; Returns: Json }
       get_website_public: { Args: { p_slug: string }; Returns: Json }
       get_widget_frame_ancestors: {
         Args: { p_slug: string }
@@ -4991,6 +5556,16 @@ export type Database = {
         }
         Returns: Json
       }
+      list_client_files: {
+        Args: {
+          p_appointment_id?: string
+          p_before_at?: string
+          p_before_id?: string
+          p_client_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_client_packages: {
         Args: {
           p_client_id: string
@@ -5049,6 +5624,10 @@ export type Database = {
         Returns: Json
       }
       list_roles: { Args: { p_business_id: string }; Returns: Json }
+      list_signed_consents: {
+        Args: { p_appointment_id?: string; p_client_id: string }
+        Returns: Json
+      }
       low_stock_count: {
         Args: { p_branch_id?: string; p_business_id: string }
         Returns: number
@@ -5220,6 +5799,17 @@ export type Database = {
         Args: { p_outbox: string; p_token_ids: string[] }
         Returns: number
       }
+      record_signed_consent: {
+        Args: {
+          p_answers: Json
+          p_appointment_id: string
+          p_client_id: string
+          p_signature: Json
+          p_signer_name: string
+          p_template_id: string
+        }
+        Returns: Json
+      }
       register_push_token: {
         Args: { p_platform: string; p_token: string }
         Returns: Json
@@ -5340,6 +5930,20 @@ export type Database = {
         Args: { p_branch_id: string; p_settings: Json }
         Returns: Json
       }
+      save_form_template: {
+        Args: {
+          p_body: Json
+          p_business_id: string
+          p_fields: Json
+          p_is_active?: boolean
+          p_kind: string
+          p_requires_signature: boolean
+          p_service_ids: string[]
+          p_template_id: string
+          p_title: string
+        }
+        Returns: Json
+      }
       save_package: {
         Args: {
           p_bonus_sessions: number
@@ -5428,6 +6032,10 @@ export type Database = {
         Args: { p_allow_negative_stock: boolean; p_branch_id: string }
         Returns: Json
       }
+      set_photo_consent: {
+        Args: { p_client_id: string; p_value: boolean }
+        Returns: Json
+      }
       set_plan_prices: {
         Args: {
           p_active?: boolean
@@ -5511,6 +6119,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      submit_form_request: {
+        Args: {
+          p_answers: Json
+          p_ip_hash?: string
+          p_signature: Json
+          p_signer_name: string
+          p_token: string
+        }
+        Returns: Json
+      }
       submit_review: {
         Args: { p_comment?: string; p_rating: number; p_token: string }
         Returns: Json
@@ -5577,8 +6195,22 @@ export type Database = {
         Args: { p_business_id: string; p_permission: string; p_user_id: string }
         Returns: boolean
       }
+      validate_form_answers: {
+        Args: { p_answers: Json; p_fields: Json }
+        Returns: Json
+      }
+      validate_form_body: { Args: { p_body: Json }; Returns: Json }
+      validate_form_fields: { Args: { p_fields: Json }; Returns: Json }
+      validate_signature: {
+        Args: { p_required: boolean; p_sig: Json }
+        Returns: Json
+      }
       validate_widget_origin: {
         Args: { p_origin: string; p_public_key: string }
+        Returns: Json
+      }
+      void_signed_consent: {
+        Args: { p_id: string; p_reason: string }
         Returns: Json
       }
       website_asset_path_ok: { Args: { p: string }; Returns: boolean }

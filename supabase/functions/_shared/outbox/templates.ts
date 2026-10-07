@@ -26,6 +26,7 @@ type Catalogue = {
     manage: string;
     manage_pending: string;
     review: string;
+    form: string;
     unsubscribe: string;
     address: string;
   };
@@ -63,6 +64,13 @@ const en: Catalogue = {
         'Here is the link to view, change or cancel your {service} on {when}.',
       ],
     },
+    form_request: {
+      subject: 'Please complete your form for {business}',
+      lines: [
+        'Hi {first},',
+        '{business} has asked you to complete a short form before your visit.',
+      ],
+    },
     review_request: {
       subject: 'How was your visit to {business}?',
       lines: [
@@ -79,6 +87,7 @@ const en: Catalogue = {
     cancelled: '{business}: your booking on {when} was cancelled.',
     manage_link: '{business}: manage your booking:',
     review_request: '{business}: how was your visit? Rate it:',
+    form_request: '{business}: please complete your form:',
   },
   push: {
     staff_new_booking: { title: 'New booking', body: '{client} · {service} · {when}' },
@@ -94,6 +103,7 @@ const en: Catalogue = {
     manage: 'Need to change it? {url}',
     manage_pending: 'View or change your request: {url}',
     review: 'Rate your visit: {url}',
+    form: 'Open the form: {url}',
     unsubscribe: 'Stop these emails: {url}',
     address: '{address}',
   },
@@ -142,6 +152,7 @@ export function escapeHtml(text: string): string {
 export type Links = {
   manageUrl: string | null;
   reviewUrl: string | null;
+  formUrl?: string | null;
   unsubscribeUrl: string | null;
   oneClickUrl?: string | null;
 };
@@ -186,6 +197,8 @@ export function renderEmail(job: Job, links: Links): RenderedEmail | null {
   }
   if (links.reviewUrl && job.event === 'review_request')
     lines.push(fill(cat.lines.review, { url: links.reviewUrl }));
+  if (links.formUrl && job.event === 'form_request')
+    lines.push(fill(cat.lines.form, { url: links.formUrl }));
   if (links.unsubscribeUrl) lines.push(fill(cat.lines.unsubscribe, { url: links.unsubscribeUrl }));
 
   const subject = fill(entry.subject, v);
@@ -205,7 +218,12 @@ export function renderSms(job: Job, links: Links): string | null {
   const tpl = cat.sms[job.event];
   if (!tpl) return null;
   const body = fill(tpl, vars(job, locale)).replace(/\s+/g, ' ').trim();
-  const url = job.event === 'review_request' ? links.reviewUrl : links.manageUrl;
+  const url =
+    job.event === 'review_request'
+      ? links.reviewUrl
+      : job.event === 'form_request'
+        ? (links.formUrl ?? null)
+        : links.manageUrl;
   return url && job.event !== 'cancelled' ? `${body} ${url}` : body;
 }
 

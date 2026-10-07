@@ -15,6 +15,8 @@ import {
   Text,
   useToast,
 } from '@/components/ui';
+import { ClientFilesSection } from '@/features/files/components/ClientFilesSection';
+import { ClientFormsSection } from '@/features/forms/components/ClientFormsSection';
 import { ClientPackagesSection } from '@/features/packages/components/ClientPackagesSection';
 import { useAppointmentList } from '@/features/appointments/api/useAppointments';
 import { type AppointmentRow } from '@/features/appointments/types';
@@ -151,6 +153,10 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
 
           {/* Add-on "Packages & Sessions": renders nothing when the add-on is off. */}
           <ClientPackagesSection clientId={clientId} />
+
+          {/* Add-ons "Files & Photos" and "Forms & Consent": each renders nothing while its add-on is off. */}
+          <ClientFilesSection clientId={clientId} />
+          <ClientFormsSection clientId={clientId} clientName={data.fullName} />
 
           {canViewAppointments ? (
             <>

@@ -2791,5 +2791,220 @@
       "insufficient_stock": "There is not enough stock for that.",
       "unknown": "Something went wrong. Please try again."
     }
+  },
+  "files": {
+    "title": "Files and photos",
+    "addPhoto": "Add photo",
+    "addPdf": "Add PDF",
+    "uploaded": "File added",
+    "deleted": "File deleted",
+    "limits": "JPEG, PNG, WebP or PDF, up to 10 MB each.",
+    "exifHint": "Photos keep their hidden details (such as the location they were taken at); these are not removed.",
+    "loadMore": "Load more",
+    "error": "Couldn't load files",
+    "empty": {
+      "title": "No files yet",
+      "description": "Photos and documents you add appear here."
+    },
+    "category": {
+      "label": "Photo type",
+      "before": "Before",
+      "after": "After",
+      "damage": "Damage",
+      "other": "Other"
+    },
+    "consent": {
+      "label": "Client agrees to photos being taken and stored",
+      "needed": "Record the client's photo consent above before adding photos. PDFs can be added without it.",
+      "none": "No photo consent recorded.",
+      "recorded": "Recorded on {{date}} by {{name}}.",
+      "unknownPerson": "a team member",
+      "saved": "Photo consent updated"
+    },
+    "delete": {
+      "action": "Delete file",
+      "title": "Delete this file?",
+      "message": "It disappears for everyone. The deletion is recorded.",
+      "confirm": "Delete file"
+    },
+    "errors": {
+      "forbidden": "You don't have permission to do that.",
+      "feature_unavailable": "Files and photos are not part of your plan.",
+      "not_found": "That file could not be found.",
+      "unsupported_type": "Only JPEG, PNG, WebP and PDF files are allowed.",
+      "file_too_large": "That file is larger than 10 MB.",
+      "invalid_size": "That file is empty.",
+      "invalid_name": "That file name can't be used.",
+      "invalid_category": "Choose a photo type.",
+      "appointment_mismatch": "That appointment belongs to a different client.",
+      "photo_consent_required": "Record the client's photo consent before adding photos.",
+      "file_cap_reached": "This business has reached its file limit.",
+      "file_rejected": "That file is not what it claims to be, so it was not saved.",
+      "invalid_value": "That value isn't valid.",
+      "upload_failed": "The upload did not finish. Please try again.",
+      "picker_unavailable": "The photo picker needs an app update.",
+      "unknown": "Something went wrong. Please try again."
+    }
+  },
+  "forms": {
+    "title": "Forms and consent",
+    "hubTitle": "Forms and consent",
+    "hubSubtitle": "Intake and consent forms your clients sign",
+    "intro": "Build intake and consent forms. Attach a form to a service and it shows on those appointments; it never blocks a booking or a visit.",
+    "create": "New form",
+    "deleted": "Form deleted",
+    "error": "Couldn't load forms",
+    "empty": {
+      "title": "No forms yet",
+      "description": "Create a consent or intake form, then have clients sign it on your device or from a link."
+    },
+    "kind": {
+      "consent": "Consent form",
+      "intake": "Intake form"
+    },
+    "card": {
+      "questions_one": "{{count}} question",
+      "questions_other": "{{count}} questions",
+      "services_one": "{{count}} service",
+      "services_other": "{{count}} services",
+      "version": "Version {{version}}",
+      "inactive": "Inactive"
+    },
+    "block": {
+      "heading": "Heading",
+      "paragraph": "Paragraph",
+      "bullet": "Bullet point"
+    },
+    "field": {
+      "short_text": "Short text",
+      "long_text": "Long text",
+      "dropdown": "Dropdown",
+      "yes_no": "Yes / No",
+      "number": "Number"
+    },
+    "editor": {
+      "title": "Form title",
+      "kind": "Type",
+      "kindHint": "A consent form records agreement; an intake form collects information. This can't be changed later.",
+      "requiresSignature": "Client must sign",
+      "active": "Active",
+      "services": "Show on these services",
+      "servicesHint": "Appointments for these services show the form as pending or signed.",
+      "text": "Text",
+      "textHint": "The wording the client reads. Plain text only.",
+      "blockType": "Block type",
+      "blockText": "Text",
+      "addBlock": "Add text block",
+      "questions": "Questions",
+      "fieldType": "Question type",
+      "fieldLabel": "Question",
+      "fieldHelp": "Help text (optional)",
+      "options": "Choices",
+      "optionsHint": "One choice per line, at least two.",
+      "required": "Required",
+      "sensitive": "Sensitive answer",
+      "sensitiveHint": "Only people who may view sensitive client details see this answer.",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Remove",
+      "addQuestion": "Add question",
+      "versionNow": "Version {{version}}",
+      "versionNote": "Changing the wording or questions creates a new version. Forms already signed keep the version they were signed on.",
+      "save": "Save form",
+      "saved": "Form saved",
+      "savedNewVersion": "Saved as version {{version}}"
+    },
+    "delete": {
+      "title": "Delete this form?",
+      "message": "It can no longer be used and open signing links stop working. Forms already signed are kept.",
+      "confirm": "Delete form"
+    },
+    "client": {
+      "title": "Forms",
+      "choose": "Form",
+      "signHere": "Sign on this device",
+      "sendLink": "Send signing link",
+      "empty": "No signed forms yet.",
+      "error": "Couldn't load forms",
+      "signedBy": "Signed by {{name}} on {{date}}",
+      "viaDevice": "Signed on a device",
+      "viaLink": "Signed from a link",
+      "valid": "Valid",
+      "voided": "Voided",
+      "redacted": "Hidden (sensitive)"
+    },
+    "appointment": {
+      "title": "Forms",
+      "pending": "Not signed yet",
+      "signed": "Signed"
+    },
+    "sign": {
+      "title": "Sign form",
+      "for": "For {{name}}",
+      "handOver": "Hand the device to the client to fill in and sign.",
+      "signerName": "Full name of the person signing",
+      "signature": "Signature",
+      "padHint": "Sign here",
+      "padLabel": "Signature area",
+      "clear": "Clear signature",
+      "submit": "Save signed form",
+      "saved": "Signed form saved"
+    },
+    "fill": {
+      "yes": "Yes",
+      "no": "No",
+      "fieldProblem": "Please check this answer."
+    },
+    "link": {
+      "title": "Signing link",
+      "message": "Copy this link and send it to the client. It works once and expires in 14 days.",
+      "emailed": "The link was also queued as an email to the client.",
+      "once": "This link is shown only now. Create another if you lose it (the earlier one then stops working).",
+      "copy": "Copy link",
+      "copied": "Link copied"
+    },
+    "void": {
+      "action": "Void this signed form",
+      "title": "Void this signed form?",
+      "message": "The signed copy is kept as it was and marked as voided. This can't be undone.",
+      "reason": "Reason",
+      "confirm": "Void form",
+      "done": "Form voided"
+    },
+    "public": {
+      "invalidTitle": "This link doesn't work",
+      "invalidMessage": "It may have expired or already been used. Ask the business for a new link.",
+      "loadErrorTitle": "Couldn't load the form",
+      "loadErrorMessage": "Check your connection and try again.",
+      "subtitle": "{{business}} asked {{name}} to complete this form.",
+      "submit": "Sign and send",
+      "thanksTitle": "Thank you",
+      "thanksMessage": "Your form has been sent. You can close this page."
+    },
+    "errors": {
+      "forbidden": "You don't have permission to do that.",
+      "feature_unavailable": "Forms and consent are not part of your plan.",
+      "not_found": "That could not be found.",
+      "invalid_kind": "Choose a form type.",
+      "invalid_title": "Enter a title (up to 120 characters).",
+      "invalid_fields": "Check the questions.",
+      "invalid_field_type": "Choose a question type.",
+      "invalid_field_label": "Every question needs a label.",
+      "invalid_field_id": "A question id is not valid.",
+      "invalid_options": "A dropdown needs at least two different choices.",
+      "invalid_body": "Text blocks can't be empty.",
+      "invalid_signature": "The signature could not be read. Please sign again.",
+      "unknown_service": "One of the services is not available.",
+      "missing_answer": "Please answer the required questions.",
+      "invalid_answer": "One of the answers is not valid.",
+      "signature_required": "Please sign in the box.",
+      "invalid_name": "Enter the full name of the person signing.",
+      "appointment_mismatch": "That appointment belongs to a different client.",
+      "reason_required": "A reason is required (at least 3 characters).",
+      "already_voided": "That form was already voided.",
+      "invalid_token": "This link doesn't work any more.",
+      "rate_limited": "Too many attempts. Please wait a few minutes.",
+      "unknown": "Something went wrong. Please try again."
+    }
   }
 }

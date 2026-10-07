@@ -31,4 +31,6 @@ Shared files:
 | Website, reviews, widget | website-reviews-widget.md | backend + UI done | 7A/7B | Public website at `/<slug>` (booking moved to `/<slug>/book`), editor, reviews screen + review page, widget settings + embed gate, 4 Edge Functions, assets bucket |
 | Packages & Sessions | packages-sessions.md | backend + UI done | 10A | Add-on: package definitions, sold as invoice lines at issue, session deduct/undo/reverse (immutable, concurrency-safe), balance on client + appointment |
 | Inventory | inventory.md | backend + UI done | 10A | Add-on: products, immutable stock movements, stock drops at invoice issue and is restored by an exhausting credit note, low-stock badge + push/email alert |
+| Files & Photos | files-photos.md | backend + UI done | 10B | Add-on: private bucket, signed-URL-only access, photo consent, type checked by bytes, client/appointment Files tab |
+| Forms & Consent | forms-consent.md | backend + UI done | 10B | Add-on: versioned intake/consent templates, signature pad, immutable signed copies, tokenised public signing link |
 | Notifications | notifications.md | backend + UI done, deployed | 6A/6B | Outbox, Resend email, Twilio SMS + credits, Expo push, reminders (pg_cron), unsubscribe, 3 Edge Functions, settings/credits/log/push screens |

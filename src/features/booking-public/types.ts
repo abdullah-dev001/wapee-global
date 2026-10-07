@@ -118,7 +118,10 @@ export type PublicErrorCode =
   | 'not_cancellable'
   // --- the website, review page and widget ---
   /** Nothing public lives here (unknown, unpublished, inactive, widget not allowed). */
-  | 'not_found';
+  | 'not_found'
+  // --- the form signing page (sign_form) ---
+  | 'signature_required'
+  | 'invalid_signature';
 
 export class PublicApiError extends Error {
   code: PublicErrorCode;

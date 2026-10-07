@@ -617,3 +617,34 @@ describe('low stock alerts', () => {
     expect(calls.emails[0]?.unsubscribeUrl).toBeNull();
   });
 });
+
+describe('form_request email', () => {
+  const links = (url: string | null) => ({
+    manageUrl: null,
+    reviewUrl: null,
+    formUrl: url,
+    unsubscribeUrl: null,
+  });
+  it('asks the client to open the form and carries the link', () => {
+    const m = renderEmail(
+      job({ event: 'form_request', starts_at: null }),
+      links('https://x.test/nova-hair/sign#token=abc'),
+    );
+    expect(m?.subject).toBe('Please complete your form for Nova Hair Studio');
+    expect(m?.text).toContain('Open the form: https://x.test/nova-hair/sign#token=abc');
+    expect(m?.text).not.toContain('Stop these emails');
+  });
+  it('sms: one short line then the link', () => {
+    expect(
+      renderSms(
+        job({ event: 'form_request', channel: 'sms' }),
+        links('https://x.test/s#token=abc'),
+      ),
+    ).toBe('Nova Hair Studio: please complete your form: https://x.test/s#token=abc');
+  });
+  it('a form_request without its token fails and nothing is sent', async () => {
+    const { d, calls } = deps();
+    expect(await processJob(job({ event: 'form_request', token: null }), d)).toBe('dead');
+    expect(calls.emails).toHaveLength(0);
+  });
+});

@@ -18,6 +18,8 @@ import {
 } from '../api/useAppointments';
 import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
+import { ClientFilesSection } from '@/features/files/components/ClientFilesSection';
+import { AppointmentFormsSection } from '@/features/forms/components/AppointmentFormsSection';
 import { AppointmentPackageSection } from '@/features/packages/components/AppointmentPackageSection';
 import { AppointmentMessages } from '@/features/notifications/components/AppointmentMessages';
 import { ReviewLinkAction } from '@/features/reviews/components/ReviewLinkAction';
@@ -165,6 +167,14 @@ export function AppointmentDetailDrawer({
               serviceId={appointment.serviceId}
               status={appointment.status}
             />
+
+            {/* Add-ons Forms & Consent / Files & Photos: each hidden while off. */}
+            <AppointmentFormsSection
+              appointmentId={appointment.id}
+              clientId={appointment.clientId}
+              clientName={appointment.clientName}
+            />
+            <ClientFilesSection clientId={appointment.clientId} appointmentId={appointment.id} />
 
             {/* "Did the customer get a message?" (branch-scope viewers only). */}
             <AppointmentMessages

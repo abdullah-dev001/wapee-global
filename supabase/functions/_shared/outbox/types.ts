@@ -20,7 +20,8 @@ export type OutboxEvent =
   | 'staff_reminder'
   | 'report_summary'
   | 'staff_low_stock'
-  | 'low_stock';
+  | 'low_stock'
+  | 'form_request';
 
 export type Job = {
   id: string;

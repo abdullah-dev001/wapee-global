@@ -50,6 +50,7 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
       token && MANAGE_EVENTS.has(job.event) ? `${base}/${slug}/manage#token=${token}` : null,
     reviewUrl:
       token && job.event === 'review_request' ? `${base}/${slug}/review#token=${token}` : null,
+    formUrl: token && job.event === 'form_request' ? `${base}/${slug}/sign#token=${token}` : null,
     unsubscribeUrl,
     oneClickUrl,
   };
@@ -69,7 +70,12 @@ async function failJob(
 export async function processJob(job: Job, deps: Deps): Promise<Outcome> {
   try {
     // A link event without its token cannot be sent: fail it, never send a dead end.
-    if ((job.event === 'manage_link' || job.event === 'review_request') && !job.token) {
+    if (
+      (job.event === 'manage_link' ||
+        job.event === 'review_request' ||
+        job.event === 'form_request') &&
+      !job.token
+    ) {
       return await failJob(deps, job, 'missing_token', false);
     }
     const links = await buildLinks(job, deps);

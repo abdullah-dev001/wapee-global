@@ -153,7 +153,7 @@ const RECEPTIONIST = grantsFor(
   'branch',
 );
 
-/** Staff: 11 permissions at `own` scope (Phase 10 added packages.deduct_session). */
+/** Staff: 12 permissions at `own` scope (Phase 10 added packages.deduct_session, files.upload). */
 const STAFF = grantsFor(
   [
     'appointments.create',
@@ -162,6 +162,7 @@ const STAFF = grantsFor(
     'clients.view',
     'clients.view_sensitive',
     'commission.view_own',
+    'files.upload',
     'files.view',
     'packages.deduct_session',
     'reviews.view',
@@ -224,7 +225,7 @@ describe('seeded role fixtures match the database', () => {
     expect(OWNER).toHaveLength(46);
     expect(MANAGER).toHaveLength(39);
     expect(RECEPTIONIST).toHaveLength(20);
-    expect(STAFF).toHaveLength(11);
+    expect(STAFF).toHaveLength(12);
   });
 
   it('gives Manager booking settings but not business settings or the website', () => {

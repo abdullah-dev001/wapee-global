@@ -462,6 +462,14 @@ verify_jwt = false
 [functions.message_preview]
 verify_jwt = true
 
+# Phase 10B. client_files is called by the signed-in dashboard: JWT verification stays ON (it forwards
+# the caller's JWT to the RPCs, which are the real boundary). sign_form is the PUBLIC signing link.
+[functions.client_files]
+verify_jwt = true
+
+[functions.sign_form]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

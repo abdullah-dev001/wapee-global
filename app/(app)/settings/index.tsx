@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   ChartNoAxesCombined,
   ChevronRight,
+  ClipboardSignature,
   Coins,
   CreditCard,
   MessageSquareText,
@@ -39,7 +40,8 @@ type HubItem = {
     | '/settings/billing'
     | '/settings/roles'
     | '/settings/branches'
-    | '/settings/advanced-reports';
+    | '/settings/advanced-reports'
+    | '/settings/forms';
   icon: LucideIcon;
   title: string;
   subtitle: string;
@@ -84,6 +86,8 @@ export default function SettingsScreen() {
   const canRoles = usePermission('roles.manage');
   const canBranches = usePermission('settings.business');
   const canAdvanced = usePermission('reports.view_advanced');
+  const canForms = usePermission('forms.manage');
+  const formsOn = useFeatureFlag('forms_consent');
   const customRoles = useFeatureFlag('custom_roles');
   const multiBranch = useFeatureFlag('multi_branch');
   const advancedReports = useFeatureFlag('advanced_reports');
@@ -152,6 +156,16 @@ export default function SettingsScreen() {
             icon: Building2,
             title: t('branches.hubTitle'),
             subtitle: t('branches.hubSubtitle'),
+          },
+        ]
+      : []),
+    ...(canForms.allowed && formsOn.enabled
+      ? [
+          {
+            route: '/settings/forms' as const,
+            icon: ClipboardSignature,
+            title: t('forms.hubTitle'),
+            subtitle: t('forms.hubSubtitle'),
           },
         ]
       : []),

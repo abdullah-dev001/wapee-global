@@ -47,7 +47,9 @@ export type PublicEndpoint =
   | 'get_review_request'
   | 'submit_review'
   | 'validate_widget'
-  | 'unsubscribe';
+  | 'unsubscribe'
+  | 'get_form_request'
+  | 'submit_form_request';
 
 export type RateLimitResult = {
   allowed: boolean;

@@ -197,7 +197,7 @@ select pg_temp.add_member('biza', 'owner2', 'receptionist', 'brancha');
 -- ===========================================================================
 select pg_temp.chk('default roles intact: owner/manager/receptionist/staff permission counts',
   (select string_agg(r.key || ':' || (select count(*) from public.role_permissions rp where rp.role_id = r.id), ',' order by r.key)
-   from public.roles r where r.business_id is null), 'manager:39,owner:46,receptionist:20,staff:11');
+   from public.roles r where r.business_id is null), 'manager:39,owner:46,receptionist:20,staff:12');
 
 do $$
 declare r jsonb; v_role uuid; v_n0 int; v_snap text;
@@ -351,7 +351,7 @@ begin
   perform pg_temp.chk('other business cannot update', pg_temp.as_('ownerb', format($q$select public.update_custom_role(%L, 'Hacked')$q$, v_role))->>'code', 'forbidden');
   perform pg_temp.chk('default role cannot be edited', pg_temp.as_('owner', format($q$select public.update_custom_role(%L, 'Own3r')$q$, pg_temp.rid('owner')))->>'code', 'system_role');
   perform pg_temp.chk('default role permissions cannot be replaced', pg_temp.as_('owner', format($q$select public.update_custom_role(%L, null, '[{"permission":"clients.view","scope":"own"}]'::jsonb)$q$, pg_temp.rid('staff')))->>'code', 'system_role');
-  perform pg_temp.chk('...staff role untouched', (select count(*)::text from public.role_permissions where role_id = pg_temp.rid('staff')), '11');
+  perform pg_temp.chk('...staff role untouched', (select count(*)::text from public.role_permissions where role_id = pg_temp.rid('staff')), '12');
   perform pg_temp.chk('nothing to change', pg_temp.as_('owner', format($q$select public.update_custom_role(%L)$q$, v_role))->>'code', 'nothing_to_change');
   perform pg_temp.chk('rename onto a taken name', pg_temp.as_('owner', format($q$select public.update_custom_role(%L, 'Reception Copy')$q$, v_role))->>'code', 'name_taken');
   perform pg_temp.chk('billing refused on update', pg_temp.as_('owner', format($q$select public.update_custom_role(%L, null, '[{"permission":"settings.billing","scope":"all"}]'::jsonb)$q$, v_role))->>'code', 'billing_owner_only');

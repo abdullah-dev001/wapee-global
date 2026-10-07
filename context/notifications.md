@@ -70,6 +70,7 @@ pg_cron: `outbox-worker` every minute (calls the worker only if something is due
 - Not deployed-tested: Twilio (no secrets), push on a real device, Resend inbox delivery (needs a verified domain or the account owner's address as the test recipient).
 
 ## Changelog
+- 2026-10-07: Phase 10B: event `form_request` (client email, SMS fallback) carries the sealed signing-link token (`/<slug>/sign#token=`); `outbox_guard` skips it as stale when the link was used / revoked / expired or the add-on is off; `send_outbox` redeployed. No real form email sent yet.
 - 2026-10-07: Phase 10A: events `low_stock` (email to a USER, like `report_summary`) and `staff_low_stock` (push); `outbox_guard` re-checks add-on + permission + product still low; `send_outbox` redeployed. Not delivered for real this round.
 - 2026-10-07: `report_summary` payloads (revenue figures) are emptied the moment the row reaches sent / dead / skipped / cancelled (trigger `purge_report_payload` + CHECK `message_outbox_report_payload_only_while_open`), like the sealed token. One real report email was sent to the Resend account owner's address and confirmed with a provider id (throwaway business deleted).
 - 2026-10-09: Phase 6B + fixes: confirm-page unsubscribe, project-wide privilege revoke, Resend fresh-key retries, 3 Edge Functions deployed, settings/credits/log/push screens, appointment send status, push_preferences, message_preview.
