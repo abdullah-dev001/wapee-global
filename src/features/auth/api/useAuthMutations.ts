@@ -20,7 +20,7 @@ import {
  * Every URL used here must also be listed in the Supabase dashboard under
  * Authentication -> URL Configuration -> Redirect URLs.
  */
-function redirectTo(path: string): string {
+export function redirectTo(path: string): string {
   if (Platform.OS === 'web') {
     if (typeof window === 'undefined') return path;
     return new URL(path, window.location.origin).toString();

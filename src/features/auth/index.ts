@@ -10,4 +10,5 @@ export {
   useResetPassword,
   useSignOut,
   useSignup,
+  redirectTo,
 } from './api/useAuthMutations';

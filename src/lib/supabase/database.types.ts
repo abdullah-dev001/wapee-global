@@ -1488,13 +1488,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "commission_rules_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "commission_rules_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -5181,6 +5174,12 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      account_delete_blockers: { Args: never; Returns: Json }
+      account_delete_commit: { Args: { p_user_id: string }; Returns: Json }
+      account_sole_owner_businesses: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       add_payment: {
         Args: {
           p_amount_minor: number
@@ -6018,6 +6017,7 @@ export type Database = {
         Args: { p_appointment_id?: string; p_client_id: string }
         Returns: Json
       }
+      log_account_event: { Args: { p_event: string }; Returns: Json }
       low_stock_count: {
         Args: { p_branch_id?: string; p_business_id: string }
         Returns: number

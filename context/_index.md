@@ -36,3 +36,4 @@ Shared files:
 | Client portal | client-portal.md | backend + UI done | 10C | Add-on: passwordless customer sessions (hashed single-use links), own bookings / packages / invoices / consented photos / signed forms, book-cancel-reschedule through the public engines |
 | GDPR & contact lock | gdpr.md | backend + client-profile UI done | 11A | Per-client export / erase (financial rows kept), business erase, portal request seam, `clients.view_contact` as a database boundary |
 | Notifications | notifications.md | backend + UI done, deployed | 6A/6B | Outbox, Resend email, Twilio SMS + credits, Expo push, reminders (pg_cron), unsubscribe, 3 Edge Functions, settings/credits/log/push screens |
+| Account | account.md | done | pre-launch | Change email / password, delete my account (+ public /delete-account page) |

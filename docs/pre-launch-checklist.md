@@ -74,7 +74,7 @@ Source files are in brackets, e.g. [_handoff] is `context/_handoff.md`.
 | B5.1 | **First real run on Android** (never run; every task ended with a written code review only) | **Blocking for Android** | EAS build on a real device. [_handoff] |
 | B5.2 | iOS device run, not just the simulator | **Blocking for iOS** | Native modules added without a device pass: `expo-image-picker`, `expo-document-picker`, `expo-clipboard`, secure store. Run `npm run ios` after pulling. [_handoff] |
 | B5.3 | Bundle id / package name, version, icons, splash, permissions strings (camera, photos, notifications) final | **Blocking** | `brand.bundleId` is a placeholder. |
-| B5.4 | App Store / Play review: privacy labels, account-deletion expectation, permission rationale | **Blocking for the stores** | In-app account / business deletion exists (Settings > Delete this business); store policies also expect a way to request deletion of a user account (the sign-in account is kept today, see the product-gaps table below). |
+| B5.4 | App Store / Play review: privacy labels, account-deletion expectation, permission rationale | **Blocking for the stores** | **Account deletion DONE (2026-10-09):** Settings > Account > Delete my account + public URL `/delete-account` for Play Console (see `context/account.md`). Still open: privacy labels / data-safety answers and permission rationale strings. |
 
 ### B6. Observability, backups, operations
 | # | Item | Status | Detail |
@@ -102,7 +102,7 @@ Source files are in brackets, e.g. [_handoff] is `context/_handoff.md`.
 | Packages report (doc §8.3) | Not blocking | Listed as the next report. [_handoff] |
 | Open items in plan-features UI (unclicked flows, mobile switcher) | Not blocking | [plan-features-ui] |
 | Real PDF export on native (needs `expo-print` + `expo-sharing`, new dependencies: ask first) | Not blocking | Web print works. [invoices] |
-| Sign-in account of a person is never deleted by business erase | Not blocking, note for the privacy policy | A person may belong to several businesses. Add an account-deletion flow if the stores require it (B5.4). [gdpr] |
+| Sign-in account of a person is never deleted by business erase | Not blocking, note for the privacy policy | A person may belong to several businesses. **Account-deletion flow now exists** (B5.4, `context/account.md`); business erase still keeps the sign-in account. [gdpr] |
 | Single-branch assumptions not fixed in a few places | Not blocking | Listed in [plan-features]. |
 | Deferred by product decision: online payments / deposits, waitlist, custom domain + SSL, WordPress plugin, marketing email, dark mode | Not blocking | Out of scope. [Build Plan] |
 

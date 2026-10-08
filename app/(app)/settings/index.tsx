@@ -15,6 +15,7 @@ import {
   Trash2,
   MessageSquareText,
   ShieldCheck,
+  UserRound,
 } from 'lucide-react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
@@ -45,7 +46,8 @@ type HubItem = {
     | '/settings/advanced-reports'
     | '/settings/forms'
     | '/settings/data-requests'
-    | '/settings/delete-business';
+    | '/settings/delete-business'
+    | '/settings/account';
   icon: LucideIcon;
   title: string;
   subtitle: string;
@@ -60,7 +62,6 @@ function HubCard({ item, onPress }: { item: HubItem; onPress: () => void }) {
           size={theme.iconSize.lg}
           strokeWidth={theme.iconStroke}
           color={theme.colors.primary}
-          accessibilityElementsHidden
         />
         <View style={styles.rowText}>
           <Text variant="cardTitle" color="textPrimary">
@@ -74,7 +75,6 @@ function HubCard({ item, onPress }: { item: HubItem; onPress: () => void }) {
           size={theme.iconSize.md}
           strokeWidth={theme.iconStroke}
           color={theme.colors.textMuted}
-          accessibilityElementsHidden
         />
       </View>
     </Card>
@@ -210,6 +210,12 @@ export default function SettingsScreen() {
       icon: BellRing,
       title: t('notifications.hub.myTitle'),
       subtitle: t('notifications.hub.mySubtitle'),
+    },
+    {
+      route: '/settings/account',
+      icon: UserRound,
+      title: t('account.title'),
+      subtitle: t('account.hubSubtitle'),
     },
   ];
 

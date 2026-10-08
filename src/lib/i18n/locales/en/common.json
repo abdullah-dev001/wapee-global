@@ -3254,5 +3254,83 @@
       "doneCounts": "{{clients}} clients, {{appointments}} appointments, {{invoices}} invoices and {{files}} files were removed.",
       "continue": "Continue"
     }
+  },
+  "account": {
+    "title": "Account",
+    "subtitle": "Your sign-in email and password.",
+    "loadFailed": "We could not load your account.",
+    "email": {
+      "title": "Email",
+      "current": "You sign in with {{email}}.",
+      "new": "New email",
+      "submit": "Change email",
+      "requested": "Check your inbox to confirm the new address.",
+      "pendingBadge": "Waiting for confirmation",
+      "pendingBody": "We sent a link to {{email}}. Open it to finish the change. Until then you keep signing in with {{current}}.",
+      "resend": "Send the link again",
+      "resent": "Confirmation sent again."
+    },
+    "password": {
+      "title": "Password",
+      "help": "Use 8 to 72 characters. Your other devices will be signed out; this one stays signed in.",
+      "current": "Current password",
+      "new": "New password",
+      "submit": "Change password",
+      "changed": "Password changed. Other devices were signed out."
+    },
+    "delete": {
+      "cardTitle": "Delete my account",
+      "cardSubtitle": "Remove your sign-in account for good.",
+      "title": "Delete my account",
+      "subtitle": "This cannot be undone.",
+      "warningTitle": "Your account will be deleted for good",
+      "warningBody": "You will be signed out everywhere and you will not be able to sign in again with this email.",
+      "removedTitle": "Removed",
+      "removedBody": "Your sign-in, your name and email, your access to every business you belong to, your roles, your notification settings and your devices.",
+      "keptTitle": "Kept",
+      "keptBody": "The businesses' records stay as they are: staff profiles, appointments, invoices and payments. They no longer point to a person.",
+      "blockedTitle": "You are the only Owner of:",
+      "blockedBody": "Add another Owner in Team, or delete the business, before you delete your account.",
+      "goDeleteBusiness": "Delete a business",
+      "password": "Your password",
+      "typeEmail": "Type your email ({{email}}) to confirm",
+      "confirm": "Delete my account",
+      "progress": "Deleting your account. Keep this page open.",
+      "done": "Your account was deleted."
+    },
+    "errors": {
+      "wrong_password": "That password is not right.",
+      "confirm_mismatch": "The email you typed does not match your account.",
+      "sole_owner": "You are the only Owner of a business. Delete it or add another Owner first.",
+      "super_admin": "A platform administrator account cannot be deleted here.",
+      "same_password": "Choose a password you have not used just now.",
+      "weak_password": "That password is too easy to guess.",
+      "email_exists": "That email is already used by another account.",
+      "same_email": "That is already your email.",
+      "rate_limited": "Too many tries. Wait a minute and try again.",
+      "forbidden": "You cannot do that.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "public": {
+      "title": "Delete your {{appName}} account",
+      "subtitle": "How to remove your account and what happens to your data.",
+      "howTitle": "How to delete your account",
+      "step1": "Sign in to {{appName}} (the app or the website).",
+      "step2": "Open Settings, then Account.",
+      "step3": "Choose Delete my account, enter your password and type your email to confirm.",
+      "stepLine": "{{n}}. {{text}}",
+      "signIn": "Sign in",
+      "goDelete": "Delete my account",
+      "removedTitle": "What is removed",
+      "removedBody": "Your sign-in account, name and email, your access and roles in every business, your notification settings and the devices registered for notifications.",
+      "keptTitle": "What is kept",
+      "keptBody": "A business keeps its own records (appointments, invoices, payments, staff profiles) because the law requires it and they belong to the business. After deletion they no longer point to you.",
+      "ownerTitle": "If you own a business",
+      "ownerBody": "If you are the only Owner, first delete the business or add another Owner. You will see which businesses in the same screen.",
+      "customerTitle": "If you are a customer",
+      "customerBody": "Customers who booked with a business do not have a sign-in account. To see or erase your data, open the \"My data\" page from the link in your booking email, or ask the business.",
+      "contact": "Cannot sign in? Write to {{email}} from the address on your account."
+    },
+    "hubSubtitle": "Email, password, delete account."
   }
 }
