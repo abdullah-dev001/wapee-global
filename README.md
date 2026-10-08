@@ -22,13 +22,13 @@ cp .env.example .env   # then fill in the values (see below)
 
 The app **runs without any keys**. Missing values only log one dev warning (`[env] Missing: …`) and backend calls are disabled.
 
-| Variable                        | What it is                                                       |
-| ------------------------------- | ---------------------------------------------------------------- |
-| `EXPO_PUBLIC_SUPABASE_URL`      | Supabase project URL (Project Settings → API)                    |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon / publishable key                                  |
-| `EXPO_PUBLIC_VAPID_PUBLIC_KEY`  | Web Push public key (PWA notifications)                          |
-| `EXPO_PUBLIC_APP_URL`           | Dashboard URL. Placeholder default: `https://app.wapee.com`      |
-| `EXPO_PUBLIC_PUBLIC_SITE_URL`   | Public business sites. Placeholder default: `https://wapee.site` |
+| Variable                        | What it is                                             |
+| ------------------------------- | ------------------------------------------------------ |
+| `EXPO_PUBLIC_SUPABASE_URL`      | Supabase project URL (Project Settings → API)          |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon / publishable key                        |
+| `EXPO_PUBLIC_VAPID_PUBLIC_KEY`  | Web Push public key (PWA notifications)                |
+| `EXPO_PUBLIC_APP_URL`           | Dashboard URL. Default: `https://app.wapee.online`     |
+| `EXPO_PUBLIC_PUBLIC_SITE_URL`   | Public business sites. Default: `https://wapee.online` |
 
 `EXPO_PUBLIC_*` values are bundled into the app and are **public**. Never put secrets in `.env`.
 Server secrets (Twilio, Resend, VAPID private key, service role) live only in Edge Function secrets; their names are listed in [supabase/functions/.env.example](supabase/functions/.env.example).

@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { BookingManage } from '@/features/booking-manage';
 
 /**
- * The guest manage link: `wapee.site/<slug>/manage#token=...`. The slug in
+ * The guest manage link: `wapee.online/<slug>/manage#token=...`. The slug in
  * the path is cosmetic — the token in the FRAGMENT is the only thing that
  * identifies the booking, and it is read once and stripped from the address
  * bar (`useTokenFromUrl`). `referrer: no-referrer` so the fragment-bearing

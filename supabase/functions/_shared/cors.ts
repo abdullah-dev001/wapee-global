@@ -24,9 +24,8 @@ function allowedOrigins(): string[] {
       .map((o) => o.trim().replace(/\/+$/, ''))
       .filter(Boolean);
   }
-  // Placeholder defaults, matching src/config/brand.ts. The real production
-  // domain is a Phase 12 item and must be set via PUBLIC_SITE_ORIGINS — these
-  // are only a fallback so development works out of the box.
+  // Production defaults, matching src/config/brand.ts. PUBLIC_SITE_ORIGINS
+  // overrides them (e.g. for a staging domain).
   //
   // The localhost entries cover the ports Expo actually uses:
   //   8081  `npm run web` (Metro's default)
@@ -37,8 +36,8 @@ function allowedOrigins(): string[] {
   // 127.0.0.1 is listed alongside localhost because a browser treats them as
   // different origins and some setups resolve to one and not the other.
   return [
-    'https://wapee.site',
-    'https://app.wapee.com',
+    'https://wapee.online',
+    'https://app.wapee.online',
     'http://localhost:8081',
     'http://localhost:8082',
     'http://localhost:8090',

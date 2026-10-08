@@ -2,7 +2,7 @@
 Status: done (Phase 3 step 5) · Phase: 3 · Last updated: 2026-10-04
 
 ## What it does
-The customer-facing flow at `wapee.site/<slug>`: pick a service, pick a person
+The customer-facing flow at `wapee.online/<slug>`: pick a service, pick a person
 (if the branch offers that), pick a date and time, fill in the booking form,
 get a confirmation with a guest manage link. No account, no RLS-backed client —
 every byte comes from three public Edge Functions.

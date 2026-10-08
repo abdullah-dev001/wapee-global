@@ -64,12 +64,12 @@ describe('snippet', () => {
   it('builds the script tag', () => {
     expect(
       buildWidgetSnippet({
-        publicSiteUrl: 'https://wapee.site/',
+        publicSiteUrl: 'https://wapee.online/',
         functionsUrl: 'https://x.supabase.co/functions/v1/',
         key: 'wk_abc',
       }),
     ).toBe(
-      '<script src="https://wapee.site/widget.js" data-key="wk_abc" data-api="https://x.supabase.co/functions/v1" data-app="https://wapee.site" async></script>',
+      '<script src="https://wapee.online/widget.js" data-key="wk_abc" data-api="https://x.supabase.co/functions/v1" data-app="https://wapee.online" async></script>',
     );
     expect(functionsBaseUrl('https://x.supabase.co/')).toBe('https://x.supabase.co/functions/v1');
   });

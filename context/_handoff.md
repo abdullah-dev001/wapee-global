@@ -241,7 +241,7 @@ further Phase 4 polish, once the user says go.
 - **`expo-clipboard` was added** (invite link copy button), so the dev build needs a rebuild: `npm run ios`.
 - **Android has never been run** — no emulator on this machine. Every UI task ends with a written Android code review instead (CLAUDE.md §4). Test on a real device via EAS build when possible.
 - **Email is Supabase's built-in sender**: rate-limited, and it only delivers to project team members. Confirm test users with SQL (see `context/auth.md`). Resend replaces it in Phase 6.
-- Placeholder domains (`app.wapee.com`, `wapee.site`) and placeholder app icons.
+- Placeholder app icons.
 
 - **Suite 12's fixture was fixed (153/153)**: the invoiced appointment now gets a REAL invoice via `create_invoice_draft` + `issue_invoice`. It (and any test that looks a client up by PHONE ALONE) can still fail while other businesses in the DB hold the same phone numbers: it did while a throwaway seed reused `+447700900111`. Suite 16's bucket count is now scoped to its own businesses for the same reason. Run suites on a database without leftover test data.
 - **Launch blocker (Phase 12): widget embedding is only enforced by a `frame-ancestors` header on the booking page.** Supabase Edge Functions cannot serve HTML, and the static web host is not chosen. Until the host emits it, any site can frame the booking page.

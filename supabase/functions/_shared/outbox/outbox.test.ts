@@ -114,7 +114,7 @@ function deps(
       },
     },
     config: {
-      publicSiteUrl: 'https://wapee.site',
+      publicSiteUrl: 'https://wapee.online',
       unsubscribeUrl: 'https://x.supabase.co/functions/v1/unsubscribe',
       signingKey: KEY,
       now: () => NOW,
@@ -126,7 +126,7 @@ function deps(
 describe('templates', () => {
   it('renders a short plain English confirmation from the business, not the product', () => {
     const m = renderEmail(job({ token: RAW }), {
-      manageUrl: 'https://wapee.site/nova-hair/manage#token=abc',
+      manageUrl: 'https://wapee.online/nova-hair/manage#token=abc',
       reviewUrl: null,
       unsubscribeUrl: null,
     });
@@ -134,7 +134,7 @@ describe('templates', () => {
     expect(m?.text).toContain('Hi Mia,');
     expect(m?.text).toContain('Your Cut at Nova Hair Studio is confirmed for');
     expect(m?.text).toContain('1 High Street');
-    expect(m?.text).toContain('Need to change it? https://wapee.site/nova-hair/manage#token=abc');
+    expect(m?.text).toContain('Need to change it? https://wapee.online/nova-hair/manage#token=abc');
     expect(`${m?.subject}${m?.text}${m?.html}`.toLowerCase()).not.toContain('wapee global');
   });
 
@@ -189,13 +189,13 @@ describe('templates', () => {
 
   it('escapes HTML in names and links the URLs', () => {
     const m = renderEmail(job({ client_first_name: '<b>Mia</b>', business_name: 'A & B' }), {
-      manageUrl: 'https://wapee.site/a/manage#token=z',
+      manageUrl: 'https://wapee.online/a/manage#token=z',
       reviewUrl: null,
       unsubscribeUrl: null,
     });
     expect(m?.html).toContain('&lt;b&gt;Mia&lt;/b&gt;');
     expect(m?.html).toContain('A &amp; B');
-    expect(m?.html).toContain('<a href="https://wapee.site/a/manage#token=z">');
+    expect(m?.html).toContain('<a href="https://wapee.online/a/manage#token=z">');
     expect(escapeHtml(`"'<>&`)).toBe('&quot;&#39;&lt;&gt;&amp;');
   });
 
@@ -210,12 +210,12 @@ describe('templates', () => {
 
   it('SMS is one short line with the link last; cancelled has none', () => {
     const body = renderSms(job({ channel: 'sms', event: 'manage_link' }), {
-      manageUrl: 'https://wapee.site/n/manage#token=z',
+      manageUrl: 'https://wapee.online/n/manage#token=z',
       reviewUrl: null,
       unsubscribeUrl: null,
     });
     expect(body?.startsWith('Nova Hair Studio: manage your booking:')).toBe(true);
-    expect(body?.endsWith('https://wapee.site/n/manage#token=z')).toBe(true);
+    expect(body?.endsWith('https://wapee.online/n/manage#token=z')).toBe(true);
     expect(
       renderSms(job({ channel: 'sms', event: 'cancelled' }), {
         manageUrl: 'https://x/y',
@@ -292,7 +292,7 @@ describe('processJob: email', () => {
     const out = await processJob(job({ token: RAW }), d);
     expect(out).toBe('sent');
     expect(calls.emails[0]?.idempotencyKey).toBe('booking_confirmed:appt-1');
-    expect(calls.emails[0]?.text).toContain(`https://wapee.site/nova-hair/manage#token=${RAW}`);
+    expect(calls.emails[0]?.text).toContain(`https://wapee.online/nova-hair/manage#token=${RAW}`);
     expect(calls.complete[0]).toEqual(['job-1', 'resend', 're_1', []]);
     expect(calls.fail).toHaveLength(0);
   });
@@ -309,7 +309,7 @@ describe('processJob: email', () => {
     const { d, calls } = deps();
     await processJob(job({ event: 'review_request', token: RAW }), d);
     const m = calls.emails[0]!;
-    expect(m.text).toContain(`https://wapee.site/nova-hair/review#token=${RAW}`);
+    expect(m.text).toContain(`https://wapee.online/nova-hair/review#token=${RAW}`);
     // The email links the confirm PAGE (token in the fragment); the one-click header POSTs to the function.
     expect(m.unsubscribeUrl).toMatch(/^https:\/\/wapee\.site\/unsubscribe#token=/);
     expect(m.oneClickUrl).toMatch(/^https:\/\/x\.supabase\.co\/functions\/v1\/unsubscribe\?t=/);

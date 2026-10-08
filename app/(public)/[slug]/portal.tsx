@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 import { PortalPage } from '@/features/portal';
 
 /**
- * The client portal: `wapee.site/<slug>/portal`. A sign-in link arrives as `#token=...` in the FRAGMENT and
+ * The client portal: `wapee.online/<slug>/portal`. A sign-in link arrives as `#token=...` in the FRAGMENT and
  * is stripped from the address bar on load. `noindex` and `no-referrer` for the same reason as the manage page.
  */
 export default function PortalScreen() {

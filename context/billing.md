@@ -108,7 +108,7 @@ Plans, subscriptions, trial rules, the super admin lifecycle RPCs (`assign_plan`
 
 ## Known limits / TODO
 - No `/billing` route exists yet — it is in the allowed list ready for Phase 8. Today the owner reaches Settings only.
-- `brand.supportEmail` is `support@wapee.com`, a **placeholder** like the domains.
+- `brand.supportEmail` is `support@wapee.online`, the real mailbox.
 - No plan self-service, no checkout, no invoice history (Phase 8, super admin assigns plans by hand).
 
 ## Changelog

@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { PublicSignPage } from '@/features/forms/components/PublicSignPage';
 
 /**
- * The client's form signing page: `wapee.site/<slug>/sign#token=...`. The token in the FRAGMENT is the
+ * The client's form signing page: `wapee.online/<slug>/sign#token=...`. The token in the FRAGMENT is the
  * only thing that identifies the request; it is read once and stripped from the address bar.
  * `no-referrer` and `noindex`, like the manage and review pages.
  */

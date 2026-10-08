@@ -121,15 +121,15 @@ describe('bufferExplanationKey', () => {
 
 describe('bookingUrl', () => {
   it('joins the site and the business slug', () => {
-    expect(bookingUrl('https://wapee.site', 'nova-hair')).toBe('https://wapee.site/nova-hair/book');
+    expect(bookingUrl('https://wapee.online', 'nova-hair')).toBe('https://wapee.online/nova-hair/book');
   });
 
   it('does not double the slash when the base already ends in one', () => {
-    expect(bookingUrl('https://wapee.site/', 'nova-hair')).toBe(
-      'https://wapee.site/nova-hair/book',
+    expect(bookingUrl('https://wapee.online/', 'nova-hair')).toBe(
+      'https://wapee.online/nova-hair/book',
     );
-    expect(bookingUrl('https://wapee.site///', 'nova-hair')).toBe(
-      'https://wapee.site/nova-hair/book',
+    expect(bookingUrl('https://wapee.online///', 'nova-hair')).toBe(
+      'https://wapee.online/nova-hair/book',
     );
   });
 });

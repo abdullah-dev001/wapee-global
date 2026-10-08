@@ -42,7 +42,7 @@ function assetUrl(path: unknown): string | null {
 }
 
 function websiteBase(): string {
-  return (Deno.env.get('PUBLIC_WEBSITE_BASE_URL') ?? 'https://wapee.site').replace(/\/+$/, '');
+  return (Deno.env.get('PUBLIC_WEBSITE_BASE_URL') ?? 'https://wapee.online').replace(/\/+$/, '');
 }
 
 const str = (v: unknown): string | null => (typeof v === 'string' ? v : null);

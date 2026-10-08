@@ -6,7 +6,7 @@ import { BookingFlow } from '@/features/booking-public';
 import { EmbedGate } from '@/features/widget/components/EmbedGate';
 
 /**
- * The public booking page: `wapee.site/<slug>/book` — the shareable booking
+ * The public booking page: `wapee.online/<slug>/book` — the shareable booking
  * link. No account, no RLS-backed client; every byte comes from the
  * `get_booking_page` / `get_slots` / `create_booking` Edge Functions.
  *

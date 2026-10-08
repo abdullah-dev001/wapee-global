@@ -117,7 +117,7 @@ export function ComponentGallery() {
           onChangeText={setText}
           required
         />
-        <Input label="Slug" prefix="wapee.site/" placeholder="my-salon" autoCapitalize="none" />
+        <Input label="Slug" prefix="wapee.online/" placeholder="my-salon" autoCapitalize="none" />
         <Input
           label="Email"
           placeholder="name@example.com"

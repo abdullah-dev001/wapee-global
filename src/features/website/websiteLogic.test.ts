@@ -6,10 +6,10 @@ import { mapWebsite } from './mapWebsite';
 
 describe('links', () => {
   it('builds website, booking and review urls', () => {
-    expect(websiteUrl('https://wapee.site/', 'nova')).toBe('https://wapee.site/nova');
-    expect(bookingUrl('https://wapee.site', 'nova')).toBe('https://wapee.site/nova/book');
-    expect(reviewUrl('https://wapee.site///', 'nova', 'a b')).toBe(
-      'https://wapee.site/nova/review#token=a%20b',
+    expect(websiteUrl('https://wapee.online/', 'nova')).toBe('https://wapee.online/nova');
+    expect(bookingUrl('https://wapee.online', 'nova')).toBe('https://wapee.online/nova/book');
+    expect(reviewUrl('https://wapee.online///', 'nova', 'a b')).toBe(
+      'https://wapee.online/nova/review#token=a%20b',
     );
   });
   it('whatsapp only from a valid E.164', () => {
@@ -63,7 +63,7 @@ describe('mapWebsite', () => {
       radius_key: 'lg',
       logo_url: 'https://x/l.png',
     },
-    seo: { title: 'Nova', description: 'Hair', canonical_url: 'https://wapee.site/nova' },
+    seo: { title: 'Nova', description: 'Hair', canonical_url: 'https://wapee.online/nova' },
     sections: [
       { type: 'hero', headline: 'Hi', subheadline: null, cta_label: 'Book' },
       {
@@ -109,7 +109,7 @@ describe('mapWebsite', () => {
       fontKey: 'serif',
       logoUrl: 'https://x/l.png',
     });
-    expect(model.seo.canonicalUrl).toBe('https://wapee.site/nova');
+    expect(model.seo.canonicalUrl).toBe('https://wapee.online/nova');
     expect(model.jsonLd).toEqual({ '@type': 'LocalBusiness' });
   });
   it('drops malformed rows and unknown sections', () => {

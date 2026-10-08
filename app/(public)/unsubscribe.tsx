@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { UnsubscribePage } from '@/features/unsubscribe/UnsubscribePage';
 
 /**
- * `wapee.site/unsubscribe#token=...` — the confirm page of the unsubscribe link in
+ * `wapee.online/unsubscribe#token=...` — the confirm page of the unsubscribe link in
  * reminder and review emails. The token stays in the fragment (never sent to a
  * server by the browser), `noindex`, `no-referrer`.
  */

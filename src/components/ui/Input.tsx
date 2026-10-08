@@ -14,7 +14,7 @@ export type InputProps = Omit<TextInputProps, 'style' | 'placeholderTextColor'> 
   error?: string;
   /** Adds a red `*` next to the label. */
   required?: boolean;
-  /** Static text inside the field, before the input (e.g. "wapee.site/"). */
+  /** Static text inside the field, before the input (e.g. "wapee.online/"). */
   prefix?: string;
   /** Node at the end inside the field (e.g. a reveal button or status icon). */
   endAdornment?: ReactNode;

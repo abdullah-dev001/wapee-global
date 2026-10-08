@@ -26,7 +26,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | app/+html.tsx                                                                                                            | Web HTML shell: viewport-fit=cover, iOS web-app meta, manifest, icons, base CSS             |
 | app/(auth)/login.tsx · (app)/index.tsx · (public)/[slug]/index.tsx · (admin)/admin/index.tsx | Placeholder routes (`/login`, `/`, `/:slug`, `/admin`)                           |
 | src/components/shared/PlaceholderScreen.tsx                                                                              | TEMPORARY placeholder; delete when real screens exist                                       |
-| src/config/brand.ts                                                                                                      | Product name, slug, scheme, bundle ID `com.wapee.app`, URLs. Only place "Wapee" lives       |
+| src/config/brand.ts                                                                                                      | Product name, slug, scheme, bundle ID `online.wapee.app`, URLs. Only place "Wapee" lives       |
 | src/config/env.ts                                                                                                        | zod-validated public env; `env`, `isSupabaseConfigured`, `missingEnvKeys`, `warnAboutEnv()` |
 | src/lib/theme/                                                                                                           | colors, typography, tokens, shadow(), useBreakpoint(), fonts, `theme` object                |
 | src/lib/query/                                                                                                           | queryClient, staleTimes, createQueryKeys(), useAppFocusManager()                            |
@@ -190,7 +190,7 @@ GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProv
 
 - `.env.example` (5 `EXPO_PUBLIC_*` keys). `.env*` gitignored except examples.
 - Missing Supabase keys → one `console.warn` in dev, app still runs; `getSupabase()` throws `SupabaseNotConfiguredError` inside queryFns (shows as query error).
-- **TODO:** `https://app.wapee.com` and `https://wapee.site` are **placeholders** (no domain bought). Update brand.ts defaults + .env when real.
+- Real domains (2026-10-09): dashboard `https://app.wapee.online`, public sites `https://wapee.online` (same build, one Cloudflare Pages project). brand.ts defaults + `.env.example` use them; the Edge secret `PUBLIC_SITE_URL` must be `https://wapee.online`.
 
 ## Data layer
 
@@ -207,7 +207,7 @@ GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProv
 
 ## Platform config
 
-- IDs: iOS bundle + Android package `com.wapee.app`; scheme `wapee`.
+- IDs: iOS bundle + Android package `online.wapee.app`; scheme `wapee`.
 - Orientation: phones portrait; iPad all (`UISupportedInterfaceOrientations~ipad`). Android: the activity is portrait, and `useTabletOrientation()` releases the lock at runtime when the larger screen edge is >= 768px.
 - Android edge-to-edge always on (SDK 57); nav bar `style: dark`, `enforceContrast: false`; `predictiveBackGestureEnabled: false` until back handling is built.
 - Splash: primary background `#024751` + W mark.
@@ -227,7 +227,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 
 ## Known limits / TODO
 
-- Placeholder URLs (see Env). Placeholder icons.
+- Placeholder icons.
 - The gallery (`app/_gallery.tsx` + `src/dev/ComponentGallery.tsx`), `ComingSoonScreen` and `PlaceholderScreen` are temporary; delete them as real screens land. The gallery is reachable from More in dev.
 - Header user menu is still a placeholder. Both Sign out buttons are now wired to `useSignOut()`.
 - No business/branch switcher UI yet; `useScopeSelection` supports one (see roles.md).
