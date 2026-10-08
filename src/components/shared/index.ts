@@ -8,7 +8,6 @@ export { FormField, type FormFieldProps } from './FormField';
 export { IntegerInput, type IntegerInputProps } from './IntegerInput';
 export { MoneyInput, type MoneyInputProps } from './MoneyInput';
 export { PhoneInput, type PhoneInputProps } from './PhoneInput';
-export { PlaceholderScreen } from './PlaceholderScreen';
 export { SEARCH_MIN_LENGTH, SearchInput, type SearchInputProps } from './SearchInput';
 export { SignaturePad, SignatureView } from './SignaturePad';
 export { StatusBadge, type StatusBadgeProps } from './StatusBadge';

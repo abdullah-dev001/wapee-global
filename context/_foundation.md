@@ -25,7 +25,6 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | app/_layout.tsx                                                                                                          | Root providers + font loading + splash + SW registration                                    |
 | app/+html.tsx                                                                                                            | Web HTML shell: viewport-fit=cover, iOS web-app meta, manifest, icons, base CSS             |
 | app/(auth)/login.tsx · (app)/index.tsx · (public)/[slug]/index.tsx · (admin)/admin/index.tsx | Placeholder routes (`/login`, `/`, `/:slug`, `/admin`)                           |
-| src/components/shared/PlaceholderScreen.tsx                                                                              | TEMPORARY placeholder; delete when real screens exist                                       |
 | src/config/launch.ts | Launch switches (`widget`, `sms`, both false): features that are built but hidden |
 | src/components/shared/LegalLinks.tsx | Terms + Privacy links (open `brand.urls.terms` / `privacy`); used on signup, Settings, public pages |
 | src/config/brand.ts                                                                                                      | Product name, slug, scheme, bundle ID `online.wapee.app`, URLs. Only place "Wapee" lives       |
@@ -235,7 +234,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 ## Known limits / TODO
 
 - Placeholder icons.
-- The gallery (`app/_gallery.tsx` + `src/dev/ComponentGallery.tsx`), `ComingSoonScreen` and `PlaceholderScreen` are temporary; delete them as real screens land. The gallery is reachable from More in dev.
+- The gallery (`app/_gallery.tsx` + `src/dev/ComponentGallery.tsx`) and `ComingSoonScreen` are temporary; delete them as real screens land. The gallery is reachable from More in dev.
 - Header user menu is still a placeholder. Both Sign out buttons are now wired to `useSignOut()`.
 - No business/branch switcher UI yet; `useScopeSelection` supports one (see roles.md).
 - Tablet/desktop have no bottom tabs by design; the Tabs navigator still owns routing there, with the bar hidden.
@@ -303,3 +302,4 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - 2026-10-07: Phase 11B: `Dialog` actions accept `disabled`; muted text token darkened to `#6b7280` (4.8:1) and secondary to `#4b5563`; `features/data-rights/` (see `gdpr.md`); `useClientData` / `deliverExport` moved there.
 - 2026-10-09: `lib/supabase/verifyPassword.ts` (password check on a throw-away client, live session untouched); `redirectTo()` exported from `features/auth`. See `account.md`.
 - 2026-10-09: batch-2 fixes: `PageContainer` mobile title no longer collapses to zero height on native when `actions` follow it (`titleBlockMobile`, found on the iOS simulator); `SearchInput` reports its debounced term from an effect (was a setState-in-render warning); decorative lucide icons carry no `accessibilityElementsHidden` (DOM warning on web); `app/+html.tsx` has an inline script that moves `#token=` out of the address bar before the bundle loads (`window.__wapeeFragment`, read by `useTokenFromUrl`). NOTE: run Metro WITHOUT `CI=1` for native checks (CI mode turns off file watching, so edits never reach the simulator).
+- 2026-10-09: PlaceholderScreen deleted (unused). App/PWA icons and splash are still the Phase 0 placeholders.
