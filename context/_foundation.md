@@ -219,6 +219,11 @@ GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProv
 - Update flow: `registerServiceWorker({ onUpdateAvailable })` posts `SKIP_WAITING` then reloads. Toast not wired yet.
 - Not built yet: install hint / iOS "Add to Home Screen" instructions, Web Push.
 
+## Hosting files (Cloudflare Pages, `public/` → `dist/`)
+- `public/_redirects`: rewrites (200) for dynamic routes (`/:slug`, `/:slug/{book,manage,review,sign,portal}`, `/clients/:id`, `/invoice-print/:id`, `/admin/business/:id`) to the exported template (`/[slug]`, no `.html`), then `/* /index.html 200`. Static files win over rules. `/unsubscribe`, `/accept-invite`, `/delete-account`, `/privacy`, `/terms`, `/report-print` resolve as static pages.
+- `public/_headers`: HSTS, nosniff, `Referrer-Policy` (no-referrer on manage/review/sign/portal/unsubscribe), `X-Frame-Options: DENY` + `frame-ancestors 'none'` everywhere except `/:slug/book` (`SAMEORIGIN` / `'self'`), caching (sw.js, html no-cache; `/_expo/static/*`, `/assets/*` immutable; manifest 1h), CSP **Report-Only**. Rules merge on Pages; specific rules detach the general header with `! Name`.
+- Checked 2026-10-09 with a local emulator of these two files (not Cloudflare's own engine): every deep link returns 200 with the right template. Verify once on a real Pages preview URL.
+
 ## Scripts
 
 start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings), typecheck, **test** (`vitest run`), **test:watch**, format, format:check, build:web, manifest.
