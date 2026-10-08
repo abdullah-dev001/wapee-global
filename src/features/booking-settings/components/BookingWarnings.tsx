@@ -43,8 +43,6 @@ export function BookingWarnings({ warnings }: BookingWarningsProps) {
                 size={theme.iconSize.md}
                 strokeWidth={theme.iconStroke}
                 color={isError ? theme.colors.error : theme.colors.info}
-                // Decorative: the text says the same thing.
-                accessibilityElementsHidden
               />
               <View style={styles.text}>
                 <Text variant="body" color="textPrimary">

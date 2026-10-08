@@ -39,7 +39,6 @@ export function BranchSwitcher({ compact = false }: { compact?: boolean }) {
         size={theme.iconSize.md}
         strokeWidth={theme.iconStroke}
         color={theme.colors.textMuted}
-        accessibilityElementsHidden
       />
       <View style={styles.select}>
         <Select

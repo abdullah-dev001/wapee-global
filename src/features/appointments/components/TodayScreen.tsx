@@ -21,7 +21,8 @@ import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentIn
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
 import { showReviewLink } from '@/features/reviews/reviewLinkStore';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
-import { focusRing, theme } from '@/lib/theme';
+import { BranchSwitcher } from '@/features/branches/components';
+import { focusRing, theme, useBreakpoint } from '@/lib/theme';
 import { formatTime, todayInZone, type UtcIso } from '@/lib/time';
 
 import {
@@ -45,6 +46,7 @@ import { type AppointmentRow, type AppointmentStatus } from '../types';
  */
 export function TodayScreen() {
   const { t, i18n } = useTranslation();
+  const { isMobile } = useBreakpoint();
   const { businessId, business, branchId } = useCurrentScope();
   const canApprove = usePermission('appointments.approve').allowed;
   const canEdit = usePermission('appointments.edit').allowed;
@@ -114,6 +116,12 @@ export function TodayScreen() {
   return (
     <Screen edges={['top']}>
       <PageContainer title={t('appointments.today')}>
+        {/* Phones have no top bar: the location switcher sits here (it renders nothing with one location). */}
+        {isMobile ? (
+          <View style={styles.switcher}>
+            <BranchSwitcher compact />
+          </View>
+        ) : null}
         <View style={styles.counts}>
           <CountTile label={t('appointments.today')} value={counts.total} />
           {canApprove ? (
@@ -385,6 +393,9 @@ function QuickActionDialog({
 }
 
 const styles = StyleSheet.create({
+  switcher: {
+    marginBottom: theme.spacing[12],
+  },
   counts: {
     flexDirection: 'row',
     gap: theme.spacing[8],

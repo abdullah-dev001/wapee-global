@@ -4,6 +4,8 @@ import * as ExpoLinking from 'expo-linking';
 
 import { parseTokenFromFragment, stripTokenFromUrl } from './tokenFragment';
 
+type WindowWithFragment = Window & { __wapeeFragment?: string };
+
 /**
  * Reads the manage token from the URL FRAGMENT and keeps it in memory only —
  * never localStorage/sessionStorage, never logged, never sent anywhere except
@@ -29,7 +31,10 @@ export function useTokenFromUrl(): string | null | undefined {
   const [token, setToken] = useState<string | null | undefined>(() => {
     if (Platform.OS !== 'web') return undefined;
     if (typeof window === 'undefined') return null;
-    return parseTokenFromFragment(window.location.hash);
+    // The inline script in app/+html.tsx already moved the fragment out of the address bar; fall back to the address
+    // itself (dev server, or a script blocked by a browser extension).
+    const stashed = (window as WindowWithFragment).__wapeeFragment;
+    return parseTokenFromFragment(stashed ?? window.location.hash);
   });
   // Guards a native async resolution against overwriting a token already
   // found by an earlier `url` event or the initial URL.
@@ -43,7 +48,7 @@ export function useTokenFromUrl(): string | null | undefined {
     if (!token || typeof window.history?.replaceState !== 'function') return;
 
     const { pathname, search } = window.location;
-    window.history.replaceState(null, '', `${pathname}${search}`);
+    window.history.replaceState(window.history.state, '', `${pathname}${search}`);
 
     // Expo Router re-writes the address bar from its own saved URL (measured: it put `#token=`
     // back right after the strip above). So for as long as this page is mounted, any history

@@ -238,7 +238,6 @@ function FixedFieldRow({
         size={theme.iconSize.sm}
         strokeWidth={theme.iconStroke}
         color={theme.colors.textMuted}
-        accessibilityElementsHidden
       />
       <View style={styles.rowText}>
         <Text variant="body" color="textPrimary" numberOfLines={1}>

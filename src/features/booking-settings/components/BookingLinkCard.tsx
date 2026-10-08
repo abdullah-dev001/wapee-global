@@ -56,7 +56,6 @@ export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) 
             size={theme.iconSize.md}
             strokeWidth={theme.iconStroke}
             color={theme.colors.textSecondary}
-            accessibilityElementsHidden
           />
           <Text variant="cardTitle" color="textPrimary">
             {t('bookingSettings.link')}

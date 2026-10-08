@@ -1,5 +1,5 @@
 import { Search, X } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet } from 'react-native';
 
@@ -31,11 +31,14 @@ export function SearchInput({ onSearch, initialValue = '', ...inputProps }: Sear
 
   // One search term below the minimum is an empty term, not a one-letter query.
   const term = debounced.trim().length >= SEARCH_MIN_LENGTH ? debounced.trim() : '';
-  const [lastReported, setLastReported] = useState(term);
-  if (lastReported !== term) {
-    setLastReported(term);
+  // Reported from an effect, never during render: onSearch sets the PARENT's state, and React warns when one
+  // component updates another while rendering.
+  const lastReported = useRef(term);
+  useEffect(() => {
+    if (lastReported.current === term) return;
+    lastReported.current = term;
     onSearch(term);
-  }
+  }, [term, onSearch]);
 
   return (
     <Input

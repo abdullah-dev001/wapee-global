@@ -55,7 +55,7 @@ export function PageContainer({
       <View style={[styles.inner, fill ? styles.fill : null, maxWidth ? { maxWidth } : null]}>
         {title ? (
           <View style={[styles.header, isMobile ? styles.headerMobile : styles.headerWide]}>
-            <View style={styles.titleBlock}>
+            <View style={[styles.titleBlock, isMobile ? styles.titleBlockMobile : null]}>
               <View style={styles.titleRow}>
                 <Text variant={isMobile ? 'pageTitleMobile' : 'pageTitle'}>{title}</Text>
                 {count !== undefined ? <Badge tone="neutral">{String(count)}</Badge> : null}
@@ -107,6 +107,11 @@ const styles = StyleSheet.create({
   titleBlock: {
     flex: 1,
     gap: theme.spacing[4],
+  },
+  // In the mobile COLUMN header `flex: 1` has a zero basis on native and collapses the title when an actions row follows.
+  titleBlockMobile: {
+    flex: 0,
+    flexShrink: 0,
   },
   titleRow: {
     flexDirection: 'row',
