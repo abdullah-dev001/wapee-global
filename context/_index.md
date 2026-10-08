@@ -37,3 +37,4 @@ Shared files:
 | GDPR & contact lock | gdpr.md | backend + client-profile UI done | 11A | Per-client export / erase (financial rows kept), business erase, portal request seam, `clients.view_contact` as a database boundary |
 | Notifications | notifications.md | backend + UI done, deployed | 6A/6B | Outbox, Resend email, Twilio SMS + credits, Expo push, reminders (pg_cron), unsubscribe, 3 Edge Functions, settings/credits/log/push screens |
 | Account | account.md | done | pre-launch | Change email / password, delete my account (+ public /delete-account page) |
+| Offline screen | offline.md | done | pre-launch | Full-screen "No internet connection" + Retry over the whole app (web + native, public pages too) |

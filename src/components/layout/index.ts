@@ -3,6 +3,7 @@ export { BottomTabBar } from './BottomTabBar';
 export { ConsumedInsetsProvider, useConsumedInsets, type ConsumedInsets } from './ConsumedInsets';
 export { Header, type HeaderProps } from './Header';
 export { InstallHint } from './InstallHint';
+export { OfflineGate } from './OfflineGate';
 export { PageContainer, type PageContainerProps } from './PageContainer';
 export { Screen, type ScreenProps } from './Screen';
 export { ServiceWorkerUpdater } from './ServiceWorkerUpdater';

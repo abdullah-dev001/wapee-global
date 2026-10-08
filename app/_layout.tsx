@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { OfflineGate } from '@/components/layout/OfflineGate';
 import { ServiceWorkerUpdater } from '@/components/layout/ServiceWorkerUpdater';
 import { ToastProvider } from '@/components/ui';
 import { AdminAccessGate } from '@/features/admin/components';
@@ -55,18 +56,20 @@ export default function RootLayout() {
               <ToastProvider>
                 <ServiceWorkerUpdater />
                 <StatusBar style="dark" />
-                <SessionProvider>
-                  <AdminAccessGate>
-                    <AuthGate>
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: { backgroundColor: theme.colors.background },
-                        }}
-                      />
-                    </AuthGate>
-                  </AdminAccessGate>
-                </SessionProvider>
+                <OfflineGate>
+                  <SessionProvider>
+                    <AdminAccessGate>
+                      <AuthGate>
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
+                            contentStyle: { backgroundColor: theme.colors.background },
+                          }}
+                        />
+                      </AuthGate>
+                    </AdminAccessGate>
+                  </SessionProvider>
+                </OfflineGate>
               </ToastProvider>
             </QueryClientProvider>
           </I18nextProvider>

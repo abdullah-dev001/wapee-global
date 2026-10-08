@@ -1,3 +1,4 @@
+import { env } from '@/config/env';
 import { getSupabase } from '@/lib/supabase';
 
 import type { PushState } from './pushRegistration';
@@ -24,7 +25,7 @@ export class WebPushError extends Error {
 }
 
 function vapidPublicKey(): string | null {
-  return process.env.EXPO_PUBLIC_VAPID_PUBLIC_KEY || null;
+  return env.vapidPublicKey || null;
 }
 
 function isIos(): boolean {

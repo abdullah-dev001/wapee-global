@@ -74,6 +74,12 @@
     "updateTitle": "Update available",
     "updateAction": "Reload"
   },
+  "offline": {
+    "title": "No internet connection",
+    "description": "Check your Wi-Fi or mobile data. We will bring you back as soon as you are online.",
+    "retry": "Try again",
+    "checking": "Checking…"
+  },
   "auth": {
     "accountDisabled": "This account is disabled. Contact {{email}}",
     "login": {
