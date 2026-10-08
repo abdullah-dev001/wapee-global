@@ -146,3 +146,4 @@ Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
   migration, 2 new SQL assertions). New test suite (15 assertions) proving
   RLS/role behaviour against the new dashboard query paths. New shared
   `DataTable` component.
+- 2026-10-09: the profile's Invoices section is real: `features/invoices/components/ClientInvoicesSection` (number, date, total in the invoice's own currency, payment state; `useInvoiceList({clientId})`, 20 per page + load more; row opens `InvoiceDrawer`; hidden without `invoices.view`; empty + error states). Replaces the "coming soon" placeholder.

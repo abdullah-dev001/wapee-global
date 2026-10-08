@@ -909,7 +909,7 @@
       "noHistory": "No past appointments",
       "loadMoreHistory": "Load more",
       "invoices": "Invoices",
-      "invoicesComingSoon": "Invoice history is coming in a later phase."
+      "invoicesEmpty": "No invoices for this client yet."
     },
     "errors": {
       "nameRequired": "Enter a name.",

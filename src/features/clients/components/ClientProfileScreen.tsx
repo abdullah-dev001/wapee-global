@@ -32,6 +32,7 @@ import {
   useExportClient,
 } from '@/features/data-rights';
 import { useArchiveClient, useClient } from '../api/useClients';
+import { ClientInvoicesSection } from '@/features/invoices/components/ClientInvoicesSection';
 import { ClientForm } from './ClientForm';
 
 export type ClientProfileScreenProps = {
@@ -295,14 +296,7 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
                 ) : null}
               </View>
 
-              <View style={styles.section}>
-                <Text variant="sectionTitle">{t('clients.profile.invoices')}</Text>
-                <Card>
-                  <Text variant="helper" color="textMuted">
-                    {t('clients.profile.invoicesComingSoon')}
-                  </Text>
-                </Card>
-              </View>
+              <ClientInvoicesSection businessId={businessId} clientId={data.id} />
             </>
           ) : null}
         </View>

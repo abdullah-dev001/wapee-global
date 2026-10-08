@@ -96,3 +96,4 @@ Migrations: `20261006130000_report_basic_at_internal` (removed the public `p_as_
 - 2026-10-07: Phase 10A: package and product lines (see above).
 - 2026-10-06: Phase 5B UI (Invoices, detail/editor drawer, payments/reversal/credit note, print/share, Reports, appointment invoice buttons). Removed public `p_as_of` (`report_basic_at` internal).
 - 2026-10-06: Phase 5A backend built (schema, 10 RPCs, immutability, currency lock, reports). 310 SQL assertions + real concurrent-issue test.
+- 2026-10-09: `ClientInvoicesSection` (client profile) reuses `useInvoiceList` with `clientId` and `InvoiceDrawer`.
