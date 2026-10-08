@@ -8,10 +8,14 @@
  *   RESEND_API_KEY, RESEND_FROM_EMAIL
  *   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and ONE of
  *     TWILIO_MESSAGING_SERVICE_SID (preferred) or TWILIO_FROM_NUMBER
+ *   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (Web Push)
  *   EXPO_ACCESS_TOKEN (optional; only if Expo "enhanced push security" is on)
  */
 
+import webpush from 'npm:web-push@3.6.7';
+
 import type { EmailMessage, ProviderResult, PushMessage, PushOutcome } from './types.ts';
+import { sendWebPush, type WebPushConfig, type WebPushLib } from './webpush.ts';
 
 const TIMEOUT_MS = 15_000;
 
@@ -131,7 +135,7 @@ export async function sendSms(m: { to: string; body: string }): Promise<Provider
   };
 }
 
-export async function sendPush(messages: PushMessage[]): Promise<PushOutcome> {
+async function sendExpo(messages: PushMessage[]): Promise<PushOutcome> {
   if (messages.length === 0)
     return { delivered: false, deadTokenIds: [], retryable: false, message: 'no_tokens' };
   const headers: Record<string, string> = {
@@ -175,5 +179,43 @@ export async function sendPush(messages: PushMessage[]): Promise<PushOutcome> {
     deadTokenIds: dead,
     retryable: !delivered && dead.length < messages.length,
     message: delivered ? 'ok' : 'expo rejected',
+  };
+}
+
+function webPushConfig(): WebPushConfig | null {
+  const publicKey = Deno.env.get('VAPID_PUBLIC_KEY');
+  const privateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+  const subject = Deno.env.get('VAPID_SUBJECT');
+  return publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null;
+}
+
+/** Routes by platform: Expo for ios / android, Web Push (VAPID) for web. */
+export async function sendPush(messages: PushMessage[]): Promise<PushOutcome> {
+  const web = messages.filter((m) => m.platform === 'web');
+  const native = messages.filter((m) => m.platform !== 'web');
+  const config = web.length > 0 ? webPushConfig() : null;
+  const [n, w] = await Promise.all([
+    native.length > 0 ? sendExpo(native) : null,
+    web.length === 0
+      ? null
+      : config
+        ? sendWebPush(webpush as unknown as WebPushLib, config, web)
+        : // VAPID secrets missing: keep the subscriptions, do not retry forever.
+          Promise.resolve<PushOutcome>({
+            delivered: false,
+            deadTokenIds: [],
+            retryable: false,
+            message: 'webpush not configured',
+          }),
+  ]);
+  const parts = [n, w].filter((x): x is PushOutcome => x !== null);
+  if (parts.length === 0)
+    return { delivered: false, deadTokenIds: [], retryable: false, message: 'no_tokens' };
+  const delivered = parts.some((x) => x.delivered);
+  return {
+    delivered,
+    deadTokenIds: parts.flatMap((x) => x.deadTokenIds),
+    retryable: !delivered && parts.some((x) => x.retryable),
+    message: delivered ? 'ok' : parts.map((x) => x.message).join('; '),
   };
 }

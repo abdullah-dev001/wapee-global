@@ -129,7 +129,15 @@ export async function processJob(job: Job, deps: Deps): Promise<Outcome> {
     const msg = renderPush(job);
     if (!msg) return await failJob(deps, job, 'bad_event', false);
     const out = await deps.providers.sendPush(
-      job.tokens.map((t) => ({ id: t.id, token: t.token, title: msg.title, body: msg.body })),
+      job.tokens.map((t) => ({
+        id: t.id,
+        token: t.token,
+        title: msg.title,
+        body: msg.body,
+        platform: t.platform,
+        webKeys: t.web_keys ?? null,
+        url: msg.url,
+      })),
     );
     // Dead tokens are forgotten whether or not another device got the message.
     const dead = out.deadTokenIds;

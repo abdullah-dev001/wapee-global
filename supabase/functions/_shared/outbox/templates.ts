@@ -240,12 +240,22 @@ export function renderSms(job: Job, links: Links): string | null {
   return url && job.event !== 'cancelled' ? `${body} ${url}` : body;
 }
 
-export function renderPush(job: Job): { title: string; body: string } | null {
+/** Where tapping a web push opens. Same-origin paths only. */
+const PUSH_URL: Partial<Record<OutboxEvent, string>> = {
+  staff_new_booking: '/calendar',
+  staff_pending_approval: '/calendar',
+  staff_cancelled: '/calendar',
+  staff_reminder: '/calendar',
+  staff_low_stock: '/inventory',
+};
+
+export function renderPush(job: Job): { title: string; body: string; url: string } | null {
   const { cat, locale } = catalogueFor(job.language);
   const entry = cat.push[job.event];
   if (!entry) return null;
   const v = vars(job, locale);
   return {
+    url: PUSH_URL[job.event] ?? '/today',
     title: fill(entry.title, v),
     body: fill(entry.body, v)
       .replace(/^\s*·\s*/, '')

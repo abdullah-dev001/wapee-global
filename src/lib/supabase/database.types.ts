@@ -3398,6 +3398,7 @@ export type Database = {
           platform: string
           token: string
           user_id: string
+          web_keys: Json | null
         }
         Insert: {
           created_at?: string
@@ -3406,6 +3407,7 @@ export type Database = {
           platform: string
           token: string
           user_id: string
+          web_keys?: Json | null
         }
         Update: {
           created_at?: string
@@ -3414,6 +3416,7 @@ export type Database = {
           platform?: string
           token?: string
           user_id?: string
+          web_keys?: Json | null
         }
         Relationships: []
       }
@@ -6327,6 +6330,10 @@ export type Database = {
       }
       register_push_token: {
         Args: { p_platform: string; p_token: string }
+        Returns: Json
+      }
+      register_web_push_subscription: {
+        Args: { p_auth: string; p_endpoint: string; p_p256dh: string }
         Returns: Json
       }
       reissue_review_request: {

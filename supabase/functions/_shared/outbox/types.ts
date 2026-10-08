@@ -51,7 +51,13 @@ export type Job = {
   /** Email address or E.164 phone. Null for push. */
   to: string | null;
   recipient_hash: string | null;
-  tokens: { id: string; token: string }[];
+  tokens: {
+    id: string;
+    token: string;
+    platform?: 'ios' | 'android' | 'web';
+    /** Web Push only: the subscription keys. */
+    web_keys?: { p256dh: string; auth: string } | null;
+  }[];
 };
 
 export type ProviderResult =
@@ -79,7 +85,17 @@ export type EmailMessage = {
   oneClickUrl: string | null;
 };
 
-export type PushMessage = { id: string; token: string; title: string; body: string };
+export type PushMessage = {
+  id: string;
+  token: string;
+  title: string;
+  body: string;
+  /** Absent = native (Expo). 'web' = Web Push; `token` is then the endpoint. */
+  platform?: 'ios' | 'android' | 'web';
+  webKeys?: { p256dh: string; auth: string } | null;
+  /** Where a tap should open (web only), a same-origin path. */
+  url?: string;
+};
 
 export type ReserveResult =
   | { ok: true; to: string; segments: number; encoding: string; credits: number }

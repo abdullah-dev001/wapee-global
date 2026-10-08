@@ -47,13 +47,15 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9.39.5",
     "eslint-config-expo": "^57.0.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.9",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.0",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "web-push": "^3.6.7"
   },
   "scripts": {
     "start": "expo start",

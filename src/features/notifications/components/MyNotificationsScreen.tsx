@@ -79,6 +79,10 @@ export function MyNotificationsScreen() {
                 <Text variant="small" color="textSecondary">
                   {t('notifications.push.unsupported')}
                 </Text>
+              ) : status === 'needs_install' ? (
+                <Text variant="small" color="warning">
+                  {t('notifications.push.needsInstall')}
+                </Text>
               ) : status === 'not_configured' ? (
                 <Text variant="small" color="textSecondary">
                   {t('notifications.push.notConfigured')}
