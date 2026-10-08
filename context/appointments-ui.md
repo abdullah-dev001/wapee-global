@@ -2,7 +2,7 @@
 Status: done (Phase 4 part B1, fixed in B2) · Phase: 4 · Last updated: 2026-10-05
 
 The Today screen (`context/today.md`) reuses this file's hooks/components
-directly: `useCalendarAppointments`, `useAppointmentsRealtime`,
+directly: `useCalendarAppointments`, `useLiveRefetchInterval`,
 `AppointmentDetailDrawer`, `StatusBadge`, `Avatar`. The one addition made
 FOR Today, `calendarAppointmentToRow()` (exported from `useAppointments.ts`),
 is also now used by `DayView` instead of its own private copy.
@@ -54,7 +54,7 @@ documents the UI layer on top of it.
 |---|---|
 | app/(app)/calendar.tsx | route: `RouteGuard` + `CalendarScreen` |
 | src/features/appointments/api/useAppointments.ts | all 8 RPCs wrapped: `list_appointments` (`useInfiniteQuery`, keyset), `get_calendar_appointments`, create/update/cancel/no_show/complete/approve/reopen mutations, `appointmentKeys` |
-| src/features/appointments/api/useAppointmentsRealtime.ts | the app's FIRST Realtime subscription — see Data & caching |
+| src/lib/query/useLiveRefetchInterval.ts | 30 s refetch interval while the screen is focused (replaces the removed Realtime hook) |
 | src/features/appointments/api/useMyStaffProfile.ts | wraps `my_staff_profile_id()` for the UI's own-column lock |
 | src/features/appointments/api/useClientSearch.ts | minimal client search (name/phone) for the create form — gated the same as `clients_select` RLS, not a Clients feature |
 | src/features/appointments/api/usePendingApprovalCount.ts | count of `status='pending'` rows for the approval badge |
@@ -80,29 +80,13 @@ documents the UI layer on top of it.
 ## Data & caching
 `appointmentKeys` (`createQueryKeys('appointments')`), scoped by business +
 branch. `list_appointments`/`get_calendar_appointments` use
-`staleTimes.live`/`liveShort`. `useAppointmentsRealtime(businessId,
-branchId)` subscribes to `appointments` (`business_id` filter narrows the
-WAL subscription only — RLS is the real boundary, see
-`context/appointments.md`), invalidates `appointmentKeys.scope()` on every
-event, re-subscribes on business/branch change. `usePendingApprovalCount`
+`staleTimes.live`/`liveShort`. No Realtime (removed 2026-10-09): Today, the Day/Week grid and the list tab pass `{ live: true }` and refetch every 30 s while focused and visible (`useLiveRefetchInterval`); the Calendar header has a Refresh button. `usePendingApprovalCount`
 has its own key, `liveShort`. `useDayShading` (per-staff hours/breaks/time
 off, see Business rules) is `staleTimes.static`. Mutations invalidate the
 whole appointments scope (no precise per-row `setQueryData` — acceptable
-since Realtime already re-invalidates).
+since refetching keeps the data fresh).
 
-**Confirmed (2026-10-05, not a fix — traced and verified, no gap found):
-the Realtime subscription is torn down on logout and cleared on both
-logout and branch switch.** `useAppointmentsRealtime`'s `useEffect` cleanup
-calls `removeChannel` whenever `businessId`/`branchId` change OR the
-component unmounts. On sign-out, `SessionProvider`'s `onAuthStateChange`
-handler calls `queryClient.clear()` AND flips session state to null in the
-same synchronous event; `AuthGate` reads that same state and renders
-`<Redirect href="/login">` instead of `children` in the very next render,
-which unmounts `CalendarScreen` (and therefore this hook) in that same
-commit — there is no window where a live channel event could invalidate
-into an already-cleared cache while still mounted. On branch switch, the
-`branchId` dependency alone re-runs the effect (old channel removed, new
-one opened) without needing an unmount at all.
+On sign-out and business switch `queryClient.clear()` empties the cache, so nothing from the previous business can show. There are no subscriptions to tear down.
 
 ## Permissions & gating
 `appointments.view`/`.create`/`.edit`/`.cancel`/`.approve` via

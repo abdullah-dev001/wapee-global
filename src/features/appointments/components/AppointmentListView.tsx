@@ -33,7 +33,7 @@ export function AppointmentListView({
   onSelect,
 }: AppointmentListViewProps) {
   const { t } = useTranslation();
-  const query = useAppointmentList(businessId, filters);
+  const query = useAppointmentList(businessId, filters, { live: true });
 
   const rows = useMemo(() => query.data?.pages.flatMap((page) => page.rows) ?? [], [query.data]);
 

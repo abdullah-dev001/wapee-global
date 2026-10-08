@@ -428,8 +428,8 @@ Seed: ≥2 staff with hours, ≥2 services, ≥1 client, one pending (approval m
 | CAL-43 | Detail | Completed: review link | "Get review link again" if unreviewed (REV) | O/M/R | ☐ |
 | CAL-44 | Detail | Message status | Shows sent/failed messages for the appointment (event/channel/status only); Staff (Own) see none | O/M/R | ☐ |
 | CAL-45 | Pending badge | Pending count | Tab badge (mobile) / header chip (tablet+desktop) only for `appointments.approve` holders (O/M/R); none for Staff | O/M/R/S | ☐ |
-| CAL-46 | Realtime | Two windows: book publicly while calendar open | Calendar updates without refresh; Staff window gets only own events | O/S | ☐ |
-| CAL-47 | Realtime | Sign out then in as other business | No events from previous business (channel torn down) | Any | ☐ |
+| CAL-46 | Freshness | Two windows: book publicly while calendar open | Calendar updates within ~30 s or on Refresh; Staff window gets only own appointments; browser network tab shows no websocket | O/S | ☐ |
+| CAL-47 | Freshness | Sign out then in as other business | Nothing from the previous business (query cache cleared) | Any | ☐ |
 | CAL-48 | Drag and drop | Try to drag a block | **Not supported by design** | O | ☐ |
 | CAL-49 | Timezone | Branch ≠ device tz | All times in branch tz; "today" boundaries by branch | O | ☐ |
 | CAL-50 | DST | Appointment spanning a DST change day (create on 28 Mar 2027 London) | Correct local time, no off-by-one hour | O | ☐ |
@@ -446,10 +446,10 @@ Seed: ≥2 staff with hours, ≥2 services, ≥1 client, one pending (approval m
 | TOD-06 | Row | Tap summary | Opens same detail drawer as Calendar | O | ☐ |
 | TOD-07 | Row | Completed row | Create/View invoice button; review link dialog on completing | O/M/R | ☐ |
 | TOD-08 | Row | Layout 375 | Name not squeezed out; no button-in-button | O | ☐ |
-| TOD-09 | Realtime | Public booking while Today open | List updates live | O | ☐ |
+| TOD-09 | Freshness | Public booking while Today open | List updates within ~30 s; pull to refresh works on native | O | ☐ |
 | TOD-10 | Staff | Staff role | Only own appointments; no approve | S | ☐ |
 | TOD-11 | Pending count | Receptionist | Shown (holds approve); Staff not | R/S | ☐ |
-| TOD-12 | Realtime collision | Open Today and Calendar both | Neither screen blanks (channel-name bug fixed) | O | ☐ |
+| TOD-12 | Both screens | Open Today and Calendar both | Neither screen blanks; only the focused one polls | O | ☐ |
 | TOD-13 | Known limits | In-progress appointment | No separate visual state (by design) | O | ☐ |
 
 ### 2.15 CLI — Clients
@@ -707,7 +707,7 @@ Mark each cell `V` visible/allowed, `H` hidden, `B` blocked (UI shows no-access 
 | X-29 | Trial banner (last 3 days) | V | H | H | H | — | — |
 | X-30 | Billing/settings when trial locked | V (settings, more) | per `settings.business/billing` | H | H | — | — |
 | X-31 | Public booking / website / manage / review | — | — | — | — | — | V |
-| X-32 | Data isolation | Create data in business A; sign in to business B (other account) | Nothing from A visible in lists, search, URLs by id, realtime, invoice-print id | all | all | B | B |
+| X-32 | Data isolation | Create data in business A; sign in to business B (other account) | Nothing from A visible in lists, search, URLs by id, invoice-print id | all | all | B | B |
 | X-33 | Super admin / `/admin` | B | B | B | B | B | B |
 
 ---

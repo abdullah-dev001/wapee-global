@@ -52,7 +52,7 @@ List-appointments inner query as the Owner, 50k appointments: `Index Scan using 
 - `list_appointments` page 1 still takes about 650 ms although its inner plan is an index scan; the rest is inside the function (window + aggregation + the phone look-up). Under 1 s, so left.
 - The reports (`get_basic_report` 175 ms, `get_advanced_report` 65-230 ms) scan the year of data per call; fine at this size, re-measure above 200k appointments per business.
 - Unused-index advisor notices (37) are data-volume noise on a mostly empty project; none dropped.
-- Numbers are from the dev instance on one run day; production hardware will differ. Not measured: network, Realtime, the app's rendering.
+- Numbers are from the dev instance on one run day; production hardware will differ. Not measured: network, the app's rendering.
 
 ## Phase 11B: `list_invoices` payment filter
 Measured on a second throwaway business with 20,000 issued invoices and 16,000 payments (deleted by recorded id afterwards).

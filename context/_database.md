@@ -296,7 +296,7 @@ EVERY write RPC (`created`, `rescheduled`, `cancelled`, `no_show`,
 `completed`, `approved`, `reopened`); `list_appointments` pagination,
 filters, search, Own-scope narrowing, cross-business/anon seeing nothing;
 `get_calendar_appointments` branch-timezone day boundaries and cancelled
-rows excluded; Realtime publication membership; grants on every RPC
+rows excluded; no Realtime publication; grants on every RPC
 including both collision helpers.
 
 **Realtime RLS proved with a LIVE subscription** (not SQL fixtures, which
@@ -442,7 +442,7 @@ even visible to anon over REST (404). Performance = no unindexed FKs; the long
 | `20261003223040_get_booking_page_catalogue.sql` | Phase 3 step 5: `get_booking_page_catalogue()` for the public booking page's bootstrap endpoint |
 | `20261003223121_get_booking_page_rate_limit.sql` | Rate-limit rule for `get_booking_page` |
 | `20261004035654_guest_manage_reschedule_slots.sql` | Step 6 (cont.): `get_booking_reschedule_slots` — reschedule screen's slots, resolved from a TOKEN not an id |
-| `20261004042720_phase4_appointments_schema.sql` | Phase 4 part A: `appointments.invoice_id` (Phase 5 seam, no FK yet), `appointment_status_transitions` table + `is_allowed_appointment_transition()`, `appointments` added to `supabase_realtime` |
+| `20261004042720_phase4_appointments_schema.sql` | Phase 4 part A: `appointments.invoice_id` (Phase 5 seam, no FK yet), `appointment_status_transitions` table + `is_allowed_appointment_transition()`, `appointments` was added to `supabase_realtime` (removed again by `20261019100000_remove_realtime.sql`) |
 | `20261004042940_phase4_appointment_rpcs.sql` | `check_appointment_collision_v2()` shared helper (final form — see below), `create_appointment` (final form) |
 | `20261004043110_phase4_update_appointment.sql` | `update_appointment` (final form: reschedule or notes-only, validates fully before one write, stores `resource_id`) |
 | `20261004043134_phase4_status_rpcs.sql` | `cancel_appointment`, `mark_no_show`, `mark_completed`, `approve_appointment` (final form: pending-only, not a reopen side door) |
@@ -562,3 +562,4 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 - 2026-10-07: **Phase 11B** — `clients.notes` locked behind `clients.view_contact`; `invoice_payment_state` side table for the invoice payment filter; 2 migrations.
 - 2026-10-09: **Account deletion / email sync** — `account_delete_blockers`, `account_delete_commit` (service_role, one transaction, deletes the auth user), `log_account_event`, trigger `sync_profile_email`; ledger `created_by` FKs dropped (append-only tables cannot take SET NULL), `delete-account` slug reserved; 3 migrations. See `account.md`.
 - 2026-10-09: **Launch default prices** — data-only migration `20261019090000_default_launch_prices.sql`: add-ons set to packages 800, inventory 800, files_photos 1000, forms_consent 1000, client_portal 1200, custom_roles 1000 (USD minor), only where still the seed value and `updated_by` is null. Plans already 1500/3900/7900. Annual = `plans.price_annual_minor` (seed 18% off; no discount % field, no add-on annual).
+- 2026-10-09: **Realtime removed.** `20261019100000_remove_realtime.sql` drops `appointments` (the only published table) from `supabase_realtime`; no Realtime policy or helper existed. Suites 12 and 28 now assert the publication is empty. `[realtime] enabled = false` in `supabase/config.toml`. Project rule: no Realtime anywhere.

@@ -89,7 +89,7 @@ Migrations: `20261006130000_report_basic_at_internal` (removed the public `p_as_
 - **Top-service revenue ignores credit notes.**
 - **Free (total 0) invoices cannot be issued** (`zero_total`).
 - `reverse_payment` has no per-day cut-off or Owner-only rule beyond `invoices.credit_note`.
-- No `invoices` realtime (not needed; precise invalidation instead).
+- No live updates for invoices (precise invalidation instead).
 - Draft invoices are not audited on create (only discard), by choice.
 
 ## Changelog

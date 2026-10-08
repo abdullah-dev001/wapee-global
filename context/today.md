@@ -37,8 +37,7 @@ and UI pieces wholesale — no new backend, no new query hook.
 ## Data & caching
 `useCalendarAppointments(businessId, branchId, today, today)` —
 `staleTimes.live`, same key scope as the Calendar screen's Day view.
-`useAppointmentsRealtime(businessId, branchId)` is mounted here too (the
-same hook Calendar uses), so Today updates live without a pull-to-refresh.
+Freshness (no Realtime): the query passes `{ live: true }`, so it refetches every 30 s while Today is focused and the tab/app is visible, and on window focus / reconnect. Pull-to-refresh on native (`Screen onRefresh`).
 Quick actions invalidate the whole appointments scope, same as every other
 appointment mutation.
 

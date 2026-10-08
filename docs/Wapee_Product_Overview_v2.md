@@ -85,7 +85,7 @@ One Expo (React Native) codebase for iOS, Android, web; Supabase backend; whole 
 | Layer | Choice |
 |---|---|
 | App | Expo, Expo Router, React Native Web |
-| Backend | Supabase: Postgres, Auth, Storage, Realtime, Edge Functions |
+| Backend | Supabase: Postgres, Auth, Storage, Edge Functions (no Realtime) |
 | Security | Row Level Security on every tenant table |
 | Fonts / icons | DM Sans (@expo-google-fonts/dm-sans); lucide-react-native |
 | Forms | react-hook-form + zod |

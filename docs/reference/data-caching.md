@@ -16,10 +16,10 @@ Moved from CLAUDE.md §6. Read only when the task adds/changes a list or query.
 - Default `staleTime` by data type (set in `lib/query`):
   - static-ish (services, staff, settings, roles, plan): 5–10 min
   - lists (clients, invoices): 30–60 s
-  - live (calendar, today): 0–15 s + Realtime
+  - live (calendar, today): 0–15 s, plus `refetchInterval` 30 s while the screen is focused and the tab/app visible (`useLiveRefetchInterval`)
 - Use `placeholderData: keepPreviousData` for paginated lists (no flicker between pages).
 - Mutations: invalidate **exactly** the affected keys (or `setQueryData` for precise updates). Optimistic updates only for simple toggles/status, with rollback on error.
-- **Realtime** (appointments, calendar) updates/invalidates the cache; it never replaces the query.
+- **No Realtime anywhere.** Freshness comes from `refetchOnWindowFocus`, `refetchOnReconnect`, the 30 s interval on Today and Calendar only, and manual refresh (pull-to-refresh on native lists and Today, Refresh button on the Calendar).
 - Prefetch the next page and likely next screen where cheap.
 - On logout or business switch: clear the query cache.
 - Every query handles loading (skeleton), empty, and error (retry) states.

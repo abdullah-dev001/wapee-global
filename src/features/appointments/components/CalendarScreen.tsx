@@ -1,4 +1,5 @@
-import { Plus } from 'lucide-react-native';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { Plus, RefreshCw } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,8 +11,7 @@ import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 import { todayInZone } from '@/lib/time';
 
-import { type AppointmentListFilters } from '../api/useAppointments';
-import { useAppointmentsRealtime } from '../api/useAppointmentsRealtime';
+import { appointmentKeys, type AppointmentListFilters } from '../api/useAppointments';
 import { type AppointmentRow, type AppointmentStatus } from '../types';
 import { AppointmentDetailDrawer } from './AppointmentDetailDrawer';
 import { AppointmentListFilterBar } from './AppointmentListFilterBar';
@@ -73,22 +73,40 @@ export function CalendarScreen() {
       search: next.search ?? undefined,
     });
 
-  useAppointmentsRealtime(businessId, branchId);
+  const queryClient = useQueryClient();
+  const refreshing =
+    useIsFetching({ queryKey: appointmentKeys.business(businessId ?? 'none') }) > 0;
+  const refresh = () => {
+    if (businessId)
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.business(businessId) });
+  };
 
   return (
     <Screen edges={['top']} scroll={false}>
       <PageContainer
         title={t('appointments.title')}
         actions={
-          canCreate.allowed ? (
+          <>
             <Button
               size="sm"
-              startIcon={Plus}
-              onPress={() => setCreating({ date: selectedDate, minute: 9 * 60, staffId: null })}
+              variant="ghost"
+              startIcon={RefreshCw}
+              loading={refreshing}
+              onPress={refresh}
+              accessibilityLabel={t('appointments.refresh')}
             >
-              {t('appointments.newAppointment')}
+              {t('appointments.refresh')}
             </Button>
-          ) : null
+            {canCreate.allowed ? (
+              <Button
+                size="sm"
+                startIcon={Plus}
+                onPress={() => setCreating({ date: selectedDate, minute: 9 * 60, staffId: null })}
+              >
+                {t('appointments.newAppointment')}
+              </Button>
+            ) : null}
+          </>
         }
       >
         <View style={styles.tabs}>

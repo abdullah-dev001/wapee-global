@@ -41,7 +41,7 @@ Status: planned | in progress | done   ·   Phase: <n>   ·   Last updated: <YYY
 - Migrations: filenames
 
 ## Data & caching
-- Query keys, staleTime, which mutations invalidate what, realtime channels
+- Query keys, staleTime, which mutations invalidate what, refetch intervals
 - Pagination type, available filters/sort
 
 ## Permissions & gating

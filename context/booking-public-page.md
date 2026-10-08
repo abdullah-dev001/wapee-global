@@ -89,7 +89,7 @@ No new tables. One new function this step added:
   steps.
 - `useCreateBooking`: a mutation with `retry: false` — a double-submit must
   never silently become two bookings.
-- No realtime: a customer only ever looks at one branch for a few minutes.
+- No live updates: a customer only ever looks at one branch for a few minutes.
 
 ## Permissions & gating
 None — this is the anonymous public surface. No permission check applies;

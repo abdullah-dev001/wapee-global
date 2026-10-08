@@ -23,7 +23,7 @@ Shared files:
 | Booking public API | booking-public-api.md | deployed + verified | 3 | 5 Edge Functions, rate-limited and bot-protected — the only public path |
 | Booking public page | booking-public-page.md | done | 3 | `(public)/[slug]` booking flow: service → staff → slot → form → confirmation |
 | Guest manage page | booking-manage.md | done | 3 | `(public)/[slug]/manage` — view, cancel, reschedule a booking by token |
-| Dashboard appointments | appointments.md | backend done + closure round + B1/B2 fixes | 4 | create/update/cancel/no-show/complete/approve/reopen, list + calendar RPCs, Realtime (RLS proved live) |
+| Dashboard appointments | appointments.md | backend done + closure round + B1/B2 fixes | 4 | create/update/cancel/no-show/complete/approve/reopen, list + calendar RPCs |
 | Dashboard appointments UI | appointments-ui.md | done (B1 + B2 fixes), sim-tested | 4 | Calendar screen (Day/Week/List), create/detail drawers, shared scheduler |
 | Clients | clients.md | done (part B2) | 4 | Client list (search, pagination, archive), create/edit, profile (contact/notes/upcoming/history) |
 | Today | today.md | done (part B2) | 4 | Mobile home: today's appointments, counts, quick actions |

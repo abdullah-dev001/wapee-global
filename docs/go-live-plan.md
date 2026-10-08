@@ -217,7 +217,7 @@ After Day 2: Apple review (1-3 days), Play closed test (14 days if personal acco
 ## 12. Launch-day smoke checklist (production URLs, a real phone and an outside email)
 1. `https://wapee.online/<slug>` website loads; `https://wapee.online/<slug>/book` loads; `https://app.wapee.online/login` loads; hard refresh each; `/privacy` and `/terms` load.
 2. Sign up with an outside email: verification mail arrives (not spam, SPF/DKIM/DMARC pass); confirm; onboard; create service, staff, hours.
-3. Booking link shows as active; book from a phone; confirmation email arrives with the manage link; the business receives it in the calendar (Realtime updates live).
+3. Booking link shows as active; book from a phone; confirmation email arrives with the manage link; the business receives it in the calendar (it appears within 30 s or on refresh).
 4. Guest manage link: reschedule, then cancel; both emails arrive.
 5. Approve/complete a booking; review request email arrives; leave a review; reply.
 6. Create, issue and print an invoice; take a payment; credit note.

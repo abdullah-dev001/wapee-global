@@ -79,7 +79,7 @@ untouched and unrelated; this is the staff-facing path, callable by
 ## Files
 | Path | Purpose |
 |---|---|
-| supabase/migrations/20261004042720_phase4_appointments_schema.sql | `invoice_id`, `appointment_status_transitions` table + `is_allowed_appointment_transition()`, Realtime publication |
+| supabase/migrations/20261004042720_phase4_appointments_schema.sql | `invoice_id`, `appointment_status_transitions` table + `is_allowed_appointment_transition()` (it once added `appointments` to the Realtime publication; removed 2026-10-09) |
 | supabase/migrations/20261004042940_phase4_appointment_rpcs.sql | `check_appointment_collision_v2()` (final form), `create_appointment` (final form, forces Own-scope staff_id, stores resource_id) |
 | supabase/migrations/20261004043110_phase4_update_appointment.sql | `update_appointment` (final form, stores resource_id) |
 | supabase/migrations/20261004043134_phase4_status_rpcs.sql | `cancel_appointment`, `mark_no_show`, `mark_completed`, `approve_appointment` (final form: pending-only, not a reopen side door) |
@@ -166,66 +166,12 @@ EXECUTE, called from inside the DEFINER functions).
   **`get_calendar_appointments(...)`** — unchanged from the first pass.
   See the SQL for full signatures.
 
-### Realtime
-`appointments` is in the `supabase_realtime` publication. Supabase's
-`postgres_changes` applies the subscriber's own RLS policies to each change
-event for an authenticated client, so **`appointments_select` (Own/Branch/
-All) is the only access boundary** — nothing extra was built. Subscribe
-with:
-
-```ts
-supabase
-  .channel('appointments-changes')
-  .on('postgres_changes', {
-    event: '*', schema: 'public', table: 'appointments',
-    filter: `business_id=eq.${businessId}`,
-  }, handler)
-  .subscribe();
-```
-
-A Staff member (Own scope) only ever RECEIVES events for rows RLS lets them
-see, regardless of the `filter` — the filter narrows the WAL subscription
-for efficiency; RLS decides visibility. Invalidate/refetch
-`list_appointments`/`get_calendar_appointments` on an event rather than
-patching the cache from the payload (CLAUDE.md §6).
-
-**Proved with a live subscription, not just argued (2026-10-05).**
-`set_config` JWT fixtures (the SQL suite's usual trick) cannot subscribe to
-a Realtime channel — it needs a live, signed JWT. Proved with three REAL
-signed-in `supabase-js` clients against the deployed project: Owner A
-(business A), Owner B (a DIFFERENT business), and Staff X (a Staff member
-on business A, Own scope, with a second staff profile on the SAME business
-with no login — "someone else's" appointment from Staff X's point of
-view). All three subscribed with no `filter`, to prove RLS alone does the
-work. Owner A created two appointments on business A: one for Staff X
-themselves, one for the other staff profile.
-
-Result:
-- **Owner B (another business) received ZERO events.**
-- **Staff X received exactly ONE event — their own appointment** — the one
-  for the other staff profile on the SAME business never arrived, proving
-  `is_own_staff_profile` narrowing applies to the Realtime stream exactly
-  as it does to an ordinary `select`.
-- Owner A (Branch/All, own business) received both, as expected.
-
-The throwaway script and its test businesses/users were deleted after the
-run; nothing from this proof is left in the database.
-
-### Migration history
-All local filenames now match the REAL remote `supabase_migrations` history
-exactly — `supabase migration list` reports 56/56 matched, zero mismatches,
-confirmed 2026-10-05. **No `supabase migration repair` was needed or run.**
-The mismatch this closure round found and fixed: `apply_migration` assigns
-each migration its OWN timestamp based on when it actually runs, which does
-not match whatever timestamp prefix the local filename happens to use.
-Every Phase 4 file (and two Phase 3 files from the previous session) had
-drifted for this reason. Fixed by renaming local files to the real remote
-timestamps (confirmed with the user before doing it — pure `mv`, zero
-database changes). See Changelog and `context/_handoff.md`'s Traps.
+### Freshness (no Realtime)
+The product uses NO Realtime (owner decision 2026-10-09; migration `20261019100000_remove_realtime.sql` removed `appointments` from the `supabase_realtime` publication). The dashboard stays fresh through TanStack Query: refetch on window focus / reconnect, a 30 s `refetchInterval` on Today and Calendar only while focused and visible (`useLiveRefetchInterval`), and manual refresh. Visibility of rows is decided by `appointments_select` / the RPCs (Own/Branch/All) on every fetch.
 
 ## Data & caching
 Not wired here — see [appointments-ui.md](appointments-ui.md) for query
-keys, staleTimes and the Realtime invalidation built on this RPC surface.
+keys, staleTimes and the refetching built on this RPC surface.
 
 ## Permissions & gating
 `appointments.view`/`.create`/`.edit`/`.cancel`/`.approve`, each Own/Branch/

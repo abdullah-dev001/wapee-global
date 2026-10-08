@@ -1417,10 +1417,10 @@ begin
 end $$;
 
 -- ===========================================================================
--- 7. Realtime + grants
+-- 7. No Realtime + grants
 -- ===========================================================================
-select pg_temp.chk('appointments is in the supabase_realtime publication',
-  (select count(*)::int from pg_publication_tables where pubname='supabase_realtime' and tablename='appointments'), 1);
+select pg_temp.chk('no table is in the supabase_realtime publication (Realtime is not used)',
+  (select count(*)::int from pg_publication_tables where pubname='supabase_realtime'), 0);
 
 select pg_temp.chk('anon cannot call create_appointment',
   has_function_privilege('anon','public.create_appointment(uuid,uuid,timestamptz,uuid,uuid,text,text,text,text,text,public.booking_source,boolean)','execute'), false);

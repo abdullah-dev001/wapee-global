@@ -65,7 +65,7 @@ export function DayView({
   const staff = useStaff(businessId, branchId, { includeInactive: false });
   const branchSchedule = useBranchSchedule(businessId, branchId);
   const dayShading = useDayShading(businessId, branchId, date, timeZone);
-  const calendar = useCalendarAppointments(businessId, branchId, date, date);
+  const calendar = useCalendarAppointments(businessId, branchId, date, date, null, { live: true });
 
   const isOwnScopeOnly = !canViewAllStaff.allowed;
   const allStaff = useMemo(() => staff.data ?? [], [staff.data]);

@@ -5,7 +5,7 @@
 --
 -- Plain SQL, own fixtures, rolled back. Roles: Owner, Manager, Receptionist (allowed by default), Staff at
 -- own scope (blocked), a stranger from another business. Also proves search, the invoice print view, the
--- duplicate-phone lookup, list_appointments, booking-side RPCs (service_role) and Realtime are unaffected.
+-- duplicate-phone lookup, list_appointments, booking-side RPCs (service_role) are unaffected (and nothing is published to Realtime).
 begin;
 
 create temporary table ids (k text primary key, v uuid) on commit drop;
@@ -347,8 +347,8 @@ begin
   perform pg_temp.chk('invoice print view: receptionist still gets the phone; the Manager too', (pg_temp.as_('recep', format($q$select public.get_invoice_print_data(%L)$q$, v_inv))->'client'->>'phone') || (pg_temp.as_('mgr', format($q$select public.get_invoice_print_data(%L)$q$, v_inv))->'client'->>'phone'), '+447700910001+447700910001');
   perform pg_temp.chk('booking side (service_role, DEFINER): a client lookup by phone / email still works',
     pg_temp.svc(format($q$select to_jsonb((select count(*) from public.clients where business_id = %L and phone_e164 = '+447700910001'))$q$, pg_temp.id('biza')))::text || pg_temp.svc(format($q$select to_jsonb((select count(*) from public.clients where business_id = %L and email = 'alice@example.com'))$q$, pg_temp.id('biza')))::text, '11');
-  perform pg_temp.chk('Realtime: only appointments is published (no contact column can ride a change event), and appointments is still readable by a dashboard member',
-    (select string_agg(tablename, ',') from pg_publication_tables where pubname = 'supabase_realtime') || '/' || pg_temp.try_as('staff', 'select id, status, client_id from public.appointments'), 'appointments/ok');
+  perform pg_temp.chk('no Realtime: nothing is published (no contact column can ride a change event), and appointments is still readable by a dashboard member',
+    coalesce((select string_agg(tablename, ',') from pg_publication_tables where pubname = 'supabase_realtime'), 'none') || '/' || pg_temp.try_as('staff', 'select id, status, client_id from public.appointments'), 'none/ok');
   perform pg_temp.chk('portal_client_ids (email -> clients, DEFINER) still resolves', public.portal_client_ids(pg_temp.id('biza'), 'alice@example.com')::text, '{' || pg_temp.id('alice')::text || '}');
 end $$;
 

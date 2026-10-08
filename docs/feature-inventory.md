@@ -243,7 +243,7 @@ Rows are `| feature | status | where | tested |`. Status is exactly `Built`, `Pa
 | Status transition table (cancelled is final) | Built | `appointment_status_transitions` | SQL 12 |
 | `list_appointments` (keyset, filters, search, client) | Built | RPC | SQL 12, 13; perf measured |
 | `get_calendar_appointments` | Built | RPC | SQL 12 |
-| Realtime on appointments (RLS applies) | Built | `useAppointmentsRealtime` | 3 live clients proof |
+| Fresh data on Today / Calendar (no Realtime) | Built | `useLiveRefetchInterval`, Calendar Refresh button | 30 s poll while focused |
 | Calendar Day / Week / List | Built | `/calendar` | SIM (Day view screenshot); WEB; create/edit/cancel dialogs NONE recorded |
 | One column per staff, shading from real hours/breaks/time off, now-line | Built | `StaffColumnsGrid`, `useDayShading` | UT; SIM |
 | Create drawer (client search/new, service, staff, time, walk-in, out-of-hours warning) | Built | `CreateAppointmentForm` | UT; click NONE recorded |

@@ -733,6 +733,7 @@
     "slotGone": "That time was just taken. Pick another."
   },
   "appointments": {
+    "refresh": "Refresh",
     "title": "Calendar",
     "views": {
       "day": "Day",

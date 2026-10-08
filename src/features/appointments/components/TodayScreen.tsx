@@ -34,7 +34,6 @@ import {
   useMarkNoShow,
   type CalendarAppointment,
 } from '../api/useAppointments';
-import { useAppointmentsRealtime } from '../api/useAppointmentsRealtime';
 import { minuteOfDayFromTime } from '../timeGrid';
 import { AppointmentDetailDrawer } from './AppointmentDetailDrawer';
 import { type AppointmentRow, type AppointmentStatus } from '../types';
@@ -58,9 +57,9 @@ export function TodayScreen() {
   }, [business, branchId]);
 
   const today = todayInZone(timeZone);
-  const calendar = useCalendarAppointments(businessId, branchId, today, today);
-
-  useAppointmentsRealtime(businessId, branchId);
+  const calendar = useCalendarAppointments(businessId, branchId, today, today, null, {
+    live: true,
+  });
 
   const [selected, setSelected] = useState<AppointmentRow | null>(null);
   const [quickAction, setQuickAction] = useState<{
@@ -114,7 +113,11 @@ export function TodayScreen() {
   }
 
   return (
-    <Screen edges={['top']}>
+    <Screen
+      edges={['top']}
+      onRefresh={() => void calendar.refetch()}
+      refreshing={calendar.isRefetching}
+    >
       <PageContainer title={t('appointments.today')}>
         {/* Phones have no top bar: the location switcher sits here (it renders nothing with one location). */}
         {isMobile ? (

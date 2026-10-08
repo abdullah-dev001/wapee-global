@@ -49,7 +49,7 @@ Updated: Oct 1, 2026 · Based on: Wapee_Product_Overview_v2.md
 ## Phase 4 — Calendar, appointments, clients
 - Calendar: day, week, list; staff columns; visible slots; no drag
 - Create / edit / reschedule / cancel via form, walk-ins, statuses, no-show, approve (if manual confirmation)
-- Realtime updates (naya booking turant dikhe)
+- Fresh data without Realtime: refetch on focus/reconnect, 30 s refresh on Today and Calendar, manual refresh
 - Clients: list, search, profile, contact, notes, visit history, sensitive fields gating
 - Today screen (mobile home)
 - **Done jab:** receptionist poora din calendar se chala sakta hai.

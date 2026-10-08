@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 
 import { useSession } from '@/features/auth';
-import { createQueryKeys, staleTimes } from '@/lib/query';
+import { createQueryKeys, staleTimes, useLiveRefetchInterval } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 import { type UtcIso } from '@/lib/time';
 
@@ -92,8 +92,14 @@ type AppointmentListPage = {
   nextCursor: { starts_at: string; id: string } | null;
 };
 
-export function useAppointmentList(businessId: string | null, filters: AppointmentListFilters) {
+/** `live: true` = poll every 30 s while focused and visible (the Calendar list tab only). */
+export function useAppointmentList(
+  businessId: string | null,
+  filters: AppointmentListFilters,
+  options: { live?: boolean } = {},
+) {
   const { isAuthenticated } = useSession();
+  const refetchInterval = useLiveRefetchInterval(options.live ?? false);
   const { branchId, staffId, status, serviceId, clientId, fromDate, toDate, search = '' } = filters;
 
   return useInfiniteQuery<AppointmentListPage>({
@@ -105,6 +111,7 @@ export function useAppointmentList(businessId: string | null, filters: Appointme
     }),
     enabled: isAuthenticated && Boolean(businessId),
     staleTime: staleTimes.liveShort,
+    refetchInterval,
     initialPageParam: null as { starts_at: string; id: string } | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }) => {
@@ -189,8 +196,11 @@ export function useCalendarAppointments(
   fromDate: string,
   toDate: string,
   staffIds?: string[] | null,
+  /** `live: true` = poll every 30 s while focused and visible (Today and Calendar only). */
+  options: { live?: boolean } = {},
 ): UseQueryResult<{ timezone: string; rows: CalendarAppointment[] }, Error> {
   const { isAuthenticated } = useSession();
+  const refetchInterval = useLiveRefetchInterval(options.live ?? false);
 
   return useQuery({
     queryKey: appointmentKeys.list({
@@ -200,6 +210,7 @@ export function useCalendarAppointments(
     }),
     enabled: isAuthenticated && Boolean(businessId && branchId),
     staleTime: staleTimes.live,
+    refetchInterval,
     queryFn: async () => {
       const { data, error } = await getSupabase().rpc('get_calendar_appointments', {
         p_business_id: businessId ?? '',

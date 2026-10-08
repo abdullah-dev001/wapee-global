@@ -10,7 +10,7 @@ If code and these docs disagree, **stop and ask**.
 - `design-system.md` — colour tokens, type/shape/motion, component specs, reusable component rules (any UI work)
 - `platform.md` — breakpoints, safe areas, system bars, back/keyboard, testing matrix, screenshot rules, Android review checklist
 - `pwa.md` — manifest, service worker, install hint · `push.md` — push tables, Expo/Web Push, `send-push`
-- `data-caching.md` — server-side pagination/search rules, TanStack Query keys, staleTime, invalidation, realtime
+- `data-caching.md` — server-side pagination/search rules, TanStack Query keys, staleTime, invalidation, refetching
 - `context-files.md` — context file rules + template (only when creating a feature file)
 
 ## 1. Working rules (STRICT)
@@ -32,7 +32,7 @@ If code and these docs disagree, **stop and ask**.
 12. **UI tasks need real screenshots** at mobile (~375) and desktop (1440) before done (details in `platform.md`). Simulator: **do not try to tap it**; use screenshots and deep links only. If login is needed and you have no credentials, ask. Android is never run here: say "reviewed in code, not run".
 
 ## 2. Tech stack (no new libraries without asking: say why + name the alternative)
-Expo (latest stable) + **Expo Router** + React Native Web, TypeScript **strict** · Supabase (Postgres, Auth, Storage, Realtime, Edge Functions/Deno) · **@tanstack/react-query** (all server state) · Zustand (small client-only UI state; never server data) · react-hook-form + zod · i18next + react-i18next + expo-localization · **lucide-react-native** only (stroke 1.75, sizes 14/16/18/20/22) · DM Sans (@expo-google-fonts/dm-sans) · date-fns + date-fns-tz · Resend (email) and Twilio (SMS), Edge Functions only · Push: Expo push (Android/iOS), Web Push VAPID (web) · react-native-safe-area-context, expo-status-bar, expo-navigation-bar, keyboard-controller (or KeyboardAvoidingView — ask) · Charts: one lib for web+native (ask before choosing).
+Expo (latest stable) + **Expo Router** + React Native Web, TypeScript **strict** · Supabase (Postgres, Auth, Storage, Edge Functions/Deno) · **@tanstack/react-query** (all server state) · Zustand (small client-only UI state; never server data) · react-hook-form + zod · i18next + react-i18next + expo-localization · **lucide-react-native** only (stroke 1.75, sizes 14/16/18/20/22) · DM Sans (@expo-google-fonts/dm-sans) · date-fns + date-fns-tz · Resend (email) and Twilio (SMS), Edge Functions only · Push: Expo push (Android/iOS), Web Push VAPID (web) · react-native-safe-area-context, expo-status-bar, expo-navigation-bar, keyboard-controller (or KeyboardAvoidingView — ask) · Charts: one lib for web+native (ask before choosing).
 
 ## 3. Folder structure
 ```
@@ -63,6 +63,7 @@ Routes stay thin; business logic in `features/`. No file over ~300 lines.
 - Financial records are **immutable** (credit notes / reversal rows). Invoice numbers `<branch prefix>-<n>`, gapless per branch (DB). Prefix unique per business, fixed after first invoice.
 - Country, currency, timezone, address, tax belong to the **BRANCH** (business keeps only `default_*`). Branch currency is fixed once it has an invoice/payment. "Today", slots, reminders use branch timezone.
 - Reports never add different currencies (group by currency). Audit-log: role changes, financial actions, soft deletes, super-admin access.
+- **No Realtime anywhere.** No `.channel()`, `postgres_changes`, broadcast or presence, and no table in the `supabase_realtime` publication. Freshness = TanStack Query: refetch on focus/reconnect, plus a 30 s `refetchInterval` ONLY on Today and Calendar while focused and visible, and manual refresh.
 - Index every FK and filter/sort column; `pg_trgm` for text search. Atomic/heavy work → RPC or Edge Function. Secrets only in Edge Function secrets; service role key never in the app.
 - **All** pagination, filter, sort, search server-side (page 20, max 100, search ≥2 chars debounced 300ms, no `select('*')` in lists). Every read via a hook in `features/<x>/api/` (TanStack Query, key factory scoped by business/branch); no Supabase calls in components. Clear query cache on logout/business switch. Details: `data-caching.md`.
 
