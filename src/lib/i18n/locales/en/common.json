@@ -30,7 +30,6 @@
     "auth": "Sign in",
     "app": "Dashboard",
     "public": "Business page: {{slug}}",
-    "portal": "Client portal",
     "admin": "Super admin",
     "notFound": "Page not found"
   },

@@ -47,7 +47,7 @@ Rows are `| feature | status | where | tested |`. Status is exactly `Built`, `Pa
 | Print stylesheet (invoice, report) | Built | `app/+html.tsx` | WEB (Chromium print emulation) |
 | Settings hub screen | Built | `/settings` | WEB; has a known dev-only icon-prop warning that shows as an error toast in the dev build |
 | More screen (mobile menu) | Built | `/more` | WEB; SIM |
-| `app/(portal)/portal` route | Partial | still a `PlaceholderScreen`; the real portal is `/<slug>/portal` | stale route, harmless, remove |
+| `app/(portal)/portal` route | Removed 2026-10-09 | was a `PlaceholderScreen`; the real portal is `/<slug>/portal` | done |
 | Unit-test suite | Built | 47 files / 590 tests | **run by me: pass** |
 | CI workflow | Partial | `.github/workflows/ci.yml` written, **never run** | NONE |
 | `npm run smoke:public` (40 checks) | Built | `scripts/smoke-public.mjs` | HTTP; spends the 10/hour per-IP budget |

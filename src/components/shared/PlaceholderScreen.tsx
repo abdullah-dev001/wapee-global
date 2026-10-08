@@ -57,9 +57,6 @@ export function PlaceholderScreen({ title }: PlaceholderScreenProps) {
           <Link href="/demo-salon" style={styles.link}>
             {t('routes.public', { slug: 'demo-salon' })}
           </Link>
-          <Link href="/portal" style={styles.link}>
-            {t('routes.portal')}
-          </Link>
           <Link href="/admin" style={styles.link}>
             {t('routes.admin')}
           </Link>
