@@ -21,6 +21,7 @@ import {
 import { PageContainer, Screen } from '@/components/layout';
 import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Card, Text } from '@/components/ui';
+import { launch } from '@/config/launch';
 import { RouteGuard } from '@/features/auth';
 import { useFeatureFlag, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
@@ -125,7 +126,7 @@ export default function SettingsScreen() {
           },
         ]
       : []),
-    ...(canSeeCredits.allowed
+    ...(launch.sms && canSeeCredits.allowed
       ? [
           {
             route: '/settings/sms-credits' as const,

@@ -1,3 +1,4 @@
+import { launch } from '@/config/launch';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -163,31 +164,43 @@ export function NotificationSettingsScreen() {
       <Card>
         <View style={styles.stack}>
           <Text variant="cardTitle">{t('notifications.settings.smsTitle')}</Text>
-          <Toggle
-            label={t('notifications.settings.smsToggle')}
-            value={current.smsEnabled}
-            onValueChange={(v) => update({ smsEnabled: v })}
-            disabled={!editable}
-          />
-          <Text variant="helper" color="textSecondary">
-            {t('notifications.settings.smsHint')}
-          </Text>
-          {current.smsEnabled ? (
-            <Text variant="helper" color={readiness === 'ready' ? 'success' : 'warning'}>
-              {t(
-                readiness === 'no_rate'
-                  ? 'notifications.settings.smsNoRate'
-                  : readiness === 'no_credits'
-                    ? 'notifications.settings.smsNoCredits'
-                    : 'notifications.settings.smsReady',
-              )}
+          {launch.sms ? (
+            <>
+              <Toggle
+                label={t('notifications.settings.smsToggle')}
+                value={current.smsEnabled}
+                onValueChange={(v) => update({ smsEnabled: v })}
+                disabled={!editable}
+              />
+              <Text variant="helper" color="textSecondary">
+                {t('notifications.settings.smsHint')}
+              </Text>
+              {current.smsEnabled ? (
+                <Text variant="helper" color={readiness === 'ready' ? 'success' : 'warning'}>
+                  {t(
+                    readiness === 'no_rate'
+                      ? 'notifications.settings.smsNoRate'
+                      : readiness === 'no_credits'
+                        ? 'notifications.settings.smsNoCredits'
+                        : 'notifications.settings.smsReady',
+                  )}
+                </Text>
+              ) : null}
+              {canSeeCredits.allowed ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => router.push('/settings/sms-credits')}
+                >
+                  {t('notifications.settings.viewCredits')}
+                </Button>
+              ) : null}
+            </>
+          ) : (
+            <Text variant="helper" color="textSecondary">
+              {t('notifications.settings.smsComingSoon')}
             </Text>
-          ) : null}
-          {canSeeCredits.allowed ? (
-            <Button variant="ghost" size="sm" onPress={() => router.push('/settings/sms-credits')}>
-              {t('notifications.settings.viewCredits')}
-            </Button>
-          ) : null}
+          )}
         </View>
       </Card>
 

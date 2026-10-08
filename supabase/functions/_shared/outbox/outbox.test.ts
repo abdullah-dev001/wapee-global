@@ -311,7 +311,7 @@ describe('processJob: email', () => {
     const m = calls.emails[0]!;
     expect(m.text).toContain(`https://wapee.online/nova-hair/review#token=${RAW}`);
     // The email links the confirm PAGE (token in the fragment); the one-click header POSTs to the function.
-    expect(m.unsubscribeUrl).toMatch(/^https:\/\/wapee\.site\/unsubscribe#token=/);
+    expect(m.unsubscribeUrl).toMatch(/^https:\/\/wapee\.online\/unsubscribe#token=/);
     expect(m.oneClickUrl).toMatch(/^https:\/\/x\.supabase\.co\/functions\/v1\/unsubscribe\?t=/);
     const t = decodeURIComponent(m.unsubscribeUrl!.split('#token=')[1]!);
     expect(await verifyUnsubscribe(KEY, t, NOW)).toMatchObject({ b: 'biz-1', c: 'email', h: HASH });

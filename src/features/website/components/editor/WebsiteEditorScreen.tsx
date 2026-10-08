@@ -18,6 +18,7 @@ import {
   useToast,
 } from '@/components/ui';
 import { brand } from '@/config/brand';
+import { launch } from '@/config/launch';
 import { WidgetSettings } from '@/features/widget/components/WidgetSettings';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme, useBreakpoint } from '@/lib/theme';
@@ -88,7 +89,7 @@ export function WebsiteEditorScreen() {
   const tabs: { value: Tab; label: string }[] = [
     { value: 'sections', label: t('websiteEditor.tabs.sections') },
     { value: 'theme', label: t('websiteEditor.tabs.theme') },
-    { value: 'widget', label: t('websiteEditor.tabs.widget') },
+    ...(launch.widget ? [{ value: 'widget' as Tab, label: t('websiteEditor.tabs.widget') }] : []),
     ...(isDesktop ? [] : [{ value: 'preview' as Tab, label: t('websiteEditor.tabs.preview') }]),
   ];
   const activeTab: Tab = tab === 'preview' && isDesktop ? 'sections' : tab;
@@ -162,7 +163,7 @@ export function WebsiteEditorScreen() {
           onDraftChange={setThemeDraft}
         />
       ) : null}
-      {activeTab === 'widget' ? <WidgetSettings businessId={businessId} /> : null}
+      {launch.widget && activeTab === 'widget' ? <WidgetSettings businessId={businessId} /> : null}
       {activeTab === 'preview' ? (
         <WebsitePreview model={preview.model} isLoading={preview.isLoading} />
       ) : null}

@@ -165,7 +165,7 @@
       "branchName": "Leave blank to use your business name.",
       "currency": "Used on this location's invoices. It cannot change once invoices exist.",
       "timezone": "Appointment times at this location use this.",
-      "country": "Sets tax rules and SMS rates for this location."
+      "country": "Sets tax rules for this location."
     },
     "slug": {
       "checking": "Checking…",
@@ -1551,7 +1551,7 @@
     "title": "Notifications",
     "hub": {
       "settingsTitle": "Customer notifications",
-      "settingsSubtitle": "Reminders, SMS, quiet hours and message previews",
+      "settingsSubtitle": "Reminders, quiet hours and message previews",
       "creditsTitle": "SMS credits",
       "creditsSubtitle": "Balance and history",
       "logTitle": "Message log",
@@ -1573,6 +1573,7 @@
       "reviewTitle": "Review requests",
       "reviewToggle": "Ask for a review after a visit is completed",
       "smsTitle": "SMS",
+      "smsComingSoon": "SMS messages are coming soon.",
       "smsToggle": "Use SMS for customers without an email",
       "smsHint": "A customer with an email always gets email. SMS is used only when there is no email, and every message costs credits.",
       "smsReady": "SMS is ready to send.",
@@ -1583,7 +1584,7 @@
       "quietTitle": "Quiet hours",
       "quietStart": "Quiet from",
       "quietEnd": "Quiet until",
-      "quietHint": "SMS reminders and review requests wait until the quiet period ends, but never later than 2 hours before the appointment. Email and booking confirmations are never delayed. Choosing the same start and end turns quiet hours off.",
+      "quietHint": "Reminders and review requests wait until the quiet period ends, but never later than 2 hours before the appointment. Email and booking confirmations are never delayed. Choosing the same start and end turns quiet hours off.",
       "save": "Save changes",
       "saved": "Notification settings saved",
       "saveError": "Could not save. Please try again.",

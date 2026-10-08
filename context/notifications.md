@@ -76,3 +76,5 @@ pg_cron: `outbox-worker` every minute (calls the worker only if something is due
 - 2026-10-09: Phase 6B + fixes: confirm-page unsubscribe, project-wide privilege revoke, Resend fresh-key retries, 3 Edge Functions deployed, settings/credits/log/push screens, appointment send status, push_preferences, message_preview.
 - 2026-10-08: Phase 6A built (7 migrations, 2 Edge Functions + shared module, 304 SQL assertions, 31 unit tests).
 - 2026-10-07: Phase 10C: new event `portal_login` (email, sealed single-use link `/<slug>/portal#token=`, `outbox_guard` stale check, token required). `send_outbox` redeployed; its `fail` hook now logs the failure reason (the row only keeps `rejected`). One real portal sign-in email was sent to wapeeglobal@gmail.com (status `sent`).
+
+- 2026-10-09: **SMS is OFF at launch** (`launch.sms: false`): the Settings "SMS credits" card is hidden, `/settings/sms-credits` redirects to Settings, the SMS toggle is replaced by "SMS messages are coming soon", the SMS preview option is hidden, and hint texts no longer mention SMS. Code, RPCs, tables and super-admin credit tools stay. Role editor still lists the `sms.*` permissions.

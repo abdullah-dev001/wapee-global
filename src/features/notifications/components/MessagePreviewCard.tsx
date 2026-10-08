@@ -1,4 +1,5 @@
 import type { ParseKeys } from 'i18next';
+import { launch } from '@/config/launch';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -52,7 +53,9 @@ export function MessagePreviewCard({ businessId, branchId }: Props) {
           onChange={setChannel}
           options={[
             { value: 'email', label: t('notifications.preview.email') },
-            { value: 'sms', label: t('notifications.preview.sms') },
+            ...(launch.sms
+              ? [{ value: 'sms' as const, label: t('notifications.preview.sms') }]
+              : []),
           ]}
         />
 

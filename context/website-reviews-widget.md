@@ -56,3 +56,5 @@ Migrations `20261007090000_phase7_website`, `…100000_phase7_reviews`, `…1100
 - 2026-10-08: review request creation/reissue now queue the message in the outbox (Phase 6A).
 - 2026-10-07: **7B UI** built (public website, review page, editor, reviews screen, widget settings, embed gate); `/<slug>` is now the website and the booking flow moved to `/<slug>/book`; `mark_completed` consumers show the review link; `formatDuration` fixed for Hermes.
 - 2026-10-07: Built (7A). 417 SQL assertions; positive+negative HTTP checks against the deployed functions with a throwaway business (deleted).
+
+- 2026-10-09: **Widget is OFF at launch** (`src/config/launch.ts` `widget: false`): the Widget tab is hidden in `/website`. Code, edge functions, `public/widget.js` and DB stay. `/:slug/book` still allows framing only by itself (`_headers`).
