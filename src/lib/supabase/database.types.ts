@@ -5638,6 +5638,7 @@ export type Database = {
         }
         Returns: Json
       }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       deduct_session: {
         Args: { p_appointment_id: string; p_client_package_id: string }
         Returns: Json
@@ -6036,6 +6037,7 @@ export type Database = {
       member_branch_ids: { Args: { p_business_id: string }; Returns: string[] }
       member_business_ids: { Args: never; Returns: string[] }
       message_recipient_hash: { Args: { p_address: string }; Returns: string }
+      my_access_state: { Args: never; Returns: Json }
       my_features: { Args: { p_business_id: string }; Returns: Json }
       my_grants: {
         Args: { p_business_id: string }
@@ -6449,6 +6451,10 @@ export type Database = {
         Returns: Json
       }
       revoke_invite: { Args: { p_member_id: string }; Returns: Json }
+      revoke_sessions_of_disabled_members: {
+        Args: { p_business_id: string }
+        Returns: number
+      }
       role_permission_set: { Args: { p_role_id: string }; Returns: Json }
       roles_gate: { Args: { p_business_id: string }; Returns: Json }
       rotate_widget_key: { Args: { p_business_id: string }; Returns: Json }
@@ -6722,6 +6728,7 @@ export type Database = {
         Args: { p_business_id: string; p_permission: string; p_user_id: string }
         Returns: boolean
       }
+      user_is_disabled: { Args: { p_user: string }; Returns: boolean }
       validate_form_answers: {
         Args: { p_answers: Json; p_fields: Json }
         Returns: Json

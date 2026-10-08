@@ -567,3 +567,6 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 
 ## Web Push (2026-10-20)
 `20261020100000_web_push_subscriptions` (+ `…100100` restores the `outbox_job` idempotency key, `…100200` regex fix: Postgres regex repetition max is 255, `…100300` CHECK null trap: `jsonb_typeof(null)` is null and a CHECK returning null PASSES). `push_tokens` gains `web_keys jsonb`; CHECK `push_tokens_shape_check` per platform (ios/android = Expo token, no keys; web = https endpoint + p256dh/auth). New RPC `register_web_push_subscription(endpoint, p256dh, auth)` (authenticated); `register_push_token` now refuses `web`; `outbox_job.tokens[]` carries `platform` + `web_keys`. Suite `34_web_push.sql` (33 assertions).
+
+## Suspended login block (2026-10-20)
+`20261020110000_suspended_login_block`: `user_is_disabled(uuid)` (service_role / supabase_auth_admin), `custom_access_token_hook(jsonb)` (supabase_auth_admin only, fail-open), `revoke_sessions_of_disabled_members(uuid)` (service_role; deletes `auth.refresh_tokens` / `auth.sessions`), `my_access_state()` (authenticated), `set_business_status` redefined. Audit action `admin.sessions_revoked`. Suite `35_suspended_login_block.sql` (66). Trap: the management DB role cannot `SET ROLE supabase_auth_admin`, so the suite calls the hook as postgres and proves the grant with `has_function_privilege`.

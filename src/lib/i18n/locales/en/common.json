@@ -75,6 +75,7 @@
     "updateAction": "Reload"
   },
   "auth": {
+    "accountDisabled": "This account is disabled. Contact {{email}}",
     "login": {
       "title": "Welcome back",
       "subtitle": "Sign in to your {{appName}} account",

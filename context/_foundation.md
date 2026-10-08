@@ -305,3 +305,4 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - 2026-10-09: PlaceholderScreen deleted (unused). App/PWA icons and splash are still the Phase 0 placeholders.
 
 - `src/lib/push/webPush.ts` (2026-10-20): browser Web Push (support check incl. iOS-needs-install, subscribe from a tap, register/unregister); `pushRegistration.ts` delegates to it on web. `supabase/functions/_shared/outbox/webpush.ts`: lib-injected Web Push sender.
+- `src/features/auth/accountDisabled.ts` (matcher + `useDisabledNotice` store) and `api/useAccessGuard.ts` (focus check of `my_access_state`, mounted in `AuthGate`).

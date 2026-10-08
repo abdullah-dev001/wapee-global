@@ -7,6 +7,7 @@ import { useMyBusinesses } from '@/features/onboarding/api/useBusiness';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
 
+import { useAccessGuard } from '../api/useAccessGuard';
 import { useSession } from '../SessionProvider';
 
 /** Route groups that an unauthenticated visitor may open. */
@@ -36,6 +37,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const segments = useSegments();
   // Only runs once signed in (the hook is disabled otherwise).
   const businesses = useMyBusinesses();
+  // Ends the session when every business of this account is suspended (checked on focus / reconnect).
+  useAccessGuard();
 
   const group = segments[0];
   const isPublicGroup = typeof group === 'string' && PUBLIC_GROUPS.has(group);
