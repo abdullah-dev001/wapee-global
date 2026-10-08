@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { FormField } from '@/components/shared/FormField';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Button, Text } from '@/components/ui';
 import { useSignup } from '@/features/auth/api/useAuthMutations';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
@@ -94,6 +95,7 @@ export default function SignupScreen() {
         <Button fullWidth size="lg" onPress={onSubmit} loading={signup.isPending}>
           {t('auth.signup.submit')}
         </Button>
+        <LegalLinks lead={t('legal.signupNotice')} />
       </View>
     </AuthLayout>
   );

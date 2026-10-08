@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link as LinkIcon } from 'lucide-react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Button, EmptyState, ErrorState, Skeleton, Tabs, Text } from '@/components/ui';
 import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
 import { useTokenFromUrl } from '@/features/booking-manage/useTokenFromUrl';
@@ -87,7 +88,10 @@ export function PortalPage({ slug }: { slug: string }) {
 
   return (
     <Screen>
-      <PageContainer maxWidth={MAX_WIDTH}>{body}</PageContainer>
+      <PageContainer maxWidth={MAX_WIDTH}>
+        {body}
+        <LegalLinks />
+      </PageContainer>
     </Screen>
   );
 }

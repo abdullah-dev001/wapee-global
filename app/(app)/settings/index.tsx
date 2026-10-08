@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Card, Text } from '@/components/ui';
 import { RouteGuard } from '@/features/auth';
 import { useFeatureFlag, usePermission } from '@/lib/permissions';
@@ -228,6 +229,7 @@ export default function SettingsScreen() {
               <HubCard key={item.route} item={item} onPress={() => router.push(item.route)} />
             ))}
           </View>
+          <LegalLinks />
         </PageContainer>
       </Screen>
     </RouteGuard>

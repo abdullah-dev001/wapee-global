@@ -24,4 +24,5 @@ export {
   type StarRatingInputProps,
   type StarRatingProps,
 } from './StarRating';
+export { LegalLinks } from './LegalLinks';
 export { MonthStepper } from './MonthStepper';

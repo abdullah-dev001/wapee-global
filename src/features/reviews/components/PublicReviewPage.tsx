@@ -6,6 +6,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { PageContainer, Screen } from '@/components/layout';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { StarRatingInput } from '@/components/shared/StarRating';
 import { Button, Card, EmptyState, ErrorState, Input, Skeleton, Text } from '@/components/ui';
 import { HoneypotField } from '@/features/booking-public/components/HoneypotField';
@@ -46,7 +47,10 @@ export function PublicReviewPage() {
 
   const wrap = (children: React.ReactNode) => (
     <Screen>
-      <PageContainer maxWidth={isDesktop ? MAX_WIDTH : undefined}>{children}</PageContainer>
+      <PageContainer maxWidth={isDesktop ? MAX_WIDTH : undefined}>
+        {children}
+        <LegalLinks />
+      </PageContainer>
     </Screen>
   );
 

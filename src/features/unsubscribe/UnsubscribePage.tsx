@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { PageContainer, Screen } from '@/components/layout';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Button, Card, Text } from '@/components/ui';
 import { useTokenFromUrl } from '@/features/booking-manage/useTokenFromUrl';
 import { getSupabase } from '@/lib/supabase';
@@ -60,6 +61,7 @@ export function UnsubscribePage() {
             )}
           </View>
         </Card>
+        <LegalLinks />
       </PageContainer>
     </Screen>
   );

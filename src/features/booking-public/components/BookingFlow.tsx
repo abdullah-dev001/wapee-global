@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Screen, PageContainer } from '@/components/layout';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Button, Dialog, EmptyState, ErrorState, Skeleton, Text, useToast } from '@/components/ui';
 import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
 import { brand } from '@/config/brand';
@@ -304,6 +305,7 @@ export function BookingFlow({ slug }: BookingFlowProps) {
             />
           )
         ) : null}
+        <LegalLinks />
       </PageContainer>
 
       <Dialog

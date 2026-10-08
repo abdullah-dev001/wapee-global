@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { SignaturePad } from '@/components/shared';
 import { Button, Card, EmptyState, ErrorState, Input, Skeleton, Text } from '@/components/ui';
 import { useTokenFromUrl } from '@/features/booking-manage/useTokenFromUrl';
@@ -47,7 +48,10 @@ export function PublicSignPage() {
 
   const wrap = (children: React.ReactNode) => (
     <Screen>
-      <PageContainer maxWidth={isDesktop ? MAX_WIDTH : undefined}>{children}</PageContainer>
+      <PageContainer maxWidth={isDesktop ? MAX_WIDTH : undefined}>
+        {children}
+        <LegalLinks />
+      </PageContainer>
     </Screen>
   );
 

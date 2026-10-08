@@ -1,6 +1,7 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { theme, useBreakpoint } from '@/lib/theme';
 
 import { type SocialNetwork, type WebsiteModel, type WebsiteSection } from '../../types';
@@ -157,6 +158,7 @@ function Footer({ name }: { name: string }) {
       <WText variant="helper" color="textMuted" align="center">
         {t('website.footer', { year: new Date().getFullYear(), name })}
       </WText>
+      <LegalLinks />
     </View>
   );
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link as LinkIcon } from 'lucide-react-native';
 
 import { Screen, PageContainer } from '@/components/layout';
+import { LegalLinks } from '@/components/shared/LegalLinks';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui';
 import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
 import { theme, useBreakpoint } from '@/lib/theme';
@@ -118,6 +119,7 @@ export function BookingManage() {
     <Screen>
       <PageContainer maxWidth={isDesktop ? DESKTOP_MAX_WIDTH : undefined}>
         <View style={styles.wrapper}>{body}</View>
+        <LegalLinks />
       </PageContainer>
     </Screen>
   );
