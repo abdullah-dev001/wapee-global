@@ -436,6 +436,8 @@
     "create": "Add staff",
     "saved": "Staff saved",
     "noLogin": "No app access",
+    "noHours": "No working hours set — no online slots",
+    "noHoursAction": "Set working hours",
     "inactive": "Inactive",
     "empty": {
       "title": "No staff yet",
@@ -624,6 +626,7 @@
       "no_bookable_service": "Add at least one service that can be booked online.",
       "no_bookable_staff": "Add at least one person who can be booked online.",
       "no_staffed_service": "You have services and people, but nobody is assigned to a bookable service yet.",
+      "no_staff_hours": "The people who perform your services have no working hours at this location. Set their hours in Team > Working hours, or no times will show.",
       "booking_disabled": "Online booking is turned off for this location, so the link will not take bookings.",
       "buffer_override": "Some services have their own gap, which replaces the one set here.",
       "fix": "Fix this"

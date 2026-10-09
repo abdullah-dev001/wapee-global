@@ -1,25 +1,30 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { CalendarClock } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { FormField } from '@/components/shared';
-import { Button, Text, Toggle, useToast } from '@/components/ui';
+import { Badge, Button, Text, Toggle, useToast } from '@/components/ui';
 import { planErrorKey } from '@/features/plans/planErrors';
 import { useServices } from '@/features/services/api/useServices';
 import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useSaveStaff, type StaffListItem } from '../api/useStaff';
+import { hasNoWorkingHours } from '../staffHours';
 import { emptyStaff, staffSchema, type StaffValues } from '../schemas/staff.schemas';
 
 export function StaffForm({
   member,
   onDone,
+  onOpenSchedule,
 }: {
   /** Undefined = creating a new one. */
   member?: StaffListItem;
   onDone: () => void;
+  /** Opens the working-hours editor for this person (edit mode only). */
+  onOpenSchedule?: () => void;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -165,6 +170,20 @@ export function StaffForm({
           onValueChange={(on) => setValue('isBookableOnline', on, { shouldValidate: true })}
         />
       </View>
+
+      {member && onOpenSchedule ? (
+        <View style={styles.block}>
+          <Text variant="label">{t('schedule.workingHours')}</Text>
+          {hasNoWorkingHours(member, branchId) ? (
+            <Badge tone="warning">
+              {t('staff.noHours')}
+            </Badge>
+          ) : null}
+          <Button variant="secondary" startIcon={CalendarClock} onPress={onOpenSchedule} fullWidth>
+            {t('staff.noHoursAction')}
+          </Button>
+        </View>
+      ) : null}
 
       <Button onPress={onSubmit} loading={save.isPending} fullWidth>
         {member ? t('actions.save') : t('staff.create')}

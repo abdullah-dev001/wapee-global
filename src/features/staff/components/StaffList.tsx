@@ -4,9 +4,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Badge, Card, EmptyState, Skeleton, Text } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
+import { useCurrentScope } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
 import { type StaffListItem } from '../api/useStaff';
+import { hasNoWorkingHours } from '../staffHours';
 
 export type StaffListProps = {
   staff: readonly StaffListItem[];
@@ -78,6 +80,8 @@ function StaffRow({
 }) {
   const { t } = useTranslation();
   const { handlers, showHover, showFocusRing } = useInteractionState(false);
+  const { branchId } = useCurrentScope();
+  const noHours = hasNoWorkingHours(member, branchId);
 
   return (
     <View style={[styles.row, isLast ? null : styles.rowDivider]}>
@@ -106,6 +110,15 @@ function StaffRow({
           <Text variant="helper" color="textSecondary" numberOfLines={1}>
             {member.jobTitle}
           </Text>
+        ) : null}
+
+        {/* No fallback to branch hours exists: without hours this person has no online slots. */}
+        {noHours ? (
+          <View style={styles.warning}>
+            <Badge tone="warning">
+              {t('staff.noHours')}
+            </Badge>
+          </View>
         ) : null}
       </Pressable>
 
@@ -158,6 +171,10 @@ const styles = StyleSheet.create({
   },
   name: {
     flexShrink: 1,
+  },
+  warning: {
+    alignItems: 'flex-start',
+    marginTop: theme.spacing[4],
   },
   scheduleButton: {
     width: theme.layout.minTouchTarget,

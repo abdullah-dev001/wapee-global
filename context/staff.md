@@ -105,5 +105,6 @@ Against the live database, in rolled-back transactions:
 - No avatar/photo (needs the files add-on, Phase 8).
 
 ## Changelog
+- 2026-10-20: row badge "No working hours set — no online slots" + "Set working hours" button in the edit panel (`staffHours.ts`); list query now embeds `staff_working_hours(branch_id)`.
 - 2026-10-02: Staff UI: list with no-login badge, create/edit drawer, branch and service assignment, soft delete, schedule drawer.
 - 2026-10-02: Staff schema: profiles with optional member_id, branch assignment, service assignment, RLS, Own-scope helper.

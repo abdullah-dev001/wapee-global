@@ -20,6 +20,8 @@ export type StaffListItem = {
   memberId: string | null;
   branchIds: string[];
   serviceIds: string[];
+  /** Branches where this person has at least one working-hours row. */
+  hoursBranchIds: string[];
 };
 
 /**
@@ -49,7 +51,7 @@ export function useStaff(
       let query = getSupabase()
         .from('staff_profiles')
         .select(
-          'id, display_name, job_title, email, phone, is_active, is_bookable_online, member_id, sort_order, staff_branches(branch_id), service_staff(service_id)',
+          'id, display_name, job_title, email, phone, is_active, is_bookable_online, member_id, sort_order, staff_branches(branch_id), service_staff(service_id), staff_working_hours(branch_id)',
         )
         .eq('business_id', businessId ?? '')
         .is('deleted_at', null);
@@ -71,6 +73,9 @@ export function useStaff(
         memberId: row.member_id,
         branchIds: (row.staff_branches ?? []).map((entry) => entry.branch_id),
         serviceIds: (row.service_staff ?? []).map((entry) => entry.service_id),
+        hoursBranchIds: [
+          ...new Set((row.staff_working_hours ?? []).map((entry) => entry.branch_id)),
+        ],
       }));
 
       // Filtering by branch in JS is safe here: a team is tens of rows, and the

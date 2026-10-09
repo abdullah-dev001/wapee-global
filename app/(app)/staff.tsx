@@ -97,7 +97,21 @@ export default function StaffScreen() {
             </Button>
           }
         >
-          {editing ? <StaffForm member={editing} onDone={() => setEditing(null)} /> : null}
+          {editing ? (
+            <StaffForm
+              member={editing}
+              onDone={() => setEditing(null)}
+              onOpenSchedule={
+                canSchedule.allowed
+                  ? () => {
+                      const target = editing;
+                      setEditing(null);
+                      setScheduling(target);
+                    }
+                  : undefined
+              }
+            />
+          ) : null}
         </Drawer>
 
         <Drawer

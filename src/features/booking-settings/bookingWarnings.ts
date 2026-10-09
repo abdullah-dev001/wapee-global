@@ -13,7 +13,8 @@ export type BookableReason =
   | 'no_branch_hours'
   | 'no_bookable_service'
   | 'no_bookable_staff'
-  | 'no_staffed_service';
+  | 'no_staffed_service'
+  | 'no_staff_hours';
 
 export type BranchBookable = {
   bookable: boolean;
@@ -48,6 +49,7 @@ const REASON_ORDER: BookableReason[] = [
   'no_bookable_service',
   'no_bookable_staff',
   'no_staffed_service',
+  'no_staff_hours',
   'booking_disabled',
 ];
 
@@ -58,6 +60,8 @@ const FIX_ROUTES: Partial<Record<BookableReason, BookingWarning['fixRoute']>> = 
   // Both exist; the missing link is "which staff perform this service", which
   // lives on the service.
   no_staffed_service: '/services',
+  // Hours are edited per person from the Team screen.
+  no_staff_hours: '/staff',
 };
 
 /**

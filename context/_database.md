@@ -570,3 +570,6 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 
 ## Suspended login block (2026-10-20)
 `20261020110000_suspended_login_block`: `user_is_disabled(uuid)` (service_role / supabase_auth_admin), `custom_access_token_hook(jsonb)` (supabase_auth_admin only, fail-open), `revoke_sessions_of_disabled_members(uuid)` (service_role; deletes `auth.refresh_tokens` / `auth.sessions`), `my_access_state()` (authenticated), `set_business_status` redefined. Audit action `admin.sessions_revoked`. Suite `35_suspended_login_block.sql` (66). Trap: the management DB role cannot `SET ROLE supabase_auth_admin`, so the suite calls the hook as postgres and proves the grant with `has_function_privilege`.
+
+## Branch bookable needs staff hours (2026-10-20)
+`20261020120000_branch_bookable_staff_hours`: `branch_is_bookable` adds reason `no_staff_hours` (a performer of an offered service with a `staff_working_hours` row at the branch is required) and `bookable` now needs it. Suite 08 section 16.

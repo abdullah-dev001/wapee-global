@@ -1102,6 +1102,25 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- 16. branch_is_bookable: staff without working hours (no fallback to branch hours)
+-- ---------------------------------------------------------------------------
+do $$
+declare r jsonb; v_before int;
+begin
+  select count(*) into v_before from public.staff_working_hours where branch_id = pg_temp.id('br');
+  perform pg_temp.chk('fixture has staff working hours', (v_before > 0)::text, 'true');
+
+  delete from public.staff_working_hours where branch_id = pg_temp.id('br');
+
+  r := public.branch_is_bookable(pg_temp.id('br'));
+  perform pg_temp.chk('no staff hours -> NOT bookable', r->>'bookable', 'false');
+  perform pg_temp.chk('and the reason is no_staff_hours', (r->'reasons') ? 'no_staff_hours', true);
+  perform pg_temp.chk('no slots are returned either (the engine agrees)',
+    (select count(*)::int from public.get_free_slots(pg_temp.id('br'), pg_temp.id('svc'), null,
+      (now() at time zone 'Europe/London')::date, (now() at time zone 'Europe/London')::date + 14)), 0);
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Results
 -- ---------------------------------------------------------------------------
 select

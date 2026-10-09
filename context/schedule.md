@@ -178,5 +178,6 @@ Advisors: security 0 errors, performance 0 warnings.
 - Time off has no approval workflow (deliberate, see Business rules).
 
 ## Changelog
+- 2026-10-20: Staff with no working hours at a branch get ZERO slots (engine has no fallback to branch hours). Now flagged: `branch_is_bookable` reason `no_staff_hours` (migration `20261020120000`), Staff list badge + "Set working hours" button in the edit panel (`staffHours.ts`).
 - 2026-10-02: Schedule UI: per-person week editor (from the Staff screen), branch hours, time off, holidays, rooms. Locale weekday names from Intl with a timezone-shift guard.
 - 2026-10-02: Schedule schema: working hours, breaks, time off, branch hours, closures; 5 exclusion constraints; Own-scope RLS; minute-of-day helpers + tests.

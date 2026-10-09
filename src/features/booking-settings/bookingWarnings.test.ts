@@ -12,6 +12,11 @@ describe('bookingWarnings', () => {
     expect(bookingWarnings({ bookable: true, reasons: [] })).toEqual([]);
   });
 
+  it('reports staff without working hours and sends the owner to Team', () => {
+    const warnings = bookingWarnings({ bookable: false, reasons: ['no_staff_hours'] });
+    expect(warnings).toEqual([{ code: 'no_staff_hours', severity: 'error', fixRoute: '/staff' }]);
+  });
+
   it('treats missing data as nothing to warn about rather than throwing', () => {
     // The query is still loading. Rendering five errors while we do not yet know
     // would be worse than rendering none.
