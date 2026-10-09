@@ -127,6 +127,7 @@ Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
   other mutation in Phase 4.
 
 ## Changelog
+- 2026-10-20: `contactLinks.ts` (tel / wa.me digits-only / mailto / display format / `contactState`); `useClient` takes `{enabled}`.
 - 2026-10-07: Phase 11B: `notes` is blanked by `clients_v` without `clients.view_contact`; the edit form for a caller without it shows the name only and sends only the name.
 - 2026-10-07: Phase 11A: contact lock is a database boundary (`clients_v`), profile gets Export data / Erase personal data (`gdpr.md`), list reads indexed `(business_id, full_name, id)`.
 - 2026-10-07: Phase 10B: the profile shows Files and photos (consent, gallery, upload) and Forms (sign here, send link, signed copies, void) sections while the add-ons are on.

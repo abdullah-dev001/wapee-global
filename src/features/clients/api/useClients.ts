@@ -131,12 +131,13 @@ export type ClientDetail = ClientListItem & {
 export function useClient(
   businessId: string | null,
   clientId: string | null,
+  options: { enabled?: boolean } = {},
 ): UseQueryResult<ClientDetail, Error> {
   const { isAuthenticated } = useSession();
 
   return useQuery({
     queryKey: clientKeys.detail({ businessId: businessId ?? 'none' }, clientId ?? 'none'),
-    enabled: isAuthenticated && Boolean(businessId && clientId),
+    enabled: (options.enabled ?? true) && isAuthenticated && Boolean(businessId && clientId),
     staleTime: staleTimes.list,
     queryFn: async () => {
       const { data, error } = await getSupabase()

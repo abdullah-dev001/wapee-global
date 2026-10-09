@@ -25,6 +25,7 @@ import { AppointmentMessages } from '@/features/notifications/components/Appoint
 import { ReviewLinkAction } from '@/features/reviews/components/ReviewLinkAction';
 import { showReviewLink } from '@/features/reviews/reviewLinkStore';
 
+import { AppointmentClientContact } from './AppointmentClientContact';
 import { useIsOwnerOrManager } from '../api/useIsOwnerOrManager';
 import { actionsForStatus, type AppointmentAction } from '../statusActions';
 import { AppointmentRpcError, type AppointmentErrorCode, type AppointmentRow } from '../types';
@@ -129,6 +130,7 @@ export function AppointmentDetailDrawer({
             </View>
 
             <DetailRow label={t('appointments.detail.client')} value={appointment.clientName} />
+            <AppointmentClientContact clientId={appointment.clientId} onNavigate={onClose} />
             <DetailRow label={t('appointments.detail.service')} value={appointment.serviceName} />
             {appointment.staffName ? (
               <DetailRow label={t('appointments.detail.staff')} value={appointment.staffName} />

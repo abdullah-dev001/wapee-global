@@ -814,6 +814,15 @@
       "notes": "Notes",
       "internalNotes": "Internal notes",
       "noNotes": "No notes",
+      "call": "Call",
+      "whatsapp": "WhatsApp",
+      "sendEmail": "Send email",
+      "copy": "Copy",
+      "copied": "Copied",
+      "openFailed": "Could not open this link",
+      "noPhone": "No phone on file",
+      "noEmail": "No email on file",
+      "viewClient": "View client",
       "reschedule": "Reschedule"
     },
     "actions": {
