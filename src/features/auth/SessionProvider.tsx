@@ -1,8 +1,10 @@
 import { type Session, type User } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+
+import { nextSessionState } from './sessionState';
 
 export type SessionState = {
   session: Session | null;
@@ -29,6 +31,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // Whether Supabase is configured is known at import time, so start settled
   // when there is no client to wait for.
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  // Latest session for the auth listener, which must not re-subscribe on change.
+  const sessionRef = useRef<Session | null>(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -37,17 +41,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     void client.auth.getSession().then(({ data }) => {
       if (!active) return;
+      sessionRef.current = data.session;
       setSession(data.session);
       setLoading(false);
     });
 
     const { data: subscription } = client.auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession);
+      // Same-user SIGNED_IN / TOKEN_REFRESHED (fired on every tab refocus) is silent.
+      const transition = nextSessionState(event, sessionRef.current, nextSession);
+      sessionRef.current = transition.session;
+      setSession(transition.session);
       setLoading(false);
       // A different user (or none) must never see the previous user's cache.
-      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
-        queryClient.clear();
-      }
+      if (transition.clearCache) queryClient.clear();
     });
 
     return () => {
