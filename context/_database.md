@@ -574,3 +574,4 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 
 ## Branch bookable needs staff hours (2026-10-20)
 `20261020120000_branch_bookable_staff_hours`: `branch_is_bookable` adds reason `no_staff_hours` (a performer of an offered service with a `staff_working_hours` row at the branch is required) and `bookable` now needs it. Suite 08 section 16.
+- 2026-10-09: suite 23 reworked. Its "two sessions waited" check failed because the FIRST `supabase db query` of scenario 2 started minutes late (CLI login stall), after the winner had already released; locks themselves unchanged. Now: exactly one winner, every session that overlapped the winner must be held until its release, at least one must overlap; stored rows asserted as before.

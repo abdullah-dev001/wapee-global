@@ -11,7 +11,10 @@
 # lock too, because the lock is taken before the check), so whichever session the CLI starts first
 # makes the others queue behind it, whatever the start-up jitter.
 # Asserted per scenario: exactly ONE success (whoever it is), the others refused with the right
-# code, at least two sessions really waited, and the STORED rows agree (1 usage; stock 0 + 1 sale).
+# code, every session that really overlapped the winner waited for the winner's release (and at least one
+# did, or the run proved nothing), and the STORED rows agree (1 usage; stock 0 + 1 sale).
+# A session whose `supabase db query` login stalled until AFTER the winner released (seen: 2m50s late) never
+# competed for the lock; it is only held to the refusal code, not to a wait it could not have had.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 TMP="$(mktemp -d)"
@@ -116,7 +119,7 @@ run3 s1 "public.deduct_session('$AP0', '$CP')" "public.deduct_session('$AP1', '$
 echo "scenario 2: three parallel sales of the LAST unit"
 run3 s2 "public.issue_invoice('$INV0')" "public.issue_invoice('$INV1')" "public.issue_invoice('$INV2')"
 
-python3 - "$TMP" <<'PY'
+python3 - "$TMP" "$HOLD_SECONDS" <<'PY'
 import json, sys, re, datetime as dt
 tmp = sys.argv[1]
 def ts(s):
@@ -134,12 +137,20 @@ for sc, refusal in (("s1", "no_sessions_left"), ("s2", "insufficient_stock")):
     outs = {n: load(sc, n) for n in "ABC"}
     oks = [n for n, o in outs.items() if o["r"].get("ok")]
     codes = sorted(o["r"].get("code") for n, o in outs.items() if not o["r"].get("ok"))
-    waited = [(ts(o["t1"]) - ts(o["t0"])).total_seconds() for o in outs.values()]
+    # The winner holds its transaction for HOLD seconds after its call returned.
+    win = outs[oks[0]] if len(oks) == 1 else None
+    hold = float(sys.argv[2])
     for n, o in outs.items():
         print(sc, n, "ok" if o["r"].get("ok") else o["r"].get("code"), "took %.2fs" % (ts(o["t1"]) - ts(o["t0"])).total_seconds())
     if len(oks) != 1: fail.append(f"{sc}: successes {oks}, expected exactly one")
     if codes != [refusal, refusal]: fail.append(f"{sc}: refusals {codes}")
-    if sum(1 for w in waited if w >= 1.5) < 2: fail.append(f"{sc}: fewer than two sessions waited on the lock: {waited}")
+    if win is not None:
+        release = ts(win["t1"]) + dt.timedelta(seconds=hold)
+        # Overlapping = started before the winner released. Those must have been held until it did.
+        overlap = [n for n, o in outs.items() if o is not win and ts(o["t0"]) < release - dt.timedelta(seconds=1)]
+        early = [n for n in overlap if ts(outs[n]["t1"]) < release - dt.timedelta(seconds=1)]
+        if not overlap: fail.append(f"{sc}: no session overlapped the winner (CLI start-up stall); the run proved nothing, re-run")
+        if early: fail.append(f"{sc}: {early} overlapped the winner but returned before it released the lock")
 print("PASS: exactly one winner per scenario, the others queued behind it" if not fail else "FAIL: " + "; ".join(fail))
 sys.exit(1 if fail else 0)
 PY
