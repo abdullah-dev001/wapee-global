@@ -1,3 +1,4 @@
+import { launch } from '@/config/launch';
 import { PERMISSIONS, type PermissionKey } from '@/config/permissions';
 import { type Grant, type PermissionScope } from '@/lib/permissions/types';
 
@@ -26,6 +27,21 @@ export const OWNER_ONLY_PERMISSIONS: readonly PermissionKey[] = ['settings.billi
 
 export function isOwnerOnly(permission: PermissionKey): boolean {
   return OWNER_ONLY_PERMISSIONS.includes(permission);
+}
+
+/** Permissions of a feature that is switched OFF at launch (`config/launch.ts`). */
+const SMS_PERMISSIONS: readonly PermissionKey[] = ['sms.send', 'sms.buy_credits'];
+
+/**
+ * True when the matrix must not offer this permission because no screen uses it
+ * at launch (SMS is off). Hidden, not removed: a role's stored value is left
+ * untouched, so saving a role never drops it and it returns when the flag flips.
+ */
+export function isLaunchHidden(
+  permission: PermissionKey,
+  flags: { sms: boolean } = launch,
+): boolean {
+  return !flags.sms && SMS_PERMISSIONS.includes(permission);
 }
 
 /** The highest scope the CALLER holds a permission at, anywhere (0 = not at all). */

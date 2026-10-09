@@ -28,6 +28,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { handlePreflight } from '../_shared/cors.ts';
 import { jsonError, jsonOk, logUnexpected } from '../_shared/response.ts';
 import { randomToken } from '../_shared/crypto.ts';
+import { buildManageUrl } from '../_shared/manageUrl.ts';
 
 const RequestSchema = z.object({ appointment_id: z.string().uuid() }).strict();
 
@@ -106,12 +107,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // receptionist to copy — the same pattern the Phase 1 invite link uses.
     const publicSite = Deno.env.get('PUBLIC_SITE_URL') ?? '';
 
+    // The link needs the business slug. Read as the caller (RLS): they already
+    // passed the appointments.edit check, so they can see this row.
+    let manageUrl: string | null = null;
+    if (publicSite && typeof r.manage_token === 'string') {
+      const { data: row } = await db
+        .from('appointments')
+        .select('businesses(slug)')
+        .eq('id', parsed.data.appointment_id)
+        .maybeSingle();
+      const slug = (row as { businesses?: { slug?: string } | null } | null)?.businesses?.slug;
+      if (slug) manageUrl = buildManageUrl(publicSite, slug, r.manage_token);
+    }
+
     return jsonOk(req, {
       manage_token: r.manage_token,
       expires_at: r.expires_at,
-      // Built here so one place owns the link shape. Empty base = the dashboard
-      // shows the token and builds its own link.
-      manage_url: publicSite ? `${publicSite.replace(/\/+$/, '')}/manage/${r.manage_token}` : null,
+      // Built here so one place owns the link shape (`_shared/manageUrl.ts`).
+      // null = no base URL or slug: the dashboard shows the token only.
+      manage_url: manageUrl,
     });
   } catch (err) {
     logUnexpected('resend_manage_link', null, err);

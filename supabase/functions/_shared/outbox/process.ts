@@ -12,6 +12,7 @@
  *   - a Twilio "recipient replied STOP" (21610) suppresses the number and is not retried
  */
 
+import { buildManageUrl } from '../manageUrl.ts';
 import { renderEmail, renderPush, renderSms, type Links } from './templates.ts';
 import { signUnsubscribe } from './unsubscribe.ts';
 import type { Deps, Job, Outcome } from './types.ts';
@@ -47,7 +48,7 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
 
   return {
     manageUrl:
-      token && MANAGE_EVENTS.has(job.event) ? `${base}/${slug}/manage#token=${token}` : null,
+      job.token && MANAGE_EVENTS.has(job.event) ? buildManageUrl(base, job.slug, job.token) : null,
     reviewUrl:
       token && job.event === 'review_request' ? `${base}/${slug}/review#token=${token}` : null,
     formUrl: token && job.event === 'form_request' ? `${base}/${slug}/sign#token=${token}` : null,

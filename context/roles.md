@@ -98,3 +98,4 @@ executed from the scratchpad rather than committed as a suite — see TODO below
 - 2026-10-02: Invite flow added (see members.md); the escalation guard was verified to block a Manager inviting an Owner.
 - 2026-10-02: App gating built — `my_grants()` RPC, `can()`, `usePermission`, `useFeature`, current-scope store, `useVisibleNav`, `RouteGuard` on every `(app)` screen, sign out wired. Nav `feature` field dropped in favour of the catalogue's `minPlan`/`addon`.
 - 2026-10-02: Database half complete (catalogue, roles, grants, guards, tests). App half not started.
+- 2026-10-09: the permission matrix hides `sms.send` / `sms.buy_credits` while `launch.sms` is off (`isLaunchHidden` in `rolesLogic.ts`, tested). Stored values stay in the role untouched.

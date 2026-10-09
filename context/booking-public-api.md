@@ -353,3 +353,4 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   after measuring that the last `x-forwarded-for` entry is a rotating proxy**;
   anon-key call to `resend_manage_link` now reports 404 instead of 500.
 - 2026-10-03: `get_slots` and `create_booking` deployed and verified end-to-end.
+- 2026-10-09: `resend_manage_link` returned `<base>/manage/<token>` (a route that does not exist). It now reads the business slug as the caller and returns `<base>/<slug>/manage#token=<token>` via `_shared/manageUrl.ts` (same builder as the confirmation email); `manage_url` is null when `PUBLIC_SITE_URL` or the slug is missing. **Needs a redeploy of `resend_manage_link` and `send_outbox`.** Test: `manageUrl.test.ts`.

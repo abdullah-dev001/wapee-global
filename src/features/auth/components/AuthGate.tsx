@@ -8,6 +8,7 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
 
 import { useAccessGuard } from '../api/useAccessGuard';
+import { useGateSpinner } from '../gateSettled';
 import { useSession } from '../SessionProvider';
 
 /** Route groups that an unauthenticated visitor may open. */
@@ -33,12 +34,13 @@ const ACCEPT_INVITE_ROUTE = 'accept-invite';
  * The inactive-business lock screen is added in the trial step.
  */
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isEmailVerified, loading } = useSession();
+  const { isAuthenticated, isEmailVerified, loading, user } = useSession();
   const segments = useSegments();
   // Only runs once signed in (the hook is disabled otherwise).
   const businesses = useMyBusinesses();
   // Ends the session when every business of this account is suspended (checked on focus / reconnect).
   useAccessGuard();
+  const waitForBusinesses = useGateSpinner(businesses.isPending, user?.id ?? null);
 
   const group = segments[0];
   const isPublicGroup = typeof group === 'string' && PUBLIC_GROUPS.has(group);
@@ -69,7 +71,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (isAuthenticated && isEmailVerified) {
     // Wait for the membership list before deciding; redirecting early would
     // bounce an existing owner through onboarding on every cold start.
-    if (businesses.isPending) {
+    if (waitForBusinesses) {
       return (
         <View style={styles.loading}>
           <Spinner size={24} />

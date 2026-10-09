@@ -15,6 +15,7 @@ import {
   allowedScopes,
   groupPermissions,
   heldRank,
+  isLaunchHidden,
   isOwnerOnly,
   scopeRank,
   setScope,
@@ -51,6 +52,7 @@ export function PermissionMatrix({
         .map((group) => ({
           ...group,
           keys: group.keys.filter((permission) => {
+            if (isLaunchHidden(permission)) return false;
             if (!permissionMeta(permission).addon) return true;
             const feature = featureForPermission(permission);
             return feature === null || isFeatureOn(features, feature);

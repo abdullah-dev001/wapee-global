@@ -5,6 +5,7 @@ import { type Grant } from '@/lib/permissions/types';
 
 import { PERMISSION_LABEL_KEYS } from './permissionLabels';
 import {
+  isLaunchHidden,
   allowedScopes,
   draftCount,
   draftFromRows,
@@ -137,5 +138,25 @@ describe('roleErrorKey', () => {
     expect(roleErrorKey('last_owner')).toBe('roles.errors.last_owner');
     expect(roleErrorKey('made_up')).toBe('roles.errors.unknown');
     expect(roleErrorKey(null)).toBe('roles.errors.unknown');
+  });
+});
+
+describe('isLaunchHidden', () => {
+  it('hides both SMS permissions while SMS is off', () => {
+    expect(isLaunchHidden('sms.send', { sms: false })).toBe(true);
+    expect(isLaunchHidden('sms.buy_credits', { sms: false })).toBe(true);
+  });
+
+  it('shows them again when SMS is on', () => {
+    expect(isLaunchHidden('sms.send', { sms: true })).toBe(false);
+    expect(isLaunchHidden('sms.buy_credits', { sms: true })).toBe(false);
+  });
+
+  it('never hides an unrelated permission', () => {
+    expect(isLaunchHidden('clients.view', { sms: false })).toBe(false);
+  });
+
+  it('follows the real launch flag by default (SMS is off at launch)', () => {
+    expect(isLaunchHidden('sms.send')).toBe(true);
   });
 });

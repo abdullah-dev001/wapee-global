@@ -1,6 +1,14 @@
 import { type Session, type User } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 

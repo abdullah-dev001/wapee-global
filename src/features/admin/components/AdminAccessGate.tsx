@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Spinner } from '@/components/ui';
 import { useSession } from '@/features/auth';
+import { useGateSpinner } from '@/features/auth/gateSettled';
 import { useMyBusinesses } from '@/features/onboarding/api/useBusiness';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
@@ -19,15 +20,17 @@ import { useAdminAccess } from '../api/useAdminAccess';
  * Convenience only: every admin RPC checks the flag and aal2 itself.
  */
 export function AdminAccessGate({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isEmailVerified, loading } = useSession();
+  const { isAuthenticated, isEmailVerified, loading, user } = useSession();
   const access = useAdminAccess();
   const businesses = useMyBusinesses();
   const pathname = usePathname();
+  const pending = access === 'loading' || (access === 'granted' && businesses.isPending);
+  const waiting = useGateSpinner(pending, user?.id ?? null);
 
   if (!isSupabaseConfigured || loading || !isAuthenticated || !isEmailVerified) {
     return <>{children}</>;
   }
-  if (access === 'loading' || (access === 'granted' && businesses.isPending)) {
+  if (waiting) {
     return (
       <View style={styles.loading}>
         <Spinner size={24} />

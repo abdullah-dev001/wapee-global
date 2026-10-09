@@ -309,3 +309,4 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - `src/features/auth/sessionState.ts` (pure `nextSessionState`: same-user SIGNED_IN / TOKEN_REFRESHED is silent, never clears the cache).
 - `src/features/auth/accountDisabled.ts` (matcher + `useDisabledNotice` store) and `api/useAccessGuard.ts` (focus check of `my_access_state`, mounted in `AuthGate`).
 - `src/components/layout/OfflineGate.tsx` + `src/lib/network` (`useNetworkStatus`, `probeConnection`, `isOfflineState`): global offline overlay with a real-request Retry.
+- `src/features/auth/gateSettled.ts` (`useGateSpinner`, pure `showGateSpinner`): root gates show their full-screen spinner only until the first load for a user. `supabase/functions/_shared/manageUrl.ts` (`buildManageUrl`): the ONE owner of the guest manage link shape (`<base>/<slug>/manage#token=`), used by `send_outbox` and `resend_manage_link`.
