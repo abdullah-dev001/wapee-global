@@ -96,6 +96,7 @@ display text and can be reused server-side.
 - **Creating an `auth.users` row by hand needs `''`, not NULL, in `confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`.** GoTrue scans those columns as non-nullable strings, so a hand-made user fails sign-in with a 500 "Database error querying schema". Found 2026-10-02 with a SQL-inserted test user. Prefer the real `/auth/v1/signup` endpoint.
 
 ## Changelog
+- 2026-10-09: `AuthLayout` side padding fixed (it sat on `Screen`'s content container, where `paddingStart/End: 0` overrode it, so the card touched the screen edges); padding now on an inner wrapper.
 - 2026-10-02: Trial lock wired into `RouteGuard` (see billing.md).
 - 2026-10-02: `/accept-invite` added to the gate's always-allowed routes (see members.md).
 - 2026-10-02: Auth screens, session provider and route guard. Verified end to end on web (signup → verify → login → session persists) and on iOS.

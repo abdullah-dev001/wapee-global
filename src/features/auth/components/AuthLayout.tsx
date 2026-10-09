@@ -21,24 +21,26 @@ export type AuthLayoutProps = {
 export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProps) {
   return (
     <Screen contentContainerStyle={styles.screen}>
-      <View style={styles.stack}>
-        <Text variant="pageTitle" color="primary" align="center">
-          {brand.name}
-        </Text>
+      <View style={styles.page}>
+        <View style={styles.stack}>
+          <Text variant="pageTitle" color="primary" align="center">
+            {brand.name}
+          </Text>
 
-        <Card style={[styles.card, shadow('sm')]}>
-          <View style={styles.header}>
-            <Text variant="authTitle">{title}</Text>
-            {subtitle ? (
-              <Text variant="body" color="textSecondary">
-                {subtitle}
-              </Text>
-            ) : null}
-          </View>
-          {children}
-        </Card>
+          <Card style={[styles.card, shadow('sm')]}>
+            <View style={styles.header}>
+              <Text variant="authTitle">{title}</Text>
+              {subtitle ? (
+                <Text variant="body" color="textSecondary">
+                  {subtitle}
+                </Text>
+              ) : null}
+            </View>
+            {children}
+          </Card>
 
-        {footer ? <View style={styles.footer}>{footer}</View> : null}
+          {footer ? <View style={styles.footer}>{footer}</View> : null}
+        </View>
       </View>
     </Screen>
   );
@@ -48,6 +50,12 @@ const styles = StyleSheet.create({
   screen: {
     flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Padding lives here, not on Screen's content container: Screen sets
+  // paddingStart/End (0), which beat a plain `padding` and left the card flush.
+  page: {
+    width: '100%',
     alignItems: 'center',
     padding: theme.layout.pagePaddingMobile,
   },
