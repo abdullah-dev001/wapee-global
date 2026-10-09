@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormField, PhoneInput } from '@/components/shared';
 import { Button, Text, useToast } from '@/components/ui';
-import { usePermission } from '@/lib/permissions';
+import { useBranchCountry, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useFindClientByPhone, useSaveClient, type ClientListItem } from '../api/useClients';
@@ -23,6 +23,7 @@ export type ClientFormProps = {
 /** Create/edit a client. Phone is unique per business — a collision shows a clear message with a link to the existing record, never a raw DB error. */
 export function ClientForm({ client, businessId, onDone, onOpenExisting }: ClientFormProps) {
   const { t } = useTranslation();
+  const branchCountry = useBranchCountry();
   const toast = useToast();
   const save = useSaveClient(businessId);
   // Without clients.view_contact the database blanks phone / email / notes: an edit must not overwrite what the
@@ -92,6 +93,7 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
             label={t('clients.phone')}
             value={phoneField.value}
             onChange={phoneField.onChange}
+            defaultCountry={branchCountry}
           />
 
           {duplicateOf ? (

@@ -4,9 +4,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { StatusBadge, type AppointmentStatus } from '@/components/shared/StatusBadge';
 import { Text } from '@/components/ui';
 import {
+  blockDetailForHeight,
+  blockHeightPx,
   type GridHours,
   gridHeightPx,
   HOUR_HEIGHT_PX,
+  hourLabelOffsets,
   layoutOverlappingBlocks,
   minuteToOffsetPx,
 } from '@/features/appointments/timeGrid';
@@ -129,6 +132,14 @@ export function StaffDayColumn({
           />
         ))}
 
+        {hourLabelOffsets(hours).map(({ hour, topPx }) => (
+          <View
+            key={`line-${hour}`}
+            pointerEvents="none"
+            style={[styles.hourLine, { top: topPx }]}
+          />
+        ))}
+
         {typeof nowMinute === 'number' ? (
           <View
             pointerEvents="none"
@@ -140,10 +151,9 @@ export function StaffDayColumn({
           const appointment = byId.get(block.id);
           if (!appointment) return null;
           const top = minuteToOffsetPx(block.startMinute, hours);
-          const height = Math.max(
-            HOUR_HEIGHT_PX / 4,
-            minuteToOffsetPx(block.endMinute, hours) - top,
-          );
+          const height = blockHeightPx(block.startMinute, block.endMinute, hours);
+          const detail = blockDetailForHeight(height);
+          const timeRange = formatTimeRange(appointment.startMinute, appointment.endMinute, locale);
           const columnWidth = 100 / block.columnCount;
 
           return (
@@ -164,16 +174,27 @@ export function StaffDayColumn({
                 },
               ]}
             >
-              <Text variant="small" numberOfLines={1}>
-                {formatTimeRange(appointment.startMinute, appointment.endMinute, locale)}
-              </Text>
-              <Text variant="bodyStrong" numberOfLines={1}>
-                {appointment.clientName}
-              </Text>
-              <Text variant="caption" color="textSecondary" numberOfLines={1}>
-                {appointment.serviceName}
-              </Text>
-              {appointment.status !== 'confirmed' ? (
+              {detail === 'compact' ? (
+                // One line, ellipsised: "12:00 PM · Client".
+                <Text variant="caption" color="textPrimary" numberOfLines={1}>
+                  {`${formatStart(appointment.startMinute, locale)} · ${appointment.clientName}`}
+                </Text>
+              ) : (
+                <>
+                  <Text variant="helper" color="textSecondary" numberOfLines={1}>
+                    {timeRange}
+                  </Text>
+                  <Text variant="bodyStrong" color="textPrimary" numberOfLines={1}>
+                    {appointment.clientName}
+                  </Text>
+                </>
+              )}
+              {detail === 'full' ? (
+                <Text variant="helper" color="textSecondary" numberOfLines={1}>
+                  {appointment.serviceName}
+                </Text>
+              ) : null}
+              {detail === 'full' && appointment.status !== 'confirmed' ? (
                 <View style={styles.blockBadge}>
                   <StatusBadge status={appointment.status} />
                 </View>
@@ -193,6 +214,14 @@ function minuteFromTapY(locationY: number, hours?: GridHours): MinuteOfDay {
   const gridEndMinute = (hours?.endHour ?? 21) * 60;
   const minute = gridStartMinute + (locationY / HOUR_HEIGHT_PX) * 60;
   return Math.max(gridStartMinute, Math.min(gridEndMinute, Math.round(minute / 15) * 15));
+}
+
+function formatStart(minute: MinuteOfDay, locale: LocaleTag): string {
+  return new Intl.DateTimeFormat(locale, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(2000, 0, 1, Math.floor(minute / 60), minute % 60)));
 }
 
 function formatTimeRange(
@@ -240,6 +269,13 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: theme.colors.surfaceHover,
   },
+  hourLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: theme.borderWidth.hairline,
+    backgroundColor: theme.colors.borderSubtle,
+  },
   nowLine: {
     position: 'absolute',
     left: 0,
@@ -254,9 +290,10 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.sm,
     borderWidth: theme.borderWidth.hairline,
     borderColor: theme.colors.border,
-    padding: theme.spacing[4],
+    paddingHorizontal: theme.spacing[6],
+    paddingVertical: theme.spacing[2],
+    justifyContent: 'center',
     overflow: 'hidden',
-    gap: 1,
   },
   blockBadge: {
     marginTop: theme.spacing[2],

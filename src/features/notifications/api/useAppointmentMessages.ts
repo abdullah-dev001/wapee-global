@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useSession } from '@/features/auth';
 import { createQueryKeys, staleTimes } from '@/lib/query';
@@ -14,6 +14,10 @@ export type AppointmentMessage = {
   status: MessageStatus;
   code: string | null;
   at: string;
+  /** Scrubbed provider reason of a failed send, e.g. "resend_403: validation_error". */
+  error: string | null;
+  outboxId: string | null;
+  canRetry: boolean;
 };
 
 /**
@@ -54,10 +58,32 @@ export function useAppointmentMessages(
                 status: i.status,
                 code: typeof i.code === 'string' ? i.code : null,
                 at: String(i.at),
+                error: typeof i.error === 'string' ? i.error : null,
+                outboxId: typeof i.outbox_id === 'string' ? i.outbox_id : null,
+                canRetry: i.can_retry === true,
               },
             ]
           : [],
       );
+    },
+  });
+}
+
+/** Re-queues one dead message (RPC `retry_message`: needs appointments.edit at the branch). */
+export function useRetryMessage(businessId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation<boolean, Error, string>({
+    mutationFn: async (outboxId) => {
+      const { data, error } = await getSupabase().rpc('retry_message', { p_outbox_id: outboxId });
+      if (error) throw new Error(error.message);
+      const r = (data ?? {}) as { ok?: boolean; code?: string };
+      if (r.ok !== true) throw new Error(r.code ?? 'unknown');
+      return true;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: appointmentMessageKeys.business(businessId ?? 'none'),
+      });
     },
   });
 }

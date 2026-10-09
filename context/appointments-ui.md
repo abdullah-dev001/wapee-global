@@ -144,6 +144,7 @@ Namespace `common`, group `appointments.*`.
   `setQueryData` — fine given Realtime already re-invalidates.
 
 ## Changelog
+- 2026-10-20: FIX hour labels drifted up 8px per hour (`marginTop:-8` on 64px rows = 56px pitch), so 12:00 cards sat near the 1 PM label; labels now absolute from `minuteToOffsetPx`. Cards: 96px/hour, min height 28, compact (1 line) / standard / full (service) by height, hour lines drawn, `minuteOfDayFromTime` uses h23. Branch timezone was already used.
 - 2026-10-07: Phase 10B: the detail drawer shows Forms (pending / signed per attached template, sign here, send link) and Files and photos for that visit while the add-ons are on.
 - 2026-10-07: Phase 10A: the detail drawer has a Package sessions block (`AppointmentPackageSection`: use a session, Undo within 10 min, Reverse with a reason) while the add-on is on; Today and the tablet/desktop header show the `LowStockBadge`.
 - 2026-10-07 (Phase 7B): "Mark completed" (Today and the detail drawer) now shows the customer's review link in a dialog (`ReviewLinkDialogHost`); the drawer's completed state offers "Get review link again". See [website-reviews-widget.md](website-reviews-widget.md).

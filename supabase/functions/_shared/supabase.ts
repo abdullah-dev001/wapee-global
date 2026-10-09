@@ -40,6 +40,7 @@ export type ResolvedBranch = {
   branchName: string;
   timezone: string;
   currency: string;
+  countryCode: string;
   /** booking_settings the public page needs to render the flow. */
   settings: {
     staffChoice: 'hidden' | 'optional' | 'required';
@@ -95,7 +96,7 @@ export async function resolveBranch(
   let query = db
     .from('branches')
     .select(
-      'id, name, timezone, currency, business_id, is_primary, booking_settings(online_booking_enabled, staff_choice, slot_display, show_prices, booking_window_days, require_client_email, confirmation)',
+      'id, name, timezone, currency, country_code, business_id, is_primary, booking_settings(online_booking_enabled, staff_choice, slot_display, show_prices, booking_window_days, require_client_email, confirmation)',
     )
     .eq('business_id', business.id)
     .is('deleted_at', null);
@@ -121,6 +122,7 @@ export async function resolveBranch(
     branchName: branch.name,
     timezone: branch.timezone,
     currency: branch.currency,
+    countryCode: branch.country_code,
     settings: {
       staffChoice: settings.staff_choice,
       slotDisplay: settings.slot_display,

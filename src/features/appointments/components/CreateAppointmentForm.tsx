@@ -10,7 +10,7 @@ import { useServices } from '@/features/services/api/useServices';
 import { useBranchSchedule } from '@/features/schedule/api/useBranchSchedule';
 import { useStaffSchedule } from '@/features/schedule/api/useSchedule';
 import { useStaff } from '@/features/staff/api/useStaff';
-import { useCurrentScope, usePermission } from '@/lib/permissions';
+import { useBranchCountry, useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 import { todayInZone, weekdayOfLocalDate, zonedToUtc, type IanaTimeZone } from '@/lib/time';
 
@@ -46,6 +46,7 @@ export function CreateAppointmentForm({
   const { t } = useTranslation();
   const toast = useToast();
   const { businessId, branchId } = useCurrentScope();
+  const branchCountry = useBranchCountry();
   const canViewAllStaff = usePermission('calendar.view_all_staff');
   const myStaffProfile = useMyStaffProfile(businessId);
   const services = useServices(businessId, branchId, { includeInactive: false });
@@ -187,6 +188,7 @@ export function CreateAppointmentForm({
             label={t('appointments.form.clientPhone')}
             value={phoneField.value ?? ''}
             onChange={phoneField.onChange}
+            defaultCountry={branchCountry}
           />
           <FormField
             control={control}

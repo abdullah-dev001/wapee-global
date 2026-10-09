@@ -298,6 +298,7 @@ export function BookingFlow({ slug }: BookingFlowProps) {
             <FormStep
               fields={fieldsForService}
               requireClientEmail={data.settings.requireClientEmail}
+              defaultCountry={data.branch.countryCode}
               submitting={createBooking.isPending}
               serverFieldError={serverFieldError}
               onDirtyChange={setFormDirty}

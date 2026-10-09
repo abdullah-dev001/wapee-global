@@ -6434,6 +6434,7 @@ export type Database = {
       }
       resolve_manage_token: { Args: { p_token: string }; Returns: string }
       restore_branch: { Args: { p_branch_id: string }; Returns: Json }
+      retry_message: { Args: { p_outbox_id: string }; Returns: Json }
       reverse_payment: {
         Args: {
           p_amount_minor?: number

@@ -123,6 +123,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         name: branch.branchName,
         timezone: branch.timezone,
         currency: branch.currency,
+        country_code: branch.countryCode,
       },
       settings: {
         staff_choice: branch.settings.staffChoice,

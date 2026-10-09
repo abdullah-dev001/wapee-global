@@ -1,13 +1,14 @@
+import type { ParseKeys } from 'i18next';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Badge, Skeleton, Text } from '@/components/ui';
-import { useCurrentScope } from '@/lib/permissions';
+import { Badge, Button, Skeleton, Text, useToast } from '@/components/ui';
+import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { formatDateTime, type UtcIso } from '@/lib/time';
 import { theme } from '@/lib/theme';
 
-import { useAppointmentMessages } from '../api/useAppointmentMessages';
-import { channelKey, codeKey, eventKey, statusKey, statusTone } from '../messageLogic';
+import { useAppointmentMessages, useRetryMessage } from '../api/useAppointmentMessages';
+import { channelKey, codeKey, eventKey, failureHintKey, statusKey, statusTone } from '../messageLogic';
 
 type Props = { appointmentId: string; timezone: string; enabled: boolean };
 
@@ -20,6 +21,9 @@ export function AppointmentMessages({ appointmentId, timezone, enabled }: Props)
   const { t, i18n } = useTranslation();
   const { businessId } = useCurrentScope();
   const query = useAppointmentMessages(businessId, appointmentId, enabled);
+  const canEdit = usePermission('appointments.edit');
+  const retry = useRetryMessage(businessId);
+  const toast = useToast();
 
   if (!enabled || query.data === null) return null;
 
@@ -54,6 +58,30 @@ export function AppointmentMessages({ appointmentId, timezone, enabled }: Props)
                     {t(code)}
                   </Text>
                 ) : null}
+                {m.status === 'failed' && failureHintKey(m.error) ? (
+                  <Text variant="helper" color="textSecondary">
+                    {t(failureHintKey(m.error) as ParseKeys)}
+                  </Text>
+                ) : null}
+                {m.canRetry && m.outboxId && canEdit.allowed ? (
+                  <View style={styles.retry}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      loading={retry.isPending}
+                      onPress={() => {
+                        retry.mutate(m.outboxId as string, {
+                          onSuccess: () =>
+                            toast.show({ message: t('notifications.retry.queued'), tone: 'success' }),
+                          onError: () =>
+                            toast.show({ message: t('notifications.retry.failed'), tone: 'error' }),
+                        });
+                      }}
+                    >
+                      {t('notifications.retry.action')}
+                    </Button>
+                  </View>
+                ) : null}
               </View>
               <Badge tone={statusTone(m.status)} dot>
                 {t(statusKey(m.status))}
@@ -75,4 +103,5 @@ const styles = StyleSheet.create({
     gap: theme.spacing[12],
   },
   text: { flex: 1, gap: theme.spacing[2] },
+  retry: { alignItems: 'flex-start', marginTop: theme.spacing[4] },
 });

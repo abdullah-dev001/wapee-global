@@ -104,6 +104,27 @@ export function codeKey(code: string | null): ParseKeys | null {
   return (CODE_KEYS as Record<string, ParseKeys | undefined>)[code] ?? 'notifications.code.other';
 }
 
+/**
+ * A short, human reason for a provider refusal, from the scrubbed error stored on the
+ * log row (e.g. "resend_403: validation_error"). Null when there is nothing useful to add.
+ */
+export function failureHintKey(error: string | null): ParseKeys | null {
+  if (!error) return null;
+  const status = /^resend_(\d{3})/.exec(error)?.[1];
+  switch (status) {
+    case '401':
+      return 'notifications.hint.badKey';
+    case '403':
+      return 'notifications.hint.senderNotVerified';
+    case '422':
+      return 'notifications.hint.badRecipient';
+    case '429':
+      return 'notifications.hint.rateLimited';
+    default:
+      return null;
+  }
+}
+
 const EVENT_KEYS: Record<(typeof LOG_EVENTS)[number], ParseKeys> = {
   booking_confirmed: 'notifications.event.booking_confirmed',
   pending_received: 'notifications.event.pending_received',

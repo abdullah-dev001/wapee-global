@@ -6,6 +6,7 @@ import {
   encodingKey,
   ledgerKindKey,
   eventKey,
+  failureHintKey,
   formatCredits,
   formatCreditsSigned,
   isMessageStatus,
@@ -106,5 +107,18 @@ describe('notification settings schema', () => {
         smsEnabled: true,
       }),
     ).toBe(false);
+  });
+});
+
+describe('failureHintKey', () => {
+  it('explains a Resend 403 (unverified domain / test sender)', () => {
+    expect(failureHintKey('resend_403: validation_error')).toBe('notifications.hint.senderNotVerified');
+  });
+  it('maps 422, 401 and 429 and ignores the rest', () => {
+    expect(failureHintKey('resend_422: validation_error')).toBe('notifications.hint.badRecipient');
+    expect(failureHintKey('resend_401: x')).toBe('notifications.hint.badKey');
+    expect(failureHintKey('resend_429: x')).toBe('notifications.hint.rateLimited');
+    expect(failureHintKey('resend_500: x')).toBeNull();
+    expect(failureHintKey(null)).toBeNull();
   });
 });

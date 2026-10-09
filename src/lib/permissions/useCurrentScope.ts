@@ -109,3 +109,9 @@ export function useCurrentScope(): CurrentScope {
     isPending,
   };
 }
+
+/** ISO country of the selected branch (the default for phone pickers), if known. */
+export function useBranchCountry(): string | undefined {
+  const { business, branchId } = useCurrentScope();
+  return business?.branches.find((branch) => branch.id === branchId)?.country_code;
+}

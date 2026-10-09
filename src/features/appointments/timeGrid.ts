@@ -12,8 +12,46 @@ export type GridHours = { startHour: number; endHour: number };
 
 export const DEFAULT_GRID_HOURS: GridHours = { startHour: 7, endHour: 21 };
 
-/** Pixels per hour of the grid. Fixed so touch targets stay >= 44px tall for a 30-min slot. */
-export const HOUR_HEIGHT_PX = 64;
+/** Pixels per hour of the grid. 96 makes a 30-min appointment 48px tall: two readable lines and a 44px touch target. */
+export const HOUR_HEIGHT_PX = 96;
+
+/** No card is shorter than this, so even a 15-min appointment keeps one readable line. */
+export const MIN_BLOCK_HEIGHT_PX = 28;
+
+/** Card height in px for a start/end, never below `MIN_BLOCK_HEIGHT_PX`. */
+export function blockHeightPx(
+  startMinute: MinuteOfDay,
+  endMinute: MinuteOfDay,
+  hours: GridHours = DEFAULT_GRID_HOURS,
+): number {
+  return Math.max(
+    MIN_BLOCK_HEIGHT_PX,
+    minuteToOffsetPx(endMinute, hours) - minuteToOffsetPx(startMinute, hours),
+  );
+}
+
+export type BlockDetail = 'compact' | 'standard' | 'full';
+
+/**
+ * How much a card shows for its height: `compact` = one line (time + client),
+ * `standard` = time line + client line, `full` = also the service (and status badge).
+ */
+export function blockDetailForHeight(heightPx: number): BlockDetail {
+  if (heightPx >= 76) return 'full';
+  if (heightPx >= 44) return 'standard';
+  return 'compact';
+}
+
+/** Top offset, in px, of each whole-hour label/line: the SAME maths the cards use. */
+export function hourLabelOffsets(
+  hours: GridHours = DEFAULT_GRID_HOURS,
+): { hour: number; topPx: number }[] {
+  const out: { hour: number; topPx: number }[] = [];
+  for (let hour = hours.startHour; hour <= hours.endHour; hour += 1) {
+    out.push({ hour, topPx: minuteToOffsetPx(hour * 60, hours) });
+  }
+  return out;
+}
 
 /** Vertical offset, in px, of a minute-of-day within the grid. Clamped to the grid's range. */
 export function minuteToOffsetPx(
@@ -106,7 +144,8 @@ export function minuteOfDayFromTime(date: string, zone: string): MinuteOfDay {
     timeZone: zone,
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
+    // h23 so midnight is 00, not 24 (hour12:false gives "24" on some engines).
+    hourCycle: 'h23',
   }).formatToParts(new Date(date));
   const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0');
   const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0');

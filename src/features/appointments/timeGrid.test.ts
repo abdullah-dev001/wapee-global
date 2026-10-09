@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_GRID_HOURS,
+  blockDetailForHeight,
+  blockHeightPx,
   gridHeightPx,
   HOUR_HEIGHT_PX,
+  hourLabelOffsets,
+  MIN_BLOCK_HEIGHT_PX,
   layoutOverlappingBlocks,
   minuteOfDayFromTime,
   minuteToOffsetPx,
@@ -96,5 +100,40 @@ describe('minuteOfDayFromTime', () => {
     expect(minuteOfDayFromTime('2026-06-15T13:30:00.000Z', 'Europe/London')).toBe(14 * 60 + 30);
     // 13:30 UTC = 18:30 in Karachi (+05:00, no DST).
     expect(minuteOfDayFromTime('2026-06-15T13:30:00.000Z', 'Asia/Karachi')).toBe(18 * 60 + 30);
+  });
+});
+
+describe('card height and detail', () => {
+  it('gives a 30-minute appointment a readable two-line card', () => {
+    const height = blockHeightPx(12 * 60, 12 * 60 + 30);
+    expect(height).toBe(HOUR_HEIGHT_PX / 2);
+    expect(blockDetailForHeight(height)).toBe('standard');
+  });
+  it('never goes below the minimum height', () => {
+    expect(blockHeightPx(12 * 60, 12 * 60 + 5)).toBe(MIN_BLOCK_HEIGHT_PX);
+    expect(blockDetailForHeight(MIN_BLOCK_HEIGHT_PX)).toBe('compact');
+  });
+  it('shows the service from one hour up', () => {
+    expect(blockDetailForHeight(blockHeightPx(12 * 60, 13 * 60))).toBe('full');
+  });
+});
+
+describe('hour labels line up with cards', () => {
+  it('puts the 12 PM label exactly where a 12:00 card starts', () => {
+    const label = hourLabelOffsets().find((entry) => entry.hour === 12);
+    expect(label?.topPx).toBe(minuteToOffsetPx(12 * 60));
+  });
+  it('spaces labels exactly one hour height apart (no drift)', () => {
+    const tops = hourLabelOffsets().map((entry) => entry.topPx);
+    tops.slice(1).forEach((top, index) => expect(top - (tops[index] as number)).toBe(HOUR_HEIGHT_PX));
+  });
+});
+
+describe('minuteOfDayFromTime in the business zone', () => {
+  it('reads 12:00 America/New_York for 16:00Z in October (EDT)', () => {
+    expect(minuteOfDayFromTime('2026-10-12T16:00:00Z', 'America/New_York')).toBe(12 * 60);
+  });
+  it('does not depend on the browser zone and never returns 24:00', () => {
+    expect(minuteOfDayFromTime('2026-10-12T04:00:00Z', 'America/New_York')).toBe(0);
   });
 });

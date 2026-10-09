@@ -1309,8 +1309,8 @@ begin
   perform pg_temp.act_as(pg_temp.id('owner')); set local role authenticated;
   r := public.get_appointment_messages(pg_temp.id('appt1')); reset role;
   perform pg_temp.chk('owner reads the send status of an appointment', r->>'ok', 'true');
-  perform pg_temp.chk('...items carry event/channel/status/code/at and NOTHING else (no recipient, body or link)',
-    (select (count(*) filter (where (select array_agg(k order by k) from jsonb_object_keys(e) k) = array['at','channel','code','event','status']) = count(*))::text from jsonb_array_elements(r->'items') e), 'true');
+  perform pg_temp.chk('...items carry event/channel/status/code/at/error/outbox_id/can_retry and NOTHING else (no recipient, body or link)',
+    (select (count(*) filter (where (select array_agg(k order by k) from jsonb_object_keys(e) k) = array['at','can_retry','channel','code','error','event','outbox_id','status']) = count(*))::text from jsonb_array_elements(r->'items') e), 'true');
   perform pg_temp.chk('...no staff push events leak into it', (select count(*)::int from jsonb_array_elements(r->'items') e where e->>'event' like 'staff\_%'), 0);
   perform pg_temp.chk('...queued rows show as queued', (select count(*)::int from jsonb_array_elements(r->'items') e where e->>'status' = 'queued') > 0, true);
   perform pg_temp.chk('...the serialised answer contains no address', r::text !~* '(@|https?://|\+44)', true);
@@ -1326,6 +1326,62 @@ begin
   perform pg_temp.chk('an unknown appointment is not_found', public.get_appointment_messages(gen_random_uuid())->>'code', 'not_found');
 end $$;
 select pg_temp.chk('anon cannot call get_appointment_messages', has_function_privilege('anon', 'public.get_appointment_messages(uuid)', 'execute'), false);
+
+-- Retry of a dead message (migration 20261020130000)
+do $$
+declare v_id uuid; v_before jsonb; v_after jsonb; r jsonb; v_row public.message_outbox;
+begin
+  v_id := public.outbox_enqueue(pg_temp.id('biza'), pg_temp.id('brancha'), 'booking_confirmed', 'test:msgretry:1',
+    pg_temp.id('appt1'), pg_temp.id('c_mail'), null, null, null, '{}'::jsonb, null);
+  perform pg_temp.chk('retry fixture queued', v_id is not null, true);
+  update public.message_outbox set status = 'sending', attempts = 1, locked_until = now() + interval '5 minutes' where id = v_id;
+  perform public.outbox_fail(v_id, 'resend_403: validation_error', false, true);
+  perform pg_temp.chk('fixture is dead/rejected',
+    (select row(status, last_error)::text from public.message_outbox where id = v_id), '(dead,rejected)');
+
+  -- items expose the reason and can_retry, still no address
+  perform pg_temp.act_as(pg_temp.id('owner')); set local role authenticated;
+  r := public.get_appointment_messages(pg_temp.id('appt1')); reset role;
+  perform pg_temp.chk('the failed item carries the provider reason',
+    (select e->>'error' from jsonb_array_elements(r->'items') e where e->>'outbox_id' = v_id::text), 'resend_403: validation_error');
+  perform pg_temp.chk('...and can_retry is true',
+    (select e->>'can_retry' from jsonb_array_elements(r->'items') e where e->>'outbox_id' = v_id::text), 'true');
+
+  -- every refusal leaves the row exactly as it was
+  select to_jsonb(o) into v_before from public.message_outbox o where o.id = v_id;
+  perform pg_temp.act_as(pg_temp.id('staffa')); set local role authenticated;
+  r := public.retry_message(v_id); reset role;
+  perform pg_temp.chk('Staff (Own scope) cannot retry', r->>'code', 'forbidden');
+  perform pg_temp.act_as(pg_temp.id('ownerb')); set local role authenticated;
+  r := public.retry_message(v_id); reset role;
+  perform pg_temp.chk('another business cannot retry', r->>'code', 'forbidden');
+  r := public.retry_message(gen_random_uuid());
+  perform pg_temp.chk('unknown id (no session) is refused', r->>'ok', 'false');
+  select to_jsonb(o) into v_after from public.message_outbox o where o.id = v_id;
+  perform pg_temp.chk('refused retries left the row exactly as it was', v_after = v_before, true);
+
+  -- ambiguous_send and non-dead rows are never retried
+  update public.message_outbox set last_error = 'ambiguous_send' where id = v_id;
+  select to_jsonb(o) into v_before from public.message_outbox o where o.id = v_id;
+  perform pg_temp.act_as(pg_temp.id('owner')); set local role authenticated;
+  r := public.retry_message(v_id); reset role;
+  perform pg_temp.chk('ambiguous_send is not retryable', r->>'code', 'not_retryable');
+  select to_jsonb(o) into v_after from public.message_outbox o where o.id = v_id;
+  perform pg_temp.chk('...and the row is untouched', v_after = v_before, true);
+  update public.message_outbox set last_error = 'rejected' where id = v_id;
+
+  -- the success path: stored values, not just the return code
+  perform pg_temp.act_as(pg_temp.id('recep')); set local role authenticated;
+  r := public.retry_message(v_id); reset role;
+  perform pg_temp.chk('receptionist (branch scope) can retry', r->>'ok', 'true');
+  select * into v_row from public.message_outbox where id = v_id;
+  perform pg_temp.chk('requeued with a clean slate and a fresh idempotency key',
+    row(v_row.status, v_row.attempts, v_row.last_error, v_row.finished_at is null, v_row.idem_suffix)::text, '(pending,0,,t,1)');
+  perform pg_temp.act_as(pg_temp.id('owner')); set local role authenticated;
+  r := public.retry_message(v_id); reset role;
+  perform pg_temp.chk('a row that is pending again cannot be retried twice', r->>'code', 'not_retryable');
+end $$;
+select pg_temp.chk('anon cannot call retry_message', has_function_privilege('anon', 'public.retry_message(uuid)', 'execute'), false);
 select pg_temp.chk('anon cannot call save_push_preferences', has_function_privilege('anon', 'public.save_push_preferences(uuid,jsonb)', 'execute'), false);
 
 select pg_temp.chk('unsubscribe is a reserved slug', (select count(*)::int from public.reserved_slugs where slug = 'unsubscribe'), 1);

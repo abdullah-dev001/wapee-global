@@ -80,6 +80,8 @@ export type BookingPageData = {
     name: string;
     timezone: string;
     currency: string;
+    /** ISO country of the branch; the default for the phone picker. */
+    countryCode?: string;
   };
   settings: PublicBookingConfig;
   services: PublicService[];

@@ -1,15 +1,15 @@
-import { Check, ChevronDown } from 'lucide-react-native';
+import { ChevronDown } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Keyboard, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Text } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
-import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
-import { dialCodes, findDialCode, type DialCode, DEFAULT_DIAL_CODE } from '@/config/dialCodes';
+import { findDialCode, flagEmoji, type DialCode, DEFAULT_DIAL_CODE } from '@/config/dialCodes';
 import { fromE164, toE164 } from '@/config/e164';
-import { focusRing, shadow, theme } from '@/lib/theme';
+import { focusRing, theme } from '@/lib/theme';
+
+import { PhoneCountryPicker } from './PhoneCountryPicker';
 
 export type PhoneInputProps = {
   label?: string;
@@ -30,8 +30,7 @@ export type PhoneInputProps = {
  * value it cannot fully validate; this component is what makes that the common
  * path rather than the primary one.
  *
- * The dial-code list is `src/config/dialCodes.ts`, deliberately the same 42
- * countries `create_booking`'s fallback table uses.
+ * The dial-code list is `src/config/dialCodes.ts` (every country with a code).
  */
 export function PhoneInput({
   label,
@@ -45,15 +44,18 @@ export function PhoneInput({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
-  const insets = useSafeAreaInsets();
   const { handlers, showFocusRing } = useInteractionState(false);
-  useOverlayDismiss(open, close);
 
   // Split the incoming E.164 back into { dial, national } for display.
+  // The picked country is state, NOT derived from the number: with an empty number
+  // (or a code shared by several countries, like +1) nothing in `value` can say which
+  // country was chosen. Until the user picks one, the business country is used.
   const fallbackCountry = findDialCode(defaultCountry) ?? DEFAULT_DIAL_CODE;
+  const [chosen, setChosen] = useState<DialCode | null>(null);
+  const base = chosen ?? fallbackCountry;
   const { country, nationalNumber: national } = useMemo(
-    () => fromE164(value, fallbackCountry),
-    [value, fallbackCountry],
+    () => fromE164(value, base, base),
+    [value, base],
   );
 
   const emit = useCallback(
@@ -87,13 +89,16 @@ export function PhoneInput({
           }}
           accessibilityRole="button"
           accessibilityLabel={t('phoneInput.countryCode')}
-          accessibilityValue={{ text: `+${country.dialCode}` }}
+          accessibilityValue={{ text: `${country.name} +${country.dialCode}` }}
           style={[
             styles.trigger,
             { borderColor: hasError ? theme.colors.error : theme.colors.border },
             showFocusRing ? focusRing() : null,
           ]}
         >
+          <Text variant="body" accessibilityElementsHidden>
+            {flagEmoji(country.code)}
+          </Text>
           <Text variant="body" color="textPrimary">
             +{country.dialCode}
           </Text>
@@ -108,7 +113,17 @@ export function PhoneInput({
         >
           <TextInput
             value={national}
-            onChangeText={(text) => emit(country, text)}
+            onChangeText={(text) => {
+              // A pasted international number ("+92 300 ...") carries its own country.
+              if (text.trim().startsWith('+')) {
+                const digits = text.replace(/[^0-9]/g, '');
+                const parsed = fromE164(`+${digits}`, country, country);
+                setChosen(parsed.country);
+                emit(parsed.country, parsed.nationalNumber);
+                return;
+              }
+              emit(country, text);
+            }}
             keyboardType="phone-pad"
             autoComplete="tel"
             textContentType="telephoneNumber"
@@ -132,73 +147,16 @@ export function PhoneInput({
         </Text>
       ) : null}
 
-      <Modal
-        visible={open}
-        transparent
-        animationType="slide"
-        onRequestClose={close}
-        statusBarTranslucent
-      >
-        <View style={styles.overlay}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={close}
-            accessibilityLabel={t('actions.close')}
-          />
-          <View style={[styles.sheet, shadow('lg'), { paddingBottom: insets.bottom }]}>
-            <View style={styles.sheetHeader}>
-              <Text variant="dialogTitle">{t('phoneInput.countryCode')}</Text>
-            </View>
-            <FlatList
-              data={dialCodes}
-              keyExtractor={(item) => item.code}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
-                <DialCodeOption
-                  option={item}
-                  selected={item.code === country.code}
-                  onPress={() => {
-                    emit(item, national);
-                    setOpen(false);
-                  }}
-                />
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
+      <PhoneCountryPicker
+        open={open}
+        selected={country}
+        onSelect={(next) => {
+          setChosen(next);
+          emit(next, national);
+        }}
+        onClose={close}
+      />
     </View>
-  );
-}
-
-function DialCodeOption({
-  option,
-  selected,
-  onPress,
-}: {
-  option: DialCode;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const { handlers, showHover } = useInteractionState(false);
-  return (
-    <Pressable
-      {...handlers}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      style={[styles.option, showHover ? { backgroundColor: theme.colors.surfaceHover } : null]}
-    >
-      <Text variant={selected ? 'bodyStrong' : 'body'} numberOfLines={1} style={styles.optionText}>
-        {option.name}
-      </Text>
-      <Text variant="helper" color="textSecondary">
-        +{option.dialCode}
-      </Text>
-      {selected ? (
-        <Check size={theme.iconSize.sm} strokeWidth={2} color={theme.colors.primary} />
-      ) : null}
-    </Pressable>
   );
 }
 
@@ -234,36 +192,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing[12],
     paddingVertical: theme.spacing[10],
     outlineWidth: 0,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: theme.colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: theme.colors.surface,
-    maxHeight: '70%',
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
-  },
-  sheetHeader: {
-    padding: theme.spacing[16],
-    borderBottomWidth: theme.borderWidth.hairline,
-    borderBottomColor: theme.colors.border,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing[8],
-    minHeight: theme.layout.minTouchTarget,
-    paddingHorizontal: theme.spacing[16],
-    paddingVertical: theme.spacing[10],
-  },
-  optionText: {
-    flex: 1,
   },
 });

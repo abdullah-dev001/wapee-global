@@ -1,17 +1,14 @@
 /**
- * Country -> dialling code, for `PhoneInput`.
+ * Country -> dialling code for `PhoneInput`, covering every ISO country that has
+ * one. Names come from `localeData.generated.ts` (the same list the onboarding
+ * country select uses), so the two never disagree on a name.
  *
- * Deliberately the SAME 42 countries as the dialling-code table inside the
- * `create_booking` RPC (`supabase/migrations/20261003160000_create_booking.sql`),
- * so a country picked here and a phone normalised there never disagree about
- * which code applies. If a country is added to one table it should be added to
- * the other.
- *
- * `PhoneInput` combines this with the national number to send real E.164
- * (`+<dialCode><nationalNumber>`) from the client, which makes the server's
- * `normalise_phone_e164()` a fallback rather than the primary path — it has no
- * country hint for a web caller with no device locale.
+ * Several countries share a code (+1 is the whole North American plan, +7 Russia and
+ * Kazakhstan, +44 the UK and the Crown dependencies). `canonicalDialCountry` picks
+ * the country shown when a bare E.164 number is split back into country + digits;
+ * `PhoneInput` keeps the country the user picked, so the choice is never lost.
  */
+import { allCountries } from './localeData.generated';
 
 export type DialCode = {
   /** ISO 3166-1 alpha-2. */
@@ -21,55 +18,302 @@ export type DialCode = {
   dialCode: string;
 };
 
-export const dialCodes: readonly DialCode[] = [
-  { code: 'GB', name: 'United Kingdom', dialCode: '44' },
-  { code: 'US', name: 'United States', dialCode: '1' },
-  { code: 'CA', name: 'Canada', dialCode: '1' },
-  { code: 'PK', name: 'Pakistan', dialCode: '92' },
-  { code: 'AE', name: 'United Arab Emirates', dialCode: '971' },
-  { code: 'SA', name: 'Saudi Arabia', dialCode: '966' },
-  { code: 'IN', name: 'India', dialCode: '91' },
-  { code: 'AU', name: 'Australia', dialCode: '61' },
-  { code: 'NZ', name: 'New Zealand', dialCode: '64' },
-  { code: 'IE', name: 'Ireland', dialCode: '353' },
-  { code: 'DE', name: 'Germany', dialCode: '49' },
-  { code: 'FR', name: 'France', dialCode: '33' },
-  { code: 'ES', name: 'Spain', dialCode: '34' },
-  { code: 'IT', name: 'Italy', dialCode: '39' },
-  { code: 'NL', name: 'Netherlands', dialCode: '31' },
-  { code: 'BE', name: 'Belgium', dialCode: '32' },
-  { code: 'SE', name: 'Sweden', dialCode: '46' },
-  { code: 'NO', name: 'Norway', dialCode: '47' },
-  { code: 'DK', name: 'Denmark', dialCode: '45' },
-  { code: 'FI', name: 'Finland', dialCode: '358' },
-  { code: 'PL', name: 'Poland', dialCode: '48' },
-  { code: 'PT', name: 'Portugal', dialCode: '351' },
-  { code: 'ZA', name: 'South Africa', dialCode: '27' },
-  { code: 'NG', name: 'Nigeria', dialCode: '234' },
-  { code: 'KE', name: 'Kenya', dialCode: '254' },
-  { code: 'EG', name: 'Egypt', dialCode: '20' },
-  { code: 'TR', name: 'Türkiye', dialCode: '90' },
-  { code: 'MY', name: 'Malaysia', dialCode: '60' },
-  { code: 'SG', name: 'Singapore', dialCode: '65' },
-  { code: 'ID', name: 'Indonesia', dialCode: '62' },
-  { code: 'PH', name: 'Philippines', dialCode: '63' },
-  { code: 'TH', name: 'Thailand', dialCode: '66' },
-  { code: 'BD', name: 'Bangladesh', dialCode: '880' },
-  { code: 'LK', name: 'Sri Lanka', dialCode: '94' },
-  { code: 'QA', name: 'Qatar', dialCode: '974' },
-  { code: 'KW', name: 'Kuwait', dialCode: '965' },
-  { code: 'BH', name: 'Bahrain', dialCode: '973' },
-  { code: 'OM', name: 'Oman', dialCode: '968' },
-  { code: 'JO', name: 'Jordan', dialCode: '962' },
-  { code: 'LB', name: 'Lebanon', dialCode: '961' },
-  { code: 'MA', name: 'Morocco', dialCode: '212' },
-  { code: 'TN', name: 'Tunisia', dialCode: '216' },
-] as const;
+const DIAL_BY_COUNTRY: Readonly<Record<string, string>> = {
+  AF: '93',
+  AL: '355',
+  DZ: '213',
+  AS: '1',
+  AD: '376',
+  AO: '244',
+  AI: '1',
+  AG: '1',
+  AR: '54',
+  AM: '374',
+  AW: '297',
+  AU: '61',
+  AT: '43',
+  AZ: '994',
+  BS: '1',
+  BH: '973',
+  BD: '880',
+  BB: '1',
+  BY: '375',
+  BE: '32',
+  BZ: '501',
+  BJ: '229',
+  BM: '1',
+  BT: '975',
+  BO: '591',
+  BA: '387',
+  BW: '267',
+  BR: '55',
+  IO: '246',
+  VG: '1',
+  BN: '673',
+  BG: '359',
+  BF: '226',
+  BI: '257',
+  KH: '855',
+  CM: '237',
+  CA: '1',
+  CV: '238',
+  BQ: '599',
+  KY: '1',
+  CF: '236',
+  TD: '235',
+  CL: '56',
+  CN: '86',
+  CX: '61',
+  CC: '61',
+  CO: '57',
+  KM: '269',
+  CG: '242',
+  CD: '243',
+  CK: '682',
+  CR: '506',
+  CI: '225',
+  HR: '385',
+  CU: '53',
+  CW: '599',
+  CY: '357',
+  CZ: '420',
+  DK: '45',
+  DJ: '253',
+  DM: '1',
+  DO: '1',
+  EC: '593',
+  EG: '20',
+  SV: '503',
+  GQ: '240',
+  ER: '291',
+  EE: '372',
+  SZ: '268',
+  ET: '251',
+  FK: '500',
+  FO: '298',
+  FJ: '679',
+  FI: '358',
+  FR: '33',
+  GF: '594',
+  PF: '689',
+  GA: '241',
+  GM: '220',
+  GE: '995',
+  DE: '49',
+  GH: '233',
+  GI: '350',
+  GR: '30',
+  GL: '299',
+  GD: '1',
+  GP: '590',
+  GU: '1',
+  GT: '502',
+  GG: '44',
+  GN: '224',
+  GW: '245',
+  GY: '592',
+  HT: '509',
+  HN: '504',
+  HK: '852',
+  HU: '36',
+  IS: '354',
+  IN: '91',
+  ID: '62',
+  IR: '98',
+  IQ: '964',
+  IE: '353',
+  IM: '44',
+  IL: '972',
+  IT: '39',
+  JM: '1',
+  JP: '81',
+  JE: '44',
+  JO: '962',
+  KZ: '7',
+  KE: '254',
+  KI: '686',
+  XK: '383',
+  KW: '965',
+  KG: '996',
+  LA: '856',
+  LV: '371',
+  LB: '961',
+  LS: '266',
+  LR: '231',
+  LY: '218',
+  LI: '423',
+  LT: '370',
+  LU: '352',
+  MO: '853',
+  MG: '261',
+  MW: '265',
+  MY: '60',
+  MV: '960',
+  ML: '223',
+  MT: '356',
+  MH: '692',
+  MQ: '596',
+  MR: '222',
+  MU: '230',
+  YT: '262',
+  MX: '52',
+  FM: '691',
+  MD: '373',
+  MC: '377',
+  MN: '976',
+  ME: '382',
+  MS: '1',
+  MA: '212',
+  MZ: '258',
+  MM: '95',
+  NA: '264',
+  NR: '674',
+  NP: '977',
+  NL: '31',
+  NC: '687',
+  NZ: '64',
+  NI: '505',
+  NE: '227',
+  NG: '234',
+  NU: '683',
+  NF: '672',
+  KP: '850',
+  MK: '389',
+  MP: '1',
+  NO: '47',
+  OM: '968',
+  PK: '92',
+  PW: '680',
+  PS: '970',
+  PA: '507',
+  PG: '675',
+  PY: '595',
+  PE: '51',
+  PH: '63',
+  PL: '48',
+  PT: '351',
+  PR: '1',
+  QA: '974',
+  RE: '262',
+  RO: '40',
+  RU: '7',
+  RW: '250',
+  BL: '590',
+  SH: '290',
+  KN: '1',
+  LC: '1',
+  MF: '590',
+  PM: '508',
+  VC: '1',
+  WS: '685',
+  SM: '378',
+  ST: '239',
+  SA: '966',
+  SN: '221',
+  RS: '381',
+  SC: '248',
+  SL: '232',
+  SG: '65',
+  SX: '1',
+  SK: '421',
+  SI: '386',
+  SB: '677',
+  SO: '252',
+  ZA: '27',
+  KR: '82',
+  SS: '211',
+  ES: '34',
+  LK: '94',
+  SD: '249',
+  SR: '597',
+  SJ: '47',
+  SE: '46',
+  CH: '41',
+  SY: '963',
+  TW: '886',
+  TJ: '992',
+  TZ: '255',
+  TH: '66',
+  TL: '670',
+  TG: '228',
+  TK: '690',
+  TO: '676',
+  TT: '1',
+  TN: '216',
+  TR: '90',
+  TM: '993',
+  TC: '1',
+  TV: '688',
+  VI: '1',
+  UG: '256',
+  UA: '380',
+  AE: '971',
+  GB: '44',
+  US: '1',
+  UY: '598',
+  UZ: '998',
+  VU: '678',
+  VA: '39',
+  VE: '58',
+  VN: '84',
+  WF: '681',
+  EH: '212',
+  YE: '967',
+  ZM: '260',
+  ZW: '263',
+  AX: '358',
+};
 
-export const DEFAULT_DIAL_CODE: DialCode = { code: 'GB', name: 'United Kingdom', dialCode: '44' };
+/** Who "owns" a shared code when only the number is known. */
+const CANONICAL = new Set(['US', 'RU', 'GB', 'FI', 'NO', 'IT', 'GP', 'CW', 'MA', 'RE', 'AU']);
+
+/** Every country with a dialling code, sorted by name. */
+export const dialCodes: readonly DialCode[] = allCountries
+  .filter((country) => DIAL_BY_COUNTRY[country.code] !== undefined)
+  .map((country) => ({
+    code: country.code,
+    name: country.name,
+    dialCode: DIAL_BY_COUNTRY[country.code] as string,
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+const GB_FALLBACK: DialCode = { code: 'GB', name: 'United Kingdom', dialCode: '44' };
+export const DEFAULT_DIAL_CODE: DialCode =
+  dialCodes.find((entry) => entry.code === 'GB') ?? GB_FALLBACK;
 
 export function findDialCode(code: string | null | undefined): DialCode | undefined {
   if (!code) return undefined;
   const upper = code.toUpperCase();
   return dialCodes.find((entry) => entry.code === upper);
+}
+
+/** The country shown for a dial code when several share it. */
+export function canonicalDialCountry(dialCode: string): DialCode | undefined {
+  const sharing = dialCodes.filter((entry) => entry.dialCode === dialCode);
+  return sharing.find((entry) => CANONICAL.has(entry.code)) ?? sharing[0];
+}
+
+/** Regional-indicator flag emoji for an ISO code ("GB" -> flag). */
+export function flagEmoji(code: string): string {
+  return [...code.toUpperCase()]
+    .map((char) => String.fromCodePoint(0x1f1e6 + char.charCodeAt(0) - 65))
+    .join('');
+}
+
+/**
+ * Filters by country name, ISO code or dial code ("pak", "pk", "92", "+92"). Matching
+ * names that START with the query come first. An empty query returns the list as is.
+ */
+export function searchDialCodes(list: readonly DialCode[], query: string): DialCode[] {
+  const q = query.trim().toLowerCase().replace(/^\+/, '');
+  if (!q) return [...list];
+  const matches = list.filter(
+    (entry) =>
+      entry.name.toLowerCase().includes(q) ||
+      entry.code.toLowerCase() === q ||
+      entry.dialCode.startsWith(q),
+  );
+  const rank = (entry: DialCode) =>
+    entry.name.toLowerCase().startsWith(q) || entry.code.toLowerCase() === q ? 0 : 1;
+  return matches.sort((a, b) => rank(a) - rank(b));
 }

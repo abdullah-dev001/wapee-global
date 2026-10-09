@@ -531,6 +531,7 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
   design, not an oversight.
 
 ## Changelog
+- 2026-10-20: `20261020130000_message_retry` (`get_appointment_messages` + error/outbox_id/can_retry, `retry_message`).
 - 2026-10-07: **Phase 10B** — add-ons Files & Photos and Forms & Consent (4 migrations `20261014090000`..`120000`, 8 tables, private bucket, 15 RPCs, 2 Edge Functions `client_files` + `sign_form`).
 - 2026-10-07: **Phase 10A** — add-ons Packages & Sessions and Inventory (6 migrations `20261013090000`..`140000`, 9 tables, 13 RPCs, invoice integration, low-stock alert); `list_business_member_names` for the Team list.
 - 2026-10-09: Phase 6B backend + project-wide least-privilege revoke (see Phase 6A section).

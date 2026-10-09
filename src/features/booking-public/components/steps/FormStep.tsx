@@ -17,6 +17,8 @@ export type FormStepValues = Record<string, string | undefined>;
 export type FormStepProps = {
   fields: readonly PublicFormFieldSnapshot[];
   requireClientEmail: boolean;
+  /** ISO country preselected in the phone picker (the branch's). */
+  defaultCountry?: string;
   submitting: boolean;
   /** Highlighted by the server after a failed submit (missing/invalid answer). */
   serverFieldError?: { fieldId: string | null; message: 'missing' | 'invalid' } | null;
@@ -41,6 +43,7 @@ export type FormStepProps = {
 export function FormStep({
   fields,
   requireClientEmail,
+  defaultCountry,
   submitting,
   serverFieldError,
   onDirtyChange,
@@ -113,7 +116,7 @@ export function FormStep({
         returnKeyType="next"
       />
 
-      <PhoneController control={control} requireClientEmail={requireClientEmail} />
+      <PhoneController control={control} defaultCountry={defaultCountry} />
 
       <FormField
         control={control}
@@ -150,10 +153,10 @@ export function FormStep({
 
 function PhoneController({
   control,
-  requireClientEmail: _requireClientEmail,
+  defaultCountry,
 }: {
   control: Control<FormStepValues>;
-  requireClientEmail: boolean;
+  defaultCountry?: string;
 }) {
   const { t } = useTranslation();
   const { field, fieldState } = useController({ control, name: 'phone' });
@@ -165,6 +168,7 @@ function PhoneController({
       required
       value={field.value ?? ''}
       onChange={field.onChange}
+      defaultCountry={defaultCountry}
       error={message ? String(t(message as never)) : undefined}
     />
   );

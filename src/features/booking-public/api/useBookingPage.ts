@@ -8,7 +8,7 @@ import type { BookingPageData } from '../types';
 export const bookingPageKeys = createQueryKeys('booking-public-page');
 
 type RawResponse = {
-  branch: { name: string; timezone: string; currency: string };
+  branch: { name: string; timezone: string; currency: string; country_code?: string };
   settings: {
     staff_choice: 'hidden' | 'optional' | 'required';
     slot_display: 'only_available' | 'all_greyed';
@@ -64,7 +64,12 @@ export function useBookingPage(slug: string | undefined): UseQueryResult<Booking
       const raw = await callPublicFunction<RawResponse>('get_booking_page', { slug });
 
       const data: BookingPageData = {
-        branch: raw.branch,
+        branch: {
+          name: raw.branch.name,
+          timezone: raw.branch.timezone,
+          currency: raw.branch.currency,
+          countryCode: raw.branch.country_code,
+        },
         settings: {
           staffChoice: raw.settings.staff_choice,
           slotDisplay: raw.settings.slot_display,

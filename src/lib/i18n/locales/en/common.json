@@ -5,6 +5,8 @@
   "phoneInput": {
     "label": "Phone number",
     "countryCode": "Country code",
+    "search": "Search country or code",
+    "noResults": "No country found",
     "placeholder": "700 900 123"
   },
   "actions": {
@@ -1674,6 +1676,17 @@
       "failed": "Failed",
       "skipped": "Not sent",
       "queued": "Waiting to send"
+    },
+    "hint": {
+      "senderNotVerified": "The email provider blocked this send. Usually the sending domain is not verified yet (a test sender only delivers to the provider account's owner). Contact support if this keeps happening.",
+      "badRecipient": "The provider says the customer's email address is not valid.",
+      "badKey": "The email service is not set up correctly. Contact support.",
+      "rateLimited": "The email provider is busy. Try again in a few minutes."
+    },
+    "retry": {
+      "action": "Try again",
+      "queued": "Queued to send again",
+      "failed": "Could not retry this message"
     },
     "code": {
       "skipped_no_credits": "Not sent: no SMS credits left",

@@ -163,6 +163,7 @@ top-level `phoneInput.*` group for `PhoneInput`.
   caused it.
 
 ## Changelog
+- 2026-10-20: `get_booking_page` returns `branch.country_code`; the phone picker defaults to it.
 - 2026-10-04: Built. Route, `BookingFlow` orchestrator, 5 step components,
   `PhoneInput` + `e164.ts`/`dialCodes.ts`, `HoneypotField`, the step state
   machine and error-action mapping (pure, tested), the dynamic zod form schema,

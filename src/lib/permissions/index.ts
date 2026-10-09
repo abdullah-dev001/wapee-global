@@ -1,6 +1,7 @@
 export { ALWAYS_ALLOWED_WHEN_INACTIVE, can, hasFeature, hasPermission } from './can';
 export { type Grant, type GrantSet, type PermissionKey, type PermissionScope } from './types';
 export {
+  useBranchCountry,
   useCurrentScope,
   useMyProfile,
   useScopeSelection,
