@@ -20,15 +20,24 @@ export type LandingAssets = {
   /** Public RPC endpoint + publishable key (safe in the browser). */
   rpcUrl: string;
   apiKey: string;
-  /** localStorage key of the Supabase session, for the signed-in redirect. */
+  /** localStorage key of the Supabase session (read only, never sent anywhere). */
   sessionStorageKey: string;
+  /**
+   * authSession.ts with its types stripped (defines readStoredSession + readSignedIn).
+   * Inlined into <head> so the header variant is chosen before first paint.
+   */
+  authScript: string;
 };
 
-/** Signed-in visitors go straight to the app, before anything paints (same as the old "/" route). */
-function headScript(sessionKey: string): string {
-  return `<script>(function(){var d=document.documentElement;d.className=d.className.replace('no-js','js');try{var v=localStorage.getItem(${inlineJson(
-    sessionKey,
-  )});if(v&&/"refresh_token"\\s*:\\s*"[^"]/.test(v)){location.replace('/today');}}catch(e){}setTimeout(function(){if(!window.__landingMotion)d.classList.add('reveal-all');},3000);})();</script>`;
+/**
+ * Runs in <head>, before first paint, with no network call: marks JS on, and when the
+ * stored Supabase session is valid and not expired sets html[data-auth="in"] and
+ * window.__landingUser (the display name, filled into the header with textContent).
+ * It never redirects: signed-in visitors see the landing page too.
+ */
+export function headScript(sessionKey: string, authScript: string): string {
+  return `<script>(function(){var d=document.documentElement;d.className=d.className.replace('no-js','js');try{${authScript}
+var u=readSignedIn(readStoredSession(window.localStorage,${inlineJson(sessionKey)}),Date.now());if(u){d.setAttribute('data-auth','in');window.__landingUser=u.name||'';}}catch(e){}setTimeout(function(){if(!window.__landingMotion)d.classList.add('reveal-all');},3000);})();</script>`;
 }
 
 export function softwareJsonLd(ctx: PageContext): Record<string, unknown> {
@@ -54,7 +63,7 @@ export function renderLanding(ctx: PageContext, assets: LandingAssets): string {
     strings: ctx.s.pricing,
   };
   const extra = [
-    headScript(assets.sessionStorageKey),
+    headScript(assets.sessionStorageKey, assets.authScript),
     assets.preloadFont
       ? `<link rel="preload" href="${attr(assets.preloadFont)}" as="font" type="font/ttf" crossorigin>`
       : '',

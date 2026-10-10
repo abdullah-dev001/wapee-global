@@ -105,6 +105,10 @@ const client = unexport(strip('landingClient.ts')).replace(
 if (/^\s*import\s/m.test(client) || /^\s*import\s/m.test(model))
   fail('landing script still has an import after bundling.');
 const motion = unexport(strip('motionClient.ts'));
+// Head script part: the session reader, inlined into <head> (must stay import-free and contain no "</script").
+const authScript = unexport(strip('authSession.ts'));
+if (/^\s*import\s/m.test(authScript) || authScript.includes('</script'))
+  fail('authSession.ts cannot be inlined into <head>.');
 if (/^\s*import\s/m.test(motion)) fail('motion script has an import.');
 const script = `(function(){'use strict';\n${model}\n${client}\n${motion}\n})();\n`;
 const hash = createHash('sha256').update(script).digest('hex').slice(0, 12);
@@ -137,6 +141,7 @@ const ctx = {
   siteUrl: brand.urls.site,
   year: new Date().getUTCFullYear(),
   paths: {
+    dashboard: '/today',
     login: '/login',
     signup: '/signup',
     terms: '/terms',
@@ -155,6 +160,7 @@ writeFileSync(
     apiKey: anonKey,
     // supabase-js default storage key on web: sb-<project ref>-auth-token (see src/lib/supabase/client.ts).
     sessionStorageKey: `sb-${projectRef}-auth-token`,
+    authScript,
   }),
 );
 writeFileSync(

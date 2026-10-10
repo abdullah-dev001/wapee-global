@@ -15,7 +15,10 @@
     "trial": "Start free trial",
     "menu": "Menu",
     "close": "Close menu",
-    "home": "{{name}} home"
+    "home": "{{name}} home",
+    "dashboard": "Dashboard",
+    "signedInAs": "Signed in as",
+    "account": "Your account"
   },
   "hero": {
     "eyebrow": "For salons, clinics, studios and every business that takes appointments",
@@ -41,7 +44,8 @@
       "newBookingDetail": "Haircut · 10:30",
       "invoicePaid": "Invoice paid",
       "invoiceDetail": "Sample invoice"
-    }
+    },
+    "dashboard": "Go to Dashboard"
   },
   "who": {
     "title": "Made for businesses that run on appointments",
@@ -240,7 +244,8 @@
     "title": "Ready to fill your calendar?",
     "body": "Set up your booking page today. Free for 14 days, no credit card needed.",
     "primary": "Start free trial",
-    "secondary": "Log in"
+    "secondary": "Log in",
+    "dashboard": "Go to Dashboard"
   },
   "footer": {
     "tagline": "Online booking and everyday management for service businesses.",

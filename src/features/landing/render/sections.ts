@@ -33,7 +33,8 @@ export function hero(ctx: PageContext): string {
     <h1 id="hero-title">${title}</h1>
     <p class="hero-sub">${tx(ctx, h.subtitle)}</p>
     <div class="hero-ctas">
-      <a class="btn btn-primary btn-lg" href="${attr(ctx.paths.signup)}">${tx(ctx, h.primary)}</a>
+      <a class="btn btn-primary btn-lg auth-out" href="${attr(ctx.paths.signup)}">${tx(ctx, h.primary)}</a>
+      <a class="btn btn-primary btn-lg auth-in" href="${attr(ctx.paths.dashboard)}">${tx(ctx, h.dashboard)}</a>
       <a class="btn btn-outline btn-lg" href="#pricing">${tx(ctx, h.secondary)}</a>
     </div>
     <p class="hero-note">${tx(ctx, h.note)}</p>
@@ -156,7 +157,8 @@ export function ctaBand(ctx: PageContext): string {
     <h2 id="cta-title">${tx(ctx, c.title)}</h2>
     <p>${tx(ctx, c.body)}</p>
     <div class="hero-ctas">
-      <a class="btn btn-accent btn-lg" href="${attr(ctx.paths.signup)}">${tx(ctx, c.primary)}</a>
+      <a class="btn btn-accent btn-lg auth-out" href="${attr(ctx.paths.signup)}">${tx(ctx, c.primary)}</a>
+      <a class="btn btn-accent btn-lg auth-in" href="${attr(ctx.paths.dashboard)}">${tx(ctx, c.dashboard)}</a>
       <a class="btn btn-outline btn-lg" href="${attr(ctx.paths.login)}">${tx(ctx, c.secondary)}</a>
     </div>
   </div>

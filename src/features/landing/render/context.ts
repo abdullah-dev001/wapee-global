@@ -17,6 +17,8 @@ export type PageContext = {
     terms: string;
     privacy: string;
     refund: string;
+    /** Where a signed-in visitor goes (the app). */
+    dashboard: string;
   };
 };
 

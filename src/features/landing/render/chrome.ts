@@ -22,12 +22,23 @@ export function header(ctx: PageContext): string {
       ${link('#features', n.features)}${link('#how', n.how)}${link('#pricing', n.pricing)}${link('#faq', n.faq)}
     </ul>
     <div class="nav-actions">
-      <a class="btn btn-ghost" href="${attr(ctx.paths.login)}">${tx(ctx, n.login)}</a>
-      <a class="btn btn-primary" href="${attr(ctx.paths.signup)}">${tx(ctx, n.trial)}</a>
+      <a class="btn btn-ghost auth-out" href="${attr(ctx.paths.login)}">${tx(ctx, n.login)}</a>
+      <a class="btn btn-primary auth-out" href="${attr(ctx.paths.signup)}">${tx(ctx, n.trial)}</a>
+      <span class="nav-user auth-in"><span class="sr-only">${tx(ctx, n.signedInAs)} </span><span class="nav-user-name" data-user-name>${tx(ctx, n.account)}</span></span>
+      <a class="btn btn-primary auth-in" href="${attr(ctx.paths.dashboard)}">${tx(ctx, n.dashboard)}</a>
     </div>
   </nav>
 </div>
-</header>`;
+</header>
+${fillUserName()}`;
+}
+
+/**
+ * Runs right after the header is parsed (before first paint): puts the signed-in name
+ * found by the head script into every [data-user-name], with textContent only (never HTML).
+ */
+function fillUserName(): string {
+  return `<script>(function(){var n=window.__landingUser;if(typeof n!=='string'||!n)return;var e=document.querySelectorAll('[data-user-name]');for(var i=0;i<e.length;i++){e[i].textContent=n;}})();</script>`;
 }
 
 export function footer(ctx: PageContext): string {

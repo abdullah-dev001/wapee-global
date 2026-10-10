@@ -18,6 +18,7 @@ const ctx: PageContext = {
     terms: '/terms',
     privacy: '/privacy',
     refund: '/refund',
+    dashboard: '/today',
   },
 };
 const assets = {
@@ -27,6 +28,7 @@ const assets = {
   rpcUrl: 'https://ref.supabase.co/rest/v1/rpc/get_public_pricing',
   apiKey: 'publishable-key',
   sessionStorageKey: 'sb-ref-auth-token',
+  authScript: 'function readStoredSession(){return null}function readSignedIn(){return null}',
 };
 
 /** A price written as a literal: "$15", "€9.99", "15 USD", "39/month", "$ 79". */
@@ -79,11 +81,6 @@ describe('landing page HTML', () => {
     ]) {
       expect(text).not.toContain(word);
     }
-  });
-
-  it('redirects a signed-in visitor to /today using the session key', () => {
-    expect(html).toContain('"sb-ref-auth-token"');
-    expect(html).toContain("location.replace('/today')");
   });
 });
 

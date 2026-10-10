@@ -3,7 +3,7 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 
 ## What it does
 - `/` (on the one origin `https://wapee.online`) is a static, pre-rendered marketing page: header, hero, who it's for, how it works, features, pricing (plans + add-ons + compare table), FAQ, CTA band, footer (Terms, Privacy, Refund, support email).
-- Signed-in visitors are sent to `/today` by an inline head script before paint (checks the supabase-js session key `sb-<ref>-auth-token` in localStorage for a refresh token). Native app: `app/index.tsx` still redirects to `/today`.
+- `/` is the static landing page for EVERY visitor (signed in or not; no redirect). Auth-aware header: an inline `<head>` script (`authSession.ts`, types stripped, no network, no SDK) reads `sb-<ref>-auth-token` from localStorage (also chunks / `base64-` / `{currentSession}`); a valid, NOT expired session sets `html[data-auth="in"]` and `window.__landingUser`. CSS then shows the signed-in variants (name + "Dashboard" in header and mobile menu; hero + final CTA "Go to Dashboard" to `/today`) and hides "Log in" / "Start free trial"; secondary CTAs stay. An inline script right after the header fills `[data-user-name]` with textContent. Expired (even with a refresh token) / malformed / no JS = signed out. Native app: `app/index.tsx` still redirects to `/today`; in-app (client-side) navigation to `/` does too. PWA `start_url` stays `/today`.
 - `/refund`: Refund Policy, DRAFT for lawyer review, same look as /privacy and /terms (reseller name is a placeholder).
 
 ## Business rules
@@ -20,6 +20,7 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 | src/features/landing/i18n/en.json | All page strings (English base; not loaded into the app bundle) |
 | src/features/landing/pricingModel.ts | Pure, import-free: parse RPC payload, format, yearly maths, plan highlights, compare rows, add-on availability |
 | src/features/landing/landingClient.ts | Browser script: fetch prices, render cards/tables, toggle, mobile menu, JSON-LD offers |
+| src/features/landing/authSession.ts | Pure session reader (`readStoredSession`, `readSignedIn`, `truncateName`, max 18 chars), inlined into `<head>`; tests in `authSession.test.ts`, `landingAuth.test.ts` (runs the real head script against a fake browser) |
 | src/features/landing/motionClient.ts | Browser script (inlined after landingClient): header `is-scrolled`, reveal once (`.reveal` > `.is-visible`), `[data-motion].in-view` while on screen, `html.page-hidden` |
 | src/features/landing/render/heroVisual.ts | Hero product visual (HTML/CSS/SVG, sized in em from a container-query font size) + its 8 s timeline CSS |
 | src/features/landing/render/motion.ts | Motion + polish CSS: wordmark, header blur, hero glow + dot grid + marker, heading accent, hovers, reveals, step/icon/CTA loops, pause rules |
@@ -49,6 +50,7 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 - Only English; another language = another `i18n/<lang>.json` + a page per language.
 
 ## Changelog
+- 2026-10-10: `/` no longer redirects signed-in visitors; auth-aware header and CTAs from the stored session (no network); header screenshots `docs/screenshots/landing/header-*`, `menu-mobile-*`.
 - 2026-10-10: Revision: text wordmark, new animated hero, scroll reveals and calm loops on every illustration, section heading accent, hover lift, header blur on scroll; skeleton pulse is opacity-only.
 - 2026-10-10: Single origin + Vercel; legal pages generated from brand.ts; reseller Polar Software, Inc.; screenshots in `docs/screenshots/landing/`.
 - 2026-10-10: Landing page, /refund, public pricing RPC + new price fields, reserved slugs, SPA fallback moved to /_app/shell.

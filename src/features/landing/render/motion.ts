@@ -28,6 +28,13 @@ export const motionCss = `
 .wordmark { position: relative; z-index: 0; display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; font-size: ${px(fontSize['7xl'])}; letter-spacing: ${letterSpacingEm.tighter}em; color: var(--primary); text-decoration: none; line-height: 1; }
 .wordmark::after { content: ""; position: absolute; z-index: -1; left: -2px; right: -2px; bottom: 11px; height: 7px; border-radius: 4px; background: var(--accent); }
 
+/* Signed-in / signed-out variants: decided by the head script before first paint (html[data-auth]).
+   Hidden variants are display:none, so they are neither focusable nor read out. No JS = signed out. */
+html:not([data-auth="in"]) .auth-in, html[data-auth="in"] .auth-out { display: none; }
+.nav-user { display: inline-flex; align-items: center; min-height: 44px; padding: 0 ${px(spacing[12])}; color: var(--text-2); font-weight: 600; max-width: 14em; }
+.nav-user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: ${px(breakpoints.desktop - 1)}) { .js .nav-actions .nav-user { justify-content: center; max-width: none; } }
+
 /* Header: transparent at the top, white + blur + hairline once scrolled */
 .site-header { background: transparent; border-bottom-color: transparent; backdrop-filter: none; transition: background-color ${duration.slow}ms ease, box-shadow ${duration.slow}ms ease, border-color ${duration.slow}ms ease; }
 .site-header.is-scrolled, .no-js .site-header, .legal .site-header { background: ${tint(colors.surface, 0.82)}; backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px); border-bottom-color: var(--border); box-shadow: ${shadowLevels.sm.web}; }
