@@ -28,7 +28,7 @@ export function ReviewLinkDialogHost() {
   // The raw token must not outlive the signed-in session.
   useEffect(() => hide, [hide]);
 
-  const url = link && business ? reviewUrl(brand.urls.publicSite, business.slug, link.token) : null;
+  const url = link && business ? reviewUrl(brand.urls.site, business.slug, link.token) : null;
 
   const copy = async () => {
     if (!url) return;

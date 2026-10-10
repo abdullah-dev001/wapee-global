@@ -73,7 +73,7 @@ Rules they both follow:
 - **The manage token is generated in the Edge Function** with
   `crypto.getRandomValues` (32 bytes), so the raw value exists in one response
   and is never written to the database or a log.
-- **CORS uses an origin allow-list, not `*`** (`PUBLIC_SITE_ORIGINS`), so a
+- **CORS uses an origin allow-list, not `*`** (default: `PUBLIC_SITE_URL` + localhost dev ports; `PUBLIC_SITE_ORIGINS` replaces it), so a
   random site cannot script a booking flow with a visitor's network.
 - **Rate limiting is LIVE** on every endpoint (see below).
 
@@ -203,8 +203,9 @@ supabase secrets set PUBLIC_FORM_HMAC_KEY="$(openssl rand -hex 32)"
 ```
 
 Rotating the salt resets every rate-limit window; rotating the HMAC key makes a
-customer mid-booking reload the form once. `PUBLIC_SITE_ORIGINS` sets the CORS
-allow-list, `PUBLIC_SITE_URL` the base for the manage link.
+customer mid-booking reload the form once. `PUBLIC_SITE_URL` (the one
+origin, default `https://wapee.online`) is the base for the manage link and the
+default CORS origin; `PUBLIC_SITE_ORIGINS` only overrides the list (preview domains).
 
 **`resend_manage_link` does NOT use the service role.** It forwards the caller's
 Authorization header so the `can(appointments.edit)` check inside the RPC sees the
@@ -310,8 +311,8 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   and Supabase gates it to Pro and above (confirmed in their docs and via the
   Management API, 2026-10-04). It is an auth-wide setting, not a booking one, and
   is recorded in `_handoff.md` as a pre-launch item.
-- **CORS still defaults to placeholder domains** because no domain is bought.
-  `PUBLIC_SITE_ORIGINS` must be set before a real site calls these.
+- CORS defaults to `PUBLIC_SITE_URL` (`_shared/site.ts`) plus localhost dev
+  ports. **The deployed functions still run the old list until redeployed (2026-10-10).**
 - ~~The honeypot's HTML requirements are not implemented~~ — **done**:
   `HoneypotField` (`src/features/booking-public/components/HoneypotField.tsx`)
   hides `company_website` with `position:absolute;left:-9999px`, not

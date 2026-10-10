@@ -29,6 +29,7 @@ import { handlePreflight } from '../_shared/cors.ts';
 import { jsonError, jsonOk, logUnexpected } from '../_shared/response.ts';
 import { randomToken } from '../_shared/crypto.ts';
 import { buildManageUrl } from '../_shared/manageUrl.ts';
+import { siteUrl } from '../_shared/site.ts';
 
 const RequestSchema = z.object({ appointment_id: z.string().uuid() }).strict();
 
@@ -105,7 +106,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // customer (Resend / Twilio, from an Edge Function, per CLAUDE.md §2).
     // Until then the token comes back to the dashboard, which shows it for the
     // receptionist to copy — the same pattern the Phase 1 invite link uses.
-    const publicSite = Deno.env.get('PUBLIC_SITE_URL') ?? '';
+    const publicSite = siteUrl();
 
     // The link needs the business slug. Read as the caller (RLS): they already
     // passed the appointments.edit check, so they can see this row.

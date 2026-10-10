@@ -25,6 +25,7 @@ import { logUnexpected } from '../_shared/response.ts';
 import { serviceClient } from '../_shared/supabase.ts';
 import { renderEmail, renderSms } from '../_shared/outbox/templates.ts';
 import type { Job, OutboxEvent } from '../_shared/outbox/types.ts';
+import { siteUrl } from '../_shared/site.ts';
 
 const EVENTS = [
   'booking_confirmed',
@@ -102,7 +103,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .maybeSingle();
     if (!business) return reply(req, 404, { ok: false, code: 'not_found' });
 
-    const site = (Deno.env.get('PUBLIC_SITE_URL') ?? 'https://example.com').replace(/\/+$/, '');
+    const site = siteUrl();
     const sampleToken = 'a'.repeat(64);
     const job: Job = {
       id: 'preview',

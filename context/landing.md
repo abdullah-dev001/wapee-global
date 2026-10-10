@@ -2,7 +2,7 @@
 Status: done · Phase: pre-launch · Last updated: 2026-10-10
 
 ## What it does
-- `/` (wapee.online and app.wapee.online, same build) is a static, pre-rendered marketing page: header, hero, who it's for, how it works, features, pricing (plans + add-ons + compare table), FAQ, CTA band, footer (Terms, Privacy, Refund, support email).
+- `/` (on the one origin `https://wapee.online`) is a static, pre-rendered marketing page: header, hero, who it's for, how it works, features, pricing (plans + add-ons + compare table), FAQ, CTA band, footer (Terms, Privacy, Refund, support email).
 - Signed-in visitors are sent to `/today` by an inline head script before paint (checks the supabase-js session key `sb-<ref>-auth-token` in localStorage for a refresh token). Native app: `app/index.tsx` still redirects to `/today`.
 - `/refund`: Refund Policy, DRAFT for lawyer review, same look as /privacy and /terms (reseller name is a placeholder).
 
@@ -16,7 +16,7 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 ## Files
 | Path | Purpose |
 |---|---|
-| scripts/build-landing.mjs | Runs in `postbuild:web`: moves Expo's `dist/index.html` to `dist/_app/shell.html`, writes `index.html`, `refund.html`, `assets/landing/landing.<hash>.js` + DM Sans ttf, `robots.txt`, `sitemap.xml`. Needs `EXPO_PUBLIC_SUPABASE_URL` / `_ANON_KEY` (reads `.env`). |
+| scripts/build-landing.mjs | `--check-env` in `prebuild:web` (fails clearly without the Supabase env vars); runs in `postbuild:web`: moves Expo's `dist/index.html` to `dist/_app/shell.html`, writes `index.html`, `refund.html`, `assets/landing/landing.<hash>.js` + DM Sans ttf, `privacy.html` + `terms.html` (from `legal/*.html`), `robots.txt`, `sitemap.xml`. Needs `EXPO_PUBLIC_SUPABASE_URL` / `_ANON_KEY` (reads `.env`). |
 | src/features/landing/i18n/en.json | All page strings (English base; not loaded into the app bundle) |
 | src/features/landing/pricingModel.ts | Pure, import-free: parse RPC payload, format, yearly maths, plan highlights, compare rows, add-on availability |
 | src/features/landing/landingClient.ts | Browser script: fetch prices, render cards/tables, toggle, mobile menu, JSON-LD offers |
@@ -29,8 +29,8 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 - Migration `20261021090000_public_pricing.sql`; suite `supabase/tests/36_public_pricing.sql` (42).
 
 ## Hosting
-- `public/_redirects` SPA fallback is `/_app/shell` (was `/index.html`). `public/_headers`: `/_app/*` no-cache. `public/sw.js` (v2) caches and falls back to `/_app/shell`, not `/`. Manifest `start_url` is `/today` (`id` stays `/`).
-- Reserved slugs: `pricing`, `features`, `refund` (DB + `src/config/reservedSlugs.ts`; a test keeps both lists in sync).
+- Vercel (`vercel.json`, see _foundation.md Hosting): real files first, then every path rewrites to `/_app/shell`. `public/sw.js` (v2) caches and falls back to `/_app/shell`, not `/`. `/_sitemap` (Expo's route list) is deleted from the output. Manifest `start_url` is `/today` (`id` stays `/`).
+- Reserved slugs: `pricing`, `features`, `refund` and (2026-10-10) every top-level app route (`today`, `members`, `website`, `icons`...; migration `20261021100000`). `reservedSlugs.test.ts` keeps client + DB in sync and derives every top-level path from `app/`, `public/` and the landing build.
 
 ## UI
 - Responsive 320 → wide desktop, no horizontal scroll (checked 320/375/768/1440). Mobile menu (<1024) with aria-expanded + Escape; FAQ is native `<details>`; toggle buttons use `aria-pressed`; skip link; one h1.
@@ -38,10 +38,11 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 
 ## Known limits / TODO
 - `npm run web` (dev server) still shows the app at `/`; preview the landing with `npm run build:web` and serve `dist` (fallback to `/_app/shell`).
-- Refund page: reseller name `RESELLER` in build-landing.mjs (null = "[name to be added]"), `REFUND_UPDATED` date; lawyer review.
+- Refund page: `RESELLER` = `Polar Software, Inc.` (merchant of record per polar.sh/legal/checkout-buyer-terms, checked 2026-10-10), `REFUND_UPDATED` date; lawyer review.
 - `get_public_pricing` is not rate-limited (a STABLE read of two tiny tables; PostgREST cannot count without writing).
 - `addons.available_plans` is display + admin data only: `set_addon` does not yet refuse enabling an add-on on a plan outside it.
 - Only English; another language = another `i18n/<lang>.json` + a page per language.
 
 ## Changelog
+- 2026-10-10: Single origin + Vercel; legal pages generated from brand.ts; reseller Polar Software, Inc.; screenshots in `docs/screenshots/landing/`.
 - 2026-10-10: Landing page, /refund, public pricing RPC + new price fields, reserved slugs, SPA fallback moved to /_app/shell.

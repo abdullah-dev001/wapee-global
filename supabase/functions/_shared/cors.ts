@@ -10,10 +10,12 @@
  * which is exactly the abuse vector step 7's rate limiting is meant to make
  * expensive. An allow-list keeps the browser honest for free.
  *
- * The list is driven by `PUBLIC_SITE_ORIGINS` (comma-separated) so the real
- * domains can be set without a code change — the domains are still placeholders
- * (see src/config/brand.ts).
+ * Everything runs on ONE origin (`PUBLIC_SITE_URL`, default https://wapee.online;
+ * see src/config/brand.ts), so that origin plus local dev ports is the default
+ * list. `PUBLIC_SITE_ORIGINS` (comma-separated) replaces it, e.g. for a preview
+ * deployment.
  */
+import { siteUrl } from './site.ts';
 
 /** Origins allowed to call the public endpoints from a browser. */
 function allowedOrigins(): string[] {
@@ -24,8 +26,8 @@ function allowedOrigins(): string[] {
       .map((o) => o.trim().replace(/\/+$/, ''))
       .filter(Boolean);
   }
-  // Production defaults, matching src/config/brand.ts. PUBLIC_SITE_ORIGINS
-  // overrides them (e.g. for a staging domain).
+  // The site origin (PUBLIC_SITE_URL) plus local dev. PUBLIC_SITE_ORIGINS
+  // overrides the whole list (e.g. for a preview domain).
   //
   // The localhost entries cover the ports Expo actually uses:
   //   8081  `npm run web` (Metro's default)
@@ -36,8 +38,7 @@ function allowedOrigins(): string[] {
   // 127.0.0.1 is listed alongside localhost because a browser treats them as
   // different origins and some setups resolve to one and not the other.
   return [
-    'https://wapee.online',
-    'https://app.wapee.online',
+    siteUrl(),
     'http://localhost:8081',
     'http://localhost:8082',
     'http://localhost:8090',

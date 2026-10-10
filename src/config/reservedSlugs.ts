@@ -8,7 +8,8 @@
  *
  * The DB is the real boundary: a CHECK constraint / trigger on `businesses.slug`
  * must reject these too. This list keeps the UI in step and gives a clear error early.
- * Compare lowercase and trimmed. Adding a new app route? Add it here in the same task.
+ * Compare lowercase and trimmed. Adding a new app route? Add it here AND in a migration in the same task:
+ * reservedSlugs.test.ts derives every top-level path from app/, public/ and the landing build and fails otherwise.
  */
 
 const RESERVED_SLUGS = [
@@ -58,6 +59,17 @@ const RESERVED_SLUGS = [
   'reviews',
   'widget',
   'embed',
+  'today',
+  'commission',
+  'inventory',
+  'members',
+  'more',
+  'packages',
+  'schedule',
+  'website',
+  'accept-invite',
+  'invoice-print',
+  'report-print',
 
   // Infrastructure / conventional hostnames and paths
   'api',
@@ -67,6 +79,7 @@ const RESERVED_SLUGS = [
   'assets',
   'media',
   'files',
+  'icons',
   'img',
   'images',
   'mail',

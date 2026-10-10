@@ -48,7 +48,7 @@ Migrations `20261007090000_phase7_website`, `…100000_phase7_reviews`, `…1100
 **Not changed / suggestions**: services in the preview come from the booking catalogue (online-bookable only, no description) so it can differ slightly from the live page; preview Contact/Gallery use real saved content; no bulk image management; the review link is not sent anywhere (Phase 6).
 
 ## Known limits
-- Deploy: `supabase functions deploy <name> --no-verify-jwt` (pinned in config.toml). Optional secret `PUBLIC_WEBSITE_BASE_URL` (default placeholder `https://wapee.online`).
+- Deploy: `supabase functions deploy <name> --no-verify-jwt` (pinned in config.toml). `get_website` builds URLs from `PUBLIC_SITE_URL` (`_shared/site.ts`, default `https://wapee.online`); `PUBLIC_WEBSITE_BASE_URL` is no longer read.
 - The review link is queued for sending by `create_review_request_internal` / `reissue_review_request` (Phase 6A; `review_requests.sent_at` is set when sent). Not deployed yet: see [notifications.md](notifications.md). Reissuing now also re-sends the new link. No reminder/expiry cleanup job. No UI to remove a review.
 - Responses are not cached; `get_website` hits the DB per view (rate limited).
 

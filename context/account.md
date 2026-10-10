@@ -58,5 +58,5 @@ static explanation page (Play Console URL). Portal customers have no account and
 - 2026-10-09: account deletion + change password / email + public page + reserved slug (batch 2, tasks 1-2).
 
 ## Legal pages (2026-10-09)
-- `public/privacy.html` and `public/terms.html`: static, branded, marked "DRAFT - replace with reviewed text". Served at `/privacy` and `/terms`; both slugs were already in `reserved_slugs`.
-- `brand.urls.privacy` / `brand.urls.terms` (built from the public site URL). Shared `LegalLinks` (`components/shared`) shows "Terms of Service · Privacy Policy" on: signup (with "By creating an account you agree to our"), Settings hub, website footer, booking page, manage, portal, review, sign, unsubscribe. i18n keys `legal.*`.
+- `src/features/landing/legal/privacy.html` and `terms.html`: templates (`{{brandName}}`, `{{supportEmail}}` filled from brand.ts by `scripts/build-landing.mjs`), marked "DRAFT - replace with reviewed text". Served at `/privacy` and `/terms` (+ `/refund`, landing.md); slugs reserved. Not served by `npm run web` (build output only).
+- `brand.urls.privacy` / `terms` / `refund` (built from `brand.urls.site`). Shared `LegalLinks` (`components/shared`) shows "Terms of Service · Privacy Policy" on: signup (with "By creating an account you agree to our"), Settings hub, website footer, booking page, manage, portal, review, sign, unsubscribe. i18n keys `legal.*`.

@@ -38,7 +38,7 @@ export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) 
   const websiteUnpublished =
     canSeeWebsite.allowed && site.isSuccess && site.data.website?.isPublished !== true;
 
-  const url = businessSlug ? bookingUrl(brand.urls.publicSite, businessSlug) : null;
+  const url = businessSlug ? bookingUrl(brand.urls.site, businessSlug) : null;
 
   const copy = useCallback(async () => {
     if (!url) return;

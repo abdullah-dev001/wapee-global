@@ -53,3 +53,6 @@ public/manifest.json
 
 # Parked dev-only routes during a production build
 app/*.devonly
+
+# Vercel CLI (local project link / build output)
+.vercel/

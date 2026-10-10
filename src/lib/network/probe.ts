@@ -7,7 +7,7 @@ const PROBE_TIMEOUT_MS = 6000;
 export function probeUrl(): string {
   return env.supabaseUrl
     ? `${env.supabaseUrl.replace(/\/+$/, '')}/auth/v1/health`
-    : brand.urls.publicSite;
+    : brand.urls.site;
 }
 
 /**

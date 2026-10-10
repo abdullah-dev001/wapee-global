@@ -179,7 +179,7 @@ export default function OnboardingScreen() {
                 autoCorrect={false}
                 onValueChange={() => setSlugEdited(true)}
                 hint={t('onboarding.hints.slug', {
-                  siteUrl: brand.urls.publicSite.replace(/^https?:\/\//, ''),
+                  siteUrl: brand.urls.site.replace(/^https?:\/\//, ''),
                   slug: slug || t('onboarding.placeholders.slug'),
                 })}
               />

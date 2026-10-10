@@ -13,7 +13,7 @@ import { sendWebPush, type WebPushLib } from './webpush.ts';
 
 const vapid = webpush.generateVAPIDKeys();
 const config = {
-  subject: 'mailto:support@wapee.online',
+  subject: 'mailto:test@example.com',
   publicKey: vapid.publicKey,
   privateKey: vapid.privateKey,
 };

@@ -3,12 +3,9 @@
  * Pure constants (no React Native / Expo imports) so `app.config.ts` can import this in Node.
  */
 
-const DEFAULT_APP_URL = 'https://app.wapee.online';
-const DEFAULT_PUBLIC_SITE_URL = 'https://wapee.online';
-const PUBLIC_SITE_URL = urlFromEnv(
-  process.env.EXPO_PUBLIC_PUBLIC_SITE_URL,
-  DEFAULT_PUBLIC_SITE_URL,
-);
+/** ONE origin for everything: landing page, dashboard, admin, public business pages. */
+const DEFAULT_SITE_URL = 'https://wapee.online';
+const SITE_URL = urlFromEnv(process.env.EXPO_PUBLIC_SITE_URL, DEFAULT_SITE_URL);
 
 function urlFromEnv(value: string | undefined, fallback: string): string {
   const trimmed = value?.trim();
@@ -32,13 +29,15 @@ export const brand = {
    */
   supportEmail: 'support@wapee.online',
   urls: {
-    /** Dashboard / PWA origin. */
-    app: urlFromEnv(process.env.EXPO_PUBLIC_APP_URL, DEFAULT_APP_URL),
-    /** Public business sites, booking, manage, review, sign, portal and unsubscribe links. */
-    publicSite: PUBLIC_SITE_URL,
-    /** Static legal pages (public/privacy.html, public/terms.html). */
-    privacy: `${PUBLIC_SITE_URL}/privacy`,
-    terms: `${PUBLIC_SITE_URL}/terms`,
+    /**
+     * The single origin: landing page (/), dashboard and admin (/login, /today, /admin),
+     * business pages (/<slug>, /<slug>/book, manage, review, sign, portal) and email links.
+     */
+    site: SITE_URL,
+    /** Static legal pages (public/privacy.html, public/terms.html, generated /refund). */
+    privacy: `${SITE_URL}/privacy`,
+    terms: `${SITE_URL}/terms`,
+    refund: `${SITE_URL}/refund`,
   },
 } as const;
 

@@ -47,6 +47,7 @@ module.exports = defineConfig([
     ignores: [
       'node_modules/*',
       'dist/*',
+      '.vercel/*',
       'ios/*',
       'android/*',
       '.expo/*',

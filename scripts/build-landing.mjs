@@ -2,8 +2,9 @@
  * Writes the static marketing landing page into the web export (runs from `postbuild:web`).
  *
  *   dist/index.html            the landing page (pre-rendered HTML, no React)
- *   dist/_app/shell.html       Expo's own index.html, kept as the SPA fallback (see public/_redirects, public/sw.js)
+ *   dist/_app/shell.html       Expo's own index.html, kept as the SPA fallback (see vercel.json, public/sw.js)
  *   dist/refund.html           the Refund Policy (DRAFT)
+ *   dist/privacy.html, dist/terms.html   from src/features/landing/legal/*.html ({{brandName}}, {{supportEmail}})
  *   dist/assets/landing/*      the browser script (content-hashed) and DM Sans font files
  *   dist/robots.txt, dist/sitemap.xml
  *
@@ -11,8 +12,11 @@
  * no text for search engines or for a payment-provider review. Prices are NOT baked in: the page loads them
  * from the public `get_public_pricing()` RPC at runtime.
  *
- * Needs EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY (the publishable key; read from .env by
- * `node --env-file-if-exists=.env`). Usage: node --env-file-if-exists=.env scripts/build-landing.mjs [--out dist]
+ * Needs EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY (the publishable key). Locally they come from
+ * .env (`node --env-file-if-exists=.env`); on Vercel from the project's Environment Variables.
+ *
+ *   node --env-file-if-exists=.env scripts/build-landing.mjs [--out dist]
+ *   node --env-file-if-exists=.env scripts/build-landing.mjs --check-env   (prebuild:web: fail BEFORE the export)
  */
 import { createHash } from 'node:crypto';
 import {
@@ -21,6 +25,7 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
@@ -37,8 +42,13 @@ const landingSrc = join(root, 'src/features/landing');
 
 /** Date shown on the refund page; bump when its text changes. */
 const REFUND_UPDATED = '2026-10-10';
-/** Merchant of record shown on the refund page; null shows "[name to be added]". */
-const RESELLER = null;
+/**
+ * Merchant of record shown on the refund page (null shows "[name to be added]").
+ * Source: polar.sh/legal/checkout-buyer-terms names "Polar Software, Inc., 3500 South DuPont Highway, Dover, DE,
+ * 19901" as merchant of record and authorized reseller; the polar.sh/legal footer reads "© Polar Software, Inc."
+ * (checked 2026-10-10).
+ */
+const RESELLER = 'Polar Software, Inc.';
 
 function fail(message) {
   console.error(`[build-landing] ${message}`);
@@ -47,8 +57,26 @@ function fail(message) {
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim().replace(/\/+$/, '');
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
-if (!supabaseUrl || !anonKey)
-  fail('EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set.');
+const missing = [
+  !supabaseUrl && 'EXPO_PUBLIC_SUPABASE_URL',
+  !anonKey && 'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+].filter(Boolean);
+if (missing.length > 0) {
+  fail(
+    `missing ${missing.join(' and ')}. Set it in .env (local) or in Vercel > Project > Settings > ` +
+      'Environment Variables (Production AND Preview), then rebuild. The app and the landing page cannot reach ' +
+      'Supabase without it.',
+  );
+}
+try {
+  new URL(supabaseUrl);
+} catch {
+  fail(`EXPO_PUBLIC_SUPABASE_URL is not a URL: "${supabaseUrl}".`);
+}
+if (process.argv.includes('--check-env')) {
+  console.log('[build-landing] build env ok');
+  process.exit(0);
+}
 if (!existsSync(join(out, 'index.html')))
   fail(`${out}/index.html not found: run "expo export --platform web" first.`);
 
@@ -61,6 +89,9 @@ if (readFileSync(indexPath, 'utf8').includes('id="root"')) {
 } else if (!existsSync(shellPath)) {
   fail('dist/index.html is not the Expo shell and no saved shell exists: re-run the web export.');
 }
+
+// Expo's debug route list (/_sitemap) would publish every route name: not part of the site.
+rmSync(join(out, '_sitemap.html'), { force: true });
 
 // 2. Browser script: pricingModel.ts + landingClient.ts, types stripped, one classic script.
 const strip = (file) =>
@@ -101,7 +132,7 @@ const ctx = {
   s: strings,
   brandName: brand.name,
   supportEmail: brand.supportEmail,
-  siteUrl: brand.urls.publicSite,
+  siteUrl: brand.urls.site,
   year: new Date().getUTCFullYear(),
   paths: {
     login: '/login',
@@ -129,8 +160,17 @@ writeFileSync(
   renderRefund(ctx, { fontCss, updated: REFUND_UPDATED, reseller: RESELLER }),
 );
 
+// Legal pages: templates with the product name and support email from brand.ts (no hardcoded copy).
+for (const page of ['privacy', 'terms']) {
+  const html = readFileSync(join(landingSrc, 'legal', `${page}.html`), 'utf8')
+    .replaceAll('{{brandName}}', brand.name)
+    .replaceAll('{{supportEmail}}', brand.supportEmail);
+  if (html.includes('{{')) fail(`legal/${page}.html has an unknown {{placeholder}}.`);
+  writeFileSync(join(out, `${page}.html`), html);
+}
+
 // 5. robots.txt + sitemap.xml (absolute URLs from brand.ts).
-const site = brand.urls.publicSite;
+const site = brand.urls.site;
 writeFileSync(join(out, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${site}/sitemap.xml\n`);
 const pages = ['/', '/privacy', '/terms', '/refund'];
 writeFileSync(
@@ -140,4 +180,6 @@ writeFileSync(
     .join('\n')}\n</urlset>\n`,
 );
 
-console.log(`[build-landing] wrote index.html, refund.html, _app/shell.html, landing.${hash}.js`);
+console.log(
+  `[build-landing] wrote index.html, refund.html, privacy.html, terms.html, _app/shell.html, landing.${hash}.js`,
+);

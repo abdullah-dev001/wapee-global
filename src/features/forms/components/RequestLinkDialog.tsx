@@ -21,7 +21,7 @@ export function RequestLinkDialog({
   const { business } = useCurrentScope();
   const url =
     link && business
-      ? `${brand.urls.publicSite.replace(/\/+$/, '')}/${business.slug}/sign#token=${encodeURIComponent(link.token)}`
+      ? `${brand.urls.site.replace(/\/+$/, '')}/${business.slug}/sign#token=${encodeURIComponent(link.token)}`
       : null;
 
   return (

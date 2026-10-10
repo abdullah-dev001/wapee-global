@@ -142,7 +142,7 @@ export function WebsiteEditorScreen() {
     );
   }
 
-  const url = websiteUrl(brand.urls.publicSite, business.slug);
+  const url = websiteUrl(brand.urls.site, business.slug);
   const defaultCountry = business.branches.find((b) => b.id === website.branchId)?.country_code;
 
   const body = (

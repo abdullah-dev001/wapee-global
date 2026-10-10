@@ -21,8 +21,7 @@ const envSchema = z.object({
   EXPO_PUBLIC_SUPABASE_URL: optionalUrl,
   EXPO_PUBLIC_SUPABASE_ANON_KEY: optionalString,
   EXPO_PUBLIC_VAPID_PUBLIC_KEY: optionalString,
-  EXPO_PUBLIC_APP_URL: optionalUrl,
-  EXPO_PUBLIC_PUBLIC_SITE_URL: optionalUrl,
+  EXPO_PUBLIC_SITE_URL: optionalUrl,
 });
 
 type EnvKey = keyof z.infer<typeof envSchema>;
@@ -31,8 +30,7 @@ const raw: Record<EnvKey, string | undefined> = {
   EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
   EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
   EXPO_PUBLIC_VAPID_PUBLIC_KEY: process.env.EXPO_PUBLIC_VAPID_PUBLIC_KEY,
-  EXPO_PUBLIC_APP_URL: process.env.EXPO_PUBLIC_APP_URL,
-  EXPO_PUBLIC_PUBLIC_SITE_URL: process.env.EXPO_PUBLIC_PUBLIC_SITE_URL,
+  EXPO_PUBLIC_SITE_URL: process.env.EXPO_PUBLIC_SITE_URL,
 };
 
 /** Validate each key on its own so one bad value does not drop the others. */
@@ -56,8 +54,7 @@ export const env = {
   supabaseUrl: values.EXPO_PUBLIC_SUPABASE_URL,
   supabaseAnonKey: values.EXPO_PUBLIC_SUPABASE_ANON_KEY,
   vapidPublicKey: values.EXPO_PUBLIC_VAPID_PUBLIC_KEY,
-  appUrl: brand.urls.app,
-  publicSiteUrl: brand.urls.publicSite,
+  siteUrl: brand.urls.site,
 } as const;
 
 /** True when the app can talk to Supabase. */

@@ -517,6 +517,9 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 ## Public pricing (2026-10-10)
 `20261021090000_public_pricing`: `plans.priced_per_branch`, `addons.price_annual_minor` (backfilled 10x), `addons.available_plans business_plan[]` (null = every plan); launch prices (Solo 1500/15000, Team 3900/39000, Business 7900/79000 per branch; add-ons 900/900/900/1200/1200/1000, annual 10x; custom_roles Team only); `get_public_pricing()` (anon, DEFINER, STABLE, active rows, public fields only); `set_plan_prices(+p_priced_per_branch)` and `set_addon_prices(+p_annual_minor, p_available_plans)` (dropped + recreated, old positional calls still work, null = keep); reserved slugs `pricing`, `features`, `refund`. Suite `36_public_pricing.sql` (42). See landing.md.
 
+## Reserved app-route slugs (2026-10-10)
+`20261021100000_reserve_app_route_slugs`: data-only, reserves `today`, `commission`, `inventory`, `members`, `more`, `packages`, `schedule`, `website`, `accept-invite`, `invoice-print`, `report-print`, `icons` (single origin: a slug must never shadow an app route). No dev business used any of them. `reservedSlugs.test.ts` derives every top-level path from `app/`, `public/` and the landing build.
+
 ## Known limits / TODO
 - **`supabase test db` needs Docker**, which is not installed on this machine. The CLI is linked and `db push` / `gen types` work; the pgTAP files in `supabase/tests/` have been verified by running their assertions through the connector instead. Install Docker (or share the DB password for `psql`) to run them as a suite.
 - **Leaked-password protection is OFF** (security advisor). It is a dashboard setting: Authentication → Policies → enable "Check against HaveIBeenPwned". Worth turning on before real users.

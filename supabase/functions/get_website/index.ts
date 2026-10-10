@@ -19,6 +19,7 @@ import { handlePreflight } from '../_shared/cors.ts';
 import { jsonError, jsonOk, logUnexpected } from '../_shared/response.ts';
 import { serviceClient } from '../_shared/supabase.ts';
 import { checkRateLimit } from '../_shared/rateLimit.ts';
+import { siteUrl } from '../_shared/site.ts';
 
 const RequestSchema = z
   .object({
@@ -42,7 +43,7 @@ function assetUrl(path: unknown): string | null {
 }
 
 function websiteBase(): string {
-  return (Deno.env.get('PUBLIC_WEBSITE_BASE_URL') ?? 'https://wapee.online').replace(/\/+$/, '');
+  return siteUrl();
 }
 
 const str = (v: unknown): string | null => (typeof v === 'string' ? v : null);

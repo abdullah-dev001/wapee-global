@@ -93,7 +93,7 @@ export function WidgetSettings({ businessId }: { businessId: string | null }) {
   const widget = key.data;
   const snippet = env.supabaseUrl
     ? buildWidgetSnippet({
-        publicSiteUrl: brand.urls.publicSite,
+        publicSiteUrl: brand.urls.site,
         functionsUrl: functionsBaseUrl(env.supabaseUrl),
         key: widget.publicKey,
       })

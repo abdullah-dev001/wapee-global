@@ -229,7 +229,7 @@ export function BookingFlow({ slug }: BookingFlowProps) {
   const data = page.data;
 
   if (confirmed) {
-    const manageUrl = `${brand.urls.publicSite}/${slug}/manage#token=${encodeURIComponent(confirmed.manageToken)}`;
+    const manageUrl = `${brand.urls.site}/${slug}/manage#token=${encodeURIComponent(confirmed.manageToken)}`;
     return (
       <Screen>
         <PageContainer maxWidth={isDesktop ? DESKTOP_MAX_WIDTH : undefined}>
