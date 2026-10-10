@@ -312,7 +312,7 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   Management API, 2026-10-04). It is an auth-wide setting, not a booking one, and
   is recorded in `_handoff.md` as a pre-launch item.
 - CORS defaults to `PUBLIC_SITE_URL` (`_shared/site.ts`) plus localhost dev
-  ports. **The deployed functions still run the old list until redeployed (2026-10-10).**
+  ports. Redeployed to dev 2026-10-10 (preflight from the old `app.` origin is now refused).
 - ~~The honeypot's HTML requirements are not implemented~~ — **done**:
   `HoneypotField` (`src/features/booking-public/components/HoneypotField.tsx`)
   hides `company_website` with `position:absolute;left:-9999px`, not

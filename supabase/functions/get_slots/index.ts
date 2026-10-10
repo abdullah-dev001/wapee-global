@@ -30,6 +30,16 @@ import { resolveBranch, serviceClient } from '../_shared/supabase.ts';
 import { checkRateLimit } from '../_shared/rateLimit.ts';
 import { issueStartToken } from '../_shared/startToken.ts';
 
+/** One slot as the public page receives it (no other column of `free_slot` leaks). */
+type PublicSlot = {
+  starts_at: unknown;
+  ends_at: unknown;
+  local_date: unknown;
+  local_minute: unknown;
+  available: unknown;
+  staff_id?: unknown;
+};
+
 /** A calendar date, not an instant: the engine works on local dates. */
 const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
 
@@ -126,7 +136,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Map explicitly rather than spreading the row: a future column added to
     // `free_slot` must not leak to the public page by default.
-    const slots = (data ?? []).map((s: Record<string, unknown>) => ({
+    const rows: Record<string, unknown>[] = Array.isArray(data) ? data : [];
+    const slots: PublicSlot[] = rows.map((s) => ({
       starts_at: s.starts_at,
       ends_at: s.ends_at,
       local_date: s.local_date,
