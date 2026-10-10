@@ -159,7 +159,7 @@ export function ctaBand(ctx: PageContext): string {
     <div class="hero-ctas">
       <a class="btn btn-accent btn-lg auth-out" href="${attr(ctx.paths.signup)}">${tx(ctx, c.primary)}</a>
       <a class="btn btn-accent btn-lg auth-in" href="${attr(ctx.paths.dashboard)}">${tx(ctx, c.dashboard)}</a>
-      <a class="btn btn-outline btn-lg" href="${attr(ctx.paths.login)}">${tx(ctx, c.secondary)}</a>
+      <a class="btn btn-outline btn-lg auth-out" href="${attr(ctx.paths.login)}">${tx(ctx, c.secondary)}</a>
     </div>
   </div>
 </div>

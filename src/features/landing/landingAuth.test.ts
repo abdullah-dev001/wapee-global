@@ -114,6 +114,13 @@ describe('auth-aware header markup', () => {
     expect(html.match(/auth-out" href="\/signup">Start (14-day )?free trial/g)).toHaveLength(3);
   });
 
+  it('every "Log in" link (header and final CTA band) is signed-out only', () => {
+    const logins = [...html.matchAll(/<a class="([^"]*)" href="\/login">/g)].map((m) => m[1]);
+    expect(logins).toHaveLength(2);
+    for (const cls of logins) expect(cls).toMatch(/\bauth-out\b/);
+    expect(html).toContain('<a class="btn btn-outline btn-lg auth-out" href="/login">Log in</a>');
+  });
+
   it('the name goes in with textContent, never innerHTML', () => {
     const fill = scriptBodies(html).find((s) => s.includes('[data-user-name]')) ?? '';
     expect(fill).toContain('.textContent=n');
