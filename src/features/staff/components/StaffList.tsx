@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Badge, Card, EmptyState, Skeleton, Text } from '@/components/ui';
+import { useMembers } from '@/features/members/api/useMembers';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { useCurrentScope } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
@@ -27,6 +28,13 @@ export function StaffList({
   onOpenSchedule,
 }: StaffListProps) {
   const { t } = useTranslation();
+  const { businessId } = useCurrentScope();
+  const members = useMembers(businessId);
+
+  // member id -> what to show as the login of a profile
+  const loginName = new Map(
+    (members.data ?? []).map((m) => [m.id, m.fullName?.trim() || m.email || '']),
+  );
 
   if (isPending) {
     return (
@@ -58,6 +66,7 @@ export function StaffList({
         <StaffRow
           key={member.id}
           member={member}
+          loginName={member.memberId ? (loginName.get(member.memberId) ?? null) : null}
           isLast={index === staff.length - 1}
           onPress={onSelect ? () => onSelect(member) : undefined}
           onOpenSchedule={onOpenSchedule ? () => onOpenSchedule(member) : undefined}
@@ -69,11 +78,14 @@ export function StaffList({
 
 function StaffRow({
   member,
+  loginName,
   isLast,
   onPress,
   onOpenSchedule,
 }: {
   member: StaffListItem;
+  /** Name or email of the linked login; null while loading or when not linked. */
+  loginName: string | null;
   isLast: boolean;
   onPress?: () => void;
   onOpenSchedule?: () => void;
@@ -112,12 +124,16 @@ function StaffRow({
           </Text>
         ) : null}
 
+        {loginName ? (
+          <Text variant="helper" color="textSecondary" numberOfLines={1}>
+            {t('staff.login.linkedAs', { name: loginName })}
+          </Text>
+        ) : null}
+
         {/* No fallback to branch hours exists: without hours this person has no online slots. */}
         {noHours ? (
           <View style={styles.warning}>
-            <Badge tone="warning">
-              {t('staff.noHours')}
-            </Badge>
+            <Badge tone="warning">{t('staff.noHours')}</Badge>
           </View>
         ) : null}
       </Pressable>

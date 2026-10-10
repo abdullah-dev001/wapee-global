@@ -261,7 +261,12 @@ function Body({
                 const first = member.roles[0];
                 if (!member.invitedEmail || !first) return;
                 resend.mutate(
-                  { email: member.invitedEmail, roleId: first.roleId, branchId: first.branchId },
+                  {
+                    email: member.invitedEmail,
+                    roleId: first.roleId,
+                    branchId: first.branchId,
+                    staffId: null,
+                  },
                   {
                     onSuccess: (result) => {
                       toast.show({ message: t('members.manage.resent'), tone: 'success' });

@@ -13,6 +13,8 @@ export const inviteSchema = z.object({
   roleId: z.string().uuid('members.errors.roleRequired'),
   /** null = every branch. */
   branchId: z.string().uuid().nullable(),
+  /** An unlinked staff profile to link to the new login on accept; null = none. */
+  staffId: z.string().uuid().nullable(),
 });
 
 export type InviteValues = z.infer<typeof inviteSchema>;

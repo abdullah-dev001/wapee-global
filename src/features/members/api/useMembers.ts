@@ -157,6 +157,7 @@ export function useInviteMember(businessId: string | null) {
         p_email: values.email,
         p_role_id: values.roleId,
         ...(values.branchId ? { p_branch_id: values.branchId } : {}),
+        ...(values.staffId ? { p_staff_id: values.staffId } : {}),
       });
       if (error) throw new Error(error.message);
 
@@ -176,6 +177,8 @@ export function useInviteMember(businessId: string | null) {
       void queryClient.invalidateQueries({
         queryKey: memberKeys.lists({ businessId: businessId ?? 'none' }),
       });
+      // The chosen staff profile now points at the invited member.
+      void queryClient.invalidateQueries({ queryKey: ['staff'] });
     },
   });
 }

@@ -86,5 +86,6 @@ the rate limit that never counted.
 - The members list is not paginated (CLAUDE.md §6 wants server-side paging); fine for Phase 1 team sizes, needs `ListView` when teams grow.
 
 ## Changelog
+- 2026-10-22: invite form can pick an unlinked staff profile (`invite_member(..., p_staff_id)`); the profile is linked to the invited member row and survives accept unchanged. See staff.md.
 - 2026-10-07: Phase 9B closed the gaps: manage drawer (add / change / remove role per location, remove member, resend invite, cancel invite) on `assign_member_role`, `remove_member_role`, `remove_member`, `revoke_invite`, `invite_member`. Still: other people show as "Unknown" (profiles RLS). See plan-features-ui.md.
 - 2026-10-02: Invite flow built: `invite_member`, `accept_invite`, `invite_preview`, rate limiting, team screen, accept screen, `ErrorState` primitive.

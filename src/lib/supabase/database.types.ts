@@ -5196,6 +5196,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      add_me_as_staff: {
+        Args: { p_branch_id?: string; p_business_id: string }
+        Returns: Json
+      }
       add_payment: {
         Args: {
           p_amount_minor: number
@@ -5872,6 +5876,7 @@ export type Database = {
           p_business_id: string
           p_email: string
           p_role_id: string
+          p_staff_id?: string
         }
         Returns: {
           out_expires_at: string
@@ -5923,6 +5928,10 @@ export type Database = {
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       issue_invoice: { Args: { p_invoice_id: string }; Returns: Json }
+      link_staff_member: {
+        Args: { p_member_id?: string; p_staff_id: string }
+        Returns: Json
+      }
       list_appointments: {
         Args: {
           p_branch_id?: string

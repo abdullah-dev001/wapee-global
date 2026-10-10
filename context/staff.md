@@ -1,5 +1,5 @@
 # Staff
-Status: done (Phase 2 scope) · Phase: 2 · Last updated: 2026-10-02
+Status: done (Phase 2 scope + login link) · Phase: 2 · Last updated: 2026-10-22
 
 ## What it does
 The people who perform services. A staff member is a profile, not necessarily an
@@ -8,7 +8,10 @@ Also records which branches they work at and which services they perform.
 
 ## Business rules
 - **A staff member need not have a login.** `staff_profiles.member_id` is
-  nullable. Invite them later and the rows link up. Plan limits count **staff**,
+  nullable. A login is linked through `link_staff_member` (Staff form "App login"
+  field), at invite time (`invite_member(..., p_staff_id)`), or for the signed-in
+  Owner with "Add me as staff" (`add_me_as_staff`). The column is closed to direct
+  writes by a guard trigger, and a removed member releases its profile. Plan limits count **staff**,
   not seats (product doc §10, "Staff per location").
 - Removing someone's app account does **not** erase their schedule or history:
   `member_id` is `ON DELETE SET NULL`.
@@ -31,6 +34,9 @@ Also records which branches they work at and which services they perform.
 | src/features/staff/components/StaffForm.tsx | Create/edit, branch and service assignment |
 | src/features/staff/components/StaffList.tsx | Rows with status badges |
 | src/features/staff/schemas/staff.schemas.ts | zod; limits mirror the DB CHECKs |
+| src/features/staff/staffLogin.ts | Login picker options (members not taken by another profile) + link error keys |
+| supabase/migrations/20261022090000_staff_member_link.sql | `link_staff_member`, `add_me_as_staff`, `invite_member` + staff, guard + release triggers |
+| supabase/tests/37_staff_member_link.sql | 57 assertions (link rules, guard, invite -> accept, add-me, own scope, push recipients) |
 
 ## Database
 | Table | Key columns |
@@ -96,15 +102,15 @@ Against the live database, in rolled-back transactions:
   time off refused.
 
 ## Known limits / TODO
-- **Inviting someone does not create a staff profile**, and creating a staff
-  profile does not invite them — they are separate on purpose (most staff need no
-  login), but there is no "give this person app access" button linking the two.
-  Worth adding: it is the obvious next question an owner asks.
+- Creating a staff profile still does not invite anyone (most staff need no login);
+  the owner invites from Members and may pick the profile there, or picks an
+  existing member in the staff form.
 - No reordering (`sort_order` exists but nothing sets it).
 - `useSaveStaff` is not atomic (see above).
 - No avatar/photo (needs the files add-on, Phase 8).
 
 ## Changelog
+- 2026-10-22: Login <-> profile link: "App login" field in the staff form, login name in the list, "Add me as staff" button (Owner/Manager without a profile), invite form picks an unlinked profile. Verified on dev over HTTP as dev.manager / dev.staff: unlinked staff sees 0 appointments, linked sees only its own (1 of 3), push recipients include them for their bookings only.
 - 2026-10-20: row badge "No working hours set — no online slots" + "Set working hours" button in the edit panel (`staffHours.ts`); list query now embeds `staff_working_hours(branch_id)`.
 - 2026-10-02: Staff UI: list with no-login badge, create/edit drawer, branch and service assignment, soft delete, schedule drawer.
 - 2026-10-02: Staff schema: profiles with optional member_id, branch assignment, service assignment, RLS, Own-scope helper.

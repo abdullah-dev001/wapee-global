@@ -24,6 +24,8 @@ export const staffSchema = z.object({
   phone: z.string().trim().max(32, 'staff.errors.phoneTooLong').nullable(),
   isActive: z.boolean(),
   isBookableOnline: z.boolean(),
+  /** The app login that owns this profile (a business_members id), or null for none. */
+  memberId: z.string().uuid().nullable(),
   branchIds: z.array(z.string().uuid()),
   serviceIds: z.array(z.string().uuid()),
 });
@@ -37,6 +39,7 @@ export const emptyStaff: StaffValues = {
   phone: null,
   isActive: true,
   isBookableOnline: true,
+  memberId: null,
   branchIds: [],
   serviceIds: [],
 };

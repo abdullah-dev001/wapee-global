@@ -25,8 +25,8 @@ Short names used below:
 | 2 | Onboarding: business name, address (slug), industry, then first location name, country, currency, time zone | `app/(auth)/onboarding.tsx` | WORKS |
 | 3 | One transaction creates the business, the first branch (owns country / currency / time zone, invoice prefix), the Owner membership and a 14-day trial | `create_business_with_owner` in `M/20261002120000_branch_owns_locale_and_tax` | WORKS |
 | 4 | A subscription row (`trialing`) and default booking settings (online booking ON, 24 h cancel cut-off) are created by triggers | `businesses_create_subscription` in `M/20261010090000_phase8_plans_schema`; `create_default_booking_settings` in `M/20261003090000_booking_settings_and_form` | WORKS |
-| 5 | The owner is NOT automatically a bookable staff member: they must add themselves under Staff | `src/features/staff/api/useStaff.ts` (nothing creates a staff profile at signup) | PARTIAL (not explained in the UI) |
-| 6 | The owner's own staff profile cannot be linked to their login (no screen sets `staff_profiles.member_id`) | `src/features/staff/components/StaffForm.tsx`, `invite_member` in `M/20261002162000_fix_invite_member_ambiguous_column` | MISSING (harmless for an Owner, who sees everything anyway) |
+| 5 | The owner is NOT automatically a bookable staff member: Staff > "Add me as staff" creates their profile (name + email, bookable, current branch, linked to their login) in one click | `useAddMeAsStaff` in `src/features/staff/api/useStaff.ts`, `add_me_as_staff` in `M/20261022090000_staff_member_link`; the setup checklist (Item 3) explains it | WORKS |
+| 6 | The owner's staff profile is linked to their login (`staff_profiles.member_id`) | `add_me_as_staff`, `link_staff_member` | WORKS |
 | 7 | Solo cap: 1 active bookable staff profile per location | trigger `staff_branches_enforce_cap` in `M/20261010100000_phase8_feature_gating` | WORKS (after the trial; the trial is Business-level, no cap) |
 | 8 | "Owner only" on Solo: other people can still be invited as Manager / Receptionist / Staff (logins are not capped, only staff profiles) | `invite_member` (no plan check) | DISPLAY-ONLY (the Solo limit is about profiles, not logins) |
 | 9 | Edit branch address, phone, tax rate, time zone after onboarding: only on the Locations screen, which shows only when the plan has `multi_branch` (Business, or during the trial) | `app/(app)/settings/index.tsx` (`useFeatureFlag('multi_branch')`), `update_branch` in `M/20261011110000_phase9_multi_branch` (the RPC itself is not plan-gated) | PARTIAL: once on Solo, no screen to set tax rate / address; invoices then use tax 0 (`src/features/invoices/components/InvoiceEditor.tsx` reads the branch rate) |
@@ -50,7 +50,7 @@ Short names used below:
 | 4 | **Owner** (47 permissions, all branches): everything incl. billing view, business settings, roles, website, client erase | permission set | WORKS |
 | 5 | **Manager** (39, branch scope): appointments (create / edit / cancel / approve), calendar for all staff, clients incl. contact + sensitive + export, invoices incl. discounts and credit notes, reports incl. revenue + advanced, services, staff + schedules, booking settings, reviews, inventory, packages, files, forms, invite users. NOT: billing, business settings, roles, website edit/publish, client erase, commission rules | permission set | WORKS |
 | 6 | **Receptionist** (20, branch scope): appointments (create / edit / cancel / approve), calendar all staff, clients (view, create, edit, contact), invoices create/view, packages sell/deduct, files, inventory view, reviews view, staff view. NOT: reports, services, schedules, settings, discounts / credit notes | permission set | WORKS |
-| 7 | **Staff** (12, OWN scope): own appointments (view / create / edit, not cancel), own clients (no phone/email: `clients.view_contact` is missing), own commission, own schedule, files, package deduction | permission set; own scope via `is_own_staff_profile()` in `M/20261002180000_catalogue` | **PARTIAL / BLOCKED**: "own" means the staff profile whose `member_id` is the user's membership, and NO screen or RPC ever sets `member_id` (on dev: 1 of 3 profiles linked, by SQL). A new Staff login therefore sees no appointments and cannot be assigned bookings as "theirs" |
+| 7 | **Staff** (12, OWN scope): own appointments (view / create / edit, not cancel), own clients (no phone/email: `clients.view_contact` is missing), own commission, own schedule, files, package deduction | permission set; own scope via `is_own_staff_profile()` in `M/20261002180000_catalogue`; the login is linked to a profile in the Staff form, at invite time, or by "Add me as staff" (`link_staff_member`, `invite_member(..., p_staff_id)`, `M/20261022090000_staff_member_link`) | WORKS (verified on dev over HTTP 2026-10-22: unlinked Staff login sees 0 appointments, linked sees only its own) |
 | 8 | Custom roles (Business, or Team add-on) | `M/20261011090000_phase9_custom_roles`, `app/(app)/settings/roles.tsx` | WORKS (gated) |
 | 9 | Team cap: 5 bookable staff profiles per location | `staff_branches_enforce_cap` | WORKS (profiles only; logins unlimited) |
 | 10 | "Ready-made team roles" as a Team+ feature (`default_roles` flag) | the flag is read only by `src/features/plans/featureLogic.ts` and the landing page; no SQL check | DISPLAY-ONLY (Solo also gets the roles) |
@@ -58,7 +58,7 @@ Short names used below:
 
 **Typical day (Team):**
 1. The receptionist opens the Calendar and books a walk-in for Sam at 11:00.
-2. Sam (Staff role) signs in on their phone... and sees an empty Today, because their login is not linked to their staff profile (gap 2).
+2. Sam (Staff role) signs in on their phone and sees their own appointments (the owner linked Sam's login to the "Sam" profile, or picked the profile when inviting).
 3. A client books online with Sam; managers/receptionists with `appointments.view` get a push.
 4. The manager approves a pending booking and checks the day's revenue report.
 5. The owner looks at commission for the month (Team+).
@@ -167,7 +167,7 @@ How an owner gets an add-on today:
 | 9 | Confirmation / pending / rescheduled / cancelled emails to the client | trigger `notify_appointment_change` in `M/20261008110000_phase6_enqueue_and_hooks`; `F/send_outbox` (Resend) every minute (`cron outbox-worker`) | PARTIAL: only when the client gave an email; real delivery needs a verified Resend domain in production (dev sender delivers only to the Resend account owner) |
 | 10 | Reminder (default 24 h before, quiet hours 21:00-08:00) | `enqueue_due_reminders` every 5 min (`M/20261008130000_phase6_reminders_and_cron`), `notification_settings` defaults | PARTIAL (email only, same delivery caveat) |
 | 11 | Manage link: view, cancel (default cut-off 24 h), reschedule to a free slot | `app/(public)/[slug]/manage.tsx`, `src/features/booking-manage/*`, `F/manage_booking`, `M/20261004100000_guest_manage_rpcs` | WORKS |
-| 12 | Business side: push to users with `appointments.view` for that branch/staff (`push_recipient_users`), new booking appears in Calendar / Today (30 s refresh while open, or on focus) | `notify_appointment_change`; `useLiveRefetchInterval` | PARTIAL: web push WORKS (VAPID); native app push MISSING (no EAS `projectId` in `app.config.ts`); Staff-role users without a linked profile get nothing for "their" bookings |
+| 12 | Business side: push to users with `appointments.view` for that branch/staff (`push_recipient_users`), new booking appears in Calendar / Today (30 s refresh while open, or on focus) | `notify_appointment_change`; `useLiveRefetchInterval` | PARTIAL: web push WORKS (VAPID); native app push MISSING (no EAS `projectId` in `app.config.ts`); Staff-role users get pushes for their own bookings once their login is linked (proved on dev with `push_recipient_users`) |
 | 13 | Approval mode (`confirmation = approval`): booking is `pending`, staff get "pending approval", approve -> client gets the confirmation | `notify_appointment_change`, `approve_appointment` (`M/20261004043134_phase4_status_rpcs`) | WORKS |
 | 14 | No-show: staff mark it manually (`mark_no_show`); nothing automatic | `M/20261004043134_phase4_status_rpcs` | WORKS (manual only) |
 | 15 | Walk-in / phone booking by staff (`create_appointment`, source walk_in or dashboard); walk-ins send no messages; staff may book outside hours but never double-book | `M/20261004042940_phase4_appointment_rpcs`; Calendar create drawer | WORKS |
@@ -248,14 +248,14 @@ A time appears on `/<slug>/book` only if ALL of these hold (`branch_is_bookable`
 ## Gaps / confusing points / launch blockers (most severe first)
 
 1. **Online booking cannot choose a branch** (multi-branch): every online booking goes to the primary branch (`useBookingPage.ts` sends only the slug). Blocks the multi-location promise.
-2. **Staff-role logins are never linked to their staff profile** (`staff_profiles.member_id` has no UI/RPC). A Staff user sees no own appointments, gets no pushes for their bookings, and "own" data rules do not work. Blocks the Team plan's main use.
+2. ~~Staff-role logins are never linked to their staff profile~~ **FIXED 2026-10-22** (Staff form "App login", invite-time link, "Add me as staff"; `M/20261022090000_staff_member_link`).
 3. **No payments**: subscriptions, yearly billing, per-location billing and add-on charges are all manual; `current_period_end` is never enforced, so unpaid businesses stay active until the super admin acts. Polar is not integrated.
 4. **Email delivery is not production-ready**: needs a verified Resend domain (dev sender only reaches the account owner) and custom SMTP for auth emails. Clients without an email get no confirmation, reminder or review request (SMS is off).
 5. **Native app push does not work** (no EAS `projectId`). Web push works.
 6. **No setup checklist** after onboarding: the owner lands on an empty Today; the 5 required setup steps after onboarding (hours, service, staff, link them, staff hours) are only explained under Settings > Booking.
 7. **Solo / Team cannot edit branch address, phone, tax rate or time zone after the trial** (Locations screen is Business-only). Invoices then carry tax 0; website contact data cannot be fixed.
 8. **Invites are not emailed**; the owner must copy and send the link.
-9. **Owner is not a staff member by default**: Solo owners must add themselves as staff, and that is not explained.
+9. **Owner is not a staff member by default**: Solo owners must add themselves as staff. The "Add me as staff" button exists (2026-10-22); the explanation on Today comes with the setup checklist (Item 3).
 10. **Auth hook for suspension is a manual dashboard switch** (otherwise suspended users can still sign in until the app signs them out).
 11. **Plan limits are on staff profiles, not logins**: Solo can invite any number of Manager / Receptionist users.
 12. `default_roles` ("Ready-made team roles", Team+) and add-on `available_plans` are display-only.
@@ -270,7 +270,7 @@ Compared with `src/features/landing/i18n/en.json` and `get_public_pricing()` (pl
 | Promise (where) | Reality | Suggested fix |
 |---|---|---|
 | "Run several locations from one account on Business" (feature card) / "Multiple locations" (Business card) | Locations work in the dashboard, but clients can only book the primary branch online | Build branch choice on the booking page, or say "manage several locations" without implying online booking per location |
-| "Give each person the access they need" (roles card) | Staff-role logins cannot be linked to their profile | Build the link, or avoid promising per-staff logins |
+| "Give each person the access they need" (roles card) | True since 2026-10-22: a Staff login can be linked to its profile | None |
 | Business "$79 / month per location", "each extra location billed the same", "Billed $X per year" | No billing; manual | Keep, but billing must be done by hand until Polar; make sure invoices match |
 | FAQ "Can I cancel anytime? ... keep access until the end of the period you paid for" | No self-serve cancel; period end not enforced | Say "contact us to cancel" until billing exists |
 | FAQ "Can I change plans later? Yes" | Only via support (super admin) | Add "just ask us" |

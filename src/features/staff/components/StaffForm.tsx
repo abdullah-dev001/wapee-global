@@ -5,14 +5,16 @@ import { CalendarClock } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { FormField } from '@/components/shared';
-import { Badge, Button, Text, Toggle, useToast } from '@/components/ui';
+import { Badge, Button, Select, Text, Toggle, useToast } from '@/components/ui';
+import { useMembers } from '@/features/members/api/useMembers';
 import { planErrorKey } from '@/features/plans/planErrors';
 import { useServices } from '@/features/services/api/useServices';
 import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
-import { useSaveStaff, type StaffListItem } from '../api/useStaff';
+import { useSaveStaff, useStaff, type StaffListItem } from '../api/useStaff';
 import { hasNoWorkingHours } from '../staffHours';
+import { linkErrorKey, loginOptions, NO_LOGIN } from '../staffLogin';
 import { emptyStaff, staffSchema, type StaffValues } from '../schemas/staff.schemas';
 
 export function StaffForm({
@@ -31,6 +33,9 @@ export function StaffForm({
   const { businessId, branchId, business } = useCurrentScope();
   const services = useServices(businessId, branchId, { includeInactive: false });
   const save = useSaveStaff(businessId);
+  const members = useMembers(businessId);
+  // Every profile of the business (not just this branch): a login can own one profile only.
+  const allStaff = useStaff(businessId, null);
 
   const branches = business?.branches ?? [];
 
@@ -44,6 +49,7 @@ export function StaffForm({
           phone: member.phone,
           isActive: member.isActive,
           isBookableOnline: member.isBookableOnline,
+          memberId: member.memberId,
           branchIds: member.branchIds,
           serviceIds: member.serviceIds,
         }
@@ -55,10 +61,23 @@ export function StaffForm({
   const isBookableOnline = useWatch({ control, name: 'isBookableOnline' });
   const branchIds = useWatch({ control, name: 'branchIds' });
   const serviceIds = useWatch({ control, name: 'serviceIds' });
+  const memberId = useWatch({ control, name: 'memberId' });
+
+  const logins = loginOptions({
+    members: members.data ?? [],
+    staff: allStaff.data ?? [],
+    currentStaffId: member?.id ?? null,
+    noLoginLabel: t('staff.login.none'),
+    pendingLabel: t('staff.login.pending'),
+    unnamedLabel: t('staff.login.unnamed'),
+  });
 
   const onSubmit = handleSubmit((values) => {
     save.mutate(
-      { ...values, ...(member ? { id: member.id } : {}) },
+      {
+        ...values,
+        ...(member ? { id: member.id, originalMemberId: member.memberId } : {}),
+      },
       {
         onSuccess: () => {
           toast.show({ message: t('staff.saved'), tone: 'success' });
@@ -67,7 +86,11 @@ export function StaffForm({
         onError: (error) => {
           // Plan refusals (staff cap) get a specific, calm message.
           const planKey = planErrorKey(error);
-          toast.show({ message: planKey ? t(planKey) : error.message, tone: 'error' });
+          const linkKey = linkErrorKey(error);
+          toast.show({
+            message: planKey ? t(planKey) : linkKey ? t(linkKey) : error.message,
+            tone: 'error',
+          });
         },
       },
     );
@@ -120,6 +143,17 @@ export function StaffForm({
         autoComplete="tel"
         textContentType="telephoneNumber"
         returnKeyType="next"
+      />
+
+      <Select
+        label={t('staff.login.label')}
+        hint={t('staff.login.hint')}
+        options={logins}
+        value={memberId ?? NO_LOGIN}
+        onChange={(value) =>
+          setValue('memberId', value === NO_LOGIN ? null : value, { shouldValidate: true })
+        }
+        disabled={members.isPending}
       />
 
       {branches.length > 1 ? (
@@ -175,9 +209,7 @@ export function StaffForm({
         <View style={styles.block}>
           <Text variant="label">{t('schedule.workingHours')}</Text>
           {hasNoWorkingHours(member, branchId) ? (
-            <Badge tone="warning">
-              {t('staff.noHours')}
-            </Badge>
+            <Badge tone="warning">{t('staff.noHours')}</Badge>
           ) : null}
           <Button variant="secondary" startIcon={CalendarClock} onPress={onOpenSchedule} fullWidth>
             {t('staff.noHoursAction')}

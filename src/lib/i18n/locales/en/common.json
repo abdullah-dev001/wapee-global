@@ -257,7 +257,10 @@
       "linkReady": "Invite link ready",
       "linkOnce": "Copy it now and send it to them. It is shown only once and works for 7 days.",
       "copy": "Copy link",
-      "copied": "Link copied"
+      "copied": "Link copied",
+      "staffProfile": "Staff profile",
+      "staffProfileHint": "Optional. When they accept, they see their own appointments.",
+      "noStaffProfile": "No staff profile"
     },
     "accept": {
       "title": "Join the team",
@@ -475,6 +478,27 @@
       "nameTooLong": "That name is too long",
       "jobTitleTooLong": "That job title is too long",
       "phoneTooLong": "That phone number is too long"
+    },
+    "login": {
+      "label": "App login",
+      "hint": "Lets this person sign in and see their own appointments. Pick someone who is already in your team.",
+      "none": "No login",
+      "pending": "invited",
+      "unnamed": "Unnamed",
+      "linkedAs": "Login: {{name}}",
+      "errors": {
+        "memberAlreadyLinked": "That login already belongs to another staff profile.",
+        "memberNotFound": "That person is no longer in your team.",
+        "forbidden": "You do not have permission to change this.",
+        "notFound": "This staff profile no longer exists.",
+        "alreadyStaff": "You are already in your staff list.",
+        "branchNotFound": "This location no longer exists."
+      }
+    },
+    "addMe": {
+      "action": "Add me as staff",
+      "hint": "Taking bookings yourself? Add yourself so clients can book you.",
+      "done": "You were added to your staff list."
     }
   },
   "bookingPublic": {

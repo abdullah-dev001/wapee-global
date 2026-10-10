@@ -8,7 +8,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormField } from '@/components/shared/FormField';
 import { Button, Select, Text, useToast } from '@/components/ui';
-import { useCurrentScope } from '@/lib/permissions';
+import { useStaff } from '@/features/staff/api/useStaff';
+import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useAssignableRoles } from '../api/useAssignableRoles';
@@ -17,6 +18,8 @@ import { inviteSchema, type InviteValues } from '../schemas/invite.schemas';
 
 /** Value used by the branch picker for "every branch" (the RPC wants null). */
 const ALL_BRANCHES = 'all';
+/** Value used by the staff-profile picker for "none". */
+const NO_STAFF = 'none';
 
 /**
  * Invite someone with a role and a branch.
@@ -31,17 +34,22 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
   const { businessId, branchId, business } = useCurrentScope();
   const { roles, isPending: rolesPending } = useAssignableRoles(businessId, branchId);
   const invite = useInviteMember(businessId);
+  // Linking a staff profile is a staff.manage action (the RPC checks it again).
+  const canManageStaff = usePermission('staff.manage');
+  const staff = useStaff(businessId, null, { includeInactive: false });
+  const unlinkedStaff = (staff.data ?? []).filter((entry) => entry.memberId === null);
   const [result, setResult] = useState<InviteResult | null>(null);
 
   const { control, handleSubmit, setValue, reset } = useForm<InviteValues>({
     resolver: zodResolver(inviteSchema),
-    defaultValues: { email: '', roleId: '', branchId },
+    defaultValues: { email: '', roleId: '', branchId, staffId: null },
   });
 
   // useWatch, not watch(): watch() returns a fresh function each render, which
   // the React Compiler cannot memoize (same reason as the onboarding form).
   const selectedRole = useWatch({ control, name: 'roleId' });
   const selectedBranch = useWatch({ control, name: 'branchId' });
+  const selectedStaff = useWatch({ control, name: 'staffId' });
 
   const branchOptions = [
     { value: ALL_BRANCHES, label: t('members.invite.allBranches') },
@@ -52,7 +60,7 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
     invite.mutate(values, {
       onSuccess: (data) => {
         setResult(data);
-        reset({ email: '', roleId: '', branchId });
+        reset({ email: '', roleId: '', branchId, staffId: null });
       },
       onError: (error) => toast.show({ message: error.message, tone: 'error' }),
     });
@@ -105,6 +113,25 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
           value={selectedBranch ?? ALL_BRANCHES}
           onChange={(value) =>
             setValue('branchId', value === ALL_BRANCHES ? null : value, { shouldValidate: true })
+          }
+        />
+      ) : null}
+
+      {canManageStaff.allowed && unlinkedStaff.length > 0 ? (
+        <Select
+          label={t('members.invite.staffProfile')}
+          hint={t('members.invite.staffProfileHint')}
+          options={[
+            { value: NO_STAFF, label: t('members.invite.noStaffProfile') },
+            ...unlinkedStaff.map((entry) => ({
+              value: entry.id,
+              label: entry.displayName,
+              ...(entry.jobTitle ? { hint: entry.jobTitle } : {}),
+            })),
+          ]}
+          value={selectedStaff ?? NO_STAFF}
+          onChange={(value) =>
+            setValue('staffId', value === NO_STAFF ? null : value, { shouldValidate: true })
           }
         />
       ) : null}

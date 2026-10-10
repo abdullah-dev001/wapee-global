@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 
 import { useSession } from '@/features/auth';
+import { branchBookableKeys } from '@/features/booking-settings/api/useBookingSettings';
 import { createQueryKeys, staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
+import { rpcNull, unwrapRpc } from '@/lib/supabase/rpcResult';
 
 import { type StaffValues } from '../schemas/staff.schemas';
 
@@ -97,12 +99,30 @@ function invalidateStaff(
   });
 }
 
+/**
+ * Links a staff profile to an app login, or unlinks it (`memberId` null). Always goes through
+ * the RPC: the column is closed to direct writes (context/staff.md).
+ */
+async function linkStaffMember(staffId: string, memberId: string | null): Promise<void> {
+  const { data, error } = await getSupabase().rpc('link_staff_member', {
+    p_staff_id: staffId,
+    p_member_id: memberId ?? rpcNull<string>(),
+  });
+  unwrapRpc(data, error);
+}
+
 /** Creates or updates a staff profile, its branches and its services. */
 export function useSaveStaff(businessId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation<string, Error, StaffValues & { id?: string }>({
-    mutationFn: async (values) => {
+  return useMutation<
+    string,
+    Error,
+    // `memberId` is applied through `link_staff_member` only when it differs from
+    // `originalMemberId`; a save that does not touch the login never calls it.
+    StaffValues & { id?: string; originalMemberId?: string | null }
+  >({
+    mutationFn: async ({ memberId, originalMemberId, ...values }) => {
       if (!businessId) throw new Error('No business selected');
       const supabase = getSupabase();
 
@@ -176,12 +196,20 @@ export function useSaveStaff(businessId: string | null) {
         if (error) throw new Error(error.message);
       }
 
+      // Last: the profile is already saved, so a refused link (login already used,
+      // not allowed) leaves a saved profile and tells the user only about the login.
+      if (memberId !== (originalMemberId ?? null)) {
+        await linkStaffMember(staffId, memberId);
+      }
+
       return staffId;
     },
-    onSuccess: () => {
+    onSettled: () => {
       invalidateStaff(queryClient, businessId);
       // A service's staff list changed too.
       void queryClient.invalidateQueries({ queryKey: ['services'] });
+      // "Own" data rules and the sidebar depend on who owns which profile.
+      void queryClient.invalidateQueries({ queryKey: ['my-staff-profile'] });
     },
   });
 }
@@ -200,5 +228,33 @@ export function useDeleteStaff(businessId: string | null) {
       return undefined;
     },
     onSuccess: () => invalidateStaff(queryClient, businessId),
+  });
+}
+
+/**
+ * "Add me as staff": a bookable profile from the signed-in Owner's own name and email, assigned
+ * to one branch and linked to their membership (RPC `add_me_as_staff`). Services and hours are
+ * separate setup steps.
+ */
+export function useAddMeAsStaff(businessId: string | null, branchId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<string, Error, undefined>({
+    mutationFn: async () => {
+      if (!businessId) throw new Error('No business selected');
+      const { data, error } = await getSupabase().rpc('add_me_as_staff', {
+        p_business_id: businessId,
+        ...(branchId ? { p_branch_id: branchId } : {}),
+      });
+      const result = unwrapRpc<{ ok: true; staff_id: string }>(data, error);
+      return result.staff_id;
+    },
+    onSuccess: () => {
+      invalidateStaff(queryClient, businessId);
+      void queryClient.invalidateQueries({ queryKey: ['my-staff-profile'] });
+      void queryClient.invalidateQueries({
+        queryKey: branchBookableKeys.business(businessId ?? 'none'),
+      });
+    },
   });
 }
