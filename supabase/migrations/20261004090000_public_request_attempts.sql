@@ -162,7 +162,11 @@ insert into public.rate_limit_rules (endpoint, scope, window_seconds, max_attemp
   ('create_booking',     'biz', 86400, 200,  'Per BUSINESS per day: above any single salon''s capacity, below a flood.'),
   ('get_booking',        'ip',  3600,  60,   'Manage-link reads. A guest refreshing their own page must not be blocked.'),
   ('cancel_booking',     'ip',  3600,  20,   'Writes against an existing booking.'),
-  ('reschedule_booking', 'ip',  3600,  20,   'Writes against an existing booking.');
+  ('reschedule_booking', 'ip',  3600,  20,   'Writes against an existing booking.'),
+  -- Added here (not only in 20261003223121) so a replay from an EMPTY database has
+  -- the rule: that earlier file is dated before this table exists. Same values.
+  ('get_booking_page',   'ip',  60,    60,   'Bootstraps the public booking page: branch info, services, staff, form fields. Same window as get_slots.')
+on conflict (endpoint, scope) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- check_rate_limit: record the attempt AND decide, in one call

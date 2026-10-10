@@ -74,7 +74,9 @@
     "postbuild:web": "node scripts/strip-dev-routes.mjs --restore && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/build-landing.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke:public": "node scripts/smoke-public.mjs"
+    "smoke:public": "node scripts/smoke-public.mjs",
+    "check:migrations": "bash scripts/check-migrations.sh",
+    "guide:check": "node scripts/check-guide.mjs"
   },
   "private": true,
   "engines": {

@@ -6,6 +6,12 @@ Status: in progress · Phase: 6B · Last updated: 2026-10-09
 - Applied through the **Supabase connector** (`apply_migration`). The local CLI is signed in to a different account and cannot link this project, so `supabase db push` and `supabase test db` are unavailable. Every migration file in `supabase/migrations/` matches what was applied.
 - Extensions: `citext`, `pg_trgm`, `btree_gist` (ready for Phase 3 no-double-booking), `pgtap`, `uuid-ossp`, `pgcrypto`.
 
+## Replay from an empty database (2026-10-11)
+- The chain of 147 files now replays cleanly from empty and equals dev (21 of 22 fingerprint categories identical; the 22nd is the hand-set vault entry `outbox_worker_url`). Prove it with `npm run check:migrations`; compare two projects with `scripts/schema-fingerprint.sql`. Details and the production procedure: `docs/production-setup.md`.
+- Fixed in place (dev's history already records these versions, nothing re-runs there): rate-limit rule for `get_booking_page` (seeded in `20261004090000`, guarded in `20261003223121`); `check_appointment_collision_v2` created in `20261004045723` (the text-returning v1 stays, deprecated); `create_appointment` / `update_appointment` final versions (store `resource_id`) in `20261004045754` / `20261004045817`; six comments in `20261004152214`.
+- **Rule going forward:** never apply SQL to a database by hand (execute_sql / dashboard) without the same SQL in a migration file in the same task; a placeholder "no-op" migration that claims a fix is folded elsewhere hides this. Run `npm run check:migrations` before every production push.
+- A local Supabase image lacks the hosted default privileges for objects `postgres` creates in `public`; the script adds them. Suites 19 and 34 assume rows from other businesses and fail on an empty database.
+
 ## Tables (38)
 
 | Table | Key columns | Notes |

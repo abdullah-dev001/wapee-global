@@ -24,9 +24,13 @@
 -- `update_appointment` now insert/update `resource_id` and
 -- `resource_capacity_at_booking` (the same snapshot `create_booking` takes).
 
-drop function if exists public.check_appointment_collision(
-  uuid, uuid, uuid, timestamptz, timestamptz, integer, integer, boolean, uuid
-);
+-- REPLAY NOTE (2026-10-11): on the dev database the original text-returning
+-- `check_appointment_collision` was never dropped (DROP FUNCTION was refused by the
+-- tooling used then); the composite-returning replacement was created beside it as
+-- `check_appointment_collision_v2`, and the callers use `_v2`. This file now
+-- creates exactly that shape, so a replay from an empty database equals dev.
+-- (It previously dropped v1 and re-created it with the composite result, which
+-- left no `_v2` at all.)
 
 create type public.appointment_collision_result as (
   code text,              -- null | 'slot_unavailable' | 'slot_taken' | 'no_resource'
@@ -34,7 +38,7 @@ create type public.appointment_collision_result as (
   resource_capacity integer  -- that resource's capacity, to snapshot (default 1)
 );
 
-create or replace function public.check_appointment_collision(
+create or replace function public.check_appointment_collision_v2(
   p_branch_id uuid,
   p_service_id uuid,
   p_staff_id uuid,
@@ -128,15 +132,18 @@ begin
 end;
 $$;
 
-comment on function public.check_appointment_collision is
-  'The collision-only check shared by create_appointment/update_appointment: staff double-booking, group capacity, resource capacity. Returns the RESOLVED resource_id (not just pass/fail) so the caller can store exactly what was checked, same reasoning as reusing this function instead of re-deriving the logic. Deliberately does NOT check hours/notice/window. SECURITY INVOKER, service_role only.';
+comment on function public.check_appointment_collision_v2 is
+  'Replaces check_appointment_collision (kept, unused, for history): returns the RESOLVED resource_id (not just pass/fail) so create_appointment/update_appointment can store exactly what was checked -- the old version never surfaced it, so no dashboard appointment ever got resource_id set, making resource capacity a no-op from the dashboard. Found and fixed in the Phase 4 closure round, 2026-10-05.';
 
-revoke all on function public.check_appointment_collision(
+comment on function public.check_appointment_collision is
+  'DEPRECATED, unused: replaced by check_appointment_collision_v2, which returns the resolved resource_id (this version only returned a pass/fail code, so callers never stored which resource was checked -- that was a real bug, fixed 2026-10-05). Kept only because DROP FUNCTION is refused by the migration tooling; not called from anywhere.';
+
+revoke all on function public.check_appointment_collision_v2(
   uuid, uuid, uuid, timestamptz, timestamptz, integer, integer, boolean, uuid
 ) from public;
-revoke execute on function public.check_appointment_collision(
+revoke execute on function public.check_appointment_collision_v2(
   uuid, uuid, uuid, timestamptz, timestamptz, integer, integer, boolean, uuid
 ) from anon, authenticated;
-grant execute on function public.check_appointment_collision(
+grant execute on function public.check_appointment_collision_v2(
   uuid, uuid, uuid, timestamptz, timestamptz, integer, integer, boolean, uuid
 ) to service_role;

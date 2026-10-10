@@ -118,3 +118,28 @@ revoke execute on function public.list_appointments(
 grant execute on function public.list_appointments(
   uuid, uuid, uuid, public.appointment_status, uuid, date, date, text, integer, timestamptz, uuid, uuid
 ) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- REPLAY FIX (2026-10-11): documentation comments that were edited by hand on the
+-- dev database and never written to a migration (see 20261004045901, "applied
+-- directly"). Text is dev's, verbatim. Comments only: no behaviour change.
+-- ---------------------------------------------------------------------------
+comment on function public.list_appointments(
+  uuid, uuid, uuid, public.appointment_status, uuid, date, date, text, integer, timestamptz, uuid, uuid
+) is
+  'Server-side paginated appointment list (keyset cursor on starts_at,id desc). RLS (appointments_select) is the ONLY scope boundary -- SECURITY INVOKER, p_business_id/p_branch_id/p_client_id are filters, not a bypass. Search matches client name/phone via the existing trgm index. p_client_id added for the client profile''s visit history (Phase 4 part B2). The 11-arg overload (no p_client_id) predates this and is superseded -- see Phase 4 part B2 cleanup note.';
+
+comment on function public.business_is_active(uuid) is
+  'True while the business may be used: active, or trialing and not yet expired. No cron needed.';
+
+comment on function public.mark_no_show(uuid) is
+  'Dashboard no-show. confirmed -> no_show only. Terminal: never reopens. SECURITY DEFINER, can()/scope check is the boundary.';
+
+comment on function public.approve_appointment(uuid) is
+  'pending -> confirmed ONLY (checked directly, not via is_allowed_appointment_transition, to avoid becoming a side door into the no_show/completed -> confirmed reopen path, which has its own Owner/Manager-only + invoice_id guard in reopen_appointment). Needs appointments.approve. SECURITY DEFINER, can()/scope check is the boundary.';
+
+comment on column public.business_members.invite_token_hash is
+  'SHA-256 of the invite token. The raw token exists only in the emailed link.';
+
+comment on table public.appointment_status_transitions is
+  'The ONE place every allowed appointment status change is defined. cancelled/completed/no_show are terminal (no row with them as from_status) -- no reopen, ever (agreed with the user 2026-10-05). A correction is a new appointment, not a reopened one.';
