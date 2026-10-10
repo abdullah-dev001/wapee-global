@@ -19,5 +19,6 @@
 # Business website: /<slug> (last, so any real page above it wins)
 /:slug   /[slug]   200
 
-# SPA fallback: any other path loads the app shell, which shows its own not-found screen
-/*   /index.html   200
+# SPA fallback: any other path loads the app shell, which shows its own not-found screen.
+# "/" (index.html) is the static landing page; the Expo shell is kept at /_app/shell (scripts/build-landing.mjs).
+/*   /_app/shell   200

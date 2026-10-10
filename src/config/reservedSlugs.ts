@@ -26,6 +26,7 @@ const RESERVED_SLUGS = [
   'verify',
   'invite',
   'unsubscribe',
+  'delete-account',
   'onboarding',
   'app',
   'dashboard',
@@ -41,6 +42,9 @@ const RESERVED_SLUGS = [
   'subscription',
   'plans',
   'pricing',
+  // Marketing landing (/) and its pages
+  'features',
+  'refund',
   'book',
   'booking',
   'bookings',

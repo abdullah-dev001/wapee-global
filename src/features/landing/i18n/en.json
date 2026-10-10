@@ -1,0 +1,272 @@
+{
+  "meta": {
+    "title": "{{name}}: online booking and management for service businesses",
+    "description": "{{name}} gives salons, clinics, barbers and other service businesses a 24/7 booking page, a team calendar, client records and invoices. 14-day free trial, no credit card.",
+    "ogImageAlt": "{{name}} logo"
+  },
+  "skip": "Skip to content",
+  "nav": {
+    "label": "Main",
+    "features": "Features",
+    "how": "How it works",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "login": "Log in",
+    "trial": "Start free trial",
+    "menu": "Menu",
+    "close": "Close menu",
+    "home": "{{name}} home"
+  },
+  "hero": {
+    "eyebrow": "For salons, clinics, studios and every business that takes appointments",
+    "title": "Online booking and everyday management for service businesses",
+    "subtitle": "Let customers book you 24/7, keep your team's calendar in one place, and handle clients and invoices without the paperwork.",
+    "primary": "Start free trial",
+    "secondary": "See pricing",
+    "note": "14-day free trial. No credit card needed.",
+    "illustration": "A phone showing a booking page next to a weekly team calendar"
+  },
+  "who": {
+    "title": "Made for businesses that run on appointments",
+    "line": "If customers book a time with you, {{name}} fits.",
+    "items": {
+      "salons": "Salons & barbers",
+      "beauty": "Beauty & spa",
+      "clinics": "Clinics & physio",
+      "fitness": "Fitness & coaching",
+      "tutoring": "Tutoring & lessons",
+      "repair": "Car & repair services"
+    }
+  },
+  "how": {
+    "title": "Up and running in an afternoon",
+    "subtitle": "Three steps, no setup fees, no training needed.",
+    "step": "Step {{n}}",
+    "steps": {
+      "setup": {
+        "title": "Set up services and hours",
+        "body": "Add what you offer, how long it takes, your prices and when each person works."
+      },
+      "share": {
+        "title": "Share your booking link",
+        "body": "Put your link on social media, Google or your website. Customers pick a time that is really free."
+      },
+      "manage": {
+        "title": "Manage it all in one place",
+        "body": "See every booking, keep client notes and history, and send invoices from the same app."
+      }
+    }
+  },
+  "features": {
+    "title": "Everything you need for the day-to-day",
+    "subtitle": "Plain tools that do the job. Each plan shows exactly what it includes.",
+    "items": {
+      "booking": {
+        "title": "24/7 online booking page",
+        "body": "Customers book themselves day or night, without creating an account. They get a link to cancel or move their booking."
+      },
+      "calendar": {
+        "title": "A calendar for your whole team",
+        "body": "Day, week and list views for every staff member. Double bookings are blocked automatically."
+      },
+      "clients": {
+        "title": "Client records",
+        "body": "Contact details, notes and full visit history for every client, searchable in seconds."
+      },
+      "invoices": {
+        "title": "Invoices and payment tracking",
+        "body": "Create invoices with your own numbering and tax, and record the payments you take."
+      },
+      "reports": {
+        "title": "Reports",
+        "body": "See your revenue and payments at a glance. Team and Business add deeper reports with exports."
+      },
+      "website": {
+        "title": "Your own simple website and reviews",
+        "body": "A clean page for your business with services, hours and reviews from real customers after their visit."
+      },
+      "team": {
+        "title": "Roles, permissions and multiple locations",
+        "body": "Give each person the access they need. Run several locations from one account on Business."
+      },
+      "app": {
+        "title": "Install it like an app",
+        "body": "Add it to your phone's home screen. Booking emails and push notifications keep everyone in the loop."
+      }
+    },
+    "addons": "Need more? Add packages and sessions, inventory, files and photos, forms and consent, or a client portal.",
+    "addonsLink": "See add-ons and prices",
+    "promise": {
+      "commission": "No commission on your bookings",
+      "isolated": "Your data is isolated per business"
+    }
+  },
+  "pricing": {
+    "title": "Simple pricing",
+    "subtitle": "Pick the plan that fits your team. Every plan starts with a 14-day free trial.",
+    "billing": "Billing period",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "yearlySave": "{{count}} months free",
+    "popular": "Most popular",
+    "perMonth": "/ month",
+    "perBranchMonth": "/ month per location",
+    "billedYearly": "Billed {{amount}} per year",
+    "billedYearlyPerBranch": "Billed {{amount}} per location per year",
+    "billedMonthly": "Billed monthly",
+    "cta": "Start 14-day free trial",
+    "everythingIn": "Everything in {{plan}}, plus:",
+    "fineprint": "No credit card needed for the trial. Cancel anytime. Prices in USD, taxes may apply.",
+    "loading": "Loading prices",
+    "error": "Prices could not be loaded right now.",
+    "retry": "Try again",
+    "errorHelp": "You can still start your free trial, or write to us at {{email}}.",
+    "for": {
+      "solo": "For independent professionals who work alone.",
+      "team": "For a small team sharing one location.",
+      "business": "For growing businesses with several locations."
+    },
+    "staff": {
+      "one": "1 staff member",
+      "upTo": "Up to {{count}} staff per location",
+      "unlimited": "Unlimited staff"
+    },
+    "locations": {
+      "one": "1 location",
+      "upTo": "Up to {{count}} locations",
+      "perBranch": "Multiple locations, each billed the same"
+    },
+    "feature": {
+      "booking_link": "24/7 online booking page",
+      "core": "Calendar, clients, invoices and basic reports",
+      "website": "Your own simple website",
+      "reviews": "Customer reviews",
+      "default_roles": "Ready-made team roles",
+      "commission": "Staff commission tracking",
+      "advanced_reports": "Advanced reports and exports",
+      "custom_roles": "Custom roles and permissions",
+      "multi_branch": "Multiple locations",
+      "branch_comparison": "Compare locations side by side"
+    },
+    "addonFeature": "{{feature}} available as an add-on",
+    "addons": {
+      "title": "Add-ons",
+      "subtitle": "Switch on extra modules when you need them. Billed per business.",
+      "name": "Add-on",
+      "description": "What it does",
+      "price": "Price",
+      "availability": "Available on",
+      "allPlans": "All plans",
+      "onlyOn": "{{plans}} plan",
+      "includedIn": "included in {{plans}}",
+      "perMonth": "{{amount}} / month",
+      "perYear": "{{amount}} / year",
+      "items": {
+        "packages": "Sell packages of sessions and track how many each client has left.",
+        "inventory": "Keep track of retail and product stock, with low-stock alerts.",
+        "files_photos": "Keep files and before/after photos on each client, stored privately.",
+        "forms_consent": "Send intake and consent forms that clients sign online.",
+        "client_portal": "Let clients sign in to see, move and book their appointments.",
+        "custom_roles": "Create your own roles and choose exactly what each one can do."
+      }
+    },
+    "compare": {
+      "title": "Compare plans",
+      "caption": "What each plan includes",
+      "feature": "Feature",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "addon": "Add-on",
+      "staff": "Staff",
+      "locations": "Locations",
+      "unlimited": "Unlimited"
+    }
+  },
+  "faq": {
+    "title": "Questions and answers",
+    "items": {
+      "trial": {
+        "q": "Is there a free trial?",
+        "a": "Yes. Every new business gets 14 days free with all features and add-ons switched on, so you can try everything before you choose a plan."
+      },
+      "card": {
+        "q": "Do I need a credit card to start?",
+        "a": "No. You only need an email address to start your trial."
+      },
+      "cancel": {
+        "q": "Can I cancel anytime?",
+        "a": "Yes. If you cancel, you keep access until the end of the period you have already paid for. See our refund policy for details."
+      },
+      "commission": {
+        "q": "Do you take a commission on my bookings?",
+        "a": "No. You pay a flat subscription. We never take a cut of what your customers pay you."
+      },
+      "account": {
+        "q": "Do my customers need an account to book?",
+        "a": "No. They choose a service and a time, leave their name and contact details, and get a link to cancel or reschedule."
+      },
+      "countries": {
+        "q": "Which countries and currencies do you support?",
+        "a": "You can use it anywhere. Each location has its own currency, time zone and tax settings, so your prices and invoices match where you work. Our subscription prices are in USD."
+      },
+      "plans": {
+        "q": "Can I change plans later?",
+        "a": "Yes, you can move to another plan at any time. If you move to a smaller plan, you first need to be within its staff and location limits."
+      },
+      "support": {
+        "q": "How do I get support?",
+        "a": "Email us at {{email}} and we will get back to you."
+      }
+    }
+  },
+  "cta": {
+    "title": "Ready to fill your calendar?",
+    "body": "Set up your booking page today. Free for 14 days, no credit card needed.",
+    "primary": "Start free trial",
+    "secondary": "Log in"
+  },
+  "footer": {
+    "tagline": "Online booking and everyday management for service businesses.",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "refund": "Refund Policy",
+    "contact": "Contact",
+    "copyright": "© {{year}} {{name}}. All rights reserved."
+  },
+  "refund": {
+    "title": "Refund Policy",
+    "metaDescription": "How trials, renewals, cancellations and refunds work for {{name}} subscriptions.",
+    "draft": "DRAFT - replace with reviewed text. This page has not been reviewed by a lawyer.",
+    "updated": "Last updated: {{date}}",
+    "intro": "This policy explains how trials, renewals, cancellations and refunds work for {{name}} subscriptions.",
+    "sections": {
+      "trial": {
+        "title": "1. Free trial",
+        "body": "Every new business gets a 14-day free trial. No payment details are needed to start it, and you are not charged during the trial."
+      },
+      "renewal": {
+        "title": "2. Automatic renewal",
+        "body": "A paid subscription (monthly or yearly) renews automatically at the end of each period until you cancel it."
+      },
+      "cancel": {
+        "title": "3. Cancelling",
+        "body": "You can cancel at any time. After you cancel, you keep access until the end of the period you have already paid for, and you are not charged again."
+      },
+      "refunds": {
+        "title": "4. Refunds",
+        "body": "We do not give refunds for partial periods, including unused time after you cancel, except where the law requires it.",
+        "errors": "If you were charged in error or charged twice for the same period, tell us within 14 days of the charge and we will refund the incorrect amount."
+      },
+      "reseller": {
+        "title": "5. Who processes your payment",
+        "body": "Payments are processed by our reseller and merchant of record, {{reseller}}, who appears on your receipt and bank statement."
+      },
+      "contact": {
+        "title": "6. Contact",
+        "body": "For billing questions or refund requests, email us at {{email}}."
+      }
+    },
+    "resellerPending": "[name to be added]"
+  }
+}

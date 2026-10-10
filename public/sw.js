@@ -7,11 +7,13 @@
  * browser byte-comparing this file; the app then shows "Update available" and posts
  * SKIP_WAITING (see src/lib/pwa/registerServiceWorker.ts).
  */
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = `shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 
-const SHELL_URLS = ['/', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
+// "/" is the static landing page; the app shell lives at /_app/shell (scripts/build-landing.mjs).
+const APP_SHELL = '/_app/shell';
+const SHELL_URLS = [APP_SHELL, '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 /** Same-origin paths that are safe to cache (hashed build output, icons, fonts). */
 const STATIC_PATH_PREFIXES = ['/_expo/static/', '/assets/', '/icons/'];
@@ -90,7 +92,7 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() =>
-        caches.match('/', { cacheName: SHELL_CACHE }).then((res) => res || Response.error()),
+        caches.match(APP_SHELL, { cacheName: SHELL_CACHE }).then((res) => res || Response.error()),
       ),
     );
     return;

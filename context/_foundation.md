@@ -221,15 +221,15 @@ GestureHandlerRootView → SafeAreaProvider → KeyboardProvider → I18nextProv
 - Not built yet: install hint / iOS "Add to Home Screen" instructions, Web Push.
 
 ## Hosting files (Cloudflare Pages, `public/` → `dist/`)
-- `public/_redirects`: rewrites (200) for dynamic routes (`/:slug`, `/:slug/{book,manage,review,sign,portal}`, `/clients/:id`, `/invoice-print/:id`, `/admin/business/:id`) to the exported template (`/[slug]`, no `.html`), then `/* /index.html 200`. Static files win over rules. `/unsubscribe`, `/accept-invite`, `/delete-account`, `/privacy`, `/terms`, `/report-print` resolve as static pages.
-- `public/_headers`: HSTS, nosniff, `Referrer-Policy` (no-referrer on manage/review/sign/portal/unsubscribe), `X-Frame-Options: DENY` + `frame-ancestors 'none'` everywhere except `/:slug/book` (`SAMEORIGIN` / `'self'`), caching (sw.js, html no-cache; `/_expo/static/*`, `/assets/*` immutable; manifest 1h), CSP **Report-Only**. Rules merge on Pages; specific rules detach the general header with `! Name`.
+- `public/_redirects`: rewrites (200) for dynamic routes (`/:slug`, `/:slug/{book,manage,review,sign,portal}`, `/clients/:id`, `/invoice-print/:id`, `/admin/business/:id`) to the exported template (`/[slug]`, no `.html`), then `/* /_app/shell 200` (the Expo shell; `/` is the static landing page, see landing.md). Static files win over rules. `/unsubscribe`, `/accept-invite`, `/delete-account`, `/privacy`, `/terms`, `/report-print` resolve as static pages.
+- `public/_headers`: HSTS, nosniff, `Referrer-Policy` (no-referrer on manage/review/sign/portal/unsubscribe), `X-Frame-Options: DENY` + `frame-ancestors 'none'` everywhere except `/:slug/book` (`SAMEORIGIN` / `'self'`), caching (sw.js, html, `/_app/*` no-cache; `/_expo/static/*`, `/assets/*` immutable; manifest 1h), CSP **Report-Only**. Rules merge on Pages; specific rules detach the general header with `! Name`.
 - Checked 2026-10-09 with a local emulator of these two files (not Cloudflare's own engine): every deep link returns 200 with the right template. Verify once on a real Pages preview URL.
 
 ## Scripts
 
 start, web, ios (`expo run:ios`), android (`expo run:android`), lint (0 warnings), typecheck, **test** (`vitest run`), **test:watch**, format, format:check, build:web, manifest.
-Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN renderer); `vitest.config.mts` stubs `lucide-react-native` so `config/navigation.ts` can be imported in Node.
-`build:web` runs `generate-web-manifest` + `strip-dev-routes` first and restores the dev routes after, so `/_gallery` never ships (Metro does not tree-shake a `__DEV__` branch, so the route file must be absent at build time).
+Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN renderer); tests that read repo files use `src/test/nodeFs.ts` (`loadNodeFs`, `listFiles`: no @types/node here); `vitest.config.mts` stubs `lucide-react-native` so `config/navigation.ts` can be imported in Node.
+`build:web` runs `generate-web-manifest` + `strip-dev-routes` first, then restores the dev routes and runs `scripts/build-landing.mjs` (static landing `/`, `/refund`, robots/sitemap; Expo's index.html moves to `/_app/shell`), so `/_gallery` never ships (Metro does not tree-shake a `__DEV__` branch, so the route file must be absent at build time).
 
 ## Known limits / TODO
 
@@ -243,6 +243,7 @@ Unit tests live beside the code as `*.test.ts` and cover pure logic only (no RN 
 - Adding a native module (as expo-screen-orientation did) means the dev build must be rebuilt with `npm run ios` / `npm run android`.
 
 ## Changelog
+- 2026-10-10: Landing page (landing.md): `src/test/nodeFs.ts`; `lib/theme/shadowLevels.ts` (import-free shadow values, `shadow()` reads them); `typography.ts` uses `import type` so Node scripts can import theme tokens; manifest `start_url` `/today`; SW v2 shell `/_app/shell`.
 - 2026-10-20: `PhoneInput` rebuilt: all ~240 countries (`config/dialCodes.ts`, names from `localeData`), searchable `PhoneCountryPicker` (name / ISO / dial code, flag), picked country is state (an empty number or shared +1 no longer loses it), pasted `+...` numbers pick their country, trunk 0 stripped (not Italy), default = branch country (`useBranchCountry`). Timeline math: `HOUR_HEIGHT_PX` 96, `blockHeightPx`, `blockDetailForHeight`, `hourLabelOffsets` in `timeGrid.ts`; `HourRuler` positions labels from the same math.
 - 2026-10-07: `useTokenFromUrl` now keeps the `#token=` out of the address bar for good (Expo Router re-wrote it after the first strip; history writes are cleaned while the page is mounted; `stripTokenFromUrl` tested). `expo-document-picker` added (native module: `npm run ios`).
 - 2026-10-07: Phase 10B: `components/shared/SignaturePad` + `SignatureView` (strokes 0..1, responder events + react-native-svg, no new dependency; points/path maths in `features/forms/formsLogic.ts`), Edge `_shared/files/sniff.ts` (type by first bytes), `callPublicFunction` knows `sign_form`, `PublicErrorCode` gained `signature_required` / `invalid_signature`. Storage objects are NOT covered by a business delete: remove them with the Storage API (the service key is read at runtime; never stored).

@@ -80,6 +80,7 @@ export const planPricesSchema = z.object({
   annual: price,
   currency,
   active: z.boolean(),
+  pricedPerBranch: z.boolean(),
 });
 export type PlanPricesValues = z.infer<typeof planPricesSchema>;
 
@@ -90,8 +91,11 @@ export const addonPricesSchema = z.object({
     .min(1, 'admin.validation.nameRequired')
     .max(60, 'admin.validation.nameLong'),
   monthly: price,
+  annual: price,
   currency,
   active: z.boolean(),
+  /** Plans it can be bought on. None ticked = every plan. */
+  plans: z.object({ solo: z.boolean(), team: z.boolean(), business: z.boolean() }),
 });
 export type AddonPricesValues = z.infer<typeof addonPricesSchema>;
 

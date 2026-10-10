@@ -8,6 +8,8 @@ import { Badge, Button, Card, ErrorState, Skeleton, Text, Toggle } from '@/compo
 import { formatMinorAsMajor, formatMoney, parseMajorToMinor } from '@/lib/money';
 import { theme } from '@/lib/theme';
 
+import { type PlanKey } from '@/features/plans/featureLogic';
+
 import { AdminRpcError } from '../adminLogic';
 import {
   usePlansCatalogue,
@@ -24,6 +26,19 @@ import {
 } from '../schemas/admin.schemas';
 import { AdminFormDialog } from './AdminFormDialog';
 import { useAdminMessage } from './useAdminMessage';
+
+const PLAN_KEYS: readonly PlanKey[] = ['solo', 'team', 'business'];
+const PLAN_NAME_KEYS = {
+  solo: 'plans.names.solo',
+  team: 'plans.names.team',
+  business: 'plans.names.business',
+} as const;
+
+/** Ticked plans; none or all ticked = every plan (empty list). */
+function pickedPlans(plans: Record<PlanKey, boolean>): PlanKey[] {
+  const picked = PLAN_KEYS.filter((k) => plans[k]);
+  return picked.length === PLAN_KEYS.length ? [] : picked;
+}
 
 /** Prices are typed in major units ("39.00") and sent as integer minor units. */
 function toMinor(input: string, currency: string): number {
@@ -76,6 +91,9 @@ export function PricesEditor() {
                 })}
               </Text>
             </View>
+            {p.pricedPerBranch ? (
+              <Badge tone="info">{t('admin.prices.perBranchBadge')}</Badge>
+            ) : null}
             {p.active ? null : <Badge tone="neutral">{t('admin.prices.inactive')}</Badge>}
             <Button size="sm" variant="secondary" onPress={() => setPlan(p)}>
               {t('actions.edit')}
@@ -95,7 +113,18 @@ export function PricesEditor() {
                     { amountMinor: a.priceMonthlyMinor, currency: a.currency },
                     i18n.language,
                   ),
+                  annual: formatMoney(
+                    { amountMinor: a.priceAnnualMinor, currency: a.currency },
+                    i18n.language,
+                  ),
                 })}
+              </Text>
+              <Text variant="helper" color="textSecondary">
+                {a.availablePlans
+                  ? t('admin.prices.onPlans', {
+                      plans: a.availablePlans.map((k) => t(PLAN_NAME_KEYS[k])).join(', '),
+                    })
+                  : t('admin.prices.onEveryPlan')}
               </Text>
             </View>
             {a.active ? null : <Badge tone="neutral">{t('admin.prices.inactive')}</Badge>}
@@ -119,6 +148,7 @@ export function PricesEditor() {
           annual: plan ? formatMinorAsMajor(plan.priceAnnualMinor, plan.currency) : '',
           currency: plan?.currency ?? 'USD',
           active: plan?.active ?? true,
+          pricedPerBranch: plan?.pricedPerBranch ?? false,
         }}
         successMessage={t('admin.prices.saved')}
         onSubmit={(v) =>
@@ -129,6 +159,7 @@ export function PricesEditor() {
             annual: toMinor(v.annual, v.currency),
             currency: v.currency,
             active: v.active,
+            pricedPerBranch: v.pricedPerBranch,
           })
         }
       >
@@ -156,6 +187,17 @@ export function PricesEditor() {
             />
             <Controller
               control={control}
+              name="pricedPerBranch"
+              render={({ field }) => (
+                <Toggle
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  label={t('admin.prices.perBranch')}
+                />
+              )}
+            />
+            <Controller
+              control={control}
               name="active"
               render={({ field }) => (
                 <Toggle
@@ -179,8 +221,14 @@ export function PricesEditor() {
         defaultValues={{
           name: addon?.name ?? '',
           monthly: addon ? formatMinorAsMajor(addon.priceMonthlyMinor, addon.currency) : '',
+          annual: addon ? formatMinorAsMajor(addon.priceAnnualMinor, addon.currency) : '',
           currency: addon?.currency ?? 'USD',
           active: addon?.active ?? true,
+          plans: {
+            solo: addon?.availablePlans?.includes('solo') ?? false,
+            team: addon?.availablePlans?.includes('team') ?? false,
+            business: addon?.availablePlans?.includes('business') ?? false,
+          },
         }}
         successMessage={t('admin.prices.saved')}
         onSubmit={(v) =>
@@ -188,8 +236,10 @@ export function PricesEditor() {
             key: addon?.key ?? '',
             name: v.name,
             monthly: toMinor(v.monthly, v.currency),
+            annual: toMinor(v.annual, v.currency),
             currency: v.currency,
             active: v.active,
+            availablePlans: pickedPlans(v.plans),
           })
         }
       >
@@ -209,6 +259,27 @@ export function PricesEditor() {
               label={t('admin.prices.monthly')}
               keyboardType="decimal-pad"
             />
+            <FormField
+              control={control}
+              name="annual"
+              label={t('admin.prices.annual')}
+              keyboardType="decimal-pad"
+            />
+            <Text variant="label">{t('admin.prices.availableOn')}</Text>
+            {PLAN_KEYS.map((k) => (
+              <Controller
+                key={k}
+                control={control}
+                name={`plans.${k}`}
+                render={({ field }) => (
+                  <Toggle
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    label={t(PLAN_NAME_KEYS[k])}
+                  />
+                )}
+              />
+            ))}
             <Controller
               control={control}
               name="active"

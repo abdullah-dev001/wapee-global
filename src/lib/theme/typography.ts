@@ -1,4 +1,4 @@
-import { type TextStyle } from 'react-native';
+import type { TextStyle } from 'react-native';
 
 /**
  * Typography tokens. Source: docs/DESIGN_GUIDE.md §3.

@@ -71,7 +71,7 @@
     "build:web": "expo export --platform web",
     "prebuild:web": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-web-manifest.mjs && node scripts/strip-dev-routes.mjs",
     "manifest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-web-manifest.mjs",
-    "postbuild:web": "node scripts/strip-dev-routes.mjs --restore",
+    "postbuild:web": "node scripts/strip-dev-routes.mjs --restore && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/build-landing.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "smoke:public": "node scripts/smoke-public.mjs"

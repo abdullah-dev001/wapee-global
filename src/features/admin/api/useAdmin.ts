@@ -10,7 +10,7 @@ import {
 import { createQueryKeys, staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 
-import { type FeatureMap } from '@/features/plans/featureLogic';
+import { type FeatureMap, type PlanKey } from '@/features/plans/featureLogic';
 
 import { callAdminRpc } from './adminRpc';
 import { useAdminEnabled } from './useAdminAccess';
@@ -125,13 +125,18 @@ export type PlanRow = {
   priceAnnualMinor: number;
   currency: string;
   active: boolean;
+  /** Price is per location (each extra location billed the same). */
+  pricedPerBranch: boolean;
 };
 export type AddonRow = {
   key: string;
   name: string;
   priceMonthlyMinor: number;
+  priceAnnualMinor: number;
   currency: string;
   active: boolean;
+  /** Plans it can be bought on; null = every plan. */
+  availablePlans: PlanKey[] | null;
 };
 export type SmsRateRow = {
   dialCode: string;
@@ -470,12 +475,14 @@ export function usePlansCatalogue() {
         supabase
           .from('plans')
           .select(
-            'key, name, staff_cap, max_branches, features, price_monthly_minor, price_annual_minor, currency, active',
+            'key, name, staff_cap, max_branches, features, price_monthly_minor, price_annual_minor, currency, active, priced_per_branch',
           )
           .order('sort_order'),
         supabase
           .from('addons')
-          .select('key, name, price_monthly_minor, currency, active')
+          .select(
+            'key, name, price_monthly_minor, price_annual_minor, currency, active, available_plans',
+          )
           .order('sort_order'),
       ]);
       if (plans.error) throw new Error(plans.error.message);
@@ -491,13 +498,16 @@ export function usePlansCatalogue() {
           priceAnnualMinor: p.price_annual_minor,
           currency: p.currency,
           active: p.active,
+          pricedPerBranch: p.priced_per_branch,
         })),
         addons: (addons.data ?? []).map((a) => ({
           key: a.key,
           name: a.name,
           priceMonthlyMinor: a.price_monthly_minor,
+          priceAnnualMinor: a.price_annual_minor,
           currency: a.currency,
           active: a.active,
+          availablePlans: a.available_plans,
         })),
       };
     },
@@ -514,6 +524,7 @@ export function useSavePlanPrices() {
       currency: string;
       name: string;
       active: boolean;
+      pricedPerBranch: boolean;
     }) =>
       callAdminRpc(() =>
         getSupabase().rpc('set_plan_prices', {
@@ -523,6 +534,7 @@ export function useSavePlanPrices() {
           p_currency: v.currency,
           p_name: v.name,
           p_active: v.active,
+          p_priced_per_branch: v.pricedPerBranch,
         }),
       ),
     onSuccess: () => void qc.invalidateQueries({ queryKey: adminKeys.lists(PLATFORM) }),
@@ -535,17 +547,22 @@ export function useSaveAddonPrices() {
     mutationFn: (v: {
       key: string;
       monthly: number;
+      annual: number;
       currency: string;
       name: string;
       active: boolean;
+      /** Empty = every plan. */
+      availablePlans: PlanKey[];
     }) =>
       callAdminRpc(() =>
         getSupabase().rpc('set_addon_prices', {
           p_key: v.key,
           p_monthly_minor: v.monthly,
+          p_annual_minor: v.annual,
           p_currency: v.currency,
           p_name: v.name,
           p_active: v.active,
+          p_available_plans: v.availablePlans,
         }),
       ),
     onSuccess: () => void qc.invalidateQueries({ queryKey: adminKeys.lists(PLATFORM) }),

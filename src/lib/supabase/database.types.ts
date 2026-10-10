@@ -42,10 +42,12 @@ export type Database = {
       addons: {
         Row: {
           active: boolean
+          available_plans: Database["public"]["Enums"]["business_plan"][] | null
           created_at: string
           currency: string
           key: string
           name: string
+          price_annual_minor: number
           price_monthly_minor: number
           sort_order: number
           updated_at: string
@@ -53,10 +55,14 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          available_plans?:
+            | Database["public"]["Enums"]["business_plan"][]
+            | null
           created_at?: string
           currency?: string
           key: string
           name: string
+          price_annual_minor: number
           price_monthly_minor: number
           sort_order?: number
           updated_at?: string
@@ -64,10 +70,14 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          available_plans?:
+            | Database["public"]["Enums"]["business_plan"][]
+            | null
           created_at?: string
           currency?: string
           key?: string
           name?: string
+          price_annual_minor?: number
           price_monthly_minor?: number
           sort_order?: number
           updated_at?: string
@@ -3079,6 +3089,7 @@ export type Database = {
           name: string
           price_annual_minor: number
           price_monthly_minor: number
+          priced_per_branch: boolean
           sort_order: number
           staff_cap: number | null
           updated_at: string
@@ -3094,6 +3105,7 @@ export type Database = {
           name: string
           price_annual_minor: number
           price_monthly_minor: number
+          priced_per_branch?: boolean
           sort_order?: number
           staff_cap?: number | null
           updated_at?: string
@@ -3109,6 +3121,7 @@ export type Database = {
           name?: string
           price_annual_minor?: number
           price_monthly_minor?: number
+          priced_per_branch?: boolean
           sort_order?: number
           staff_cap?: number | null
           updated_at?: string
@@ -5819,6 +5832,7 @@ export type Database = {
         }
       }
       get_invoice_print_data: { Args: { p_invoice_id: string }; Returns: Json }
+      get_public_pricing: { Args: never; Returns: Json }
       get_review_request: { Args: { p_token: string }; Returns: Json }
       get_signed_consent: { Args: { p_id: string }; Returns: Json }
       get_website_public: { Args: { p_slug: string }; Returns: Json }
@@ -6539,6 +6553,8 @@ export type Database = {
       set_addon_prices: {
         Args: {
           p_active?: boolean
+          p_annual_minor?: number
+          p_available_plans?: string[]
           p_currency: string
           p_key: string
           p_monthly_minor: number
@@ -6578,6 +6594,7 @@ export type Database = {
           p_key: string
           p_monthly_minor: number
           p_name?: string
+          p_priced_per_branch?: boolean
         }
         Returns: Json
       }

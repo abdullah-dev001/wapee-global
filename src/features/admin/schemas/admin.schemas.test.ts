@@ -49,7 +49,14 @@ describe('form schemas', () => {
     expect(ok(removeReviewSchema.safeParse({ reason: 'x'.repeat(501) }))).toBe(false);
   });
   it('plan prices: currency is 3 letters', () => {
-    const base = { name: 'Team', monthly: '39', annual: '380', currency: 'usd', active: true };
+    const base = {
+      name: 'Team',
+      monthly: '39',
+      annual: '380',
+      currency: 'usd',
+      active: true,
+      pricedPerBranch: false,
+    };
     expect(planPricesSchema.parse(base).currency).toBe('USD');
     expect(ok(planPricesSchema.safeParse({ ...base, currency: 'US' }))).toBe(false);
     expect(ok(planPricesSchema.safeParse({ ...base, monthly: '' }))).toBe(false);
