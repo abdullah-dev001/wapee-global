@@ -6,6 +6,8 @@ import { BOT_PROTECTION_HONEYPOT_FIELD } from '../botProtection';
 
 export type CreateBookingInput = {
   slug: string;
+  /** The location being booked. Null = the server's default (the primary branch). */
+  branchId?: string | null;
   serviceId: string;
   startsAt: string;
   staffId?: string | null;
@@ -59,6 +61,7 @@ export function useCreateBooking(): UseMutationResult<
     mutationFn: async (input) => {
       const raw = await callPublicFunction<RawResponse>('create_booking', {
         slug: input.slug,
+        ...(input.branchId ? { branch_id: input.branchId } : {}),
         service_id: input.serviceId,
         starts_at: input.startsAt,
         staff_id: input.staffId ?? undefined,

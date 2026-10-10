@@ -209,6 +209,7 @@ feature and checks each against the locale file.
 - **Android never run** (no emulator). Reviewed in code at the end of the task.
 
 ## Changelog
+- 2026-10-22: Booking link card lists one link per location (`?branch=<invoice prefix>`, copy button each, greyed with "Not ready" until THAT location passes `branch_is_bookable`) when the business has two or more locations; the main link now says customers choose a location first. `useBranchesBookable` shares the `branch-bookable` cache.
 - 2026-10-20: new warning `no_staff_hours` (branch_is_bookable), fix route /staff.
 - 2026-10-07 (Phase 7B): the booking link is now `<site>/<slug>/book` (`/<slug>` is the website); the link card adds "Your website is not published yet, but your booking link works." for people who can read the website row.
 

@@ -16,6 +16,8 @@ export type ManageBookingView = {
   serviceName: string;
   staffName: string | null;
   branchName: string;
+  /** Null when the location has no address on file. */
+  branchAddress: string | null;
   businessName: string;
   /** First name only — the server never sends more (CLAUDE.md §13). */
   clientFirstName: string;

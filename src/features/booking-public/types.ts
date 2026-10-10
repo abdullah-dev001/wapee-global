@@ -70,14 +70,39 @@ export type PublicBookingConfig = {
   bookingWindowDays: number;
 };
 
+/** A location the customer can choose between. */
+export type PublicBranch = {
+  id: string;
+  name: string;
+  address: string | null;
+  timezone: string;
+  /** Short code usable in `?branch=` (the branch's invoice prefix). */
+  code: string;
+};
+
 /**
  * What `get_booking_page` returns: everything the page needs to bootstrap
- * itself for a slug, before any service is picked. See
+ * itself for a slug + branch, before any service is picked. See
  * `supabase/functions/get_booking_page/index.ts`.
+ *
+ * When the business has two or more bookable locations and the link names none,
+ * only the choices come back (`needsBranch: true`) and the page shows a picker.
  */
-export type BookingPageData = {
+export type BookingPageData = BookingPageReady | BookingPageChoose;
+
+export type BookingPageChoose = {
+  needsBranch: true;
+  branches: PublicBranch[];
+};
+
+export type BookingPageReady = {
+  needsBranch: false;
+  /** Every bookable location, so the page can offer "change location" when there are two or more. */
+  branches: PublicBranch[];
   branch: {
+    id: string;
     name: string;
+    address: string | null;
     timezone: string;
     currency: string;
     /** ISO country of the branch; the default for the phone picker. */

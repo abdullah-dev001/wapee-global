@@ -163,6 +163,7 @@ top-level `phoneInput.*` group for `PhoneInput`.
   caused it.
 
 ## Changelog
+- 2026-10-22: **Several locations.** `BookingFlow` takes `?branch=<id or short code>`; with two or more bookable locations and none named, `BranchStep` (name, address, time zone) is shown first; "Change location" resets the choices (services, prices, staff and times are per location). The branch id is passed to `get_slots` and `create_booking`; the confirmation shows the location and the time zone. Pure mapper `api/bookingPageMapper.ts` (tested). Short code = the branch's invoice prefix.
 - 2026-10-20: `get_booking_page` returns `branch.country_code`; the phone picker defaults to it.
 - 2026-10-04: Built. Route, `BookingFlow` orchestrator, 5 step components,
   `PhoneInput` + `e164.ts`/`dialCodes.ts`, `HoneypotField`, the step state

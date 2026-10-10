@@ -15,6 +15,7 @@ import {
 } from '@/components/ui';
 import { useBookingPage, useSlots } from '@/features/booking-public/api';
 import { ServiceList, SlotGrid, StaffChoice } from '@/features/booking-public/components';
+import { BranchStep } from '@/features/booking-public/components/steps';
 import { actionFor } from '@/features/booking-public/errorHandling';
 import { PublicApiError } from '@/features/booking-public/types';
 import { addDaysToLocalDate, todayInZone, type LocalDate } from '@/lib/time';
@@ -29,7 +30,10 @@ type Props = { slug: string; session: string; clients: PortalClient[]; onClose: 
 export function PortalBook({ slug, session, clients, onClose }: Props) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const page = useBookingPage(slug);
+  // Which location to book; null lets the server decide (the only bookable one) or ask.
+  const [branchRef, setBranchRef] = useState<string | null>(null);
+  const page = useBookingPage(slug, branchRef);
+  const ready = page.data && !page.data.needsBranch ? page.data : null;
   const book = usePortalBook(slug, session);
   const [clientId, setClientId] = useState(clients[0]?.id ?? '');
   const [serviceId, setServiceId] = useState<string | null>(null);
@@ -38,28 +42,46 @@ export function PortalBook({ slug, session, clients, onClose }: Props) {
   const [slot, setSlot] = useState<string | null>(null);
   const [note, setNote] = useState('');
 
-  const zone = page.data?.settings.timezone ?? 'UTC';
+  const zone = ready?.settings.timezone ?? 'UTC';
   const today = useMemo(() => todayInZone(zone), [zone]);
   const day = date ?? today;
   const maxDate = useMemo(
-    () => addDaysToLocalDate(today, page.data?.settings.bookingWindowDays ?? 60),
-    [today, page.data],
+    () => addDaysToLocalDate(today, ready?.settings.bookingWindowDays ?? 60),
+    [today, ready],
   );
   const slots = useSlots(
-    serviceId ? { slug, serviceId, staffId, fromDate: day, toDate: day } : null,
+    serviceId && ready
+      ? { slug, branchId: ready.branch.id, serviceId, staffId, fromDate: day, toDate: day }
+      : null,
   );
   const staff = useMemo(() => {
-    if (!page.data || !serviceId) return [];
+    if (!ready || !serviceId) return [];
     const ids = new Set(
-      page.data.serviceStaff.filter((x) => x.serviceId === serviceId).map((x) => x.staffId),
+      ready.serviceStaff.filter((x) => x.serviceId === serviceId).map((x) => x.staffId),
     );
-    return page.data.staff.filter((s) => ids.has(s.id));
-  }, [page.data, serviceId]);
+    return ready.staff.filter((s) => ids.has(s.id));
+  }, [ready, serviceId]);
+
+  const pickLocation = (branchId: string | null) => {
+    // Services, staff, prices and times differ per location: start the choices again.
+    setBranchRef(branchId);
+    setServiceId(null);
+    setStaffId(null);
+    setSlot(null);
+    setDate(null);
+  };
 
   const submit = () => {
     if (!serviceId || !slot) return;
     book.mutate(
-      { clientId, serviceId, startsAt: slot, staffId, notes: note.trim() || undefined },
+      {
+        clientId,
+        serviceId,
+        startsAt: slot,
+        staffId,
+        branchId: ready?.branch.id ?? null,
+        notes: note.trim() || undefined,
+      },
       {
         onSuccess: () => {
           toast.show({ message: t('portal.book.booked'), tone: 'success' });
@@ -91,11 +113,29 @@ export function PortalBook({ slug, session, clients, onClose }: Props) {
         compact
       />
     );
+  } else if (page.data.needsBranch) {
+    body = (
+      <>
+        <Text variant="cardTitle">{t('bookingPublic.branch.title')}</Text>
+        <BranchStep branches={page.data.branches} onSelect={pickLocation} />
+      </>
+    );
   } else if (page.data.services.length === 0) {
     body = <EmptyState title={t('portal.book.noServices')} />;
   } else {
+    const data = page.data;
     body = (
       <>
+        {data.branches.length > 1 ? (
+          <View style={styles.location}>
+            <Text variant="bodyStrong" style={styles.grow} numberOfLines={2}>
+              {data.branch.name}
+            </Text>
+            <Button variant="ghost" size="sm" onPress={() => pickLocation(null)}>
+              {t('bookingPublic.branch.change')}
+            </Button>
+          </View>
+        ) : null}
         {clients.length > 1 ? (
           <SegmentedControl
             label={t('portal.book.who')}
@@ -190,5 +230,6 @@ export function PortalBook({ slug, session, clients, onClose }: Props) {
 const styles = StyleSheet.create({
   wrap: { gap: theme.spacing[16] },
   header: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing[8] },
+  location: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing[8] },
   grow: { flex: 1 },
 });

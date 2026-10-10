@@ -183,6 +183,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         service_name: r.service_name,
         staff_name: r.staff_name,
         branch_name: r.branch_name,
+        branch_address: r.branch_address,
         business_name: r.business_name,
         // First name only — enough to personalise, not a PII leak.
         client_first_name: r.client_first_name,

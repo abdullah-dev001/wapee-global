@@ -570,7 +570,13 @@
       "manageHint": "Use this link to view, reschedule or cancel your booking. Save it now — it is shown only once.",
       "copyLink": "Copy link",
       "linkCopied": "Link copied",
-      "copyFailed": "Couldn't copy the link. Select and copy it manually."
+      "copyFailed": "Couldn't copy the link. Select and copy it manually.",
+      "location": "Location"
+    },
+    "branch": {
+      "title": "Choose a location",
+      "intro": "Pick where you would like to go. Services, prices and times are specific to each location.",
+      "change": "Change location"
     }
   },
   "bookingSettings": {
@@ -664,7 +670,11 @@
       "peopleConflictOne": "Cannot reduce to {{limit}}: one upcoming time slot already has {{booked}} bookings ({{service}} at {{time}} on {{date}}). Those bookings keep their place — reduce this after they have passed, or cancel one.",
       "peopleConflictMany": "Cannot reduce to {{limit}}: {{count}} upcoming time slots already have more bookings than that. The busiest is {{service}} at {{time}} on {{date}} with {{booked}}. Those bookings keep their place."
     },
-    "websiteNotPublished": "Your website is not published yet, but your booking link works."
+    "websiteNotPublished": "Your website is not published yet, but your booking link works.",
+    "linkMainHint": "Share this with customers. They choose a location first, then book.",
+    "linkLocations": "A link for each location",
+    "linkLocationsHint": "Opens the booking page already set to that location, so customers skip the choice.",
+    "linkLocationNotReady": "Not ready"
   },
   "bookingFields": {
     "tab": "Booking form",

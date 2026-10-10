@@ -25,6 +25,8 @@ type RawResponse = {
 
 export type UseSlotsArgs = {
   slug: string;
+  /** The location being booked. Null = the server's default (the primary branch). */
+  branchId?: string | null;
   serviceId: string;
   staffId?: string | null;
   fromDate: string;
@@ -46,6 +48,7 @@ export function useSlots(args: UseSlotsArgs | null): UseQueryResult<SlotsResult,
     queryKey: slotsKeys.list({
       businessId: args?.slug ?? 'none',
       filters: {
+        branchId: args?.branchId ?? null,
         serviceId: args?.serviceId,
         staffId: args?.staffId ?? null,
         fromDate: args?.fromDate,
@@ -59,6 +62,7 @@ export function useSlots(args: UseSlotsArgs | null): UseQueryResult<SlotsResult,
 
       const raw = await callPublicFunction<RawResponse>('get_slots', {
         slug: args.slug,
+        ...(args.branchId ? { branch_id: args.branchId } : {}),
         service_id: args.serviceId,
         staff_id: args.staffId ?? undefined,
         from_date: args.fromDate,

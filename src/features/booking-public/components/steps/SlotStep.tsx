@@ -13,6 +13,7 @@ import type { PublicSlot } from '../../types';
 
 export type SlotStepProps = {
   slug: string;
+  branchId: string;
   serviceId: string;
   staffId: string | null;
   timezone: IanaTimeZone;
@@ -32,6 +33,7 @@ export type SlotStepProps = {
  */
 export function SlotStep({
   slug,
+  branchId,
   serviceId,
   staffId,
   timezone,
@@ -49,6 +51,7 @@ export function SlotStep({
 
   const slots = useSlots({
     slug,
+    branchId,
     serviceId,
     staffId,
     fromDate: selectedDate,

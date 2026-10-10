@@ -103,6 +103,16 @@ export function ManageView({ token, booking, onReschedule, onCancelled }: Manage
         <Text variant="helper" color="textSecondary" style={styles.timezoneNote}>
           {t('bookingPublic.timezoneNote', { timezone: booking.timezone })}
         </Text>
+        {booking.branchAddress || booking.branchName !== booking.businessName ? (
+          <Row
+            label={t('bookingPublic.confirmation.location')}
+            value={
+              booking.branchAddress
+                ? `${booking.branchName}, ${booking.branchAddress}`
+                : booking.branchName
+            }
+          />
+        ) : null}
         {booking.priceMinor !== null && booking.currency ? (
           <Row
             label={t('bookingPublic.confirmation.price')}

@@ -16,6 +16,8 @@ export type ConfirmationStepProps = {
   /** Full manage-page URL, token in the fragment (never sent to a server). */
   manageUrl: string;
   locale: string;
+  /** The booked location's address, from the booking page (the booking result carries the name). */
+  branchAddress?: string | null;
 };
 
 /**
@@ -27,7 +29,12 @@ export type ConfirmationStepProps = {
  * string, so it is never sent to a server or written to an access log; a copy
  * button and a clear note cover the fact that this is the only chance to save it.
  */
-export function ConfirmationStep({ result, manageUrl, locale }: ConfirmationStepProps) {
+export function ConfirmationStep({
+  result,
+  manageUrl,
+  locale,
+  branchAddress = null,
+}: ConfirmationStepProps) {
   const { t } = useTranslation();
   const toast = useToast();
   const [copied, setCopied] = useState(false);
@@ -89,7 +96,11 @@ export function ConfirmationStep({ result, manageUrl, locale }: ConfirmationStep
           <Text variant="label" color="textSecondary">
             {t('bookingPublic.form.service')}
           </Text>
-          <Text variant="bodyStrong" style={styles.summaryValue} numberOfLines={2}>
+          <Text
+            variant="bodyStrong"
+            style={[styles.summaryValue, styles.summaryText]}
+            numberOfLines={2}
+          >
             {result.serviceName}
           </Text>
         </View>
@@ -98,7 +109,11 @@ export function ConfirmationStep({ result, manageUrl, locale }: ConfirmationStep
             <Text variant="label" color="textSecondary">
               {t('bookingPublic.form.staff')}
             </Text>
-            <Text variant="bodyStrong" style={styles.summaryValue} numberOfLines={2}>
+            <Text
+              variant="bodyStrong"
+              style={[styles.summaryValue, styles.summaryText]}
+              numberOfLines={2}
+            >
               {result.staffName}
             </Text>
           </View>
@@ -107,16 +122,40 @@ export function ConfirmationStep({ result, manageUrl, locale }: ConfirmationStep
           <Text variant="label" color="textSecondary">
             {t('bookingPublic.form.time')}
           </Text>
-          <Text variant="bodyStrong" style={styles.summaryValue} numberOfLines={2}>
-            {dateLabel} · {formatMinuteOfDay(result.localMinute)}
+          <View style={styles.summaryValue}>
+            <Text variant="bodyStrong" style={styles.summaryText} numberOfLines={2}>
+              {dateLabel} · {formatMinuteOfDay(result.localMinute)}
+            </Text>
+            <Text variant="helper" color="textMuted" style={styles.summaryText}>
+              {t('bookingPublic.timezoneNote', { timezone: result.timezone })}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text variant="label" color="textSecondary">
+            {t('bookingPublic.confirmation.location')}
           </Text>
+          <View style={styles.summaryValue}>
+            <Text variant="bodyStrong" style={styles.summaryText} numberOfLines={2}>
+              {result.branchName}
+            </Text>
+            {branchAddress ? (
+              <Text variant="helper" color="textSecondary" style={styles.summaryText}>
+                {branchAddress}
+              </Text>
+            ) : null}
+          </View>
         </View>
         {result.priceMinor !== null && result.currency ? (
           <View style={styles.summaryRow}>
             <Text variant="label" color="textSecondary">
               {t('bookingPublic.confirmation.price')}
             </Text>
-            <Text variant="bodyStrong" style={styles.summaryValue} numberOfLines={1}>
+            <Text
+              variant="bodyStrong"
+              style={[styles.summaryValue, styles.summaryText]}
+              numberOfLines={1}
+            >
               {formatMoney(money(result.priceMinor, result.currency), locale)}
             </Text>
           </View>
@@ -155,6 +194,8 @@ const styles = StyleSheet.create({
   summaryValue: {
     flex: 1,
     flexShrink: 1,
+  },
+  summaryText: {
     textAlign: 'right',
   },
   manageSection: {

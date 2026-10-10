@@ -142,16 +142,23 @@ export function bufferExplanationKey(
 }
 
 /**
- * The public booking URL for a branch.
+ * The public booking URL.
  *
  * One function so the settings screen, the Phase 7 website block and any share
- * sheet produce the same string. The slug is the business's; a branch is chosen
- * on the page itself (the public API takes an optional `branch_id`), so the URL
- * does not carry one — which keeps a single shareable link per business.
+ * sheet produce the same string. Without a `branchCode` it is the business's
+ * main link: the page asks the customer to choose when there are two or more
+ * bookable locations (and goes straight to the only one otherwise). With a
+ * `branchCode` (the location's invoice prefix; a branch id works too) the page
+ * opens already set to that location and skips the picker.
  */
-export function bookingUrl(publicSiteUrl: string, businessSlug: string): string {
+export function bookingUrl(
+  publicSiteUrl: string,
+  businessSlug: string,
+  branchCode?: string | null,
+): string {
   const base = publicSiteUrl.replace(/\/+$/, '');
-  return `${base}/${businessSlug}/book`;
+  const url = `${base}/${businessSlug}/book`;
+  return branchCode ? `${url}?branch=${encodeURIComponent(branchCode)}` : url;
 }
 
 /**

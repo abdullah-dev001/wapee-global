@@ -37,6 +37,8 @@ export type Job = {
   slug: string;
   branch_name: string | null;
   branch_address: string | null;
+  /** Live branches of the business: a message names the location only when there is a choice. */
+  branch_count?: number;
   branch_phone: string | null;
   timezone: string;
   starts_at: string | null;

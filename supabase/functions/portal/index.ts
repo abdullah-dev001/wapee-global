@@ -113,6 +113,7 @@ const Book = z
     service_id: uuid,
     starts_at: z.string().datetime({ offset: true }),
     staff_id: uuid.nullish(),
+    branch_id: uuid.nullish(),
     notes: z.string().trim().max(2000).nullish(),
   })
   .strict();
@@ -390,6 +391,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           p_starts_at: input.starts_at,
           p_staff_id: input.staff_id ?? null,
           p_notes: input.notes ?? null,
+          p_branch_id: input.branch_id ?? null,
         });
         return r.ok === true
           ? jsonOk(req, {

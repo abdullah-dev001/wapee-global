@@ -25,6 +25,7 @@ type RawResponse = {
   service_name: string;
   staff_name: string | null;
   branch_name: string;
+  branch_address: string | null;
   business_name: string;
   client_first_name: string;
   price_minor: number | null;
@@ -66,6 +67,7 @@ export function useManageBooking(token: string | null): UseQueryResult<ManageBoo
         serviceName: raw.service_name,
         staffName: raw.staff_name,
         branchName: raw.branch_name,
+        branchAddress: raw.branch_address ?? null,
         businessName: raw.business_name,
         clientFirstName: raw.client_first_name,
         priceMinor: raw.price_minor,

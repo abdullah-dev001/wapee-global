@@ -298,7 +298,7 @@ do $$
 declare v_fns text[] := array['portal_info(text)', 'portal_request_login(text,text,text)', 'portal_exchange_token(text,text)', 'portal_sign_out(text,boolean)',
   'portal_overview(text)', 'portal_bookings(text,text,integer,integer)', 'portal_packages(text)', 'portal_invoices(text,integer,integer)', 'portal_invoice(text,uuid)',
   'portal_photos(text)', 'portal_photo_paths(text,uuid[])', 'portal_forms(text)', 'portal_cancel_booking(text,uuid,text)', 'portal_reschedule_slots(text,uuid,date,date)',
-  'portal_reschedule_booking(text,uuid,timestamptz,uuid)', 'portal_create_booking(text,uuid,uuid,timestamptz,uuid,text)', 'portal_ctx(text)', 'portal_client_ids(uuid,text)'];
+  'portal_reschedule_booking(text,uuid,timestamptz,uuid)', 'portal_create_booking(text,uuid,uuid,timestamptz,uuid,text,uuid)', 'portal_ctx(text)', 'portal_client_ids(uuid,text)'];
   f text; bad text := '';
 begin
   foreach f in array v_fns loop
@@ -495,6 +495,11 @@ begin
   r := pg_temp.p('portal_create_booking', format('%L, %L, %L, %L', pg_temp.S('alice'), pg_temp.id('alice1'), pg_temp.id('svc'), pg_temp.slot(840, 3)));
   perform pg_temp.chk('the SAME slot again: the second staff member takes it', r->>'ok', 'true');
   perform pg_temp.chk('...and a THIRD booking in that slot is refused (no_staff, the engine code); still exactly 2 there', (pg_temp.p('portal_create_booking', format('%L, %L, %L, %L', pg_temp.S('alice'), pg_temp.id('alice1'), pg_temp.id('svc'), pg_temp.slot(840, 3)))->>'code') || '/' || (select count(*)::text from public.appointments where business_id = pg_temp.id('biza') and starts_at = pg_temp.slot(840, 3) and status <> 'cancelled'), 'no_staff/2');
+  -- multi-location (migration 20261022100000): the optional branch
+  select count(*) into v_appts from public.appointments where business_id = pg_temp.id('biza');
+  perform pg_temp.chk('book at ANOTHER business''s branch id => not_bookable, nothing created', (pg_temp.p('portal_create_booking', format('%L, %L, %L, %L, null, null, %L', pg_temp.S('alice'), pg_temp.id('alice1'), pg_temp.id('svc'), pg_temp.slot(960, 5), pg_temp.id('brb')))->>'code') || '/' || ((select count(*) from public.appointments where business_id = pg_temp.id('biza')) - v_appts)::text, 'not_bookable/0');
+  r := pg_temp.p('portal_create_booking', format('%L, %L, %L, %L, null, null, %L', pg_temp.S('alice'), pg_temp.id('alice1'), pg_temp.id('svc'), pg_temp.slot(960, 5), pg_temp.id('bra')));
+  perform pg_temp.chk('the business''s own branch id given explicitly books there (stored branch_id)', (r->>'ok') || '/' || (select (branch_id = pg_temp.id('bra'))::text from public.appointments where id = (r->>'appointment_id')::uuid), 'true/true');
 end $$;
 
 -- ---- a booking made ONLINE already owns its one live manage token: the portal must coexist with it

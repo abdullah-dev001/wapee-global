@@ -124,6 +124,22 @@ describe('bufferExplanationKey', () => {
   });
 });
 
+describe('bookingUrl with a location', () => {
+  it('adds the branch code as ?branch= and encodes it', () => {
+    expect(bookingUrl('https://wapee.online', 'nova', 'DT')).toBe(
+      'https://wapee.online/nova/book?branch=DT',
+    );
+    expect(bookingUrl('https://wapee.online/', 'nova', 'A B')).toBe(
+      'https://wapee.online/nova/book?branch=A%20B',
+    );
+  });
+
+  it('is the plain main link without one', () => {
+    expect(bookingUrl('https://wapee.online', 'nova', null)).toBe('https://wapee.online/nova/book');
+    expect(bookingUrl('https://wapee.online', 'nova', '')).toBe('https://wapee.online/nova/book');
+  });
+});
+
 describe('bookingUrl', () => {
   it('joins the site and the business slug', () => {
     expect(bookingUrl('https://wapee.online', 'nova-hair')).toBe(

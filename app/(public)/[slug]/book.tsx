@@ -16,7 +16,11 @@ import { EmbedGate } from '@/features/widget/components/EmbedGate';
  * `noindex`: booking steps are not landing pages (the website at `/<slug>` is).
  */
 export default function PublicBookingScreen() {
-  const { slug, embed } = useLocalSearchParams<{ slug: string; embed?: string }>();
+  const { slug, embed, branch } = useLocalSearchParams<{
+    slug: string;
+    embed?: string;
+    branch?: string;
+  }>();
 
   return (
     <>
@@ -28,7 +32,10 @@ export default function PublicBookingScreen() {
         </Head>
       ) : null}
       <EmbedGate slug={slug} embedParam={typeof embed === 'string' ? embed : null}>
-        <BookingFlow slug={slug} />
+        <BookingFlow
+          slug={slug}
+          initialBranch={typeof branch === 'string' && branch ? branch : null}
+        />
       </EmbedGate>
     </>
   );

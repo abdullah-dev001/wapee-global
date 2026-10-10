@@ -12,10 +12,22 @@ import { theme } from '@/lib/theme';
 
 import { bookingUrl } from '../bookingWarnings';
 
+/** One location, for the per-location links. */
+export type BookingLinkBranch = {
+  id: string;
+  name: string;
+  /** The short code in `?branch=` (the location's invoice prefix). */
+  code: string;
+  /** From `branch_is_bookable()` for THIS location. */
+  isLive: boolean;
+};
+
 export type BookingLinkCardProps = {
   businessSlug: string | null;
   /** From `branch_is_bookable()`. Gates whether the link is presented as live. */
   isLive: boolean;
+  /** Every location of the business. With two or more, a link per location is listed. */
+  branches?: readonly BookingLinkBranch[];
 };
 
 /**
@@ -27,7 +39,7 @@ export type BookingLinkCardProps = {
  * software rather than as unfinished setup, and once it has been pasted into a
  * social-media bio nobody goes back to check.
  */
-export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) {
+export function BookingLinkCard({ businessSlug, isLive, branches = [] }: BookingLinkCardProps) {
   const { t } = useTranslation();
   const toast = useToast();
   const { businessId } = useCurrentScope();
@@ -45,6 +57,17 @@ export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) 
     await Clipboard.setStringAsync(url);
     toast.show({ message: t('bookingSettings.linkCopied'), tone: 'success' });
   }, [url, t, toast]);
+
+  const copyBranch = useCallback(
+    async (code: string) => {
+      if (!businessSlug) return;
+      await Clipboard.setStringAsync(bookingUrl(brand.urls.site, businessSlug, code));
+      toast.show({ message: t('bookingSettings.linkCopied'), tone: 'success' });
+    },
+    [businessSlug, t, toast],
+  );
+
+  const hasLocations = branches.length > 1;
 
   if (!url) return null;
 
@@ -76,7 +99,7 @@ export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) 
         </Text>
 
         <Text variant="helper" color="textSecondary">
-          {t('bookingSettings.linkHint')}
+          {hasLocations ? t('bookingSettings.linkMainHint') : t('bookingSettings.linkHint')}
         </Text>
 
         {websiteUnpublished ? (
@@ -97,6 +120,49 @@ export function BookingLinkCard({ businessSlug, isLive }: BookingLinkCardProps) 
             {t('bookingSettings.linkCopy')}
           </Button>
         </View>
+
+        {hasLocations && businessSlug ? (
+          <View style={styles.locations}>
+            <Text variant="bodyStrong" color="textPrimary">
+              {t('bookingSettings.linkLocations')}
+            </Text>
+            <Text variant="helper" color="textSecondary">
+              {t('bookingSettings.linkLocationsHint')}
+            </Text>
+            {branches.map((branch) => (
+              <View key={branch.id} style={styles.locationRow}>
+                <View style={styles.locationText}>
+                  <View style={styles.titleRow}>
+                    <Text variant="bodyStrong" color="textPrimary">
+                      {branch.name}
+                    </Text>
+                    {!branch.isLive ? (
+                      <Badge tone="warning">{t('bookingSettings.linkLocationNotReady')}</Badge>
+                    ) : null}
+                  </View>
+                  <Text
+                    variant="helper"
+                    color={branch.isLive ? 'textSecondary' : 'textMuted'}
+                    selectable={branch.isLive}
+                    style={styles.url}
+                  >
+                    {bookingUrl(brand.urls.site, businessSlug, branch.code)}
+                  </Text>
+                </View>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  startIcon={Copy}
+                  onPress={() => void copyBranch(branch.code)}
+                  disabled={!branch.isLive}
+                  accessibilityLabel={`${t('bookingSettings.linkCopy')}: ${branch.name}`}
+                >
+                  {t('bookingSettings.linkCopy')}
+                </Button>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </View>
     </Card>
   );
@@ -120,5 +186,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: theme.spacing[8],
     marginTop: theme.spacing[4],
+  },
+  locations: {
+    gap: theme.spacing[8],
+    marginTop: theme.spacing[12],
+    paddingTop: theme.spacing[12],
+    borderTopWidth: theme.borderWidth.hairline,
+    borderTopColor: theme.colors.borderSubtle,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing[12],
+  },
+  locationText: {
+    flex: 1,
+    gap: theme.spacing[2],
   },
 });

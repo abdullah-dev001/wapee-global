@@ -21,10 +21,12 @@ import {
 } from '../flowState';
 import { actionFor } from '../errorHandling';
 import { PublicApiError, type CreateBookingResult, type PublicSlot } from '../types';
-import { ServiceStep, StaffStep, SlotStep, FormStep, ConfirmationStep } from './steps';
+import { BranchStep, ServiceStep, StaffStep, SlotStep, FormStep, ConfirmationStep } from './steps';
 
 export type BookingFlowProps = {
   slug: string;
+  /** `?branch=` from the link: a branch id or short code. Skips the location picker. */
+  initialBranch?: string | null;
 };
 
 const DESKTOP_MAX_WIDTH = 560;
@@ -36,13 +38,17 @@ const DESKTOP_MAX_WIDTH = 560;
  * (`get_booking_page`, `get_slots`, `create_booking`) — this component only
  * tracks which step the customer is on and what they have chosen so far.
  */
-export function BookingFlow({ slug }: BookingFlowProps) {
+export function BookingFlow({ slug, initialBranch = null }: BookingFlowProps) {
   const { t, i18n } = useTranslation();
   const { isDesktop } = useBreakpoint();
   const toast = useToast();
 
-  const page = useBookingPage(slug);
+  // The location being booked. Null until the link names one (or the server finds there is only
+  // one); with two or more bookable locations and none named, the picker is shown.
+  const [branchRef, setBranchRef] = useState<string | null>(initialBranch);
+  const page = useBookingPage(slug, branchRef);
   const createBooking = useCreateBooking();
+  const ready = page.data && !page.data.needsBranch ? page.data : null;
 
   const [flow, setFlow] = useState<BookingFlowState>(initialFlowState);
   const [confirmed, setConfirmed] = useState<CreateBookingResult | null>(null);
@@ -60,7 +66,7 @@ export function BookingFlow({ slug }: BookingFlowProps) {
   const [formDirty, setFormDirty] = useState(false);
   const [confirmLeaveForm, setConfirmLeaveForm] = useState(false);
 
-  const staffChoice = page.data?.settings.staffChoice ?? 'optional';
+  const staffChoice = ready?.settings.staffChoice ?? 'optional';
   const step: BookingStep = currentStep(flow, staffChoice, confirmed !== null);
 
   const stepBack = useCallback(() => {
@@ -92,11 +98,23 @@ export function BookingFlow({ slug }: BookingFlowProps) {
 
   const fieldsForService = useMemo(() => {
     const serviceId = flow.serviceId;
-    if (!page.data || !serviceId) return [];
-    return page.data.fields.filter(
-      (f) => f.appliesToAllServices || f.serviceIds.includes(serviceId),
-    );
-  }, [page.data, flow.serviceId]);
+    if (!ready || !serviceId) return [];
+    return ready.fields.filter((f) => f.appliesToAllServices || f.serviceIds.includes(serviceId));
+  }, [ready, flow.serviceId]);
+
+  const changeLocation = useCallback(() => {
+    // Forget everything chosen for the old location: services, staff and prices differ per branch.
+    setFlow(initialFlowState);
+    setStartToken(null);
+    setFormDirty(false);
+    setBranchRef(null);
+  }, []);
+
+  const chooseLocation = useCallback((branchId: string) => {
+    setFlow(initialFlowState);
+    setStartToken(null);
+    setBranchRef(branchId);
+  }, []);
 
   const handleSlotSelect = useCallback((slot: PublicSlot, token: string) => {
     setStartToken(token);
@@ -113,13 +131,14 @@ export function BookingFlow({ slug }: BookingFlowProps) {
       honeypotValue: string;
     }) => {
       const { serviceId, startsAt, staffId } = flow;
-      if (!page.data || !serviceId || !startsAt || !startToken) return;
+      if (!ready || !serviceId || !startsAt || !startToken) return;
       setServerFieldError(null);
 
       const submit = (token: string) =>
         createBooking.mutate(
           {
             slug,
+            branchId: ready.branch.id,
             serviceId,
             startsAt,
             staffId,
@@ -178,7 +197,7 @@ export function BookingFlow({ slug }: BookingFlowProps) {
 
       submit(startToken);
     },
-    [page.data, flow, startToken, slug, createBooking, toast, t],
+    [ready, flow, startToken, slug, createBooking, toast, t],
   );
 
   if (page.isPending) {
@@ -226,6 +245,24 @@ export function BookingFlow({ slug }: BookingFlowProps) {
   }
 
   if (!page.data) return null;
+
+  if (page.data.needsBranch) {
+    return (
+      <Screen>
+        <PageContainer
+          title={t('bookingPublic.branch.title')}
+          maxWidth={isDesktop ? DESKTOP_MAX_WIDTH : undefined}
+        >
+          <Text variant="body" color="textSecondary" style={styles.branchIntro}>
+            {t('bookingPublic.branch.intro')}
+          </Text>
+          <BranchStep branches={page.data.branches} onSelect={chooseLocation} />
+          <LegalLinks />
+        </PageContainer>
+      </Screen>
+    );
+  }
+
   const data = page.data;
 
   if (confirmed) {
@@ -233,7 +270,12 @@ export function BookingFlow({ slug }: BookingFlowProps) {
     return (
       <Screen>
         <PageContainer maxWidth={isDesktop ? DESKTOP_MAX_WIDTH : undefined}>
-          <ConfirmationStep result={confirmed} manageUrl={manageUrl} locale={i18n.language} />
+          <ConfirmationStep
+            result={confirmed}
+            manageUrl={manageUrl}
+            locale={i18n.language}
+            branchAddress={data.branch.address}
+          />
         </PageContainer>
       </Screen>
     );
@@ -242,6 +284,23 @@ export function BookingFlow({ slug }: BookingFlowProps) {
   return (
     <Screen>
       <PageContainer title={data.branch.name} maxWidth={isDesktop ? DESKTOP_MAX_WIDTH : undefined}>
+        {data.branches.length > 1 || data.branch.address ? (
+          <View style={styles.locationRow}>
+            {data.branch.address ? (
+              <Text variant="helper" color="textSecondary" style={styles.stepTitle}>
+                {data.branch.address}
+              </Text>
+            ) : (
+              <View style={styles.stepTitle} />
+            )}
+            {data.branches.length > 1 ? (
+              <Button variant="ghost" size="sm" onPress={changeLocation}>
+                {t('bookingPublic.branch.change')}
+              </Button>
+            ) : null}
+          </View>
+        ) : null}
+
         <View style={styles.stepHeader}>
           {step !== 'service' ? (
             <Button variant="ghost" size="sm" onPress={goBack}>
@@ -279,6 +338,7 @@ export function BookingFlow({ slug }: BookingFlowProps) {
         {step === 'slot' && flow.serviceId ? (
           <SlotStep
             slug={slug}
+            branchId={data.branch.id}
             serviceId={flow.serviceId}
             staffId={flow.staffId}
             timezone={data.branch.timezone}
@@ -352,6 +412,15 @@ function stepTitleKey(
 const styles = StyleSheet.create({
   skeletons: {
     gap: theme.spacing[16],
+  },
+  branchIntro: {
+    marginBottom: theme.spacing[16],
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing[8],
+    marginBottom: theme.spacing[8],
   },
   stepHeader: {
     flexDirection: 'row',

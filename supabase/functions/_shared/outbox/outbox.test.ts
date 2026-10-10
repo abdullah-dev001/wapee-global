@@ -138,6 +138,34 @@ describe('templates', () => {
     expect(`${m?.subject}${m?.text}${m?.html}`.toLowerCase()).not.toContain('wapee global');
   });
 
+  it('names the location (and its address) when the business has several', () => {
+    const links = { manageUrl: null, reviewUrl: null, unsubscribeUrl: null };
+    const multi = renderEmail(
+      job({ branch_name: 'Uptown', branch_address: '9 Hill Road', branch_count: 2 }),
+      links,
+    );
+    expect(multi?.text).toContain('Location: Uptown, 9 Hill Road');
+    // every booking event that tells the customer where to go carries it
+    for (const event of ['pending_received', 'reminder', 'rescheduled'] as const) {
+      expect(
+        renderEmail(job({ event, branch_name: 'Uptown', branch_count: 2 }), links)?.text,
+      ).toContain('Location: Uptown');
+    }
+    // a cancellation does not
+    expect(
+      renderEmail(job({ event: 'cancelled', branch_name: 'Uptown', branch_count: 2 }), links)?.text,
+    ).not.toContain('Location:');
+    // no address on file: just the branch name
+    expect(
+      renderEmail(job({ branch_name: 'Uptown', branch_address: null, branch_count: 3 }), links)
+        ?.text,
+    ).toContain('Location: Uptown');
+    // single location: unchanged (address line only, no "Location:" label)
+    const single = renderEmail(job({ branch_name: 'Main', branch_count: 1 }), links);
+    expect(single?.text).not.toContain('Location:');
+    expect(single?.text).toContain('1 High Street');
+  });
+
   it('formats the time in the BRANCH timezone (BST vs GMT)', () => {
     expect(formatWhen('2027-06-15T09:00:00Z', 'Europe/London', 'en')).toContain('10:00');
     expect(formatWhen('2027-01-15T09:00:00Z', 'Europe/London', 'en')).toContain('9:00');

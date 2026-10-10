@@ -135,6 +135,7 @@ confirm dialogs, error copy). Reuses `bookingPublic.form.*` and
   on this page).
 
 ## Changelog
+- 2026-10-22: `get_booking` / `manage_booking get` return `branch_address`; the manage view shows the location (name, address) and the branch time zone.
 - 2026-10-04: Built. Route, `BookingManage` orchestrator, `ManageView`,
   `RescheduleView`, fragment-token reading (web + native deep link),
   `get_booking_reschedule_slots` (new migration) + `manage_booking`'s new

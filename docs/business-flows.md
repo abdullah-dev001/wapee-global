@@ -94,12 +94,12 @@ branch and staff hours. The receptionist moves a booking by 30 minutes; the clie
 | 4 | Staff in several branches, with hours per branch | `staff_branches`, `staff_working_hours.branch_id` | WORKS |
 | 5 | Branch switcher in the header and on Today; combined overview across branches | `src/features/branches/components/BranchSwitcher.tsx`, `src/components/layout/Header.tsx`, `get_combined_overview` | WORKS |
 | 6 | Compare branches report | `M/20261011120000_phase9_advanced_reports` (`branch_comparison`) | WORKS |
-| 7 | **Client chooses a branch on the booking page** | `src/features/booking-public/api/useBookingPage.ts` sends only `{ slug }`; `resolveBranch` in `F/_shared/supabase.ts` then picks the PRIMARY branch | **MISSING**: every online booking goes to the primary branch; other branches cannot be booked online. The booking link card also gives one link per business (`src/features/booking-settings/components/BookingLinkCard.tsx`) |
+| 7 | **Client chooses a branch on the booking page**: `/<slug>/book` shows a location picker when there are 2+ bookable locations (and goes straight in when there is one); `/<slug>/book?branch=<id or short code>` preselects. Services, prices, currency, staff, hours and time zone are all that location's. The Settings > Booking link card lists a link per location | `F/get_booking_page` + `F/_shared/branchChoice.ts`, `get_bookable_branches` in `M/20261022100000_public_multi_branch`, `BranchStep.tsx`, `BookingLinkCard.tsx`; proven over HTTP by `supabase/tests/38_multi_branch_http.mjs` | WORKS |
 | 8 | "Each extra location billed the same" (Business price per location) | stored as `plans.priced_per_branch`; no billing code | DISPLAY-ONLY |
 
 **Typical day:** the owner switches the header to "Downtown", checks its Today list, then looks at the
-combined overview. A client who wants "Uptown" opens the booking link... and can only book Downtown (the
-primary branch), so the receptionist books Uptown clients by phone.
+combined overview. A client opens the booking link, picks "Uptown" (or opens the Uptown link from the
+owner's Instagram bio) and books there; the receptionist at Uptown sees it in that branch's Calendar.
 
 ---
 
@@ -158,7 +158,7 @@ How an owner gets an add-on today:
 |---|---|---|---|
 | 1 | Client opens `https://wapee.online/<slug>/book` (or the website `/<slug>` "Book" button when the website is published) | `app/(public)/[slug]/book.tsx`, `F/get_booking_page`, `F/get_website` | WORKS |
 | 2 | Business must be active, booking enabled and the branch bookable; otherwise a neutral "not available" page | `resolveBranch` (`F/_shared/supabase.ts`), `branch_is_bookable` in `M/20261020120000_branch_bookable_staff_hours` | WORKS |
-| 3 | Branch choice | only the primary branch (see case 4) | **MISSING** |
+| 3 | Branch choice: picker when 2+ bookable locations; `?branch=` preselects; old links without a branch still work | `BookingFlow.tsx`, `F/get_booking_page` | WORKS |
 | 4 | Pick service -> staff (or any) -> date and time -> form | `src/features/booking-public/components/BookingFlow.tsx`, `F/get_slots` | WORKS |
 | 5 | Form: name + phone required (phone is the client identity), email optional by default (`require_client_email` default false), custom questions | `M/20261005100000_require_client_email`, form builder | WORKS |
 | 6 | Bot protection: honeypot, too-fast check, per-IP rate limits | `src/features/booking-public/botProtection.ts`, `M/20261004090000_public_request_attempts` (per-IP limits) | WORKS |
@@ -233,7 +233,7 @@ A time appears on `/<slug>/book` only if ALL of these hold (`branch_is_bookable`
 | Requirement | Default after signup | Reason code |
 |---|---|---|
 | Business active (status active, or trialing before `trial_ends_at`) | yes (trial) | page "not available" |
-| The branch is the PRIMARY branch (public page cannot pick another) | the onboarding branch | n/a (gap) |
+| The branch passes `branch_is_bookable` (every location is checked on its own; the customer picks among the bookable ones) | the onboarding branch | n/a |
 | Booking settings: online booking enabled | yes | `booking_disabled` |
 | Branch opening hours for that weekday | **none** | `no_branch_hours` |
 | A service: active, online-bookable, enabled at the branch (with price) | **none** | `no_bookable_service` |
@@ -247,7 +247,7 @@ A time appears on `/<slug>/book` only if ALL of these hold (`branch_is_bookable`
 
 ## Gaps / confusing points / launch blockers (most severe first)
 
-1. **Online booking cannot choose a branch** (multi-branch): every online booking goes to the primary branch (`useBookingPage.ts` sends only the slug). Blocks the multi-location promise.
+1. ~~Online booking cannot choose a branch~~ **FIXED 2026-10-22** (location picker, `?branch=`, per-location links; `M/20261022100000_public_multi_branch`).
 2. ~~Staff-role logins are never linked to their staff profile~~ **FIXED 2026-10-22** (Staff form "App login", invite-time link, "Add me as staff"; `M/20261022090000_staff_member_link`).
 3. **No payments**: subscriptions, yearly billing, per-location billing and add-on charges are all manual; `current_period_end` is never enforced, so unpaid businesses stay active until the super admin acts. Polar is not integrated.
 4. **Email delivery is not production-ready**: needs a verified Resend domain (dev sender only reaches the account owner) and custom SMTP for auth emails. Clients without an email get no confirmation, reminder or review request (SMS is off).
@@ -269,7 +269,7 @@ Compared with `src/features/landing/i18n/en.json` and `get_public_pricing()` (pl
 
 | Promise (where) | Reality | Suggested fix |
 |---|---|---|
-| "Run several locations from one account on Business" (feature card) / "Multiple locations" (Business card) | Locations work in the dashboard, but clients can only book the primary branch online | Build branch choice on the booking page, or say "manage several locations" without implying online booking per location |
+| "Run several locations from one account on Business" (feature card) / "Multiple locations" (Business card) | True since 2026-10-22: clients choose a location on the booking page | None |
 | "Give each person the access they need" (roles card) | True since 2026-10-22: a Staff login can be linked to its profile | None |
 | Business "$79 / month per location", "each extra location billed the same", "Billed $X per year" | No billing; manual | Keep, but billing must be done by hand until Polar; make sure invoices match |
 | FAQ "Can I cancel anytime? ... keep access until the end of the period you paid for" | No self-serve cancel; period end not enforced | Say "contact us to cancel" until billing exists |

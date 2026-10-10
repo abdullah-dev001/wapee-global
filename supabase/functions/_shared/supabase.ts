@@ -19,6 +19,8 @@
 
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
+import { type BookableBranch } from './branchChoice.ts';
+
 export function serviceClient(): SupabaseClient {
   const url = Deno.env.get('SUPABASE_URL');
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -38,6 +40,8 @@ export type ResolvedBranch = {
   businessId: string;
   branchId: string;
   branchName: string;
+  /** Null when the branch has no address on file. */
+  branchAddress: string | null;
   timezone: string;
   currency: string;
   countryCode: string;
@@ -53,26 +57,11 @@ export type ResolvedBranch = {
 };
 
 /**
- * slug (+ optional branch) -> the branch to work with.
- *
- * Returns null for every "you cannot book here" case, with NO distinction
- * between them, so probing slugs reveals nothing:
- *   - no such slug
- *   - the business is soft-deleted
- *   - the business is inactive or its trial lapsed
- *   - online booking is switched off for the branch
- *   - the branch does not belong to that slug
- *
- * The caller maps null to `not_bookable`.
+ * slug -> the business id, or null for every "you cannot book here" case with NO distinction
+ * between them (no such slug, soft-deleted, inactive, trial lapsed), so probing slugs reveals
+ * nothing. `business_is_active()` semantics: status active, or trialing with trial_ends_at ahead.
  */
-export async function resolveBranch(
-  db: SupabaseClient,
-  slug: string,
-  branchId: string | null,
-): Promise<ResolvedBranch | null> {
-  // `business_is_active()` is the same helper RLS uses, so "active" means
-  // exactly what it means everywhere else: status active, or trialing with
-  // trial_ends_at in the future.
+export async function resolveBusinessId(db: SupabaseClient, slug: string): Promise<string | null> {
   const { data: business, error: bizErr } = await db
     .from('businesses')
     .select('id, status, trial_ends_at, deleted_at')
@@ -88,17 +77,50 @@ export async function resolveBranch(
     (business.status === 'trialing' &&
       business.trial_ends_at !== null &&
       new Date(business.trial_ends_at) > new Date());
-  if (!active) return null;
+  return active ? business.id : null;
+}
 
+/**
+ * The business's BOOKABLE branches (`branch_is_bookable`), primary first: the locations a customer
+ * may pick. Never includes archived branches or another business's branches.
+ */
+export async function listBookableBranches(
+  db: SupabaseClient,
+  businessId: string,
+): Promise<BookableBranch[]> {
+  const { data, error } = await db.rpc('get_bookable_branches', { p_business_id: businessId });
+  if (error) throw error;
+  const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+  return rows.map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    address: typeof row.address === 'string' && row.address.trim() !== '' ? row.address : null,
+    timezone: String(row.timezone),
+    currency: String(row.currency),
+    countryCode: String(row.country_code),
+    isPrimary: row.is_primary === true,
+    code: String(row.code),
+  }));
+}
+
+/**
+ * business + branch id (or null = the primary) -> that branch with its booking settings, or null
+ * when online booking is off or the branch does not belong to the business.
+ */
+export async function loadBranch(
+  db: SupabaseClient,
+  businessId: string,
+  branchId: string | null,
+): Promise<ResolvedBranch | null> {
   // One embedded select as ONE string literal — a concatenation makes
   // supabase-js infer GenericStringError instead of the row type
   // (context/_handoff.md).
   let query = db
     .from('branches')
     .select(
-      'id, name, timezone, currency, country_code, business_id, is_primary, booking_settings(online_booking_enabled, staff_choice, slot_display, show_prices, booking_window_days, require_client_email, confirmation)',
+      'id, name, address, timezone, currency, country_code, business_id, is_primary, booking_settings(online_booking_enabled, staff_choice, slot_display, show_prices, booking_window_days, require_client_email, confirmation)',
     )
-    .eq('business_id', business.id)
+    .eq('business_id', businessId)
     .is('deleted_at', null);
 
   query = branchId ? query.eq('id', branchId) : query.order('is_primary', { ascending: false });
@@ -120,6 +142,8 @@ export async function resolveBranch(
     businessId: branch.business_id,
     branchId: branch.id,
     branchName: branch.name,
+    branchAddress:
+      typeof branch.address === 'string' && branch.address.trim() !== '' ? branch.address : null,
     timezone: branch.timezone,
     currency: branch.currency,
     countryCode: branch.country_code,
@@ -132,4 +156,22 @@ export async function resolveBranch(
       confirmation: settings.confirmation,
     },
   };
+}
+
+/**
+ * slug (+ optional branch id) -> the branch to work with. With no branch id the PRIMARY branch is
+ * used (old links and cached pages keep working); a branch id of another business simply does not
+ * match, because the lookup is always scoped to the business the slug resolved to.
+ *
+ * Returns null for every "you cannot book here" case, with NO distinction between them.
+ * The caller maps null to `not_bookable`.
+ */
+export async function resolveBranch(
+  db: SupabaseClient,
+  slug: string,
+  branchId: string | null,
+): Promise<ResolvedBranch | null> {
+  const businessId = await resolveBusinessId(db, slug);
+  if (!businessId) return null;
+  return loadBranch(db, businessId, branchId);
 }

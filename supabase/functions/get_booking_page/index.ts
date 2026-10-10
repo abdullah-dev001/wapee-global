@@ -16,21 +16,32 @@
  *     so the page can show "not available" instead of an empty flow
  *
  * Request
- *   { slug: string, branch_id?: uuid }
+ *   { slug: string, branch_id?: uuid, branch?: string }
+ *   `branch` is a branch id OR its short code (the invoice prefix), from `?branch=` in the link.
  *
  * Response
- *   { ok: true, data: { branch, settings, services, staff, service_staff, fields } }
+ *   { ok: true, data: { needs_branch, branches, branch, settings, services, staff, service_staff, fields } }
  *   { ok: false, code: 'not_bookable' | 'rate_limited' | 'bad_request' | 'server_error' }
  *
- * Same posture as `get_slots`: `resolveBranch` is the only way a slug becomes a
- * branch, the response is mapped field by field (never spread), and a slug that
- * cannot be booked for ANY reason returns the identical `not_bookable`.
+ * Which branch (pure rule in `_shared/branchChoice.ts`): a matching id / code wins; otherwise the
+ * only bookable branch, or - with two or more - `needs_branch: true` and just the `branches` list
+ * (the page shows a picker). Nothing bookable is the identical `not_bookable`.
+ *
+ * Same posture as `get_slots`: the branch is always looked up inside the business the slug
+ * resolved to (a foreign id never matches), the response is mapped field by field (never
+ * spread), and a slug that cannot be booked for ANY reason returns the identical `not_bookable`.
  */
 
 import { z } from 'npm:zod@3';
 import { handlePreflight } from '../_shared/cors.ts';
 import { jsonError, jsonOk, logUnexpected } from '../_shared/response.ts';
-import { resolveBranch, serviceClient } from '../_shared/supabase.ts';
+import { chooseBranch } from '../_shared/branchChoice.ts';
+import {
+  listBookableBranches,
+  loadBranch,
+  resolveBusinessId,
+  serviceClient,
+} from '../_shared/supabase.ts';
 import { checkRateLimit } from '../_shared/rateLimit.ts';
 
 const RequestSchema = z
@@ -42,6 +53,13 @@ const RequestSchema = z
       .max(63)
       .regex(/^[a-z0-9][a-z0-9-]*$/, 'invalid slug'),
     branch_id: z.string().uuid().nullish(),
+    branch: z
+      .string()
+      .trim()
+      .min(1)
+      .max(40)
+      .regex(/^[A-Za-z0-9-]+$/, 'invalid branch')
+      .nullish(),
   })
   .strict();
 
@@ -73,24 +91,36 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const input = parsed.data;
     slug = input.slug;
 
-    const branch = await resolveBranch(db, input.slug, input.branch_id ?? null);
+    const businessId = await resolveBusinessId(db, input.slug);
+    if (!businessId) return jsonError(req, 'not_bookable');
+
+    // Only branches that pass branch_is_bookable() are ever offered.
+    const bookable = await listBookableBranches(db, businessId);
+    const choice = chooseBranch(bookable, input.branch ?? input.branch_id ?? null);
+    if (choice.kind === 'none') return jsonError(req, 'not_bookable');
+
+    const publicBranches = bookable.map((b) => ({
+      id: b.id,
+      name: b.name,
+      address: b.address,
+      timezone: b.timezone,
+      code: b.code,
+    }));
+
+    if (choice.kind === 'choose') {
+      return jsonOk(req, { needs_branch: true, branches: publicBranches, branch: null });
+    }
+
+    const branch = await loadBranch(db, businessId, choice.branch.id);
     if (!branch) return jsonError(req, 'not_bookable');
 
-    const [{ data: catalogue, error: catErr }, { data: bookable, error: bookableErr }] =
-      await Promise.all([
-        db.rpc('get_booking_page_catalogue', { p_branch_id: branch.branchId }),
-        db.rpc('branch_is_bookable', { p_branch_id: branch.branchId }),
-      ]);
-
+    // The branch already passed branch_is_bookable() in the list above, so the
+    // catalogue is the only call left. A branch that is not set up is reported
+    // like an unresolvable slug (see the `none` case), never as "exists but empty".
+    const { data: catalogue, error: catErr } = await db.rpc('get_booking_page_catalogue', {
+      p_branch_id: branch.branchId,
+    });
     if (catErr) throw catErr;
-    if (bookableErr) throw bookableErr;
-
-    // A branch that fails its own bookability check is reported the same as an
-    // unresolvable slug: the page has nothing useful to offer either way, and
-    // this keeps "exists but not set up" indistinguishable from "does not
-    // exist" to a stranger, same as resolveBranch already does for trial/active.
-    const isBookable = (bookable as { bookable?: boolean } | null)?.bookable === true;
-    if (!isBookable) return jsonError(req, 'not_bookable');
 
     const data = catalogue as {
       services: Array<{
@@ -119,8 +149,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const showStaff = branch.settings.staffChoice !== 'hidden';
 
     return jsonOk(req, {
+      needs_branch: false,
+      branches: publicBranches,
       branch: {
+        id: branch.branchId,
         name: branch.branchName,
+        address: branch.branchAddress,
         timezone: branch.timezone,
         currency: branch.currency,
         country_code: branch.countryCode,

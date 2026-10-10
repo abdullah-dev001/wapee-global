@@ -3,6 +3,7 @@ export {
   branchBookableKeys,
   useBookingSettings,
   useBranchBookable,
+  useBranchesBookable,
   useSaveBookingSettings,
   SaveSettingsError,
   type BookingSettings,

@@ -9,6 +9,7 @@ import { RouteGuard } from '@/features/auth';
 import {
   useBookingSettings,
   useBranchBookable,
+  useBranchesBookable,
   usePreviewCatalogue,
   type BookingSettings,
 } from '@/features/booking-settings/api';
@@ -50,6 +51,13 @@ export default function BookingSettingsScreen() {
 
   const settings = useBookingSettings(businessId, branchId);
   const bookable = useBranchBookable(businessId, branchId);
+  // One link per location (shown when there are two or more), each live only when THAT
+  // location passes branch_is_bookable().
+  const locations = business?.branches ?? [];
+  const locationBookable = useBranchesBookable(
+    businessId,
+    locations.map((branch) => branch.id),
+  );
 
   // The branch owns the currency (decision 23), so the preview's prices use it.
   const currency = useMemo(() => {
@@ -140,6 +148,12 @@ export default function BookingSettingsScreen() {
                 <BookingLinkCard
                   businessSlug={business?.slug ?? null}
                   isLive={bookingLinkIsLive(bookable.data)}
+                  branches={locations.map((branch) => ({
+                    id: branch.id,
+                    name: branch.name,
+                    code: branch.invoice_prefix,
+                    isLive: bookingLinkIsLive(locationBookable.get(branch.id)),
+                  }))}
                 />
 
                 {tab === 'settings' ? (

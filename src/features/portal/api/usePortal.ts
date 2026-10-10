@@ -319,6 +319,8 @@ export function usePortalBook(slug: string, session: string | null) {
       serviceId: string;
       startsAt: string;
       staffId?: string | null;
+      /** The location being booked; null = the primary one. */
+      branchId?: string | null;
       notes?: string;
     }) =>
       call({
@@ -328,6 +330,7 @@ export function usePortalBook(slug: string, session: string | null) {
         service_id: input.serviceId,
         starts_at: input.startsAt,
         staff_id: input.staffId ?? null,
+        branch_id: input.branchId ?? null,
         notes: input.notes ?? null,
       }),
     onSuccess: refresh,

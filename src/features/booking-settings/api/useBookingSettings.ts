@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
   type UseMutationResult,
@@ -87,6 +88,38 @@ export function useBookingSettings(
   });
 }
 
+async function fetchBranchBookable(branchId: string): Promise<BranchBookable> {
+  const { data, error } = await getSupabase().rpc('branch_is_bookable', { p_branch_id: branchId });
+  if (error) throw error;
+  // The RPC returns jsonb; the generated type is `Json`, so it is narrowed here
+  // rather than asserted at every call site.
+  const result = data as { bookable?: boolean; reasons?: string[] } | null;
+  return {
+    bookable: result?.bookable === true,
+    reasons: (result?.reasons ?? []) as BranchBookable['reasons'],
+  } satisfies BranchBookable;
+}
+
+/**
+ * `branch_is_bookable` for several branches at once (the booking-link card lists one link per
+ * bookable location). Same query keys and freshness as `useBranchBookable`, so the two share cache.
+ */
+export function useBranchesBookable(
+  businessId: string | null,
+  branchIds: readonly string[],
+): Map<string, BranchBookable | undefined> {
+  const { isAuthenticated } = useSession();
+  const results = useQueries({
+    queries: branchIds.map((branchId) => ({
+      queryKey: branchBookableKeys.detail({ businessId: businessId ?? 'none' }, branchId),
+      enabled: isAuthenticated && Boolean(businessId),
+      staleTime: staleTimes.list,
+      queryFn: () => fetchBranchBookable(branchId),
+    })),
+  });
+  return new Map(branchIds.map((id, index) => [id, results[index]?.data]));
+}
+
 /** Can this branch actually take an online booking, and if not, why not. */
 export function useBranchBookable(
   businessId: string | null,
@@ -100,21 +133,7 @@ export function useBranchBookable(
     // Shorter than the settings: this depends on hours, services and staff, any of
     // which the owner may have just changed on another screen.
     staleTime: staleTimes.list,
-    queryFn: async () => {
-      const { data, error } = await getSupabase().rpc('branch_is_bookable', {
-        p_branch_id: branchId ?? '',
-      });
-
-      if (error) throw error;
-
-      // The RPC returns jsonb; the generated type is `Json`, so it is narrowed
-      // here rather than asserted at every call site.
-      const result = data as { bookable?: boolean; reasons?: string[] } | null;
-      return {
-        bookable: result?.bookable === true,
-        reasons: (result?.reasons ?? []) as BranchBookable['reasons'],
-      } satisfies BranchBookable;
-    },
+    queryFn: () => fetchBranchBookable(branchId ?? ''),
   });
 }
 

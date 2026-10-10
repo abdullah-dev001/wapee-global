@@ -330,6 +330,7 @@ giving 409 · unknown slug giving 404 · the manage view's privacy (exactly one
   but it is a second shape for "bad token" and worth knowing.
 
 ## Changelog
+- 2026-10-22: `get_booking_page` accepts `branch` (id or short code = invoice prefix) next to `branch_id` and returns `{needs_branch, branches[], branch{id,name,address,...}, ...}`. Choice rule (pure, `_shared/branchChoice.ts`): matching id/code wins; else the only bookable branch; else `needs_branch: true` with just the list. An unknown reference or another business's id is never an error and never leaks data. Branches come from `get_bookable_branches(business)` (service_role; `branch_is_bookable`). `get_slots` / `create_booking` still take an optional `branch_id` (none = primary: old links and cached pages keep working); `manage_booking get` adds `branch_address`. Proven over HTTP: `supabase/tests/38_multi_branch_http.mjs` (27 checks), SQL suite 38 (39).
 - 2026-10-08: `create_booking` and `resend_manage_link` redefined to add their outbox enqueue (Phase 6A); no change to inputs or responses.
 - 2026-10-07: Phase 7A added four more public endpoints (`get_website`, `get_review_request`, `submit_review`, `validate_widget`) using the same shared helpers; see [website-reviews-widget.md](website-reviews-widget.md).
 

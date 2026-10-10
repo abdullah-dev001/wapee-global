@@ -30,6 +30,9 @@ type Catalogue = {
     portal: string;
     unsubscribe: string;
     address: string;
+    /** Names the location when the business has more than one: "{branch}" or "{branch}, {address}". */
+    location: string;
+    locationWithAddress: string;
   };
 };
 
@@ -116,6 +119,8 @@ const en: Catalogue = {
     portal: 'Sign in: {url}',
     unsubscribe: 'Stop these emails: {url}',
     address: '{address}',
+    location: 'Location: {branch}',
+    locationWithAddress: 'Location: {branch}, {address}',
   },
 };
 
@@ -181,6 +186,15 @@ function vars(job: Job, locale: string): Record<string, string> {
   };
 }
 
+/** Booking events that tell the customer where to go. */
+const LOCATION_EVENTS: ReadonlySet<string> = new Set([
+  'booking_confirmed',
+  'pending_received',
+  'reminder',
+  'rescheduled',
+  'manage_link',
+]);
+
 export type RenderedEmail = { subject: string; text: string; html: string };
 
 export function renderEmail(job: Job, links: Links): RenderedEmail | null {
@@ -195,7 +209,15 @@ export function renderEmail(job: Job, links: Links): RenderedEmail | null {
   const lines = entry.lines
     .map((l) => fill(l, v))
     .filter((l) => l.trim() !== '' && !/^Hi ,$/.test(l));
-  if (job.branch_address && (job.event === 'booking_confirmed' || job.event === 'reminder')) {
+  // A business with several locations names the right one in every booking message; a
+  // single-location business keeps the plain address line (confirmation and reminder only).
+  const multiLocation = (job.branch_count ?? 1) > 1 && Boolean(job.branch_name);
+  if (multiLocation && LOCATION_EVENTS.has(job.event)) {
+    lines.push(fill(job.branch_address ? cat.lines.locationWithAddress : cat.lines.location, v));
+  } else if (
+    job.branch_address &&
+    (job.event === 'booking_confirmed' || job.event === 'reminder')
+  ) {
     lines.push(fill(cat.lines.address, v));
   }
   if (links.manageUrl && job.event !== 'cancelled') {

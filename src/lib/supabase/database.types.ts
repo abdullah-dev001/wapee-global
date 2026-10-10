@@ -5781,6 +5781,7 @@ export type Database = {
         Args: { p_branch_id?: string; p_business_id: string }
         Returns: Json
       }
+      get_bookable_branches: { Args: { p_business_id: string }; Returns: Json }
       get_booking: { Args: { p_token: string }; Returns: Json }
       get_booking_page_catalogue: {
         Args: { p_branch_id: string }
@@ -6247,6 +6248,7 @@ export type Database = {
       }
       portal_create_booking: {
         Args: {
+          p_branch_id?: string
           p_client_id: string
           p_notes?: string
           p_service_id: string
