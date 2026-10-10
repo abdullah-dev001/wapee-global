@@ -110,6 +110,7 @@ Against the live database, in rolled-back transactions:
 - No avatar/photo (needs the files add-on, Phase 8).
 
 ## Changelog
+- 2026-10-22: Saving a profile whose login link is refused now throws `StaffLinkError` (profile id + reason). The form shows "Profile saved. Login not linked." with the reason, keeps editing THAT profile (retry updates instead of creating a duplicate) and resets the login picker to No login. Verified in a browser for edit and create.
 - 2026-10-22: Login <-> profile link: "App login" field in the staff form, login name in the list, "Add me as staff" button (Owner/Manager without a profile), invite form picks an unlinked profile. Verified on dev over HTTP as dev.manager / dev.staff: unlinked staff sees 0 appointments, linked sees only its own (1 of 3), push recipients include them for their bookings only.
 - 2026-10-20: row badge "No working hours set — no online slots" + "Set working hours" button in the edit panel (`staffHours.ts`); list query now embeds `staff_working_hours(branch_id)`.
 - 2026-10-02: Staff UI: list with no-login badge, create/edit drawer, branch and service assignment, soft delete, schedule drawer.

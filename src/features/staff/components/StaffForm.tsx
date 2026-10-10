@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock } from 'lucide-react-native';
@@ -12,7 +13,7 @@ import { useServices } from '@/features/services/api/useServices';
 import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
-import { useSaveStaff, useStaff, type StaffListItem } from '../api/useStaff';
+import { StaffLinkError, useSaveStaff, useStaff, type StaffListItem } from '../api/useStaff';
 import { hasNoWorkingHours } from '../staffHours';
 import { linkErrorKey, loginOptions, NO_LOGIN } from '../staffLogin';
 import { emptyStaff, staffSchema, type StaffValues } from '../schemas/staff.schemas';
@@ -33,6 +34,13 @@ export function StaffForm({
   const { businessId, branchId, business } = useCurrentScope();
   const services = useServices(businessId, branchId, { includeInactive: false });
   const save = useSaveStaff(businessId);
+  // Set when the profile was saved but linking the login was refused: the form stays open on THAT
+  // profile (a retry updates it instead of creating a second one) and says what happened.
+  const [partial, setPartial] = useState<{
+    staffId: string;
+    reasonKey: string | null;
+    reason: string;
+  } | null>(null);
   const members = useMembers(businessId);
   // Every profile of the business (not just this branch): a login can own one profile only.
   const allStaff = useStaff(businessId, null);
@@ -73,10 +81,13 @@ export function StaffForm({
   });
 
   const onSubmit = handleSubmit((values) => {
+    const targetId = partial?.staffId ?? member?.id;
     save.mutate(
       {
         ...values,
-        ...(member ? { id: member.id, originalMemberId: member.memberId } : {}),
+        ...(targetId
+          ? { id: targetId, originalMemberId: partial ? null : (member?.memberId ?? null) }
+          : {}),
       },
       {
         onSuccess: () => {
@@ -84,6 +95,19 @@ export function StaffForm({
           onDone();
         },
         onError: (error) => {
+          if (error instanceof StaffLinkError) {
+            const key = linkErrorKey(error.cause);
+            setPartial({ staffId: error.staffId, reasonKey: key, reason: error.message });
+            // The refused login is no longer a valid choice: fall back to "No login" so a retry saves cleanly.
+            setValue('memberId', null, { shouldValidate: true });
+            toast.show({
+              message: key
+                ? t('staff.login.savedNotLinkedKey', { reason: t(key) })
+                : t('staff.login.savedNotLinked'),
+              tone: 'warning',
+            });
+            return;
+          }
           // Plan refusals (staff cap) get a specific, calm message.
           const planKey = planErrorKey(error);
           const linkKey = linkErrorKey(error);
@@ -144,6 +168,17 @@ export function StaffForm({
         textContentType="telephoneNumber"
         returnKeyType="next"
       />
+
+      {partial ? (
+        <View style={styles.partial}>
+          <Badge tone="warning">{t('staff.login.partialBadge')}</Badge>
+          <Text variant="helper" color="textSecondary">
+            {partial.reasonKey
+              ? t(partial.reasonKey as 'staff.login.errors.forbidden')
+              : partial.reason}
+          </Text>
+        </View>
+      ) : null}
 
       <Select
         label={t('staff.login.label')}
@@ -230,5 +265,9 @@ const styles = StyleSheet.create({
   },
   block: {
     gap: theme.spacing[10],
+  },
+  partial: {
+    gap: theme.spacing[6],
+    alignItems: 'flex-start',
   },
 });

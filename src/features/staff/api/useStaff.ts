@@ -7,6 +7,9 @@ import { getSupabase } from '@/lib/supabase';
 import { rpcNull, unwrapRpc } from '@/lib/supabase/rpcResult';
 
 import { type StaffValues } from '../schemas/staff.schemas';
+import { StaffLinkError } from '../staffLogin';
+
+export { StaffLinkError };
 
 export const staffKeys = createQueryKeys('staff');
 
@@ -203,7 +206,11 @@ export function useSaveStaff(businessId: string | null) {
       // Last: the profile is already saved, so a refused link (login already used,
       // not allowed) leaves a saved profile and tells the user only about the login.
       if (memberId !== (originalMemberId ?? null)) {
-        await linkStaffMember(staffId, memberId);
+        try {
+          await linkStaffMember(staffId, memberId);
+        } catch (error) {
+          throw new StaffLinkError(staffId, error);
+        }
       }
 
       return staffId;

@@ -72,3 +72,20 @@ export function linkErrorKey(
   }
   return null;
 }
+
+/**
+ * The profile, branches and services WERE saved, but linking the login was refused. Carries the
+ * saved profile id so the form can keep working on that profile (a retry must not create a second
+ * one) and the underlying reason so the screen can name it.
+ */
+export class StaffLinkError extends Error {
+  readonly staffId: string;
+  override readonly cause: unknown;
+
+  constructor(staffId: string, cause: unknown) {
+    super(cause instanceof Error ? cause.message : 'link_failed');
+    this.name = 'StaffLinkError';
+    this.staffId = staffId;
+    this.cause = cause;
+  }
+}

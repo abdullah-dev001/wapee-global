@@ -293,3 +293,34 @@ Compared with `src/features/landing/i18n/en.json` and `get_public_pricing()` (pl
 | Setup checklist on Today | `ca2517f` | `20261022110000_setup_checklist_dismissed` | suite 39 (15), unit tests, screenshots |
 | Solo / Team edit their location | `dec00a5` | none (`update_branch` was never plan-gated) | suite 40 (30) |
 | Landing / pricing copy truthful | this commit | none | landing unit tests, screenshots |
+
+
+---
+
+## Verification of the 2026-10-22 fixes (real browser + real suites)
+
+Checked against the dev project with a production build (`expo export`), Playwright, throwaway businesses and users
+(deleted afterwards). Screenshots: `docs/screenshots/verification/`.
+
+| Area | Check | Result |
+|---|---|---|
+| Booking, 2 locations | Picker lists both with address and time zone | PASS (`a1-picker`) |
+| | Choose Uptown: its own services, prices (PKR), staff, slots 12:00-15:00 | PASS |
+| | `?branch=DT` skips the picker, opens Downtown (GBP, Sara, 09:00-16:00) | PASS |
+| | Full test booking at each location | PASS (Uptown `u2-*`, Downtown `d3-*`) |
+| | Confirmation shows location + address + time zone; manage page shows the same | PASS |
+| Setup checklist | Card on a fresh business (0 of 6); each button goes to /schedule, /services, /staff, /services | PASS |
+| | "Add me as staff" flips the staff step (1 of 6) and hides itself | PASS |
+| | Steps flip live: 3, 4, 5 of 6; "Copy booking link" unlocks and copies `/<slug>/book` | PASS |
+| | After the copy the card stays hidden on reload; removing the hours brings the banner back | PASS |
+| | "Dismiss" hides the card, survives a reload, banner shown while unbookable | PASS |
+| Business location | Solo and Team: open the drawer, edit address / phone / tax, save, summary updated | PASS |
+| | Unsafe currency (Solo, priced service) and time zone (Team, upcoming booking): clear error, drawer stays open, nothing saved | PASS |
+| Staff | "Add me as staff" as Owner: row + login line, button gone | PASS |
+| | "App login" picker lists only eligible logins | PASS |
+| | Invite a Staff role with a profile -> accept -> sign in: Today shows only that person's booking; REST sees only their own | PASS |
+| | Login link refused after the profile is saved (edit and create): warning naming the reason, form stays open, no duplicate profile, picker back to "No login" | PASS (after the fix below) |
+
+**Found while verifying and fixed:** a refused login link used to show a generic error and leave the form looking unsaved (a retry on the create form would have made a second profile). The form now says the profile was saved and why the login was not linked, keeps working on that profile, and resets the picker.
+
+**Known dev-only behaviour:** the per-IP booking budget (10 per hour) and the portal login budget (3 per hour per email, 10 per IP) are real limits; repeated verification runs hit them. They were cleared for `create_booking` on dev between runs.

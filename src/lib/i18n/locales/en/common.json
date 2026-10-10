@@ -493,7 +493,10 @@
         "notFound": "This staff profile no longer exists.",
         "alreadyStaff": "You are already in your staff list.",
         "branchNotFound": "This location no longer exists."
-      }
+      },
+      "partialBadge": "Profile saved. Login not linked.",
+      "savedNotLinked": "Profile saved, but the login could not be linked. Try another login.",
+      "savedNotLinkedKey": "Profile saved, but the login was not linked: {{reason}}"
     },
     "addMe": {
       "action": "Add me as staff",

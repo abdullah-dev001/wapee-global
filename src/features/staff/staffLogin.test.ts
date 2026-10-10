@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { RpcError } from '@/lib/supabase/rpcResult';
 
-import { linkErrorKey, loginOptions, NO_LOGIN, type LoginMember } from './staffLogin';
+import {
+  StaffLinkError,
+  linkErrorKey,
+  loginOptions,
+  NO_LOGIN,
+  type LoginMember,
+} from './staffLogin';
 
 const labels = { noLoginLabel: 'No login', pendingLabel: 'invited', unnamedLabel: 'Unnamed' };
 
@@ -67,5 +73,20 @@ describe('linkErrorKey', () => {
   it('returns null for anything else', () => {
     expect(linkErrorKey(new RpcError('mystery'))).toBeNull();
     expect(linkErrorKey(new Error('boom'))).toBeNull();
+  });
+});
+
+describe('StaffLinkError (profile saved, login refused)', () => {
+  it('carries the saved profile id and the reason the link was refused', () => {
+    const refusal = new RpcError('member_already_linked');
+    const error = new StaffLinkError('staff-1', refusal);
+    expect(error.staffId).toBe('staff-1');
+    expect(error.cause).toBe(refusal);
+    expect(error.message).toBe('member_already_linked');
+    // the screen turns the cause into a specific message, never the raw code
+    expect(linkErrorKey(error.cause)).toBe('staff.login.errors.memberAlreadyLinked');
+    // and it is distinguishable from an ordinary save failure
+    expect(error instanceof StaffLinkError).toBe(true);
+    expect(new Error('boom') instanceof StaffLinkError).toBe(false);
   });
 });
