@@ -26,3 +26,4 @@ export {
   useSaveCustomField,
   type CustomField,
 } from './useCustomFields';
+export { useDismissSetupChecklist } from './useSetupChecklist';

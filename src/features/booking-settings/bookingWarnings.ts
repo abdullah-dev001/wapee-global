@@ -53,6 +53,8 @@ const REASON_ORDER: BookableReason[] = [
   'booking_disabled',
 ];
 
+export type BookingFixRoute = NonNullable<BookingWarning['fixRoute']>;
+
 const FIX_ROUTES: Partial<Record<BookableReason, BookingWarning['fixRoute']>> = {
   no_branch_hours: '/schedule',
   no_bookable_service: '/services',
@@ -63,6 +65,11 @@ const FIX_ROUTES: Partial<Record<BookableReason, BookingWarning['fixRoute']>> = 
   // Hours are edited per person from the Team screen.
   no_staff_hours: '/staff',
 };
+
+/** Where the owner goes to fix one reason (also used by the Today setup checklist). */
+export function fixRouteFor(reason: BookableReason): BookingFixRoute | undefined {
+  return FIX_ROUTES[reason];
+}
 
 /**
  * `booking_disabled` is a choice the owner made, so it is an `info`, not a

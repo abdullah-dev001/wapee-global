@@ -97,6 +97,10 @@ function invalidateStaff(
   void queryClient.invalidateQueries({
     queryKey: staffKeys.business(businessId ?? 'none'),
   });
+  // Staff appearing / disappearing / being linked to services changes branch_is_bookable().
+  void queryClient.invalidateQueries({
+    queryKey: branchBookableKeys.business(businessId ?? 'none'),
+  });
 }
 
 /**
@@ -252,9 +256,6 @@ export function useAddMeAsStaff(businessId: string | null, branchId: string | nu
     onSuccess: () => {
       invalidateStaff(queryClient, businessId);
       void queryClient.invalidateQueries({ queryKey: ['my-staff-profile'] });
-      void queryClient.invalidateQueries({
-        queryKey: branchBookableKeys.business(businessId ?? 'none'),
-      });
     },
   });
 }

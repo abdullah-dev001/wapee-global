@@ -8,3 +8,4 @@ export {
 export { BookingPreview, type BookingPreviewProps } from './BookingPreview';
 export { CustomFieldList, type CustomFieldListProps } from './CustomFieldList';
 export { CustomFieldEditor, type CustomFieldEditorProps } from './CustomFieldEditor';
+export { SetupChecklist } from './SetupChecklist';

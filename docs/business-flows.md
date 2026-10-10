@@ -201,7 +201,7 @@ Exact order that works today (each item is required by `branch_is_bookable` or `
 What the UI tells the owner:
 - **Settings > Booking** lists every unmet reason with a "fix" button (`src/features/booking-settings/components/BookingWarnings.tsx`, `bookingWarnings.ts`). WORKS.
 - The staff list shows a "no working hours" badge. WORKS.
-- **After onboarding the owner lands on an empty Today** ("No appointments. Nothing booked for this day yet."; `TodayScreen.tsx`). There is **no setup checklist** on Today or anywhere visible by default; the owner must find Settings > Booking. MISSING.
+- **After onboarding the owner lands on an empty Today** ("No appointments. Nothing booked for this day yet."; `TodayScreen.tsx`). Since 2026-10-22 Today shows a **setup checklist** to people with `settings.booking` (progress bar, one button per step, "Add me as staff" for solo owners, copy link at the end; derived from `branch_is_bookable`, dismissible per business, small banner if booking breaks later). WORKS.
 
 **Typical day (first setup):** sign up, confirm email, onboarding (2 steps), add hours, add "Haircut 30 min
 at 25", add yourself as staff, tick Haircut, add your working hours, open Settings > Booking: no warnings,
@@ -252,10 +252,10 @@ A time appears on `/<slug>/book` only if ALL of these hold (`branch_is_bookable`
 3. **No payments**: subscriptions, yearly billing, per-location billing and add-on charges are all manual; `current_period_end` is never enforced, so unpaid businesses stay active until the super admin acts. Polar is not integrated.
 4. **Email delivery is not production-ready**: needs a verified Resend domain (dev sender only reaches the account owner) and custom SMTP for auth emails. Clients without an email get no confirmation, reminder or review request (SMS is off).
 5. **Native app push does not work** (no EAS `projectId`). Web push works.
-6. **No setup checklist** after onboarding: the owner lands on an empty Today; the 5 required setup steps after onboarding (hours, service, staff, link them, staff hours) are only explained under Settings > Booking.
+6. ~~No setup checklist~~ **FIXED 2026-10-22** (Today checklist, `M/20261022110000_setup_checklist_dismissed`).
 7. **Solo / Team cannot edit branch address, phone, tax rate or time zone after the trial** (Locations screen is Business-only). Invoices then carry tax 0; website contact data cannot be fixed.
 8. **Invites are not emailed**; the owner must copy and send the link.
-9. **Owner is not a staff member by default**: Solo owners must add themselves as staff. The "Add me as staff" button exists (2026-10-22); the explanation on Today comes with the setup checklist (Item 3).
+9. **Owner is not a staff member by default**: Solo owners must add themselves as staff. The "Add me as staff" button exists (2026-10-22) and the Today checklist explains it.
 10. **Auth hook for suspension is a manual dashboard switch** (otherwise suspended users can still sign in until the app signs them out).
 11. **Plan limits are on staff profiles, not logins**: Solo can invite any number of Manager / Receptionist users.
 12. `default_roles` ("Ready-made team roles", Team+) and add-on `available_plans` are display-only.
@@ -279,4 +279,4 @@ Compared with `src/features/landing/i18n/en.json` and `get_public_pricing()` (pl
 | "Install it like an app ... push notifications keep everyone in the loop" | Web push works; native app push does not | OK for the PWA; do not promise store apps |
 | "Booking emails" / FAQ "a link to cancel or reschedule" | Works only with a verified email domain, and only if the client gives an email | Set up Resend domain before launch; consider making email required |
 | "Each location has its own currency, time zone and tax settings" (FAQ) | True in data, but Solo/Team cannot edit them after the trial | Open the branch edit form for single-branch plans |
-| Hero note "Set up in minutes" | 5 required setup steps after onboarding, no checklist | Add a checklist, or soften the line |
+| Hero note "Set up in minutes" | True since 2026-10-22 (Today setup checklist) | None |

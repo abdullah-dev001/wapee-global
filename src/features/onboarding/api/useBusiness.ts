@@ -13,7 +13,7 @@ type BranchRow = Database['public']['Tables']['branches']['Row'];
 export const businessKeys = createQueryKeys('businesses');
 
 /** Keys for the "which businesses am I in" lookup, which has no business scope yet. */
-const myBusinessesKey = ['businesses', 'mine'] as const;
+export const myBusinessesKey = ['businesses', 'mine'] as const;
 
 /**
  * A business the user belongs to, with its primary branch.
@@ -24,7 +24,14 @@ const myBusinessesKey = ['businesses', 'mine'] as const;
  */
 export type MyBusiness = Pick<
   BusinessRow,
-  'id' | 'name' | 'slug' | 'status' | 'plan' | 'trial_ends_at' | 'language'
+  | 'id'
+  | 'name'
+  | 'slug'
+  | 'status'
+  | 'plan'
+  | 'trial_ends_at'
+  | 'language'
+  | 'setup_checklist_dismissed_at'
 > & {
   branches: Pick<
     BranchRow,
@@ -48,7 +55,7 @@ export function useMyBusinesses(): UseQueryResult<MyBusiness[], Error> {
       const { data, error } = await getSupabase()
         .from('businesses')
         .select(
-          'id, name, slug, status, plan, trial_ends_at, language, branches(id, name, is_primary, country_code, currency, timezone, invoice_prefix, deleted_at)',
+          'id, name, slug, status, plan, trial_ends_at, language, setup_checklist_dismissed_at, branches(id, name, is_primary, country_code, currency, timezone, invoice_prefix, deleted_at)',
         )
         .is('deleted_at', null)
         .order('created_at', { ascending: true });

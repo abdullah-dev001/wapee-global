@@ -8,6 +8,7 @@ export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Input, type InputProps } from './Input';
 export { NumberStepper, clampInteger, type NumberStepperProps } from './NumberStepper';
+export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export { Select, type SelectOption, type SelectProps } from './Select';
 export {
   SegmentedControl,

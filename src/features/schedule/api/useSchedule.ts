@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 
 import { useSession } from '@/features/auth';
+import { branchBookableKeys } from '@/features/booking-settings/api/useBookingSettings';
 import { createQueryKeys, staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 import { type MinuteOfDay } from '@/lib/time';
@@ -128,6 +129,10 @@ export function useSaveStaffSchedule(businessId: string | null, branchId: string
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: scheduleKeys.scope({ businessId: businessId ?? 'none', branchId }),
+      });
+      // Staff working hours are one of the branch_is_bookable() requirements.
+      void queryClient.invalidateQueries({
+        queryKey: branchBookableKeys.business(businessId ?? 'none'),
       });
     },
   });

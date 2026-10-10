@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 
 import { useSession } from '@/features/auth';
+import { branchBookableKeys } from '@/features/booking-settings/api/useBookingSettings';
 import { createQueryKeys, staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 
@@ -132,6 +133,10 @@ function invalidateServices(
 ) {
   void queryClient.invalidateQueries({
     queryKey: serviceKeys.business(businessId ?? 'none'),
+  });
+  // A service appearing or disappearing changes what branch_is_bookable() says (and the setup checklist).
+  void queryClient.invalidateQueries({
+    queryKey: branchBookableKeys.business(businessId ?? 'none'),
   });
 }
 

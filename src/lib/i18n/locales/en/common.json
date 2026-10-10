@@ -3411,5 +3411,60 @@
     "privacy": "Privacy Policy",
     "signupNotice": "By creating an account you agree to our",
     "linksLabel": "Legal"
+  },
+  "setup": {
+    "title": "Get ready for your first booking",
+    "subtitle": "A few quick steps and your customers can book you online.",
+    "progress": "{{done}} of {{total}} steps done",
+    "dismiss": "Dismiss",
+    "optional": "Optional",
+    "askOwner": "Ask the owner of the business to do this step.",
+    "solo": "Working on your own? Add yourself as a staff member so customers can book you.",
+    "steps": {
+      "hours": {
+        "title": "Set your opening hours",
+        "description": "Customers can only book inside the hours your location is open.",
+        "action": "Set hours"
+      },
+      "service": {
+        "title": "Add your first service",
+        "description": "Give it a name, a duration and a price.",
+        "action": "Add service"
+      },
+      "staff": {
+        "title": "Add yourself or a team member as staff",
+        "description": "Bookings are made with a person, so someone must be on your staff list.",
+        "action": "Add staff"
+      },
+      "link_service": {
+        "title": "Choose who does the service",
+        "description": "Open your service and tick the staff member who provides it.",
+        "action": "Choose staff"
+      },
+      "staff_hours": {
+        "title": "Set their working hours",
+        "description": "Each staff member needs the days and times they work.",
+        "action": "Set hours"
+      },
+      "enable_booking": {
+        "title": "Turn on online booking",
+        "description": "Online booking is switched off for this location.",
+        "action": "Open settings"
+      },
+      "share": {
+        "title": "Copy your booking link",
+        "locked": "Available once the steps above are done.",
+        "action": "Copy link"
+      },
+      "website": {
+        "title": "Publish your website",
+        "description": "Optional: a simple page with your services and a Book button.",
+        "action": "Open website"
+      }
+    },
+    "banner": {
+      "title": "Online booking is not available right now",
+      "action": "Finish setup"
+    }
   }
 }

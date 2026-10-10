@@ -81,6 +81,7 @@ Reuses the `appointments.*` namespace entirely — no new keys.
   time-sorted list already satisfies without a separate visual state.
 
 ## Changelog
+- 2026-10-22: Setup checklist card "Get ready for your first booking" (`SetupChecklist`, people with `settings.booking`): steps derived from `branch_is_bookable` reasons via pure `booking-settings/setupChecklist.ts` (no rules of its own), progress bar, a button per step to its screen, Add me as staff for solo owners, optional website row, copy-link finish; Dismiss is stored per business (`businesses.setup_checklist_dismissed_at`, `dismiss_setup_checklist`); after a dismissal a small banner returns if booking becomes unavailable. Existing businesses were backfilled as dismissed. Screenshots `docs/screenshots/setup-checklist-*.png`.
 - 2026-10-05 (UI polish): layout fixes, no behaviour change. The body no
   longer sets `flex: 1` — it sits inside the scrolling `Screen`, where a flex
   child cannot grow and only squeezes its own content — and it uses

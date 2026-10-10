@@ -16,6 +16,7 @@ import {
   useToast,
 } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
+import { SetupChecklist } from '@/features/booking-settings/components';
 import { LowStockBadge } from '@/features/inventory/components/LowStockBadge';
 import { useAppointmentInvoices } from '@/features/invoices/api/useAppointmentInvoices';
 import { AppointmentInvoiceButton } from '@/features/invoices/components/AppointmentInvoiceButton';
@@ -125,6 +126,9 @@ export function TodayScreen() {
             <BranchSwitcher compact />
           </View>
         ) : null}
+        {/* New businesses: what is still missing before the first online booking. Renders
+            nothing for people without settings.booking, or once set up and dismissed. */}
+        <SetupChecklist />
         <View style={styles.counts}>
           <CountTile label={t('appointments.today')} value={counts.total} />
           {canApprove ? (

@@ -588,3 +588,6 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 ## Public multi-location booking (2026-10-22)
 `20261022100000_public_multi_branch`: `get_bookable_branches(business)` (service_role; live branches passing `branch_is_bookable`, primary first, public fields only incl. `code` = invoice prefix), `get_booking` + `branch_address`, `portal_create_booking(..., p_branch_id)` (old 6-arg signature dropped and recreated, positional calls still work), `outbox_job` + `branch_count`. No table / policy change. Suite `38_public_multi_branch.sql` (39) and HTTP `38_multi_branch_http.mjs` (27, seed + cleanup files).
 
+## Setup checklist dismissal (2026-10-22)
+`20261022110000_setup_checklist_dismissed`: `businesses.setup_checklist_dismissed_at timestamptz` (existing businesses backfilled to now()), `dismiss_setup_checklist(business)` (authenticated, DEFINER, needs `settings.booking`, first dismissal wins, `{ok, code}`). Suite `39_setup_checklist.sql` (15).
+

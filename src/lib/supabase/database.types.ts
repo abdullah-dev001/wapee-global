@@ -894,6 +894,7 @@ export type Database = {
           name: string
           plan: Database["public"]["Enums"]["business_plan"] | null
           plan_activated_at: string | null
+          setup_checklist_dismissed_at: string | null
           slug: string
           status: Database["public"]["Enums"]["business_status"]
           trial_ends_at: string | null
@@ -912,6 +913,7 @@ export type Database = {
           name: string
           plan?: Database["public"]["Enums"]["business_plan"] | null
           plan_activated_at?: string | null
+          setup_checklist_dismissed_at?: string | null
           slug: string
           status?: Database["public"]["Enums"]["business_status"]
           trial_ends_at?: string | null
@@ -930,6 +932,7 @@ export type Database = {
           name?: string
           plan?: Database["public"]["Enums"]["business_plan"] | null
           plan_activated_at?: string | null
+          setup_checklist_dismissed_at?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["business_status"]
           trial_ends_at?: string | null
@@ -5681,6 +5684,10 @@ export type Database = {
       delete_product: { Args: { p_product_id: string }; Returns: Json }
       delete_report_schedule: { Args: { p_schedule_id: string }; Returns: Json }
       discard_invoice_draft: { Args: { p_invoice_id: string }; Returns: Json }
+      dismiss_setup_checklist: {
+        Args: { p_business_id: string }
+        Returns: Json
+      }
       enqueue_due_reminders: { Args: never; Returns: number }
       enqueue_due_reminders_at: { Args: { p_now: string }; Returns: number }
       enqueue_due_report_summaries: { Args: never; Returns: number }
