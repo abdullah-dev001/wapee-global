@@ -39,8 +39,3 @@ export type IconName = keyof typeof paths;
 export function icon(name: IconName, className = 'icon'): string {
   return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[name]}</svg>`;
 }
-
-/** Brand mark: a calendar tile with a check, in the primary + accent colours. */
-export function logoMark(primary: string, accent: string): string {
-  return `<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="1" y="3" width="30" height="28" rx="8" fill="${primary}"/><rect x="7" y="0.5" width="3.5" height="7" rx="1.75" fill="${primary}"/><rect x="21.5" y="0.5" width="3.5" height="7" rx="1.75" fill="${primary}"/><path d="m9.5 17.5 4.5 4.5 8.5-9" fill="none" stroke="${accent}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-}

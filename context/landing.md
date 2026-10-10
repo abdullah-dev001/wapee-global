@@ -20,6 +20,9 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 | src/features/landing/i18n/en.json | All page strings (English base; not loaded into the app bundle) |
 | src/features/landing/pricingModel.ts | Pure, import-free: parse RPC payload, format, yearly maths, plan highlights, compare rows, add-on availability |
 | src/features/landing/landingClient.ts | Browser script: fetch prices, render cards/tables, toggle, mobile menu, JSON-LD offers |
+| src/features/landing/motionClient.ts | Browser script (inlined after landingClient): header `is-scrolled`, reveal once (`.reveal` > `.is-visible`), `[data-motion].in-view` while on screen, `html.page-hidden` |
+| src/features/landing/render/heroVisual.ts | Hero product visual (HTML/CSS/SVG, sized in em from a container-query font size) + its 8 s timeline CSS |
+| src/features/landing/render/motion.ts | Motion + polish CSS: wordmark, header blur, hero glow + dot grid + marker, heading accent, hovers, reveals, step/icon/CTA loops, pause rules |
 | src/features/landing/render/*.ts | String templates: `page.ts` (landing + refund), `chrome.ts` (head/header/footer), `sections.ts`, `pricingSection.ts`, `illustrations.ts` (original SVG), `icons.ts`, `styles.ts` (CSS from theme tokens), `context.ts` |
 | src/features/landing/*.test.ts | Model tests, rendered-HTML tests (SEO tags, no price, links, honesty, redirect), price-literal guard |
 
@@ -33,6 +36,8 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 - Reserved slugs: `pricing`, `features`, `refund` and (2026-10-10) every top-level app route (`today`, `members`, `website`, `icons`...; migration `20261021100000`). `reservedSlugs.test.ts` keeps client + DB in sync and derives every top-level path from `app/`, `public/` and the landing build.
 
 ## UI
+- Logo = text-only wordmark (`.wordmark`, bold, -0.03em, lime underline accent); favicon / PWA icons unchanged. Hero: "Fill your calendar, not your inbox." (marker on the first phrase), visual = phone booking (slots appear, 10:30 picked, Booked + check reveal) + calendar block slides in + "New booking" / "Invoice paid" cards; 8 s loop resting on the final frame.
+- Motion rules: only transform / opacity (a test checks every @keyframes); all loops behind `prefers-reduced-motion: no-preference` (base styles = final frame); loops pause off screen and in hidden tabs; reveals gated by `html.js` with a 3 s `reveal-all` safety net in the head script. Lighthouse 2026-10-10: mobile 95/100/100/100, desktop 100s, CLS ~0.002.
 - Responsive 320 → wide desktop, no horizontal scroll (checked 320/375/768/1440). Mobile menu (<1024) with aria-expanded + Escape; FAQ is native `<details>`; toggle buttons use `aria-pressed`; skip link; one h1.
 - Lighthouse (local, uncompressed, 2026-10-10): mobile 96/100/100/100, desktop 100/100/100/100 (perf/a11y/best practices/SEO).
 
@@ -44,5 +49,6 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 - Only English; another language = another `i18n/<lang>.json` + a page per language.
 
 ## Changelog
+- 2026-10-10: Revision: text wordmark, new animated hero, scroll reveals and calm loops on every illustration, section heading accent, hover lift, header blur on scroll; skeleton pulse is opacity-only.
 - 2026-10-10: Single origin + Vercel; legal pages generated from brand.ts; reseller Polar Software, Inc.; screenshots in `docs/screenshots/landing/`.
 - 2026-10-10: Landing page, /refund, public pricing RPC + new price fields, reserved slugs, SPA fallback moved to /_app/shell.

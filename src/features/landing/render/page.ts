@@ -7,6 +7,8 @@ import { attr, inlineJson, tx, type PageContext } from './context.ts';
 import { footer, head, header, logo } from './chrome.ts';
 import { pricing } from './pricingSection.ts';
 import { ctaBand, faq, features, hero, how, who } from './sections.ts';
+import { heroVisualCss } from './heroVisual.ts';
+import { motionCss } from './motion.ts';
 import { landingCss, legalCss } from './styles.ts';
 
 export type LandingAssets = {
@@ -26,7 +28,7 @@ export type LandingAssets = {
 function headScript(sessionKey: string): string {
   return `<script>(function(){var d=document.documentElement;d.className=d.className.replace('no-js','js');try{var v=localStorage.getItem(${inlineJson(
     sessionKey,
-  )});if(v&&/"refresh_token"\\s*:\\s*"[^"]/.test(v)){location.replace('/today');}}catch(e){}})();</script>`;
+  )});if(v&&/"refresh_token"\\s*:\\s*"[^"]/.test(v)){location.replace('/today');}}catch(e){}setTimeout(function(){if(!window.__landingMotion)d.classList.add('reveal-all');},3000);})();</script>`;
 }
 
 export function softwareJsonLd(ctx: PageContext): Record<string, unknown> {
@@ -66,7 +68,7 @@ ${head(ctx, {
   title: tx(ctx, ctx.s.meta.title),
   description: tx(ctx, ctx.s.meta.description),
   path: '/',
-  css: assets.fontCss + landingCss,
+  css: assets.fontCss + landingCss + heroVisualCss + motionCss,
   extra,
 })}
 <body>
@@ -106,7 +108,7 @@ ${head(ctx, {
   title: `${tx(ctx, r.title)} - ${attr(ctx.brandName)}`,
   description: tx(ctx, r.metaDescription),
   path: ctx.paths.refund,
-  css: o.fontCss + landingCss + legalCss,
+  css: o.fontCss + landingCss + motionCss + legalCss,
 })}
 <body class="legal">
 <header class="site-header"><div class="wrap header-row">${logo(ctx)}</div></header>

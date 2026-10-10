@@ -1,10 +1,11 @@
 /** Header, footer and the <head> of the landing page. */
 import { colors } from '../../../lib/theme/colors.ts';
 import { attr, tx, type PageContext } from './context.ts';
-import { icon, logoMark } from './icons.ts';
+import { icon } from './icons.ts';
 
+/** Text-only wordmark (no icon): bold DM Sans, tight tracking, a small lime underline accent (CSS). */
 export function logo(ctx: PageContext): string {
-  return `<a class="logo" href="/">${logoMark(colors.primary, colors.secondary)}<span>${attr(ctx.brandName)}</span></a>`;
+  return `<a class="wordmark" href="/" aria-label="${tx(ctx, ctx.s.nav.home)}">${attr(ctx.brandName)}</a>`;
 }
 
 export function header(ctx: PageContext): string {

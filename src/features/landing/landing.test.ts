@@ -87,6 +87,36 @@ describe('landing page HTML', () => {
   });
 });
 
+describe('wordmark and hero', () => {
+  const html = renderLanding(ctx, assets);
+  const wordmarks = [...html.matchAll(/<a class="wordmark"[^>]*>([\s\S]*?)<\/a>/g)];
+
+  it('header and footer use a text-only wordmark: no img, no svg, just the product name', () => {
+    expect(wordmarks).toHaveLength(2);
+    for (const [, inner] of wordmarks) {
+      expect(inner).not.toMatch(/<(img|svg|picture)\b/i);
+      expect(inner).toBe('Brandname');
+    }
+  });
+
+  it('the hero headline is real text with the marker phrase, and the visual is described', () => {
+    expect(html).toMatch(
+      /<h1 id="hero-title"><span class="marker">Fill your calendar<\/span>, not your inbox\.<\/h1>/,
+    );
+    expect(html).toContain('class="hero-visual" role="img" aria-label="');
+    expect(html).toContain('No credit card needed · Set up in minutes');
+  });
+
+  it('every animation sits behind prefers-reduced-motion and only moves transform / opacity', () => {
+    const css = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
+    for (const block of css.matchAll(/@keyframes [\w-]+ \{([\s\S]*?)\}\s*\}/g)) {
+      const props = [...(block[1] ?? '').matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
+      expect(props.filter((p) => p !== 'opacity' && p !== 'transform')).toEqual([]);
+    }
+    expect(css).toContain('@media (prefers-reduced-motion: no-preference)');
+  });
+});
+
 describe('refund page', () => {
   const html = renderRefund(ctx, { fontCss: '', updated: '2030-01-01', reseller: null });
 

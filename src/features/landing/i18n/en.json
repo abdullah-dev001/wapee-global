@@ -19,12 +19,29 @@
   },
   "hero": {
     "eyebrow": "For salons, clinics, studios and every business that takes appointments",
-    "title": "Online booking and everyday management for service businesses",
-    "subtitle": "Let customers book you 24/7, keep your team's calendar in one place, and handle clients and invoices without the paperwork.",
-    "primary": "Start free trial",
+    "title": "{{highlight}}, not your inbox.",
+    "titleHighlight": "Fill your calendar",
+    "subtitle": "Clients book themselves 24/7 from your own booking page, while your team calendar, client records and invoices stay in one place.",
+    "primary": "Start 14-day free trial",
     "secondary": "See pricing",
-    "note": "14-day free trial. No credit card needed.",
-    "illustration": "A phone showing a booking page next to a weekly team calendar"
+    "note": "No credit card needed · Set up in minutes",
+    "illustration": "Illustration: on a phone, a client picks a haircut and a 10:30 time and gets a booked confirmation, while the appointment appears in the team calendar.",
+    "visual": {
+      "business": "Your business",
+      "subtitle": "Book online",
+      "service": "Haircut",
+      "duration": "30 min",
+      "pickTime": "Pick a time",
+      "slots": ["9:30", "10:00", "10:30", "11:00", "11:30", "12:00"],
+      "book": "Book",
+      "booked": "Booked",
+      "bookedDetail": "Haircut · 10:30",
+      "today": "Today",
+      "newBooking": "New booking",
+      "newBookingDetail": "Haircut · 10:30",
+      "invoicePaid": "Invoice paid",
+      "invoiceDetail": "Sample invoice"
+    }
   },
   "who": {
     "title": "Made for businesses that run on appointments",

@@ -100,8 +100,6 @@ p { margin: 0; }
 /* Header */
 .site-header { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.94); backdrop-filter: saturate(1.4) blur(8px); border-bottom: 1px solid var(--border); }
 .header-row { display: flex; align-items: center; gap: ${px(spacing[16])}; min-height: ${px(layout.headerHeight)}; }
-.logo { display: inline-flex; align-items: center; gap: ${px(spacing[8])}; font-weight: 700; font-size: ${px(fontSize['5xl'])}; color: var(--primary); text-decoration: none; letter-spacing: ${letterSpacingEm.tighter}em; min-height: ${px(layout.minTouchTarget)}; }
-.logo svg { width: 28px; height: 28px; }
 .site-nav { margin-left: auto; display: flex; align-items: center; gap: ${px(spacing[4])}; }
 .nav-links { display: flex; gap: ${px(spacing[4])}; list-style: none; margin: 0; padding: 0; }
 .nav-links a { display: inline-flex; align-items: center; min-height: ${px(layout.minTouchTarget)}; padding: 0 ${px(spacing[12])}; color: var(--text-2); text-decoration: none; font-weight: 500; border-radius: var(--r-md); }
@@ -187,9 +185,9 @@ p { margin: 0; }
 .checks .addon-line { color: var(--text-2); padding-left: ${px(spacing[32] - spacing[2])}; font-style: italic; }
 .icon-check { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; background: var(--accent-light); border-radius: ${px(radius.full)}; padding: 3px; }
 .fineprint { text-align: center; color: var(--text-2); margin-top: ${px(spacing[24])}; font-size: ${px(fontSize.lg)}; }
-.skeleton { background: linear-gradient(90deg, var(--border) 0%, var(--bg) 50%, var(--border) 100%); background-size: 200% 100%; border-radius: var(--r-md); }
+.skeleton { background: var(--border); border-radius: var(--r-md); }
 @media (prefers-reduced-motion: no-preference) { .skeleton { animation: shimmer ${duration.skeletonPulse}ms ease-in-out infinite; } }
-@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 .plan-skeleton { min-height: 460px; display: grid; gap: ${px(spacing[12])}; align-content: start; }
 .sk-line { height: 14px; } .sk-title { height: 24px; width: 40%; } .sk-price { height: 44px; width: 55%; } .sk-btn { height: 44px; }
 .pricing-error { max-width: 560px; margin: 0 auto ${px(spacing[24])}; text-align: center; background: var(--error-bg); color: var(--error); border-radius: var(--r-lg); padding: ${px(spacing[20])}; }

@@ -93,7 +93,7 @@ if (readFileSync(indexPath, 'utf8').includes('id="root"')) {
 // Expo's debug route list (/_sitemap) would publish every route name: not part of the site.
 rmSync(join(out, '_sitemap.html'), { force: true });
 
-// 2. Browser script: pricingModel.ts + landingClient.ts, types stripped, one classic script.
+// 2. Browser script: pricingModel.ts + landingClient.ts + motionClient.ts, types stripped, one classic script.
 const strip = (file) =>
   stripTypeScriptTypes(readFileSync(join(landingSrc, file), 'utf8'), { mode: 'strip' });
 const unexport = (code) => code.replace(/^export\s+(?=(const|function|async|let)\b)/gm, '');
@@ -104,7 +104,9 @@ const client = unexport(strip('landingClient.ts')).replace(
 );
 if (/^\s*import\s/m.test(client) || /^\s*import\s/m.test(model))
   fail('landing script still has an import after bundling.');
-const script = `(function(){'use strict';\n${model}\n${client}\n})();\n`;
+const motion = unexport(strip('motionClient.ts'));
+if (/^\s*import\s/m.test(motion)) fail('motion script has an import.');
+const script = `(function(){'use strict';\n${model}\n${client}\n${motion}\n})();\n`;
 const hash = createHash('sha256').update(script).digest('hex').slice(0, 12);
 const assetDir = join(out, 'assets', 'landing');
 mkdirSync(assetDir, { recursive: true });
