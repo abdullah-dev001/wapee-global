@@ -272,11 +272,24 @@ Compared with `src/features/landing/i18n/en.json` and `get_public_pricing()` (pl
 | "Run several locations from one account on Business" (feature card) / "Multiple locations" (Business card) | True since 2026-10-22: clients choose a location on the booking page | None |
 | "Give each person the access they need" (roles card) | True since 2026-10-22: a Staff login can be linked to its profile | None |
 | Business "$79 / month per location", "each extra location billed the same", "Billed $X per year" | No billing; manual | Keep, but billing must be done by hand until Polar; make sure invoices match |
-| FAQ "Can I cancel anytime? ... keep access until the end of the period you paid for" | No self-serve cancel; period end not enforced | Say "contact us to cancel" until billing exists |
-| FAQ "Can I change plans later? Yes" | Only via support (super admin) | Add "just ask us" |
-| Add-ons table prices, "Billed per business" | Enabled only by the super admin, never charged automatically | Fine for a manual launch; no "buy" wording |
-| Compare table: Solo "–" for "Ready-made team roles" | Solo actually gets them (not enforced) | Remove the row or enforce |
+| FAQ "How do I cancel?" | Now says: email support; access continues to the end of the paid period (period end is still enforced by hand) | Done 2026-10-22 |
+| FAQ "Can I change plans later?" | Now says "just ask us" with the support email | Done 2026-10-22 |
+| Add-ons table prices, "Billed per business" | Subtitle now says "Ask us to enable one"; no buy wording anywhere | Done 2026-10-22 |
+| Compare table: "Ready-made team roles" row | Removed from the page (flag kept in data, not advertised) | Done 2026-10-22 |
 | "Install it like an app ... push notifications keep everyone in the loop" | Web push works; native app push does not | OK for the PWA; do not promise store apps |
 | "Booking emails" / FAQ "a link to cancel or reschedule" | Works only with a verified email domain, and only if the client gives an email | Set up Resend domain before launch; consider making email required |
 | "Each location has its own currency, time zone and tax settings" (FAQ) | True; Solo / Team edit theirs under Business location (2026-10-22) | None |
 | Hero note "Set up in minutes" | True since 2026-10-22 (Today setup checklist) | None |
+
+
+---
+
+## Fixes made on 2026-10-22 (branch `dev`, not pushed)
+
+| Gap | Commit | Migration | Suite / proof |
+|---|---|---|---|
+| Staff logins linked to staff profiles | `76cadb8` | `20261022090000_staff_member_link` | suite 37 (57) + real HTTP flow as dev.manager / dev.staff |
+| Client chooses a location | `2472704` | `20261022100000_public_multi_branch` | suite 38 (39), HTTP `38_multi_branch_http.mjs` (27), suite 26 (110) |
+| Setup checklist on Today | `ca2517f` | `20261022110000_setup_checklist_dismissed` | suite 39 (15), unit tests, screenshots |
+| Solo / Team edit their location | `dec00a5` | none (`update_branch` was never plan-gated) | suite 40 (30) |
+| Landing / pricing copy truthful | this commit | none | landing unit tests, screenshots |

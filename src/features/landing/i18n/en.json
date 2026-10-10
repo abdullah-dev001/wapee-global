@@ -137,7 +137,7 @@
     "billedMonthly": "Billed monthly",
     "cta": "Start 14-day free trial",
     "everythingIn": "Everything in {{plan}}, plus:",
-    "fineprint": "No credit card needed for the trial. Cancel anytime. Prices in USD, taxes may apply.",
+    "fineprint": "No credit card needed for the trial. Cancel by contacting us. Prices in USD, taxes may apply.",
     "loading": "Loading prices",
     "error": "Prices could not be loaded right now.",
     "retry": "Try again",
@@ -162,7 +162,6 @@
       "core": "Calendar, clients, invoices and basic reports",
       "website": "Your own simple website",
       "reviews": "Customer reviews",
-      "default_roles": "Ready-made team roles",
       "commission": "Staff commission tracking",
       "advanced_reports": "Advanced reports and exports",
       "custom_roles": "Custom roles and permissions",
@@ -172,7 +171,7 @@
     "addonFeature": "{{feature}} available as an add-on",
     "addons": {
       "title": "Add-ons",
-      "subtitle": "Switch on extra modules when you need them. Billed per business.",
+      "subtitle": "Extra modules you can add when you need them. Ask us to enable one for your business. Billed per business.",
       "name": "Add-on",
       "description": "What it does",
       "price": "Price",
@@ -215,8 +214,8 @@
         "a": "No. You only need an email address to start your trial."
       },
       "cancel": {
-        "q": "Can I cancel anytime?",
-        "a": "Yes. If you cancel, you keep access until the end of the period you have already paid for. See our refund policy for details."
+        "q": "How do I cancel?",
+        "a": "To cancel, email us at {{email}}. You keep access until the end of the period you have already paid for. See our refund policy for details."
       },
       "commission": {
         "q": "Do you take a commission on my bookings?",
@@ -232,7 +231,7 @@
       },
       "plans": {
         "q": "Can I change plans later?",
-        "a": "Yes, you can move to another plan at any time. If you move to a smaller plan, you first need to be within its staff and location limits."
+        "a": "Yes. Just ask us at {{email}} and we will move you to another plan. If you move to a smaller plan, you first need to be within its staff and location limits."
       },
       "support": {
         "q": "How do I get support?",
@@ -273,7 +272,7 @@
       },
       "cancel": {
         "title": "3. Cancelling",
-        "body": "You can cancel at any time. After you cancel, you keep access until the end of the period you have already paid for, and you are not charged again."
+        "body": "To cancel, email us at {{email}}. After you cancel, you keep access until the end of the period you have already paid for, and you are not charged again."
       },
       "refunds": {
         "title": "4. Refunds",

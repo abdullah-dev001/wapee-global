@@ -37,14 +37,15 @@ export type PublicPricing = { plans: PublicPlan[]; addons: PublicAddon[] };
 
 /**
  * Plan feature flags shown on the page, in display order. `embed_widget` is a real
- * flag but the widget is OFF at launch, so it is deliberately not listed.
+ * flag but the widget is OFF at launch, so it is deliberately not listed. `default_roles`
+ * is a flag in the data but nothing enforces it (every plan gets the ready-made roles), so
+ * advertising it as a plan difference would be untrue: it is not listed either.
  */
 export const DISPLAY_FEATURES = [
   'booking_link',
   'core',
   'website',
   'reviews',
-  'default_roles',
   'commission',
   'advanced_reports',
   'custom_roles',

@@ -50,6 +50,7 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 - Only English; another language = another `i18n/<lang>.json` + a page per language.
 
 ## Changelog
+- 2026-10-22: Copy made truthful for manual billing: cancelling and changing plans go through support (FAQ, refund policy, fineprint), add-ons say "ask us to enable", the "Ready-made team roles" row is gone (`default_roles` is no longer in `DISPLAY_FEATURES`: nothing enforces it), multi-location and "set up in minutes" claims are now true (booking-page location choice, Today setup checklist). Prices still come from `get_public_pricing()`. English is the only language. Tests added in `landing.test.ts` / `pricingModel.test.ts`.
 - 2026-10-10: `/` no longer redirects signed-in visitors; auth-aware header and CTAs from the stored session (no network); header screenshots `docs/screenshots/landing/header-*`, `menu-mobile-*`.
 - 2026-10-10: Revision: text wordmark, new animated hero, scroll reveals and calm loops on every illustration, section heading accent, hover lift, header blur on scroll; skeleton pulse is opacity-only.
 - 2026-10-10: Single origin + Vercel; legal pages generated from brand.ts; reseller Polar Software, Inc.; screenshots in `docs/screenshots/landing/`.

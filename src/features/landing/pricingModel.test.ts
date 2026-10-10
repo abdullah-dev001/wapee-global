@@ -166,6 +166,13 @@ describe('prices', () => {
 });
 
 describe('what each plan includes (from the gating flags)', () => {
+  it('never advertises default_roles: it is a flag nothing enforces, so it is no plan difference', () => {
+    const d = data();
+    for (let i = 0; i < d.plans.length; i += 1) {
+      expect(planHighlights(d.plans, i).features).not.toContain('default_roles');
+    }
+  });
+
   it('first plan lists everything; next plans list only what they add', () => {
     const d = data();
     expect(planHighlights(d.plans, 0)).toEqual({
@@ -174,7 +181,7 @@ describe('what each plan includes (from the gating flags)', () => {
     });
     expect(planHighlights(d.plans, 1)).toEqual({
       inheritsFrom: 'Solo',
-      features: ['default_roles', 'commission', 'advanced_reports'],
+      features: ['commission', 'advanced_reports'],
     });
     expect(planHighlights(d.plans, 2).features).toEqual([
       'custom_roles',

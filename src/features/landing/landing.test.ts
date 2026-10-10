@@ -146,3 +146,25 @@ describe('no price literal in the landing code', () => {
       expect(ok).not.toMatch(PRICE_LITERAL);
   });
 });
+
+describe('truthful billing copy (no self-serve billing yet)', () => {
+  const copy = JSON.stringify(en);
+
+  it('says cancelling and changing plans go through us, with the support address', () => {
+    const en2 = en;
+    expect(en2.faq.items.cancel.a).toContain('{{email}}');
+    expect(en2.faq.items.cancel.a).toMatch(/end of the period you have already paid/);
+    expect(en2.faq.items.plans.a).toMatch(/ask us/i);
+    expect(en2.faq.items.plans.a).toContain('{{email}}');
+    expect(en2.refund.sections.cancel.body).toContain('{{email}}');
+  });
+
+  it('never promises a self-serve action or a buy button', () => {
+    expect(copy).not.toMatch(/buy now|buy it|purchase|checkout/i);
+    expect(copy).not.toMatch(/cancel anytime|you can cancel at any time/i);
+  });
+
+  it('does not list "Ready-made team roles" as a plan feature', () => {
+    expect(copy).not.toMatch(/ready-made team roles/i);
+  });
+});
