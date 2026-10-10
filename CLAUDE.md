@@ -77,6 +77,8 @@ Routes stay thin; business logic in `features/`. No file over ~300 lines.
 
 **Security checklist (every feature)** — RLS tested per role (owner, manager, receptionist, staff, other business); permission checked in Edge Function/RPC; public endpoints rate-limited and minimal; private files via short-lived signed URLs; sensitive client fields gated by `clients.view_sensitive`; no secrets in client.
 
+**Product guide** — `docs/wapee-product-guide.html` is the founder's product guide (Roman Urdu). Any change to a feature, plan rule, add-on, launch flag or workflow updates the guide (card, status chip, "Last verified" date + commit) in the same commit. `npm run guide:check` lists product files changed since the guide was last updated.
+
 **Context files** — any feature change updates `context/<feature>.md` in the same task (current state, changelog one line); migration → `_database.md`; new shared component/hook/util → `_foundation.md`. Task is not done until they match the code. Template: `context-files.md`.
 
 ## 5. Testing rules (STRICT)
