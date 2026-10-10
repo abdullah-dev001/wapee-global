@@ -32,5 +32,6 @@ Owner: roles (list, edit drawer, view, create, delete dialog), members manage + 
 - A dev-only React warning about `accessibilityElementsHidden` on lucide icons appears on web (pre-existing pattern in the Settings hub).
 
 ## Changelog
+- 2026-10-22: **Business location** (`/settings/location`, `LocationScreen`): Solo / Team owners (and any `settings.business` holder on a plan without `multi_branch`) see the branch summary and edit it with the same `BranchFormDrawer` the Locations screen uses; hub card shown only while `multi_branch` is off. No migration: `update_branch` was never plan-gated and keeps refusing unsafe currency / time zone / prefix changes (`currency_locked|in_use`, `timezone_in_use`, `prefix_locked`); `create_branch` / `archive_branch` stay behind `multi_branch`, and the branch limit trigger still blocks a second location. Suite `40_single_branch_edit.sql` (30). The edit drawer itself was not clicked (summary screens screenshot-checked).
 - 2026-10-07: Team names fixed (`useMembers` merges `list_business_member_names`); the permission matrix hides add-on permissions while the add-on is off.
 - 2026-10-07: Phase 9B UI built.

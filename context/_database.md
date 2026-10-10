@@ -591,3 +591,5 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
 ## Setup checklist dismissal (2026-10-22)
 `20261022110000_setup_checklist_dismissed`: `businesses.setup_checklist_dismissed_at timestamptz` (existing businesses backfilled to now()), `dismiss_setup_checklist(business)` (authenticated, DEFINER, needs `settings.booking`, first dismissal wins, `{ok, code}`). Suite `39_setup_checklist.sql` (15).
 
+## Single-location edit (2026-10-22)
+No migration. Suite `40_single_branch_edit.sql` (30) proves `update_branch` on Solo and Team plans (stored values, forbidden roles, unsafe changes refused with nothing written, second location blocked, invoices use the edited tax rate, issued ones keep theirs).

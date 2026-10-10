@@ -45,6 +45,7 @@ type HubItem = {
     | '/settings/billing'
     | '/settings/roles'
     | '/settings/branches'
+    | '/settings/location'
     | '/settings/advanced-reports'
     | '/settings/forms'
     | '/settings/data-requests'
@@ -164,6 +165,17 @@ export default function SettingsScreen() {
             icon: Building2,
             title: t('branches.hubTitle'),
             subtitle: t('branches.hubSubtitle'),
+          },
+        ]
+      : []),
+    // One location (Solo / Team): edit it here; the multi-location tools above need multi_branch.
+    ...(canBranches.allowed && !multiBranch.enabled
+      ? [
+          {
+            route: '/settings/location' as const,
+            icon: Building2,
+            title: t('branches.location.hubTitle'),
+            subtitle: t('branches.location.hubSubtitle'),
           },
         ]
       : []),

@@ -29,7 +29,7 @@ Short names used below:
 | 6 | The owner's staff profile is linked to their login (`staff_profiles.member_id`) | `add_me_as_staff`, `link_staff_member` | WORKS |
 | 7 | Solo cap: 1 active bookable staff profile per location | trigger `staff_branches_enforce_cap` in `M/20261010100000_phase8_feature_gating` | WORKS (after the trial; the trial is Business-level, no cap) |
 | 8 | "Owner only" on Solo: other people can still be invited as Manager / Receptionist / Staff (logins are not capped, only staff profiles) | `invite_member` (no plan check) | DISPLAY-ONLY (the Solo limit is about profiles, not logins) |
-| 9 | Edit branch address, phone, tax rate, time zone after onboarding: only on the Locations screen, which shows only when the plan has `multi_branch` (Business, or during the trial) | `app/(app)/settings/index.tsx` (`useFeatureFlag('multi_branch')`), `update_branch` in `M/20261011110000_phase9_multi_branch` (the RPC itself is not plan-gated) | PARTIAL: once on Solo, no screen to set tax rate / address; invoices then use tax 0 (`src/features/invoices/components/InvoiceEditor.tsx` reads the branch rate) |
+| 9 | Edit the location's name, address, phone, tax rate, time zone, currency and invoice prefix: Settings > "Business location" (single-location plans) or Locations (`multi_branch`). Unsafe currency / time zone / prefix changes are refused by `update_branch` with a clear message; a second location is still blocked without `multi_branch` | `app/(app)/settings/location.tsx`, `LocationScreen.tsx`, `update_branch` in `M/20261011110000_phase9_multi_branch`; suite `40_single_branch_edit.sql` | WORKS (invoices use the edited tax rate; issued ones keep theirs) |
 
 **Typical day (Solo):**
 1. Morning: the owner opens `/today` and sees the day's bookings (refreshes every 30 s while open).
@@ -253,7 +253,7 @@ A time appears on `/<slug>/book` only if ALL of these hold (`branch_is_bookable`
 4. **Email delivery is not production-ready**: needs a verified Resend domain (dev sender only reaches the account owner) and custom SMTP for auth emails. Clients without an email get no confirmation, reminder or review request (SMS is off).
 5. **Native app push does not work** (no EAS `projectId`). Web push works.
 6. ~~No setup checklist~~ **FIXED 2026-10-22** (Today checklist, `M/20261022110000_setup_checklist_dismissed`).
-7. **Solo / Team cannot edit branch address, phone, tax rate or time zone after the trial** (Locations screen is Business-only). Invoices then carry tax 0; website contact data cannot be fixed.
+7. ~~Solo / Team cannot edit branch address, phone, tax rate or time zone~~ **FIXED 2026-10-22** (Settings > Business location).
 8. **Invites are not emailed**; the owner must copy and send the link.
 9. **Owner is not a staff member by default**: Solo owners must add themselves as staff. The "Add me as staff" button exists (2026-10-22) and the Today checklist explains it.
 10. **Auth hook for suspension is a manual dashboard switch** (otherwise suspended users can still sign in until the app signs them out).
@@ -278,5 +278,5 @@ Compared with `src/features/landing/i18n/en.json` and `get_public_pricing()` (pl
 | Compare table: Solo "–" for "Ready-made team roles" | Solo actually gets them (not enforced) | Remove the row or enforce |
 | "Install it like an app ... push notifications keep everyone in the loop" | Web push works; native app push does not | OK for the PWA; do not promise store apps |
 | "Booking emails" / FAQ "a link to cancel or reschedule" | Works only with a verified email domain, and only if the client gives an email | Set up Resend domain before launch; consider making email required |
-| "Each location has its own currency, time zone and tax settings" (FAQ) | True in data, but Solo/Team cannot edit them after the trial | Open the branch edit form for single-branch plans |
+| "Each location has its own currency, time zone and tax settings" (FAQ) | True; Solo / Team edit theirs under Business location (2026-10-22) | None |
 | Hero note "Set up in minutes" | True since 2026-10-22 (Today setup checklist) | None |
