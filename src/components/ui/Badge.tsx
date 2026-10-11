@@ -11,16 +11,36 @@ const DOT_SIZE = 6;
 
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'error' | 'info' | 'primary';
 
-type TonePalette = { text: ColorToken; background: ColorToken; border: ColorToken };
+type TonePalette = {
+  text: ColorToken;
+  dot: ColorToken;
+  background: ColorToken;
+  border: ColorToken;
+};
 
-/** DESIGN_GUIDE §12.16 tone table. */
+/** DESIGN_GUIDE §12.16 tone table (label text uses the AA-contrast `*Text` tokens, the dot keeps the base colour). */
 const tones: Record<BadgeTone, TonePalette> = {
-  neutral: { text: 'textSecondary', background: 'surfaceHover', border: 'border' },
-  success: { text: 'success', background: 'successLight', border: 'successBorder' },
-  warning: { text: 'warning', background: 'warningLight', border: 'warningBorder' },
-  error: { text: 'error', background: 'errorLight', border: 'errorBorder' },
-  info: { text: 'info', background: 'infoLight', border: 'infoBorder' },
-  primary: { text: 'primary', background: 'primaryLight', border: 'primaryLight' },
+  neutral: {
+    text: 'textSecondary',
+    dot: 'textSecondary',
+    background: 'surfaceHover',
+    border: 'border',
+  },
+  success: {
+    text: 'successText',
+    dot: 'success',
+    background: 'successLight',
+    border: 'successBorder',
+  },
+  warning: {
+    text: 'warningText',
+    dot: 'warning',
+    background: 'warningLight',
+    border: 'warningBorder',
+  },
+  error: { text: 'errorText', dot: 'error', background: 'errorLight', border: 'errorBorder' },
+  info: { text: 'infoText', dot: 'info', background: 'infoLight', border: 'infoBorder' },
+  primary: { text: 'primary', dot: 'primary', background: 'primaryLight', border: 'primaryLight' },
 };
 
 export type BadgeProps = {
@@ -47,7 +67,7 @@ export function Badge({ children, tone = 'neutral', dot = false, icon, style }: 
         style,
       ]}
     >
-      {dot ? <View style={[styles.dot, { backgroundColor: theme.colors[palette.text] }]} /> : null}
+      {dot ? <View style={[styles.dot, { backgroundColor: theme.colors[palette.dot] }]} /> : null}
       {icon}
       <Text variant="badge" color={palette.text} numberOfLines={1}>
         {children}

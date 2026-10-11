@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   CircleAlert,
   CircleCheck,
@@ -36,11 +37,18 @@ import { useInteractionState } from './useInteractionState';
 
 export type ToastTone = 'success' | 'error' | 'warning' | 'info';
 
+export type ToastAction = {
+  label: string;
+  onPress: () => void;
+};
+
 export type ToastOptions = {
   message: string;
   tone?: ToastTone;
   /** Auto-dismiss delay in ms. Default 4000. Pass 0 to require a manual close. */
   duration?: number;
+  /** Optional button, e.g. "Reload" on an update toast. */
+  action?: ToastAction;
 };
 
 type ToastEntry = ToastOptions & { id: number; tone: ToastTone };
@@ -90,9 +98,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const show = useCallback(
-    ({ message, tone = 'info', duration = DEFAULT_DURATION }: ToastOptions) => {
+    ({ message, tone = 'info', duration = DEFAULT_DURATION, action }: ToastOptions) => {
       const id = nextId.current++;
-      setToasts((current) => [...current, { id, message, tone, duration }].slice(-MAX_VISIBLE));
+      setToasts((current) =>
+        [...current, { id, message, tone, duration, action }].slice(-MAX_VISIBLE),
+      );
       if (duration > 0) {
         timers.current.set(
           id,
@@ -159,6 +169,7 @@ function ToastViewport({
 }
 
 function ToastRow({ toast, onDismiss }: { toast: ToastEntry; onDismiss: () => void }) {
+  const { t } = useTranslation();
   const palette = toneStyles[toast.tone];
   const Icon = palette.icon;
   const { handlers, showHover } = useInteractionState(false);
@@ -186,11 +197,25 @@ function ToastRow({ toast, onDismiss }: { toast: ToastEntry; onDismiss: () => vo
       <Text variant="small" color={palette.color} style={styles.message}>
         {toast.message}
       </Text>
+      {toast.action ? (
+        <Pressable
+          onPress={() => {
+            toast.action?.onPress();
+            onDismiss();
+          }}
+          accessibilityRole="button"
+          style={styles.action}
+        >
+          <Text variant="caption" color={palette.color}>
+            {toast.action.label}
+          </Text>
+        </Pressable>
+      ) : null}
       <Pressable
         {...handlers}
         onPress={onDismiss}
         accessibilityRole="button"
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={t('actions.dismiss')}
         style={[styles.close, showHover ? { opacity: 0.7 } : null]}
       >
         <X size={theme.iconSize.xs} strokeWidth={2} color={theme.colors[palette.color]} />
@@ -229,6 +254,10 @@ const styles = StyleSheet.create({
   },
   message: {
     flex: 1,
+  },
+  action: {
+    paddingVertical: theme.spacing[4],
+    paddingHorizontal: theme.spacing[8],
   },
   close: {
     padding: theme.spacing[2],

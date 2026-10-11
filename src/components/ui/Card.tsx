@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { focusRing, shadow, theme, useBreakpoint } from '@/lib/theme';
 
@@ -13,7 +13,7 @@ export type CardProps = {
   noPadding?: boolean;
   /** Draws the featured ring (primary-light border + 3px ring). */
   featured?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
@@ -33,7 +33,7 @@ export function Card({
   const { handlers, showHover } = useInteractionState(false);
   const interactive = Boolean(onPress);
 
-  const cardStyle: ViewStyle[] = [
+  const cardStyle: StyleProp<ViewStyle> = [
     styles.base,
     {
       padding: noPadding ? 0 : isMobile ? theme.layout.cardPaddingMobile : theme.layout.cardPadding,

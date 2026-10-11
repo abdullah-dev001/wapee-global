@@ -1,0 +1,1333 @@
+<!doctype html>
+<html lang="ur-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Wapee Product Guide</title>
+<meta name="description" content="Founder ke liye Wapee ki poori yaad-dasht: har feature, add-on, plan rule aur workflow, code se check kiya hua (Roman Urdu).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#024751; --primary-soft:#e6f0f1; --accent:#d8ff29; --accent-ink:#1d2600;
+  --bg:#f8fafb; --surface:#ffffff; --surface-2:#f1f5f6; --text:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --live:#0f7a3d; --live-bg:#e3f6ea; --off:#5b5b6b; --off-bg:#ececf1; --partial:#8a5a00; --partial-bg:#fff2d6;
+  --missing:#b42318; --missing-bg:#fde8e6; --display:#5a3fc0; --display-bg:#eeeafd;
+  --shadow:0 1px 2px rgba(17,24,39,.05),0 4px 14px rgba(17,24,39,.05);
+  --radius:14px; --font:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --primary:#5cc3cf; --primary-soft:#0f2e33; --accent:#d8ff29; --accent-ink:#1d2600;
+    --bg:#0b1214; --surface:#121b1e; --surface-2:#182428; --text:#e8eef0; --muted:#9aa7ad; --line:#24343a;
+    --live:#5fd28f; --live-bg:#12301f; --off:#b7b7c6; --off-bg:#26262f; --partial:#f3c15a; --partial-bg:#33280f;
+    --missing:#ff8a80; --missing-bg:#3a1714; --display:#b7a6ff; --display-bg:#241c45;
+    --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --primary:#5cc3cf; --primary-soft:#0f2e33; --accent:#d8ff29; --accent-ink:#1d2600;
+  --bg:#0b1214; --surface:#121b1e; --surface-2:#182428; --text:#e8eef0; --muted:#9aa7ad; --line:#24343a;
+  --live:#5fd28f; --live-bg:#12301f; --off:#b7b7c6; --off-bg:#26262f; --partial:#f3c15a; --partial-bg:#33280f;
+  --missing:#ff8a80; --missing-bg:#3a1714; --display:#b7a6ff; --display-bg:#241c45;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.65;overflow-x:hidden}
+a{color:var(--primary)}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--surface-2);padding:1px 6px;border-radius:6px;word-break:break-word}
+h1,h2,h3,h4{line-height:1.3;margin:0 0 .5em}
+h2{font-size:1.45rem}
+h3{font-size:1.08rem;margin-top:1.4em}
+p{margin:.4em 0 .8em}
+ul,ol{padding-inline-start:1.25em;margin:.3em 0 .8em}
+li{margin:.15em 0}
+
+/* Top bar */
+.topbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{display:flex;gap:10px;align-items:center;padding:10px 16px;max-width:1400px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--primary);display:grid;place-items:center}
+.brand small{font-weight:500;color:var(--muted)}
+.search{flex:1;min-width:0;position:relative}
+.search input{width:100%;font:inherit;padding:9px 12px 9px 36px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);outline:none}
+.search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.btn{font:inherit;font-size:.85rem;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;min-height:40px}
+.btn:hover{border-color:var(--primary)}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.icon-btn{width:40px;padding:0;display:grid;place-items:center}
+.only-mobile{display:none}
+.search-count{font-size:.8rem;color:var(--muted);white-space:nowrap}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1400px;margin:0 auto}
+.sidebar{position:sticky;top:61px;height:calc(100vh - 61px);overflow:auto;padding:18px 12px 40px 16px;border-right:1px solid var(--line)}
+.sidebar nav a{display:flex;gap:8px;align-items:center;padding:7px 10px;border-radius:9px;color:var(--text);text-decoration:none;font-size:.9rem}
+.sidebar nav a span.n{width:22px;height:22px;flex:none;border-radius:7px;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;font-size:.72rem;font-weight:600}
+.sidebar nav a:hover{background:var(--surface-2)}
+.sidebar nav a.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.sidebar nav a.active span.n{background:var(--primary);color:#fff}
+.side-tools{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px}
+.side-tools .btn{flex:1;font-size:.78rem;padding:6px 8px;min-height:36px}
+main{padding:24px 28px 80px;min-width:0}
+section.sec{scroll-margin-top:72px;margin-bottom:44px}
+.sec-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.sec-num{width:36px;height:36px;border-radius:11px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+.sec-head h2{margin:0}
+.lead{color:var(--muted);margin-top:0}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--primary) 0%,#04606d 100%);color:#fff;border-radius:20px;padding:26px;position:relative;overflow:hidden;margin-bottom:28px}
+:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#033a42,#05525d)}
+.hero h1{font-size:1.75rem;margin-bottom:.3em}
+.hero p{color:#d5e8ea;max-width:720px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);padding:5px 10px;border-radius:999px;font-size:.8rem}
+.badge.lime{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.hero-art{position:absolute;right:-20px;bottom:-30px;opacity:.18;pointer-events:none}
+
+/* Chips */
+.chip{display:inline-flex;align-items:center;font-size:.68rem;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap;text-transform:uppercase}
+.chip.live{background:var(--live-bg);color:var(--live)}
+.chip.off{background:var(--off-bg);color:var(--off)}
+.chip.partial{background:var(--partial-bg);color:var(--partial)}
+.chip.missing{background:var(--missing-bg);color:var(--missing)}
+.chip.display{background:var(--display-bg);color:var(--display)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:0 0 22px}
+.legend div{display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)}
+
+/* Cards */
+.grid{display:grid;gap:12px}
+details.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+details.card>summary{list-style:none;cursor:pointer;display:flex;gap:10px;align-items:center;padding:13px 16px;min-height:52px}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary .ct{font-weight:600;flex:1;min-width:0}
+details.card>summary .ct small{display:block;font-weight:400;color:var(--muted);font-size:.82rem}
+details.card>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 4px 4px;transition:transform .2s;flex:none}
+details.card[open]>summary::after{transform:rotate(225deg);margin-bottom:-4px}
+details.card[open]>summary{border-bottom:1px solid var(--line)}
+.cb{padding:14px 18px 16px}
+.cb dl{margin:0;display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px 16px}
+.cb dt{font-weight:600;color:var(--primary);font-size:.88rem}
+.cb dd{margin:0}
+.cb dd ul{margin:0}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+.note{border-inline-start:4px solid var(--accent);background:var(--surface);padding:10px 14px;border-radius:10px;margin:10px 0;border:1px solid var(--line);border-left-width:4px}
+:root .note{border-left-color:#9fbf00}
+.warn{border-left:4px solid var(--missing);background:var(--surface);padding:10px 14px;border-radius:10px;margin:10px 0;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.kpi b{display:block;font-size:1.5rem;color:var(--primary)}
+.kpi span{color:var(--muted);font-size:.85rem}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin:8px 0 14px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:start;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.c,th.c{text-align:center}
+.yes{color:var(--live);font-weight:700}
+.no{color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle}
+.dot.all{background:var(--primary)}
+.dot.branch{background:#3aa3b0}
+.dot.own{background:#9fbf00}
+.dot.none{background:transparent;border:1.5px solid var(--line)}
+
+/* Flow */
+.flow-wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px;align-items:start}
+.flow svg{width:100%;height:auto;display:block}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps>li{counter-increment:s;position:relative;padding:4px 0 8px 38px}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:4px;width:26px;height:26px;border-radius:8px;background:var(--primary-soft);color:var(--primary);font-weight:700;font-size:.8rem;display:grid;place-items:center}
+.svg-text{font-family:var(--font)}
+
+/* Cheat sheet */
+.cheat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cheat .box h4{color:var(--primary);margin-bottom:6px}
+.cheat .box ul{font-size:.88rem}
+
+.hidden-by-search{display:none !important}
+body.searching .hero,body.searching .legend{display:none}
+details.card{scroll-margin-top:72px}
+mark{background:var(--accent);color:var(--accent-ink);border-radius:3px;padding:0 1px}
+.empty-search{display:none;text-align:center;color:var(--muted);padding:40px 10px}
+footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
+.backdrop{display:none}
+
+@media (max-width:1023px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:fixed;inset:61px auto 0 0;width:min(300px,86vw);background:var(--surface);z-index:40;transform:translateX(-102%);transition:transform .22s ease;box-shadow:var(--shadow);height:auto}
+  body.nav-open .sidebar{transform:none}
+  body.nav-open .backdrop{display:block;position:fixed;inset:61px 0 0 0;background:rgba(0,0,0,.35);z-index:35}
+  .only-mobile{display:grid}
+  main{padding:18px 16px 70px}
+  .flow-wrap{grid-template-columns:1fr}
+  .flow{max-width:360px}
+}
+@media (max-width:767px){
+  body{font-size:14.5px}
+  .brand small,.hide-sm{display:none}
+  .two,.three,.cheat{grid-template-columns:1fr}
+  .cb dl{grid-template-columns:1fr;gap:2px}
+  .cb dd{margin-bottom:8px}
+  .hero{padding:20px}
+  .hero h1{font-size:1.4rem}
+  .topbar-in{gap:8px}
+}
+@media print{
+  .topbar,.sidebar,.backdrop{display:none !important}
+  .layout{display:block}
+  details.card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <button class="btn icon-btn only-mobile" id="navToggle" aria-label="Menu kholein" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <a class="brand" href="#top">
+      <span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d8ff29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 15l2.5 2.5L16 13"/></svg></span>
+      <span>Wapee <small>Product Guide</small></span>
+    </a>
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search karein: invoice, trial, SMS, staff..." aria-label="Guide mein search karein" autocomplete="off">
+    </div>
+    <span class="search-count hide-sm" id="qCount"></span>
+    <button class="btn icon-btn" id="themeToggle" aria-label="Light / dark mode badlein" title="Light / dark">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</header>
+<div class="backdrop" id="backdrop"></div>
+
+<div class="layout" id="top">
+<aside class="sidebar" id="sidebar" aria-label="Sections">
+  <div class="side-tools">
+    <button class="btn" id="expandAll">Expand all</button>
+    <button class="btn" id="collapseAll">Collapse all</button>
+  </div>
+  <nav id="toc">
+    <a href="#s1"><span class="n">1</span>Wapee kya hai</a>
+    <a href="#s2"><span class="n">2</span>Plans aur pricing</a>
+    <a href="#s3"><span class="n">3</span>Add-ons</a>
+    <a href="#s4"><span class="n">4</span>Dashboard features</a>
+    <a href="#s5"><span class="n">5</span>Roles aur permissions</a>
+    <a href="#s6"><span class="n">6</span>Workflows (A se O)</a>
+    <a href="#s7"><span class="n">7</span>Public side aur URLs</a>
+    <a href="#s8"><span class="n">8</span>Super admin</a>
+    <a href="#s9"><span class="n">9</span>Behind the scenes</a>
+    <a href="#s10"><span class="n">10</span>Limits aur gaps</a>
+    <a href="#s11"><span class="n">11</span>Go-live status</a>
+    <a href="#s12"><span class="n">12</span>Kahan milega?</a>
+    <a href="#s13"><span class="n">13</span>Glossary</a>
+    <a href="#s14"><span class="n">14</span>Cheat sheet</a>
+    <a href="#s15"><span class="n">+</span>Guide update kaise</a>
+  </nav>
+</aside>
+
+<main id="main">
+<div class="hero">
+  <svg class="hero-art" width="260" height="220" viewBox="0 0 260 220" aria-hidden="true"><rect x="20" y="20" width="200" height="180" rx="24" fill="none" stroke="#d8ff29" stroke-width="10"/><path d="M20 80h200M80 0v50M160 0v50" stroke="#d8ff29" stroke-width="10"/><path d="M70 140l30 30 60-60" fill="none" stroke="#d8ff29" stroke-width="12" stroke-linecap="round"/></svg>
+  <h1>Wapee Product Memory Guide</h1>
+  <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
+  <div class="badges">
+    <span class="badge lime">Last verified: 11 Oct 2026</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">2dccb3c</span> (branch dev)</span>
+    <span class="badge">Prices dev database se, 11 Oct 2026</span>
+  </div>
+</div>
+
+<div class="legend" aria-label="Status chips ka matlab">
+  <div><span class="chip live">Live</span> kaam karta hai, launch par on</div>
+  <div><span class="chip off">Off at launch</span> bana hua hai, abhi band</div>
+  <div><span class="chip partial">Partial</span> limit ya manual step ke saath</div>
+  <div><span class="chip missing">Missing / coming soon</span> bana hi nahin</div>
+  <div><span class="chip display">Display-only</span> dikhta hai, enforce nahin hota</div>
+</div>
+
+<!-- ============ 1 ============ -->
+<section class="sec" id="s1">
+  <div class="sec-head"><span class="sec-num">1</span><h2>Wapee kya hai</h2></div>
+  <p class="lead">Ek page ka khulasa: product kis ke liye hai, kis ke liye nahin, aur kis tarah bana hai.</p>
+
+  <div class="box searchable">
+    <p><b>Wapee</b> ek international appointment-booking SaaS hai. Koi bhi business jo "time slot" bechta hai (salon, barber, clinic, dental, physio, pet grooming, consultant, car service) Wapee par apne services, staff aur timings daalta hai, aur customers <code>wapee.online/&lt;slug&gt;/book</code> par khud booking kar lete hain. Business ko dashboard milta hai (Today, Calendar, Clients, Invoices, Reports), ek single-page website, aur zaroorat ke hisaab se add-ons.</p>
+    <div class="two">
+      <div>
+        <h3>Kis ke liye hai</h3>
+        <ul>
+          <li>Chhote aur darmiyane appointment businesses: 1 akela owner (Solo) se le kar kai branches (Business) tak.</li>
+          <li>Har mulk: koi bhi country, currency aur time zone (280 countries, 162 currencies, 418 time zones).</li>
+          <li>Jo flat price chahte hain, per-seat billing nahin, aur marketplace commission nahin.</li>
+          <li>Jinhein clinic jaisi depth chahiye: forms, consent, photos, packages (add-ons).</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Kis ke liye nahin (abhi)</h3>
+        <ul>
+          <li>Jinhein customer se online payment / deposit lena hai (built nahin, scope se bahar).</li>
+          <li>Recurring ya ek booking mein kai services (scope se bahar).</li>
+          <li>Waitlist, custom domain, drag-and-drop calendar, marketing email campaigns, dark mode in app.</li>
+          <li>Jo app store wali native app aaj hi chahte hain (PWA live hai, store apps baad mein).</li>
+          <li>Jinhein SMS reminders zaroori hain (SMS launch par off hai).</li>
+        </ul>
+      </div>
+    </div>
+    <h3>Key principles</h3>
+    <ul>
+      <li><b>Generic first:</b> ek hi engine, industry ka farq sirf settings aur custom fields se. Har industry ka alag code nahin.</li>
+      <li><b>International:</b> country, currency, time zone, tax aur address <b>branch</b> ke paas hain, business ke paas nahin. Reports kabhi do currencies ko jama nahin karte.</li>
+      <li><b>Simple UX:</b> smart defaults, ek line ki explanation, live preview, advanced settings band (collapsed).</li>
+      <li><b>Safe data:</b> double booking database khud rokta hai; invoices ek baar issue ho kar badal nahin sakte; har table par RLS.</li>
+    </ul>
+    <h3>Tech ek paragraph mein</h3>
+    <p>Ek hi Expo (React Native) codebase se web, PWA, Android aur iOS bante hain. Abhi <b>web + PWA</b> launch ho raha hai, store apps baad mein. Sab kuch ek domain par hai: <code>https://wapee.online</code> (landing page, dashboard, admin aur business pages; koi <code>app.</code> subdomain nahin). Website <b>Vercel</b> par host hogi. Backend <b>Supabase</b> hai: Postgres database, login (Auth), file storage aur Edge Functions (chhote server programs). Email <b>Resend</b> se jaata hai, browser push notifications Web Push se. SMS ke liye Twilio ka code hai magar band hai. Brand naam sirf ek file (<code>src/config/brand.ts</code>) mein likha hai, taake rename asaan rahe.</p>
+  </div>
+
+  <div class="box">
+    <h3 style="margin-top:0">Pieces kaise jurte hain</h3>
+    <svg viewBox="0 0 760 250" role="img" aria-label="Diagram: customer aur team browser se wapee.online kholte hain, jo Vercel par hai, aur data Supabase se aata hai; emails Resend se jaati hain" style="width:100%;height:auto">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker></defs>
+      <g class="svg-text" font-size="13">
+        <rect x="10" y="20" width="160" height="60" rx="12" fill="#e6f0f1" stroke="#024751"/><text x="90" y="46" text-anchor="middle" fill="#024751" font-weight="600">Customer</text><text x="90" y="64" text-anchor="middle" fill="#024751" font-size="11">/slug/book, manage</text>
+        <rect x="10" y="150" width="160" height="60" rx="12" fill="#e6f0f1" stroke="#024751"/><text x="90" y="176" text-anchor="middle" fill="#024751" font-weight="600">Business team</text><text x="90" y="194" text-anchor="middle" fill="#024751" font-size="11">/today, PWA</text>
+        <rect x="250" y="85" width="190" height="70" rx="12" fill="#024751"/><text x="345" y="114" text-anchor="middle" fill="#fff" font-weight="600">wapee.online</text><text x="345" y="134" text-anchor="middle" fill="#d8ff29" font-size="11">Vercel (web + PWA)</text>
+        <rect x="520" y="70" width="230" height="100" rx="12" fill="#d8ff29"/><text x="635" y="98" text-anchor="middle" fill="#1d2600" font-weight="700">Supabase</text><text x="635" y="118" text-anchor="middle" fill="#1d2600" font-size="11">Database + RLS, Login</text><text x="635" y="134" text-anchor="middle" fill="#1d2600" font-size="11">Storage, Edge Functions</text><text x="635" y="150" text-anchor="middle" fill="#1d2600" font-size="11">Cron jobs (har minute)</text>
+        <rect x="520" y="200" width="105" height="40" rx="10" fill="#ffffff" stroke="#024751"/><text x="572" y="225" text-anchor="middle" fill="#024751" font-size="12">Resend email</text>
+        <rect x="645" y="200" width="105" height="40" rx="10" fill="#ffffff" stroke="#024751"/><text x="697" y="225" text-anchor="middle" fill="#024751" font-size="12">Web Push</text>
+        <line x1="170" y1="55" x2="250" y2="105" stroke="#6b7280" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="170" y1="180" x2="250" y2="135" stroke="#6b7280" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="440" y1="120" x2="520" y2="120" stroke="#6b7280" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="600" y1="170" x2="580" y2="200" stroke="#6b7280" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="670" y1="170" x2="690" y2="200" stroke="#6b7280" stroke-width="2" marker-end="url(#ar)"/>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="sec" id="s2">
+  <div class="sec-head"><span class="sec-num">2</span><h2>Plans aur pricing</h2></div>
+  <p class="lead">Teen plans. Har naya business 14 din ke trial se shuru hota hai. Billing abhi haath se (super admin) hoti hai.</p>
+
+  <div class="note searchable"><b>Prices kahan se aate hain:</b> database ki <code>plans</code> aur <code>addons</code> tables se, function <code>get_public_pricing()</code> ke zariye. Landing page inhein live padhta hai, code mein koi price likha hua nahin. Badalne ki jagah: <b>/admin/platform</b> (super admin, 2FA ke saath). Current price: neeche wali table "as of 11 Oct 2026" dev database se hai. Production database abhi bana nahin; wahan bhi migration yahi values daalegi.</div>
+
+  <div class="tbl-wrap searchable">
+    <table>
+      <thead><tr><th>Cheez</th><th class="c">Solo</th><th class="c">Team</th><th class="c">Business</th></tr></thead>
+      <tbody>
+        <tr><td><b>Monthly price (USD)</b></td><td class="c">$15</td><td class="c">$39</td><td class="c">$79 <small>per location</small></td></tr>
+        <tr><td><b>Yearly price (USD)</b></td><td class="c">$150</td><td class="c">$390</td><td class="c">$790 <small>per location</small></td></tr>
+        <tr><td>Bookable staff per location</td><td class="c">1</td><td class="c">5</td><td class="c">Unlimited</td></tr>
+        <tr><td>Locations (branches)</td><td class="c">1</td><td class="c">1</td><td class="c">Unlimited</td></tr>
+        <tr><td>Booking page, dashboard, invoices, basic reports, website, reviews</td><td class="c yes">Haan</td><td class="c yes">Haan</td><td class="c yes">Haan</td></tr>
+        <tr><td>Commission</td><td class="c no">Nahin</td><td class="c yes">Haan</td><td class="c yes">Haan</td></tr>
+        <tr><td>Advanced reports (+ CSV, print, email schedule)</td><td class="c no">Nahin</td><td class="c yes">Haan</td><td class="c yes">Haan</td></tr>
+        <tr><td>Embed widget <span class="chip off">Off at launch</span></td><td class="c no">Nahin</td><td class="c yes">Haan</td><td class="c yes">Haan</td></tr>
+        <tr><td>Multi-branch (Locations) + branch comparison</td><td class="c no">Nahin</td><td class="c no">Nahin</td><td class="c yes">Haan</td></tr>
+        <tr><td>Custom roles</td><td class="c no">Nahin</td><td class="c">Add-on $10</td><td class="c yes">Included</td></tr>
+        <tr><td>"Ready-made team roles" flag <span class="chip display">Display-only</span></td><td class="c no">flag off</td><td class="c yes">flag on</td><td class="c yes">flag on</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid">
+    <details class="card"><summary><span class="ct">Trial: 14 din<small>Har naye business ka aaghaz</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya hota hai</dt><dd>Onboarding khatam hote hi 14 din ka trial shuru. Trial mein business ko <b>Business plan jaisa sab kuch</b> milta hai, <b>har add-on on</b>, aur koi cap nahin (staff aur locations unlimited).</dd>
+      <dt>Warning</dt><dd>Aakhri 3 din mein sirf Owner ko upar banner dikhta hai ("Trial ends in N days"); aakhri din laal.</dd>
+      <dt>Khatam hone par</dt><dd>Koi cron nahin; jis second trial ka waqt guzarta hai, business "inactive" ho jata hai. Detail workflow K mein.</dd>
+      <dt>Kaun badal sakta hai</dt><dd>Sirf super admin: trial 1 se 90 din tak barha sakta hai, ya plan assign kar sakta hai.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Caps (limits) kaise kaam karti hain<small>Staff per location, locations</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Staff cap</dt><dd>Solo 1, Team 5, Business unlimited. Ye <b>har location par active, bookable staff profiles</b> ginta hai. Inactive ya deleted staff nahin gina jata. Do locations mein kaam karne wala staff dono jagah gina jata hai.</dd>
+      <dt>Location cap</dt><dd>Solo 1, Team 1, Business unlimited. Doosri location banane ki koshish database rok deta hai.</dd>
+      <dt>Kya NAHIN gina jata</dt><dd>Bookings, clients, services aur <b>logins</b>. Yaani Solo par bhi Manager ya Receptionist invite ho sakte hain. "Solo = sirf owner" <span class="chip display">Display-only</span>.</dd>
+      <dt>Downgrade</dt><dd>Agar business naye plan ki limit se upar hai to super admin ka downgrade <b>refuse</b> hota hai (kaun si location limit se upar hai, list dikhati hai). Kuch nahin badalta.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Billing aaj kaise hoti hai<small>Manual, super admin ke haath se</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
+      <dt>Aaj</dt><dd><ul>
+        <li>App mein koi payment, card ya "Buy" button nahin. Owner ke Billing page par sirf plan, status, trial end, staff usage, add-ons aur "Contact us" email.</li>
+        <li>Customer aap se baat karta hai, bank transfer / PayPal / Wise se paise deta hai.</li>
+        <li>Super admin <b>/admin/business/&lt;id&gt;</b> par plan assign karta hai (isi se business active ho jata hai) aur note mein payment reference likhta hai.</li>
+        <li><b>Paid period end</b> (<code>current_period_end</code>) save hota hai magar <b>koi use check nahin karta</b> <span class="chip display">Display-only</span>. Active business khud kabhi lock nahin hota; paise band hon to super admin khud inactive ya suspended karega.</li>
+        <li>Monthly / yearly aur "per location" price sirf dikhte hain, kahin charge nahin hote.</li>
+      </ul></dd>
+      <dt>Planned (baad mein)</dt><dd>Polar (merchant of record) se online checkout: checkout aur webhook Edge Functions, plan auto-assign, past-due rule. Refund page par reseller "Polar Software, Inc." pehle se likha hai. Polar ka koi code abhi nahin <span class="chip missing">Missing</span>.</dd>
+    </dl></div></details>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="sec" id="s3">
+  <div class="sec-head"><span class="sec-num">3</span><h2>Add-ons</h2></div>
+  <p class="lead">Add-on = extra module jo plan ke upar on kiya jata hai. On karna sirf super admin ke haath mein hai (owner "Contact us" dabata hai). Trial mein sab add-ons on hote hain.</p>
+  <div class="note searchable"><b>Off hone par kya hota hai (sab add-ons ka common rule):</b> menu, screens, buttons aur role editor ki permission rows gayab ho jaati hain, aur database us module ke har action ko <code>feature_unavailable</code> keh kar refuse karta hai. <b>Data delete nahin hota</b>, bas chhup jata hai; dobara on karne par wapas aa jata hai.</div>
+
+  <div class="grid">
+    <details class="card"><summary><span class="ct">Packages &amp; Sessions<small>$9/month · $90/year · har plan par</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Business "package" banata hai (jaise 10 sessions + 1 bonus, price, expiry, kin services par chale). Client ko invoice line ke taur par bikta hai, aur har visit par appointment se ek session kaat'ta hai.</dd>
+      <dt>Kis ko chahiye</dt><dd>Laser clinics, physio, massage, gym-type sessions, prepaid bundles.</dd>
+      <dt>Misaal</dt><dd>"Laser 6 sessions $300": invoice issue hua, client ke profile par 6 balance. Har visit par appointment drawer mein "Use a session".</dd>
+      <dt>Kahan</dt><dd>Menu <b>Packages</b> (definitions), invoice editor mein "Add package", client profile par Packages section, appointment drawer mein Package sessions block.</dd>
+      <dt>Rules</dt><dd><ul><li>Package invoice <b>issue</b> hone par bikta hai (unpaid ho tab bhi sessions chalte hain). Invoice par client hona zaroori.</li><li>Expiry branch time zone ke din ke hisaab se.</li><li>Galat deduction: banane wala 10 minute tak Undo; baad mein sirf reverse permission wala (reason ke saath). Har cheez nayi row, purani kabhi delete nahin.</li><li>Poora credit note package cancel karta hai, magar sirf jab koi session use na hua ho.</li><li>Staff apni appointments par session kaat sakta hai.</li></ul></dd>
+      <dt>Missing</dt><dd>Packages report, Today/Calendar par package badge.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Inventory<small>$9/month · $90/year · har plan par</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Products (naam, SKU, unit, price, stock, low-stock level). Invoice par product line bikti hai to stock khud kam hota hai. Har stock change ek permanent record.</dd>
+      <dt>Kis ko chahiye</dt><dd>Salons jo shampoo/products bechte hain, clinics jo creams bechte hain.</dd>
+      <dt>Misaal</dt><dd>Shampoo stock 5, alert level 2. Invoice par 3 bike, stock 2, Today par "Low stock" badge aur Manager ko push + email alert.</dd>
+      <dt>Kahan</dt><dd>Menu <b>Inventory</b>; invoice editor mein "Add product"; Today aur header par Low stock badge.</dd>
+      <dt>Rules</dt><dd><ul><li>Stock invoice issue par ghat'ta hai; stock kam ho to poora issue refuse (jab tak branch par "negative stock allow" on na ho).</li><li>Poora credit note stock wapas karta hai; partial credit note nahin (staff manual "return" daale).</li><li>Products har branch ke apne. Branch ke beech transfer nahin.</li></ul></dd>
+      <dt>Partial</dt><dd>Low-stock push aur email bana hai magar asal mein kabhi deliver test nahin hua. Barcode, suppliers, purchase orders nahin.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Files &amp; Photos<small>$9/month · $90/year · har plan par</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Client (aur kisi appointment) ke saath photos aur PDFs: before / after / damage / other, aur documents.</dd>
+      <dt>Kis ko chahiye</dt><dd>Aesthetic clinics, dental, tattoo, hair colour history.</dd>
+      <dt>Misaal</dt><dd>Treatment se pehle aur baad ki photo appointment drawer se upload; client profile par gallery.</dd>
+      <dt>Kahan</dt><dd>Client profile ka Files section, appointment drawer ka Files block.</dd>
+      <dt>Rules</dt><dd><ul><li>Sirf JPG / PNG / WEBP / PDF, 10 MB tak. File ke andar ke bytes check hote hain, naam par bharosa nahin.</li><li><b>Photo consent</b> client par on hona zaroori, warna photo upload refuse (PDF bina consent ke chal jati hai).</li><li>Files private bucket mein; dekhne ke liye 5 minute ka signed link banta hai.</li><li>Ek business mein 5,000 live files ki had.</li><li>Photo ke andar location (GPS/EXIF) remove nahin hoti; app ye batata hai.</li></ul></dd>
+      <dt>Partial</dt><dd>PDF upload sirf web par test hua; native app mein naya build chahiye. Thumbnails aur virus scan nahin.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Forms &amp; Consent<small>$12/month · $120/year · har plan par</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Intake aur consent forms banana (sawal + consent text + signature), services se jorna, aur client se device par ya link se sign karwana. Signed copy kabhi badalti nahin.</dd>
+      <dt>Kis ko chahiye</dt><dd>Clinics, aesthetic, physio, koi bhi jahan "maine samajh liya" signature chahiye.</dd>
+      <dt>Misaal</dt><dd>"Botox consent" form, Botox service se jura. Appointment drawer mein "Not signed yet"; receptionist tablet par sign karwata hai ya link bhejta hai.</dd>
+      <dt>Kahan</dt><dd><b>Settings &gt; Forms</b> (builder), client profile ka Forms section, appointment drawer, public link <code>/&lt;slug&gt;/sign#token=...</code>.</dd>
+      <dt>Rules</dt><dd><ul><li>Form booking ko <b>kabhi block nahin</b> karta, sirf "signed / not signed" dikhata hai.</li><li>Form badla to naya version; purane signed copies purane version par.</li><li>Galat copy "void" hoti hai (nayi row), delete nahin.</li><li>Link 14 din valid, ek hi baar use.</li><li>Sensitive jawab sirf <code>clients.view_sensitive</code> wale dekhte hain.</li></ul></dd>
+      <dt>Partial</dt><dd>Form link ka email kabhi asal mein bheja nahin gaya (test client ke paas email nahin tha). Signed form ka PDF nahin.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Client portal<small>$12/month · $120/year · har plan par</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Business ke customers <code>/&lt;slug&gt;/portal</code> par bina password ke (email link se) sign in karte hain aur apni bookings, packages, invoices, photos aur signed forms ki list dekhte hain; wahin se book, cancel, reschedule.</dd>
+      <dt>Kis ko chahiye</dt><dd>Regular clients wale businesses: clinics, packages bechne wale.</dd>
+      <dt>Misaal</dt><dd>Client email daalta hai, link aata hai, 14 din ka session. Apna package balance aur purani invoices dekhta hai.</dd>
+      <dt>Kahan</dt><dd>Public page <code>/&lt;slug&gt;/portal</code>. Dashboard mein is ka koi alag screen nahin.</dd>
+      <dt>Rules</dt><dd><ul><li>Sirf wohi email jo pehle se kisi client ki hai; anjaan email ko bhi same jawab ("link bhej diya") taake koi andaza na laga sake.</li><li>Login link 15 minute, ek baar; session 14 din.</li><li>Cancel / reschedule / book wahi rules jo public booking page par.</li><li>Photos tab sirf jab Files &amp; Photos bhi on ho aur client ka consent ho. Packages/Forms tabs bhi apne add-on par depend.</li><li>"My data" tab: client apna data copy ya erase request kar sakta hai.</li></ul></dd>
+      <dt>Partial</dt><dd>Login email asal mein sirf Resend account owner ko gayi hai; verified domain chahiye. UI ke kuch final buttons click-test nahin hue (HTTP se prove hue).</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Custom roles<small>$10/month · $100/year · Team par add-on, Business mein included</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>4 default roles ke ilawa apne roles banana, har permission ka scope chun'na (None / Own / Branch / All), clone, edit, delete.</dd>
+      <dt>Kis ko chahiye</dt><dd>Teams jahan "Senior stylist" ya "Front desk lead" jaisa beech ka role chahiye.</dd>
+      <dt>Misaal</dt><dd>"Senior stylist" = Staff + apni branch ke sab clients dekh sake.</dd>
+      <dt>Kahan</dt><dd><b>Settings &gt; Roles</b>; assign <b>Team (Members)</b> ke Manage drawer se.</dd>
+      <dt>Rules</dt><dd><ul><li>Default roles badle nahin ja sakte.</li><li>Billing permission kisi custom role mein nahin ja sakti (sirf Owner).</li><li>Aap wo permission nahin de sakte jo aap ke paas khud nahin.</li><li>Role use mein ho to delete ke liye replacement role chun'na parta hai.</li><li>Max 50 custom roles. Add-on off hone par purane assignments chalte rehte hain, naye nahin bante.</li></ul></dd>
+      <dt>Display-only</dt><dd>"Sirf Team ke liye" sirf dikhawa hai: super admin Solo par bhi on kar sakta hai, kuch nahin rokta.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">SMS credits<small>Per business credits, super admin daalta hai</small></span><span class="chip off">Off at launch</span></summary><div class="cb"><dl>
+      <dt>Kya karta</dt><dd>Jis client ke paas email na ho, us ko SMS se confirmation / reminder (Twilio). Har mulk ka per-segment rate, credits ka ledger, quiet hours (21:00-08:00).</dd>
+      <dt>Kis ko chahiye</dt><dd>Jahan customers email nahin dete (bohat se mulk).</dd>
+      <dt>Abhi kya status</dt><dd><code>launch.sms = false</code>: Settings ka SMS credits card chhupa, SMS toggle ki jagah "SMS messages are coming soon", role editor mein sms permissions chhupi. Code aur tables maujood. Twilio keys set nahin, kabhi asal SMS nahin gaya. Pakistan jaise mulkon ka rate hi nahin (refuse hoga).</dd>
+      <dt>On kaise hoga</dt><dd>Developer: Twilio account + secrets, flag <code>sms: true</code>, har mulk mein ek test SMS.</dd>
+      <dt>Off par</dt><dd>Bina email wale client ko <b>koi message nahin</b> jaata (sirf screen par manage link).</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Embed widget<small>Plan feature (Team+), add-on nahin</small></span><span class="chip off">Off at launch</span></summary><div class="cb"><dl>
+      <dt>Kya karta</dt><dd>Business apni purani website par ek chhota code daal kar Wapee booking form dikha sake. Allowed domains (max 10), key rotate.</dd>
+      <dt>Abhi kya status</dt><dd><code>launch.widget = false</code>: Website editor ka Widget tab chhupa. Vercel abhi booking page ko sirf Wapee ke apne domain par frame hone deta hai, is liye bahar ki site par widget chalega hi nahin.</dd>
+      <dt>On kaise hoga</dt><dd>Vercel middleware jo har business ki allowed list padh kar <code>frame-ancestors</code> header lagaye (2-3 ghante kaam), phir flag on.</dd>
+    </dl></div></details>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="sec" id="s4">
+  <div class="sec-head"><span class="sec-num">4</span><h2>Dashboard features, screen by screen</h2></div>
+  <p class="lead">Mobile par neeche 3 tabs (Today, Calendar, Clients) + More; tablet/desktop par left sidebar. Har menu item sirf usi ko dikhta hai jis ke paas permission ho.</p>
+
+  <div class="grid">
+    <details class="card"><summary><span class="ct">Today<small>Menu: Today (sab ko)</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Aaj ki appointments (branch ke time zone ka "aaj"), ginti (total, pending approval, completed), agli appointment highlight, quick actions: Approve / Complete / No-show (har ek confirm ke baad). Completed par "Create invoice / View invoice".</dd>
+      <dt>Setup checklist</dt><dd>Naye owner ko "Get ready for your first booking" card: 5 steps (branch hours, service, staff, staff ko service dena, staff hours) + aakhir mein "Copy booking link". Har step ka button seedha us screen par. Dismiss ho sakta hai; baad mein booking toot jaye to chhota banner wapas.</dd>
+      <dt>Kaun</dt><dd>Har member. Staff ko sirf apni appointments. Checklist sirf <code>settings.booking</code> walon ko.</dd>
+      <dt>Fresh data</dt><dd>Screen khuli ho to har 30 second refresh, app par wapas aane par bhi; mobile par pull-to-refresh. Realtime nahin.</dd>
+      <dt>Extra</dt><dd>Mobile par upar branch switcher (2+ locations hon to). Low stock badge (Inventory on ho to).</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Calendar<small>Menu: Calendar · appointments.view</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Day / Week / List view. Day mein har staff ka alag column, band waqt shaded (staff hours, breaks, time off), abhi ke waqt ki line. Week = 7 din ki strip + chuna hua din. List = filters (status, staff, service, search) ke saath paginated list.</dd>
+      <dt>Kaun</dt><dd>Owner, Manager, Receptionist sab staff dekhte hain; Staff sirf apna column.</dd>
+      <dt>Kahan</dt><dd><b>Calendar</b>. "+ New appointment" ya khaali slot par tap.</dd>
+      <dt>Rules</dt><dd><ul><li>Drag-and-drop nahin (jaan boojh kar).</li><li>Header mein Refresh button; 30 s auto refresh jab screen khuli ho.</li><li>Pending approval ka badge (tab aur header par) sirf approve karne walon ko.</li></ul></dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Appointments: create, walk-in, phone booking<small>Calendar &gt; New appointment</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Client dhoondo ya naya banao, service, staff, date/time, notes, "walk-in" toggle.</dd>
+      <dt>Kaun</dt><dd><code>appointments.create</code>: Owner, Manager, Receptionist; Staff sirf apne liye (system khud apna profile laga deta hai).</dd>
+      <dt>Rules</dt><dd><ul><li>Staff working hours ke bahar bhi book kar sakta hai (sirf warning), magar <b>double booking kabhi nahin</b> (database rokta hai).</li><li>Walk-in par client ko koi message nahin jaata.</li><li>Dashboard booking par confirmation email jaati hai agar client ki email ho.</li></ul></dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Appointments: statuses aur actions<small>Appointment detail drawer</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Statuses</dt><dd><b>pending</b> (approval ka intezar) · <b>confirmed</b> · <b>completed</b> · <b>no_show</b> · <b>cancelled</b>.</dd>
+      <dt>Actions</dt><dd><ul>
+        <li><b>Approve</b> (pending se confirmed): <code>appointments.approve</code>.</li>
+        <li><b>Complete</b>: review link dialog khulta hai, review email queue hoti hai.</li>
+        <li><b>No-show</b>: hamesha haath se; khud-ba-khud nahin hota.</li>
+        <li><b>Cancel</b>: <code>appointments.cancel</code> (Staff ke paas nahin). Cancelled hamesha ke liye final.</li>
+        <li><b>Reopen</b> (completed/no-show se confirmed): sirf Owner ya Manager, aur sirf jab invoice na bana ho.</li>
+        <li>Drawer mein client ka phone/email (Call, WhatsApp, Email, Copy) agar <code>clients.view_contact</code> ho; messages ka status aur fail hone par "Try again".</li>
+      </ul></dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Appointments: edit / reschedule from dashboard<small>Business ki taraf se time badalna</small></span><span class="chip missing">Missing</span></summary><div class="cb"><dl>
+      <dt>Haqiqat</dt><dd>Database function (<code>update_appointment</code>) aur app hook dono bane hain, magar <b>koi screen ya button inhein use nahin karta</b>. Dashboard se time ya staff badalne ka raasta nahin.</dd>
+      <dt>Abhi kya karein</dt><dd>Cancel kar ke nayi appointment banayein, ya client ko apne manage link se reschedule karne ko kahein.</dd>
+      <dt>Note</dt><dd>business-flows.md mein "receptionist moves a booking by 30 minutes" likha hai; code is ko support nahin karta.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Clients<small>Menu: Clients · clients.view</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>List (server search, pages, archived toggle; mobile cards, desktop table), naya / edit, archive / unarchive. Profile: contact, notes, upcoming, visit history (har branch), invoices, aur add-on sections (Packages, Files, Forms).</dd>
+      <dt>Kaun</dt><dd>Owner/Manager/Receptionist apni scope ke clients; Staff sirf wo clients jin ki un ke saath appointment hai.</dd>
+      <dt>Sensitive fields</dt><dd><ul><li><b>Phone, email, notes</b> sirf <code>clients.view_contact</code> walon ko (Owner, Manager, Receptionist). Database khud blank karta hai, sirf UI nahin.</li><li><b>Sensitive custom field answers</b> sirf <code>clients.view_sensitive</code>.</li></ul></dd>
+      <dt>Rules</dt><dd><ul><li>Client poore business ka hai, branch ka nahin. Phone business mein unique; duplicate par "yeh client pehle se hai" link.</li><li>Delete nahin, archive.</li><li>Export data (JSON) aur Erase personal data buttons profile par (workflow N).</li></ul></dd>
+      <dt>Missing</dt><dd>Import / bulk upload, tags, birthdays, custom client fields. Visit history se appointment drawer nahin khulta.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Services<small>Menu: Services · services.manage</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Service: naam, duration (5 se 1440 min), buffer (safai ka waqt), online-bookable, active, kaun staff karta hai, aur <b>har branch ki apni price</b> (currency branch ki).</dd>
+      <dt>Kaun</dt><dd>Owner, Manager (apni branch ki price).</dd>
+      <dt>Rules</dt><dd><ul><li>Free (0) price chalti hai, negative nahin. Naam business mein unique.</li><li>Staff ke hisaab se alag price/duration nahin.</li><li>Service buffer branch buffer ki jagah leta hai (jama nahin hote).</li><li>Delete = soft delete, history rehti hai.</li></ul></dd>
+      <dt>Partial</dt><dd>Categories ke hisaab se list group hoti hai magar <b>category banane / rename karne ka screen nahin</b>. Save teen alag writes hai (beech mein fail ho to dobara save karein).</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Staff<small>Menu: Staff · staff.view (edit: staff.manage)</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Staff profile: display name, job title, contact, active, online-bookable, kin branches mein, kaun si services. Har person ka weekly schedule drawer.</dd>
+      <dt>Hours, breaks, time off</dt><dd>Staff ke saath "Schedule" drawer: har branch ke weekly hours (split shift ok), breaks. Time off <b>Schedule &gt; Time off</b> par (poore din; approval nahin).</dd>
+      <dt>Login link</dt><dd>Staff profile ke liye login zaroori nahin. "App login" field se kisi member ko jorna, ya invite karte waqt profile chun'na. "No app access" badge dikhata hai kis ke paas login nahin.</dd>
+      <dt>Add me as staff</dt><dd>Owner/Manager jin ka profile nahin, ek click mein apna bookable profile bana lete hain. <b>Solo owner ke liye zaroori</b>: owner khud-ba-khud staff nahin hota.</dd>
+      <dt>Rules</dt><dd><ul><li>"No working hours set — no online slots" badge: bina hours staff ka koi slot nahin banta.</li><li>Plan cap yahan lagti hai (Solo 1, Team 5 per location).</li><li>Overnight shift nahin, half-day time off nahin.</li></ul></dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Schedule<small>Menu: Schedule · staff.view</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Tabs</dt><dd>Opening hours (branch) · Time off · Holidays (closures) · Rooms.</dd>
+      <dt>Kaun</dt><dd>Branch hours aur holidays sirf <code>settings.business</code> (Owner) edit karta hai; baaki read-only dekhte hain. Staff apna time off khud.</dd>
+      <dt>Rules</dt><dd>Jis din branch hours nahin, wo din band. Holiday par koi slot nahin. Week ek saath save (ek transaction).</dd>
+      <dt>Partial</dt><dd>Rooms (resources): list, banana, delete. Capacity hamesha 1 aur service se jorne ka screen nahin; screen khud kehta hai ke rooms abhi bookings par asar nahin karte.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Invoices<small>Menu: Invoices · invoices.view</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Draft banana, items (service, free text, completed appointment se, package, product), discount, issue, payment (cash / card / bank transfer), payment reverse (refund), credit note, print.</dd>
+      <dt>Kaun</dt><dd>Banana, issue, payment: Owner, Manager, Receptionist. Discount aur credit note / payment reverse: Owner, Manager. Staff ke paas invoices nahin.</dd>
+      <dt>Numbering</dt><dd><code>&lt;branch prefix&gt;-000001</code>, har branch ka apna, <b>bina gap</b>, issue par number milta hai. Credit notes ki alag series <code>PREFIX-CN-000001</code>. Prefix pehli invoice ke baad lock.</dd>
+      <dt>Tax</dt><dd>Branch ka tax rate aur tax number issue ke waqt copy hota hai; baad mein branch badle to purani invoice nahin badalti. Tax net (discount ke baad) par.</dd>
+      <dt>Rules</dt><dd><ul><li>Issued invoice kabhi edit / delete nahin. Galti = credit note.</li><li>Payment balance se zyada nahin. Discount ke liye reason.</li><li>Ek appointment ki ek hi invoice; poora credit hone ke baad bhi dobara invoice nahin.</li><li>Branch ki pehli invoice ke baad us ki currency lock.</li><li>0 total ki invoice issue nahin hoti.</li></ul></dd>
+      <dt>Missing</dt><dd>Native PDF (web par print / save as PDF chalta hai), per-line credit note, client ko invoice email.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Reports: basic<small>Menu: Reports · reports.view_basic</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Today / This month: revenue <b>har currency alag</b>, appointment counts, top services.</dd>
+      <dt>Kaun</dt><dd>Owner, Manager. Revenue ke liye <code>reports.view_revenue</code>.</dd>
+      <dt>Missing</dt><dd>Basic report ka CSV/PDF export nahin.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Reports: advanced, branch comparison, exports<small>Reports &gt; Advanced (Settings &gt; Advanced reports) · Team+</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Week / Month / Custom (366 din tak) pichle period se muqabla: Revenue, Team, Services, Clients, Appointments, aur Locations (branch comparison, sirf Business).</dd>
+      <dt>Exports</dt><dd>CSV (web download; native par text share), print view / save as PDF (web).</dd>
+      <dt>Email schedule</dt><dd>Weekly / monthly summary email un ko jo All-scope advanced report permission rakhte hain. <span class="chip partial">Partial</span>: ek baar asal email gayi; schedule toggles UI mein click-test nahin hue.</dd>
+      <dt>Kaun</dt><dd><code>reports.view_advanced</code>: Owner, Manager.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Reviews<small>Menu: Reviews · reviews.view</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Reviews ki list (rating, reply, featured filters), reply, website par feature karna (max 12).</dd>
+      <dt>Kaun</dt><dd>Owner, Manager reply/feature; Receptionist dekh sakta; Staff sirf apni appointments ke reviews.</dd>
+      <dt>Rules</dt><dd>Customer ke alfaaz kabhi badle nahin ja sakte. Business review delete nahin kar sakta; sirf super admin "remove" (reason ke saath).</dd>
+      <dt>Partial</dt><dd>Review ke baad har rating ko "Google par review" button dikhta hai, magar <b>Google review link set karne ka koi screen nahin</b> (sirf database se).</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Website builder<small>Menu: Website · website.edit (publish: website.publish)</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Ek page ki website <code>/&lt;slug&gt;</code>: 7 sections (hero, about, services, gallery, testimonials, FAQs, contact), show/hide/upar-neeche, theme (brand colour, font, corners, logo, hero image), SEO title/description, live preview, Publish / Unpublish.</dd>
+      <dt>Kaun</dt><dd>Edit aur publish sirf Owner (Manager ke paas dono nahin).</dd>
+      <dt>Rules</dt><dd><ul><li>Services, prices, hours, address aur featured reviews live data se.</li><li>Images 5 MB tak, business mein 60 files tak; photo ki location remove nahin hoti.</li><li>"Book" button sirf jab booking ready ho. Unpublished website par bhi booking link chalta hai.</li></ul></dd>
+      <dt>Partial</dt><dd>SEO tags sirf browser mein lagte hain (server-rendered nahin). Industry templates khaali.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Booking settings<small>Settings &gt; Booking · settings.booking</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Har branch ki settings: online booking on/off, staff choice (optional / required / hidden), slot display, confirmation (auto ya approval), prices dikhana, slot interval (15 min), buffer, minimum notice (1 ghanta), booking window (30 din), customer cancel (24 ghante pehle tak), rooms, people per slot.</dd>
+      <dt>Booking form tab</dt><dd>Fixed fields (naam + phone zaroori, email optional, notes) + apne sawal: 5 types (short text, long text, dropdown, yes/no, number), required, sensitive, kin services par. "Require client email" toggle.</dd>
+      <dt>Warnings + link</dt><dd>Har kami ka warning aur "fix" button. Booking link card sirf tab active jab branch bookable ho; 2+ locations par har location ka alag link.</dd>
+      <dt>Preview</dt><dd>Customer preview: asal services/prices, magar times "sample" hain (asal engine nahin).</dd>
+      <dt>Kaun</dt><dd>Owner, Manager.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Business location<small>Settings &gt; Business location · Solo / Team</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Single-location plans par location ka naam, address, phone, tax rate, tax number, time zone, currency, invoice prefix edit.</dd>
+      <dt>Rules</dt><dd>Khatarnak changes refuse hote hain: currency (invoice ya price ho to), time zone (aage ki appointments hon to), prefix (pehli invoice ke baad). Card sirf jab Multi-branch off ho.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Locations (multi-branch)<small>Settings &gt; Locations · Business plan / trial</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Location add / edit / archive / restore / "make main". Har location ki apni currency, time zone, tax, address, invoice series, hours, prices. Overview tab: sab locations ka combined view (har currency alag total). Header (aur mobile Today/More) mein branch switcher.</dd>
+      <dt>Rules</dt><dd>Archive refuse: main location, aakhri location, aage ki appointments, open drafts, website us par. Archived location ka prefix hamesha ke liye retired.</dd>
+      <dt>Booking</dt><dd>Customer booking page par location chunta hai (2+ bookable hon to); <code>?branch=PREFIX</code> link seedha us location par.</dd>
+      <dt>Display-only</dt><dd>"Har extra location ka same price" sirf dikhta hai, charge nahin hota.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Team (Members), invites, roles<small>Menu: Team · staff.view (invite: users.invite)</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Sab members aur pending invites. Invite: email + role + (optional) branch + (optional) staff profile. Manage drawer: role per location add/change/remove, member remove, naya link (re-invite), invite cancel.</dd>
+      <dt>Default roles</dt><dd>Owner, Manager, Receptionist, Staff (section 5). Custom roles add-on se.</dd>
+      <dt>Rules</dt><dd><ul><li>Invite link ek baar, 7 din valid; role invite ke waqt tay.</li><li>Aap wo role nahin de sakte jis ki permissions aap ke paas nahin (Manager Owner invite nahin kar sakta).</li><li>Business mein kam se kam ek Owner hamesha.</li></ul></dd>
+      <dt>Partial</dt><dd>Invite <b>email nahin hota</b>: app ek link dikhata hai jo owner khud WhatsApp/email se bhejta hai. List paginated nahin.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Commission<small>Menu: Commission · Team+</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Tabs</dt><dd><b>My earnings</b> (apni kamai) · <b>Team report</b> (sab ki) · <b>Rules</b> (staff ka default aur per service: percent / flat / none, kis tareekh se).</dd>
+      <dt>Rules</dt><dd>Commission invoice line ke net par (tax ke bagair), sirf jab invoice <b>poori paid</b> ho. Credit note par proportional wapsi. Rule baad mein lagao to purani invoices par nahin.</dd>
+      <dt>Kaun</dt><dd>Rules: sirf Owner. Team report: Owner, Manager. My earnings: Staff bhi.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Billing page<small>Settings &gt; Billing · settings.billing (sirf Owner)</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Plan, status, trial end / period end, staff per location vs cap, locations vs limit, add-ons on/off, "Contact us" email.</dd>
+      <dt>Kyun partial</dt><dd>Read-only: koi buy, upgrade, card ya invoice history nahin. Trial khatam hone par bhi ye page khulta hai.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Notifications aur push<small>Settings &gt; Notifications, Messages, My notifications</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
+      <dt>Notifications</dt><dd>Har branch: reminders on/off aur kitne ghante pehle (1-72, default 24), review requests on/off, quiet hours, message preview. (<code>settings.booking</code>)</dd>
+      <dt>Messages</dt><dd>Bheje gaye messages ka log: channel, status, masked recipient, fail ki wajah.</dd>
+      <dt>My notifications</dt><dd>Is device par push on karein ("Enable notifications") aur kaun se events (new booking, pending, cancel, reminder). Har member, Staff bhi.</dd>
+      <dt>Kyun partial</dt><dd>Web Push (PWA/browser) bana aur deploy hai magar asal phone par test nahin hua. iPhone par pehle PWA install zaroori. Native app push nahin (EAS project id nahin). Emails sirf verified domain ke baad sab ko pahunchengi.</dd>
+    </dl></div></details>
+
+    <details class="card"><summary><span class="ct">Settings (hub) aur Account<small>Menu: Settings / More</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Hub cards</dt><dd>Booking · Notifications · Messages · (SMS credits, chhupa) · Billing · Roles · Locations ya Business location · Forms · Advanced reports · Data requests · Delete this business · My notifications · Account. Har card apni permission/feature par.</dd>
+      <dt>Account</dt><dd>Har user: email badalna (confirm link), password badalna (doosre devices sign out), <b>Delete my account</b> (agar aap kisi live business ke akele Owner hain to refuse; pehle business delete karein ya naya Owner banayein).</dd>
+      <dt>Data requests / Delete business</dt><dd>Workflow N dekhein.</dd>
+      <dt>Missing</dt><dd>Business switcher (ek user do businesses mein ho to). Staff/Receptionist ke liye More se Account tak ka raasta kamzor (launch checklist ka known gap).</dd>
+    </dl></div></details>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="sec" id="s5">
+  <div class="sec-head"><span class="sec-num">5</span><h2>Roles aur permissions</h2></div>
+  <p class="lead">Permission = <code>area.action</code> + scope. 47 permissions. Values dev database ke system roles se (11 Oct 2026).</p>
+
+  <div class="three searchable">
+    <div class="kpi"><b><span class="dot all"></span> All</b><span>Har branch, har cheez (Owner)</span></div>
+    <div class="kpi"><b><span class="dot branch"></span> Branch</b><span>Sirf jis branch par role diya (Manager, Receptionist)</span></div>
+    <div class="kpi"><b><span class="dot own"></span> Own</b><span>Sirf apni appointments / apne clients (Staff)</span></div>
+  </div>
+
+  <div class="tbl-wrap searchable">
+    <table>
+      <thead><tr><th>Area</th><th class="c">Owner (47)</th><th class="c">Manager (39)</th><th class="c">Receptionist (20)</th><th class="c">Staff (12)</th></tr></thead>
+      <tbody>
+        <tr><td>Appointments view / create / edit</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot own"></span></td></tr>
+        <tr><td>Appointments cancel / approve</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Calendar: sab staff dekhna</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Clients view / create / edit</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot own"></span> <small>sirf view</small></td></tr>
+        <tr><td>Client contact (phone, email, notes)</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Sensitive answers</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot own"></span></td></tr>
+        <tr><td>Client export</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Client erase (GDPR)</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Invoices view / create / payment</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Discount, credit note, payment reverse</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Reports basic / revenue / advanced</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Commission: own / all / rules</td><td class="c"><span class="dot all"></span> sab</td><td class="c"><span class="dot branch"></span> own + all</td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot own"></span> own</td></tr>
+        <tr><td>Services manage</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Staff view</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot own"></span></td></tr>
+        <tr><td>Staff manage / schedule</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot own"></span> <small>sirf apna schedule</small></td></tr>
+        <tr><td>Invite users</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Roles manage</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Settings: booking</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Settings: business (branch hours, locations), billing</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Website edit / publish</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Reviews view / reply / feature</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span> <small>view</small></td><td class="c"><span class="dot own"></span> <small>view</small></td></tr>
+        <tr><td>Packages sell / deduct / reverse</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span> <small>sell, deduct</small></td><td class="c"><span class="dot own"></span> <small>deduct</small></td></tr>
+        <tr><td>Inventory view / adjust</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span> <small>view</small></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>Files view / upload</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot own"></span></td></tr>
+        <tr><td>Forms manage (builder, void)</td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span></td><td class="c"><span class="dot none"></span></td><td class="c"><span class="dot none"></span></td></tr>
+        <tr><td>SMS send / buy credits <span class="chip off">Off</span></td><td class="c"><span class="dot all"></span></td><td class="c"><span class="dot branch"></span> <small>send</small></td><td class="c"><span class="dot branch"></span> <small>send</small></td><td class="c"><span class="dot none"></span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="two">
+    <div class="box searchable"><h3 style="margin-top:0">Safety rules</h3><ul>
+      <li>Asli darwaza <b>database</b> hai (RLS + functions). Button chhupana sirf suvidha hai, boundary nahin.</li>
+      <li>Koi apne se zyada permission kisi ko nahin de sakta.</li>
+      <li>Kam se kam ek active Owner hamesha.</li>
+      <li>Billing sirf Owner; kisi custom role mein nahin.</li>
+      <li>Trial khatam ya inactive business: Settings aur Billing ke ilawa har permission fail.</li>
+      <li>Super admin har jagah, magar sirf 2FA (aal2) ke saath; us ke direct reads logged nahin, support view logged hai.</li>
+    </ul></div>
+    <div class="box searchable"><h3 style="margin-top:0">Plan gating</h3><ul>
+      <li>Commission aur advanced reports: Team+.</li>
+      <li>Locations, branch comparison: Business.</li>
+      <li>Custom roles: Business, ya Team par add-on.</li>
+      <li>Packages / Inventory / Files / Forms / Portal permissions sirf jab us ka add-on on ho (warna role editor mein bhi chhup jaati hain).</li>
+      <li>Off feature ka route kholo to "Not included in your plan" calm screen (koi price nahin).</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="sec" id="s6">
+  <div class="sec-head"><span class="sec-num">6</span><h2>Workflows: shuru se aakhir tak</h2></div>
+  <p class="lead">Har workflow ka diagram (choti labels) aur saath mein detail steps.</p>
+
+  <div class="grid" id="workflows">
+    <details class="card"><summary><span class="ct">A. Naya owner signup se pehle bookable slot tak<small>Setup checklist aur slot na aane ki wajahein</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Signup (email + password)|Email confirm (/verify)|Onboarding 1: naam, slug, industry|Onboarding 2: location, country, currency, TZ|Today: setup checklist|Branch hours (Schedule)|Service + price (Services)|Staff / Add me as staff|Staff ko service do|Staff working hours|Copy booking link"></div>
+      <div><ol class="steps">
+        <li><b>/signup</b>: email + password (8-72). Email confirm karna zaroori; tab tak <b>/verify</b> par.</li>
+        <li><b>/onboarding</b> step 1: business naam, slug (booking address, live check), industry. Step 2: pehli location ka naam, country, currency, time zone. Ek transaction mein business + branch + Owner + 14 din trial + booking settings (online booking ON, 24h cancel) ban jaate hain.</li>
+        <li>Owner <b>Today</b> par aata hai: "Get ready for your first booking" checklist.</li>
+        <li>Step 1 <b>Schedule &gt; Opening hours</b>. Step 2 <b>Services</b>: service, active, online-bookable, is branch par price. Step 3 <b>Staff</b>: staff banayein ya <b>Add me as staff</b> (Solo owner ke liye zaroori). Step 4: staff ko service do. Step 5: staff ke working hours (Staff &gt; Schedule).</li>
+        <li>Aakhir mein "Copy booking link" (<code>/&lt;slug&gt;/book</code>). Optional: Website publish.</li>
+      </ol>
+      <div class="warn"><b>Slot kyun nahin dikh raha? (check list)</b><ul>
+        <li>Business inactive (trial khatam / suspended) → page "not available".</li>
+        <li>Online booking off (<code>booking_disabled</code>).</li>
+        <li>Us din branch hours nahin (<code>no_branch_hours</code>).</li>
+        <li>Koi active, online-bookable service is branch par price ke saath nahin (<code>no_bookable_service</code>).</li>
+        <li>Koi active, online-bookable staff is branch par nahin (<code>no_bookable_staff</code>).</li>
+        <li>Staff ye service nahin karta (<code>no_staffed_service</code>).</li>
+        <li>Staff ke is branch par working hours nahin (<code>no_staff_hours</code>), ya branch hours se overlap nahin.</li>
+        <li>Holiday, staff time off ya break, ya slot pehle se booked.</li>
+        <li>Minimum notice (default 1 ghanta) se pehle, ya booking window (30 din) se aage.</li>
+      </ul>Settings &gt; Booking har kami ka warning aur "fix" button dikhata hai.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">B. Client ka booking safar (/&lt;slug&gt;/book)<small>Location, service, staff, time, details, confirmation, manage link</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Link kholo /slug/book|Location chuno (2+ hon to)|Service chuno|Staff ya Any staff|Date aur time|Naam + phone (+ email)|Confirmation + manage link|Email confirmation (email ho to)|Manage: cancel / reschedule"></div>
+      <div><ol class="steps">
+        <li>Client link kholta hai (Instagram, website ka Book button, ya <code>?branch=PREFIX</code>).</li>
+        <li>2+ bookable locations hon to pehle location picker (naam, address, time zone).</li>
+        <li>Service → staff (setting par: optional, required ya hidden; "Any staff" mein sab se kam busy staff) → calendar aur free times (sirf asal engine se).</li>
+        <li>Form: naam + phone zaroori (phone hi client ki pehchaan), email optional (jab tak "require email" on na ho), custom sawal. Bot protection: chhupa honeypot, "bohat tez" check, per-IP limits.</li>
+        <li>Booking ek transaction mein; purana client phone se match. Account ki zaroorat nahin.</li>
+        <li>Confirmation screen par <b>manage link</b> (<code>/&lt;slug&gt;/manage#token=...</code>) ek hi baar dikhta hai, copy button ke saath.</li>
+        <li>Approval mode par status "pending" (workflow F).</li>
+        <li>Manage page: sirf first name, service, staff, local time. <b>Cancel</b> (default 24 ghante pehle tak) aur <b>Reschedule</b> (same staff, free slot). Fail par generic "link not valid".</li>
+      </ol>
+      <div class="note">Limits: reschedule hamesha same staff se ("any staff" fallback nahin). Rescheduled / cancelled emails mein manage link nahin hota. Dashboard se manage link dobara bhejne ka button nahin.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">C. Solo business ka din<small>Owner hi staff hai</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Subah: Today kholo|Client online book kare|Email + web push|Visit ke baad Complete|Review link / email|Invoice + cash payment"></div>
+      <div><ol class="steps">
+        <li>Owner <b>Today</b> kholta hai (30 s refresh).</li>
+        <li>Client 15:00 book karta hai; email ho to confirmation jaati hai.</li>
+        <li>Owner ko web push (agar "Enable notifications" kiya ho).</li>
+        <li>Visit ke baad <b>Complete</b>: review link dialog; review email jaati hai (agar on aur email ho).</li>
+        <li>Completed row par "Create invoice" → issue → cash payment.</li>
+      </ol><div class="note">Solo par cap: 1 bookable staff. Logins par cap nahin.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">D. Team business ka din<small>Owner + staff ke apne logins</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Receptionist walk-in book kare|Staff phone par apni list dekhe|Online booking: push to team|Manager pending approve kare|Manager revenue report|Owner commission dekhe"></div>
+      <div><ol class="steps">
+        <li>Receptionist Calendar se 11:00 walk-in Sam ke liye.</li>
+        <li>Sam (Staff role, login profile se linked) sirf apni appointments dekhta hai.</li>
+        <li>Online booking par jin ke paas appointments.view hai un ko push (Staff ko sirf apni).</li>
+        <li>Manager pending booking approve karta hai, din ka revenue report dekhta hai.</li>
+        <li>Owner mahine ki commission dekhta hai (Team+).</li>
+      </ol><div class="note">Team cap: 5 bookable staff per location.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">E. Multi-branch business<small>Business plan</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Settings > Locations: add|Har location: currency, TZ, tax, prefix|Hours, prices, staff per location|Header switcher se branch badlo|Client booking par location chune|Overview + Compare branches"></div>
+      <div><ol class="steps">
+        <li><b>Settings &gt; Locations</b>: nayi location (hours aur same-currency prices copy karne ka option).</li>
+        <li>Har location ki apni currency, time zone, tax, address, invoice series.</li>
+        <li>Staff kai locations mein, har jagah alag hours.</li>
+        <li>Header (desktop) / Today aur More (mobile) mein branch switcher.</li>
+        <li>Booking page par location picker; Settings &gt; Booking mein har location ka link.</li>
+        <li>Overview tab: combined, har currency alag. Advanced reports &gt; Locations: comparison.</li>
+      </ol><div class="note">Website sirf main (primary) location ka contact dikhata hai. SMS credits poore business ka ek pool.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">F. Approval-mode bookings<small>Settings &gt; Booking &gt; Confirmation = approval</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Client book kare|Status: pending|Client ko pending email|Team ko pending push + badge|Approve dabao|Client ko confirmation email"></div>
+      <div><ol class="steps">
+        <li>Confirmation setting "approval" par har online booking <b>pending</b>.</li>
+        <li>Client ko "request received" email; team ko "pending approval" push; Calendar tab aur header par badge.</li>
+        <li>Today ya appointment drawer mein <b>Approve</b> → confirmed → client ko confirmation email. Na chahein to Cancel.</li>
+      </ol><div class="note">Pending booking ka reminder nahin jaata. Auto-reject ya timeout nahin.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">G. Walk-in aur phone bookings<small>Dashboard se booking</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Calendar > New appointment|Client dhoondo ya naya|Service, staff, time|Walk-in toggle (agar walk-in)|Save: double booking check"></div>
+      <div><ol class="steps">
+        <li>Calendar &gt; "+ New appointment" ya khaali slot par tap.</li>
+        <li>Client search (naam/phone) ya naya client.</li>
+        <li>Service, staff, date/time; hours ke bahar ho to sirf warning.</li>
+        <li><b>Walk-in</b> = koi message nahin. Phone booking (walk-in off) = email ho to confirmation.</li>
+        <li>Database double booking refuse karta hai.</li>
+      </ol></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">H. Invoice aur payment<small>Draft se paid tak</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Completed appointment: Create invoice|Draft: items, discount|Issue: number + tax snapshot|Payment: cash / card / bank|Galti? Credit note|Refund: reverse payment|Print / save PDF (web)"></div>
+      <div><ol class="steps">
+        <li>Completed appointment par "Create invoice" (ya Invoices &gt; New).</li>
+        <li>Draft mein items: service, free text, package, product. Discount (Owner/Manager, reason ke saath).</li>
+        <li><b>Issue</b>: gapless number <code>PREFIX-000001</code>, tax rate copy, ab badal nahin sakti. Package bikta hai, stock ghat'ta hai.</li>
+        <li>Payment add (balance se zyada nahin). Poori paid hone par commission banta hai.</li>
+        <li>Galti ya refund: <b>credit note</b> (net amount se, apni CN series). Paid invoice par "refund due" → reverse payment (reason ke saath).</li>
+        <li>Print view: web par print / save as PDF; native par text share.</li>
+      </ol></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">I. Review request flow<small>Complete se Google tak</small></span><span class="chip partial">Partial</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Appointment Complete|Review link banta hai (30 din)|Email client ko (email ho to)|Dialog mein link copy bhi|Client stars + comment|Thanks + Google button|Owner reply / feature"></div>
+      <div><ol class="steps">
+        <li>Complete karne par review link banta hai (har appointment ka sirf ek, 30 din, ek baar).</li>
+        <li>Review requests on hon aur client ki email ho to email; dialog mein link copy kar ke WhatsApp bhi kar sakte hain. "Get review link again" naya link deta hai (purana mar jata hai).</li>
+        <li><code>/&lt;slug&gt;/review</code>: stars + comment. Har rating ko wohi thanks aur Google button.</li>
+        <li>Owner <b>Reviews</b> mein reply ya website par feature (max 12).</li>
+      </ol><div class="note">Partial kyun: email ke liye client ki email + verified domain chahiye; Google review link ka setting screen nahin.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">J. Reminders aur notifications<small>Email, push, aur bina email kya hota hai</small></span><span class="chip partial">Partial</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Action (booking/cancel) hota hai|Outbox mein message (same transaction)|Har minute worker bhejta hai|Client: email (agar email)|Team: web push|Reminder: har 5 min check, 24h pehle"></div>
+      <div><ol class="steps">
+        <li>Har booking event (confirmed, pending, rescheduled, cancelled, reminder, review request) usi waqt "outbox" mein likha jata hai.</li>
+        <li>Har minute worker Resend se email aur Web Push bhejta hai (max ~1 minute deri). Fail par 1, 4, 16, 64 minute baad retry, phir "dead".</li>
+        <li>Reminders: har 5 minute cron check karta hai; default 24 ghante pehle (branch ki ghari ke hisaab se).</li>
+        <li>Client ke paas email: sirf email. Email nahin: SMS on hota to SMS, abhi off hai to <b>kuch nahin</b>. Walk-in: kuch nahin.</li>
+        <li>Reminder aur review email se unsubscribe ho sakte hain; transactional emails se nahin.</li>
+        <li>Limits: business ke 500 email / 100 push roz; ek recipient ko 24 ghante mein 5 messages.</li>
+      </ol><div class="warn">Partial kyun: dev mein Resend test sender sirf account owner ko email deta hai. Production mein verified domain (mail.wapee.online) ke bagair kisi client ko email nahin pahunchegi. Web push asal phone par test nahin hua. Native push nahin.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">K. Trial khatam aur us ke baad<small>14 din baad</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Din 11-14: Owner ko banner|Trial ka waqt guzra|Business inactive|App lock (Settings/Billing khule)|Booking page + website band|Contact us > super admin|Plan assign: phir active"></div>
+      <div><ol class="steps">
+        <li>Aakhri 3 din Owner ko banner.</li>
+        <li>Waqt guzarte hi (cron nahin) business inactive; 30 second ke andar app mein lock screen.</li>
+        <li>Sirf Settings, Billing aur More khule. <b>Kuch delete nahin hota.</b></li>
+        <li>Public booking page aur website "not available" dikhate hain.</li>
+        <li>Owner "Contact us" se email karta hai; super admin plan assign ya trial extend; business foran active.</li>
+      </ol><div class="note">Trial khatam hone ki koi email nahin jaati (sirf banner).</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">L. Super admin se plan / add-on change<small>/admin/business/&lt;id&gt;</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Super admin login + TOTP|/admin: business dhoondo|Detail: plan, usage, add-ons|Assign plan (+ period end, note)|Limit se upar? Refuse|Add-on toggle (confirm)|Audit log mein record"></div>
+      <div><ol class="steps">
+        <li>Email + password + authenticator code (TOTP); bina 2FA ke admin kuch nahin dekh sakta.</li>
+        <li><b>/admin</b>: search, plan / status filter. Business detail: subscription, usage (staff, locations, is mahine ki appointments, invoices, SMS balance), add-ons.</li>
+        <li><b>Assign plan</b> (yehi activate bhi karta hai; suspended suspended hi rehta hai). Downgrade limit se upar ho to refuse aur kaun si location upar hai.</li>
+        <li>Add-on toggle confirm ke saath; owner ko agle refresh par menu dikhta hai.</li>
+        <li>Har action audit log mein; admin ke notes owner ko nahin dikhte.</li>
+      </ol></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">M. Suspended account<small>Super admin: status = suspended</small></span><span class="chip partial">Partial</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Super admin: Set status suspended|Business inactive|Members ke sessions khatam|Login: account disabled|Booking page band|Un-suspend: wapas active"></div>
+      <div><ol class="steps">
+        <li>Suspend par business inactive (lock screen jaisa) aur public pages band.</li>
+        <li>Jin members ke sab businesses suspended hain, un ke sessions turant khatam; login par "This account is disabled. Contact support@wapee.online".</li>
+        <li>Data delete nahin hota. Un-suspend se sab wapas.</li>
+      </ol><div class="warn">Partial kyun: login rokne wala "Auth hook" Supabase dashboard mein <b>haath se on</b> karna hai (dev aur prod dono). Bagair us ke sirf app ka apna check sign out karta hai.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">N. Data export aur erase (GDPR)<small>Client, business aur account</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Client profile: Export data (JSON)|Erase personal data: naam type karo|Check: aage ki appointment / draft?|Personal text blank, money records rehte|Portal: client request kare|Settings > Data requests: run / decline|Delete business: naam type"></div>
+      <div><ol class="steps">
+        <li><b>Export</b> (Owner, Manager): client ka JSON file (web download, native share). Audited.</li>
+        <li><b>Erase</b> (sirf Owner): client ka naam type kar ke confirm. Aage ki live appointment ya draft invoice ho to pehle hi refuse.</li>
+        <li>Erase: naam, phone, email, notes, answers, signatures, review comment, photos (storage se bhi) blank/remove. <b>Invoices, payments, credit notes ki raqam aur tareekh rehti hain.</b></li>
+        <li>Client portal "My data" se copy / erase request → <b>Settings &gt; Data requests</b> (Open / Done / Declined) se run ya decline.</li>
+        <li><b>Settings &gt; Delete this business</b> (Owner role, business ka naam type): pehle files, phir sab data. Members ke login accounts nahin mitte.</li>
+        <li><b>Settings &gt; Account &gt; Delete my account</b>: apna login mitana (akela Owner ho to refuse). Public explanation page <code>/delete-account</code> (Play Store ke liye).</li>
+      </ol><div class="note">Kuch buttons (export download, requests se "Run erase") click-test nahin hue; backend tests se prove. Privacy/terms abhi DRAFT.</div></div>
+    </div></div></details>
+
+    <details class="card"><summary><span class="ct">O. Staff login link aur invite flow<small>Team &gt; Invite</small></span><span class="chip partial">Partial</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Team > Invite: email, role, branch|Optional: staff profile chuno|Ek baar ka link dikhta hai|Owner khud link bhejta hai|Invitee signup + email confirm|Same email se sign in, accept|Staff sirf apni appointments dekhe"></div>
+      <div><ol class="steps">
+        <li><b>Team</b> &gt; Invite: email, role, (branch), aur Staff role ke liye unlinked staff profile.</li>
+        <li>App ek-baar ka link dikhata hai (7 din). <b>Email automatic nahin jaati</b>: copy kar ke WhatsApp/email karein.</li>
+        <li>Invitee link kholta hai, account banata hai, email confirm karta hai (naya user ho to confirm ke baad link dobara kholna parta hai), <b>wohi email</b> se sign in, accept.</li>
+        <li>Profile linked ho to Staff sirf apni appointments dekhta hai aur apni bookings ki push paata hai.</li>
+        <li>Baad mein jorna: Staff form ka "App login" field. Owner ke liye "Add me as staff".</li>
+      </ol></div>
+    </div></div></details>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="sec" id="s7">
+  <div class="sec-head"><span class="sec-num">7</span><h2>Public side aur URLs</h2></div>
+  <div class="grid">
+    <details class="card"><summary><span class="ct">Landing page (/)<small>Marketing page, prices live</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Static, tez page: hero, kis ke liye, kaise kaam karta, features, pricing (plans + add-ons + compare table, monthly/yearly toggle), FAQ, footer (Terms, Privacy, Refund, support email). Signed-in user ko header mein "Dashboard".</dd>
+      <dt>Honesty</dt><dd>Koi price code mein nahin; SMS, widget, online payment, custom domain, testimonials ka dawa nahin (test check karta hai). Sirf English.</dd>
+    </dl></div></details>
+    <details class="card"><summary><span class="ct">Legal pages: /privacy, /terms, /refund<small>Brand se generate</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
+      <dt>Status</dt><dd>Teeno build par bante hain magar <b>DRAFT</b> hain; lawyer review chahiye. Refund page par reseller Polar Software, Inc.</dd>
+    </dl></div></details>
+    <details class="card"><summary><span class="ct">PWA install<small>"App ki tarah install"</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Manifest (start <code>/today</code>, theme #024751), service worker (sirf app shell cache), iPhone ke liye "Add to Home Screen" hint, naye version par "Update available" toast. Internet na ho to "No internet connection" overlay.</dd>
+      <dt>Partial kyun</dt><dd>Icons placeholder; asal Android/iPhone par install aur push test nahin hua. Offline data nahin (by design).</dd>
+    </dl></div></details>
+  </div>
+
+  <h3>URLs aur routes: kaun sa URL kya karta hai</h3>
+  <div class="tbl-wrap searchable"><table>
+    <thead><tr><th>URL</th><th>Kya hai</th><th>Kaun</th></tr></thead>
+    <tbody>
+      <tr><td><code>/</code></td><td>Landing page</td><td>Sab</td></tr>
+      <tr><td><code>/privacy</code> · <code>/terms</code> · <code>/refund</code></td><td>Legal pages (draft)</td><td>Sab</td></tr>
+      <tr><td><code>/signup</code> · <code>/login</code> · <code>/verify</code></td><td>Account banana, sign in, email confirm ka intezar</td><td>Sab</td></tr>
+      <tr><td><code>/forgot-password</code> · <code>/reset-password</code></td><td>Password reset</td><td>Sab</td></tr>
+      <tr><td><code>/onboarding</code></td><td>Business banane ke 2 steps</td><td>Naya verified user</td></tr>
+      <tr><td><code>/accept-invite?token=</code></td><td>Team invite accept</td><td>Invited person</td></tr>
+      <tr><td><code>/today</code> · <code>/calendar</code> · <code>/clients</code> · <code>/clients/&lt;id&gt;</code></td><td>Dashboard ke main screens</td><td>Members</td></tr>
+      <tr><td><code>/services</code> · <code>/staff</code> · <code>/members</code> · <code>/schedule</code></td><td>Catalogue, team, invites, hours</td><td>Members (permission)</td></tr>
+      <tr><td><code>/invoices</code> · <code>/reports</code> · <code>/commission</code> · <code>/reviews</code> · <code>/website</code></td><td>Paisa, reports, commission, reviews, website editor</td><td>Members (permission)</td></tr>
+      <tr><td><code>/packages</code> · <code>/inventory</code></td><td>Add-on screens</td><td>Add-on on ho to</td></tr>
+      <tr><td><code>/settings</code> + <code>/settings/booking</code>, <code>notifications</code>, <code>messages</code>, <code>billing</code>, <code>roles</code>, <code>branches</code>, <code>location</code>, <code>forms</code>, <code>advanced-reports</code>, <code>data-requests</code>, <code>delete-business</code>, <code>my-notifications</code>, <code>account</code>, <code>delete-account</code></td><td>Settings ke sab screens (<code>sms-credits</code> launch par Settings par wapas bhej deta hai)</td><td>Members (permission)</td></tr>
+      <tr><td><code>/more</code></td><td>Mobile menu</td><td>Members</td></tr>
+      <tr><td><code>/invoice-print/&lt;id&gt;</code> · <code>/report-print</code></td><td>Print views</td><td>Signed-in, permission</td></tr>
+      <tr><td><code>/admin</code> · <code>/admin/business/&lt;id&gt;</code> · <code>/admin/platform</code> · <code>/admin/2fa</code></td><td>Super admin area</td><td>Super admin (2FA)</td></tr>
+      <tr><td><code>/&lt;slug&gt;</code></td><td>Business ki website (publish ho to)</td><td>Public</td></tr>
+      <tr><td><code>/&lt;slug&gt;/book</code> (<code>?branch=PREFIX</code>)</td><td>Booking page, share karne wala link</td><td>Public</td></tr>
+      <tr><td><code>/&lt;slug&gt;/manage#token=</code></td><td>Guest: booking dekhna, cancel, reschedule</td><td>Link wala client</td></tr>
+      <tr><td><code>/&lt;slug&gt;/review#token=</code></td><td>Review dena</td><td>Link wala client</td></tr>
+      <tr><td><code>/&lt;slug&gt;/sign#token=</code></td><td>Form sign karna (Forms add-on)</td><td>Link wala client</td></tr>
+      <tr><td><code>/&lt;slug&gt;/portal</code></td><td>Client portal (add-on)</td><td>Business ke clients</td></tr>
+      <tr><td><code>/unsubscribe#t=</code></td><td>Reminder / review emails band karna (button dabane par hi)</td><td>Email wala client</td></tr>
+      <tr><td><code>/delete-account</code></td><td>Account delete ki public explanation</td><td>Sab</td></tr>
+    </tbody>
+  </table></div>
+  <p class="searchable">Har top-level app route aur public file "reserved slug" hai, yaani koi business <code>today</code> ya <code>pricing</code> jaisa slug nahin le sakta. Token hamesha URL ke <code>#</code> ke baad hota hai taake server logs mein na jaye.</p>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="sec" id="s8">
+  <div class="sec-head"><span class="sec-num">8</span><h2>Super admin</h2></div>
+  <div class="grid">
+    <details class="card"><summary><span class="ct">Access aur TOTP login<small>/admin/2fa</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kaise</dt><dd>Profile par ek flag (sirf SQL se lagta hai) + authenticator app (TOTP). Flagged account sign in karte hi 2FA screen par jata hai; har admin action ko aal2 session chahiye. Bina 2FA admin aam user jaisa.</dd>
+      <dt>Recovery</dt><dd>Koi recovery flow nahin; factor kho jaye to developer database se hata kar dobara enrol karta hai.</dd>
+    </dl></div></details>
+    <details class="card"><summary><span class="ct">Businesses list aur detail<small>/admin, /admin/business/&lt;id&gt;</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>List</dt><dd>Search (naam + slug, owner email nahin), plan / status filters, 20 per page.</dd>
+      <dt>Detail actions</dt><dd><ul><li><b>Assign plan</b> (+ period end + note) <li><b>Set status</b>: active / inactive / suspended <li><b>Extend trial</b> 1-90 din <li><b>Add-ons</b> on/off <li><b>Add SMS credits</b> (SMS off hai) <li><b>Reviews</b>: dekhna aur reason ke saath remove <li><b>Support view</b>: read-only summary, client ki personal info nahin, har dafa logged (owner ko audit mein dikhta hai)</ul></dd>
+    </dl></div></details>
+    <details class="card"><summary><span class="ct">Platform settings<small>/admin/platform</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Plan prices (monthly, yearly, per-location toggle), add-on prices (monthly, yearly, kin plans par), SMS rates per country, industry presets (terminology aur starter fields).</dd>
+      <dt>Note</dt><dd>Prices sirf dikhte hain; plan ki structure (caps, features) migration se, yahan se nahin. Industry presets ka content khaali hai. Save dialogs click-test nahin hue (backend tests pass).</dd>
+    </dl></div></details>
+    <details class="card"><summary><span class="ct">Sirf SQL / dashboard se hone wale kaam<small>Koi screen nahin</small></span><span class="chip partial">Partial</span></summary><div class="cb"><ul>
+      <li>Super admin flag lagana (ek hi account).</li>
+      <li>Kho chuka TOTP factor hatana.</li>
+      <li>Branch ka Google review link set karna.</li>
+      <li>Service categories banana / rename (screen nahin).</li>
+      <li>Auth hook on karna, SMTP, redirect URLs (Supabase dashboard).</li>
+      <li>Payment ledger: koi table nahin; sirf notes.</li>
+      <li>Portal sessions dekhna / sab se sign out karwana (screen nahin).</li>
+      <li>Emergency: email bhejna rokna (cron unschedule).</li>
+    </ul></div></details>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section class="sec" id="s9">
+  <div class="sec-head"><span class="sec-num">9</span><h2>Behind the scenes (aasaan zabaan mein)</h2></div>
+  <div class="two">
+    <div class="box searchable"><h3 style="margin-top:0">Emails (Resend)</h3><p>Booking confirmed, pending, reminder, rescheduled, cancelled, manage link, review request, portal login, form link, low stock, report summary. Sab English mein. Bounces / complaints ka webhook nahin. Dev mein sirf account owner ko email jaati hai; production ke liye <code>mail.wapee.online</code> verify karna hai. Login/verify emails ke liye Supabase mein custom SMTP lagana hai.</p></div>
+    <div class="box searchable"><h3 style="margin-top:0">Push (Web Push)</h3><p>Team ko browser/PWA par: new booking, pending, cancel, reminder, low stock. Har device par "Enable notifications" se on, per-event switches. iPhone par pehle Home Screen par install. Native (store app) push nahin.</p></div>
+  </div>
+  <div class="tbl-wrap searchable"><table>
+    <thead><tr><th>Background job (cron)</th><th>Kab chalta hai</th><th>Kya karta hai</th></tr></thead>
+    <tbody>
+      <tr><td>outbox-worker</td><td>Har minute</td><td>Queue mein pare emails/push bhejta hai (kuch ho to hi worker ko bulata hai)</td></tr>
+      <tr><td>outbox-reminders</td><td>Har 5 minute</td><td>Jin appointments ka reminder waqt aa gaya, un ko queue mein daalta hai</td></tr>
+      <tr><td>outbox-maintenance</td><td>Har ghanta (:17)</td><td>Purane rows saaf, atke hue retry, tokens mitana</td></tr>
+      <tr><td>report-schedules</td><td>Har 15 minute</td><td>Weekly/monthly report email ka waqt check</td></tr>
+      <tr><td>cleanup_public_request_attempts</td><td>Roz 03:17</td><td>Rate-limit ke purane records saaf</td></tr>
+    </tbody>
+  </table></div>
+  <div class="three">
+    <div class="box searchable"><h3 style="margin-top:0">Data safety</h3><ul><li><b>RLS</b>: har table par database khud check karta hai kaun kya dekh sakta hai.</li><li>Double booking database ke rule se band.</li><li>Paise ke records kabhi edit/delete nahin.</li><li><b>Audit log</b>: role changes, paise, deletes, admin access.</li><li>Files private, 5 min ke links.</li></ul></div>
+    <div class="box searchable"><h3 style="margin-top:0">Rate limits + bot protection</h3><ul><li>Booking: ek IP se 10 per ghanta; ek phone se 5 per din; ek business par 30/ghanta, 120/din.</li><li>Slots / booking page / website: 60 per minute per IP.</li><li>Review submit 10/ghanta; portal login 3/ghanta per email.</li><li>Chhupa honeypot field, 3 second se tez form refuse.</li><li>CAPTCHA nahin.</li></ul></div>
+    <div class="box searchable"><h3 style="margin-top:0">Backups</h3><ul><li>Aaj: Supabase free plan, <b>koi backup nahin</b>.</li><li>Plan: Pro par roz backup; PITR baad mein; storage files ki weekly copy alag (backup files cover nahin karta).</li><li>Monitoring / uptime alerts abhi nahin.</li></ul></div>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="sec" id="s10">
+  <div class="sec-head"><span class="sec-num">10</span><h2>Limits aur known gaps</h2></div>
+  <p class="lead">Imaandaar list. Har item us section ka link deta hai jis par asar hai.</p>
+  <div class="tbl-wrap searchable"><table>
+    <thead><tr><th>Gap</th><th>Status</th><th>Asar</th></tr></thead>
+    <tbody>
+      <tr><td>Online payments / Polar (subscription), self-serve upgrade, invoice history</td><td><span class="chip missing">Missing</span></td><td><a href="#s2">Plans</a></td></tr>
+      <tr><td>Paid period end enforce nahin hota</td><td><span class="chip display">Display-only</span></td><td><a href="#s2">Plans</a></td></tr>
+      <tr><td>Monthly/yearly, per-location aur add-on prices sirf dikhte hain</td><td><span class="chip display">Display-only</span></td><td><a href="#s3">Add-ons</a></td></tr>
+      <tr><td>"Ready-made team roles" flag, custom roles "Team only", Solo "owner only"</td><td><span class="chip display">Display-only</span></td><td><a href="#s5">Roles</a></td></tr>
+      <tr><td>SMS (Twilio) aur SMS credits</td><td><span class="chip off">Off at launch</span></td><td><a href="#s3">Add-ons</a>, <a href="#s6">J</a></td></tr>
+      <tr><td>Embed widget</td><td><span class="chip off">Off at launch</span></td><td><a href="#s3">Add-ons</a></td></tr>
+      <tr><td>Email delivery: verified Resend domain + custom SMTP abhi nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">J</a>, <a href="#s11">Go-live</a></td></tr>
+      <tr><td>Bina email wale client ko koi confirmation/reminder nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">B, J</a></td></tr>
+      <tr><td>Invite email nahin, link haath se bhejna</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">O</a></td></tr>
+      <tr><td>Dashboard se appointment reschedule/edit</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Appointments</a></td></tr>
+      <tr><td>Manage link dobara bhejne ka button</td><td><span class="chip missing">Missing</span></td><td><a href="#s6">B</a></td></tr>
+      <tr><td>Google review link ka setting screen</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Reviews</a></td></tr>
+      <tr><td>Service category banane ka screen</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Services</a></td></tr>
+      <tr><td>Rooms capacity aur service linking</td><td><span class="chip partial">Partial</span></td><td><a href="#s4">Schedule</a></td></tr>
+      <tr><td>Suspend ka Auth hook dashboard mein haath se on</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">M</a></td></tr>
+      <tr><td>Native apps (Android/iOS), EAS config, native push</td><td><span class="chip missing">Coming soon</span></td><td><a href="#s11">Go-live</a></td></tr>
+      <tr><td>Web push asal phone par test nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s4">Notifications</a></td></tr>
+      <tr><td>Native PDF (invoice/report), per-line credit notes, invoice email</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Invoices</a></td></tr>
+      <tr><td>Client import, tags, birthdays; business switcher</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Clients</a></td></tr>
+      <tr><td>Overnight shifts, half-day time off</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Staff</a></td></tr>
+      <tr><td>Reschedule with "any staff"</td><td><span class="chip missing">Missing</span></td><td><a href="#s6">B</a></td></tr>
+      <tr><td>Packages report, package badge on Calendar</td><td><span class="chip missing">Missing</span></td><td><a href="#s3">Add-ons</a></td></tr>
+      <tr><td>Doosri languages (sirf English), RTL kabhi dekha nahin</td><td><span class="chip missing">Missing</span></td><td><a href="#s1">Wapee</a></td></tr>
+      <tr><td>Backups, monitoring, error reporting</td><td><span class="chip missing">Missing</span></td><td><a href="#s9">Behind</a></td></tr>
+      <tr><td>Legal texts lawyer review</td><td><span class="chip partial">Partial</span></td><td><a href="#s7">Public</a></td></tr>
+      <tr><td>Service / staff save teen alag writes (beech mein fail ho sakta)</td><td><span class="chip partial">Partial</span></td><td><a href="#s4">Services</a></td></tr>
+      <tr><td>AI agent idea</td><td><span class="chip missing">Idea only</span></td><td>Koi code nahin</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note searchable"><b>Jaan boojh kar scope se bahar:</b> customer se online payment/deposit, waitlist, custom domain + SSL, drag-and-drop calendar, recurring aur multi-service bookings, staff ki alag price/duration, marketing emails, dark mode (app mein), WordPress plugin, gift cards / loyalty, calendar sync, marketplace.</div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="sec" id="s11">
+  <div class="sec-head"><span class="sec-num">11</span><h2>Go-live status</h2></div>
+  <div class="three searchable">
+    <div class="kpi"><b>Dev</b><span>Supabase project <code>rfuovquhultjydtswtqf</code> (free plan, test data). Production kabhi isay point na kare.</span></div>
+    <div class="kpi"><b>Prod</b><span>Abhi bana nahin. Naya Supabase project (Pro) chahiye.</span></div>
+    <div class="kpi"><b>Domain</b><span><code>wapee.online</code> (ek hi origin). Hosting: Vercel Pro. Branch <code>main</code> = production.</span></div>
+  </div>
+  <div class="note">Source: <code>docs/go-live-plan.md</code> aur <code>docs/pre-launch-checklist.md</code>. <code>docs/production-setup.md</code> repo mein <b>maujood nahin</b>. Neeche ke boxes aap apne liye tick kar sakte hain (sirf is browser mein yaad rehte hain).</div>
+  <div class="two">
+    <div class="box searchable" data-checklist><h3 style="margin-top:0">Owner ke kaam</h3>
+      <label><input type="checkbox"> wapee.online ka DNS access confirm</label><br>
+      <label><input type="checkbox"> Accounts: Vercel Pro, Resend, Supabase Pro, Expo, Apple ($99/yr), Google Play ($25)</label><br>
+      <label><input type="checkbox"> support@ aur dmarc@ email forwarding</label><br>
+      <label><input type="checkbox"> Privacy, Terms, Refund lawyer se review (abhi DRAFT)</label><br>
+      <label><input type="checkbox"> Super admin kaun hoga + authenticator app</label><br>
+      <label><input type="checkbox"> Final prices /admin/platform par confirm</label><br>
+      <label><input type="checkbox"> Final icons aur splash (abhi placeholder)</label><br>
+      <label><input type="checkbox"> Alerts kis ko jayenge (on-call person)</label><br>
+      <label><input type="checkbox"> Trademark check</label>
+    </div>
+    <div class="box searchable" data-checklist><h3 style="margin-top:0">Developer ke kaam (blocking)</h3>
+      <label><input type="checkbox"> Production Supabase project, sab migrations apply, list match</label><br>
+      <label><input type="checkbox"> Vault mein outbox_worker_url set, 5 cron jobs active</label><br>
+      <label><input type="checkbox"> Naye production secrets (IP salt, form HMAC, unsubscribe key, Resend, VAPID)</label><br>
+      <label><input type="checkbox"> Sab 17 Edge Functions deploy</label><br>
+      <label><input type="checkbox"> Auth: Site URL, redirect URLs, password 8, leaked-password protection, TOTP</label><br>
+      <label><input type="checkbox"> Auth hook (Custom Access Token) on</label><br>
+      <label><input type="checkbox"> Custom SMTP + Resend domain mail.wapee.online (SPF, DKIM, DMARC)</label><br>
+      <label><input type="checkbox"> Asal inbox par email test (Gmail + Outlook)</label><br>
+      <label><input type="checkbox"> Vercel project, env vars, domain, headers check</label><br>
+      <label><input type="checkbox"> Super admin bana kar TOTP enrol</label><br>
+      <label><input type="checkbox"> Backups on + storage copy schedule</label><br>
+      <label><input type="checkbox"> Uptime monitors</label><br>
+      <label><input type="checkbox"> smoke:public ek baar throwaway business par, phir erase</label><br>
+      <label><input type="checkbox"> Poora click-through web par (section 9 of go-live plan)</label>
+    </div>
+  </div>
+  <div class="box searchable"><h3 style="margin-top:0">Store apps (baad mein)</h3><ul>
+    <li><code>eas.json</code> aur EAS project id nahin; Firebase file nahin. Android kabhi asal device par nahi chala; iOS sirf simulator.</li>
+    <li>Account deletion ab bana hua hai (Settings &gt; Account, aur <code>/delete-account</code>), jo stores ki shart thi.</li>
+    <li>Google personal account ho to 12 testers, 14 din closed test.</li>
+    <li>iOS app mein subscription khareedne ka koi link/button nahin hona chahiye (abhi bhi nahin).</li>
+  </ul></div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="sec" id="s12">
+  <div class="sec-head"><span class="sec-num">12</span><h2>"Kahan milega?" quick finder</h2></div>
+  <div class="tbl-wrap"><table id="finder">
+    <thead><tr><th>Sawal</th><th>Jawab (app mein kahan)</th></tr></thead>
+    <tbody>
+      <tr class="searchable"><td>Client ka phone number kahan se change hota hai?</td><td>Clients &gt; client kholo &gt; Edit (sirf jin ke paas contact permission hai)</td></tr>
+      <tr class="searchable"><td>Booking link kahan se copy karoon?</td><td>Settings &gt; Booking &gt; booking link card (ya Today checklist ka aakhri step)</td></tr>
+      <tr class="searchable"><td>Slot kyun nahin dikh raha?</td><td>Settings &gt; Booking ke warnings; detail Workflow A</td></tr>
+      <tr class="searchable"><td>Branch ke opening hours?</td><td>Schedule &gt; Opening hours (Owner)</td></tr>
+      <tr class="searchable"><td>Staff ke working hours / breaks?</td><td>Staff &gt; person &gt; Schedule</td></tr>
+      <tr class="searchable"><td>Chutti / time off?</td><td>Schedule &gt; Time off</td></tr>
+      <tr class="searchable"><td>Holiday par business band?</td><td>Schedule &gt; Holidays</td></tr>
+      <tr class="searchable"><td>Service ki price?</td><td>Services &gt; service &gt; price (current branch)</td></tr>
+      <tr class="searchable"><td>Approval mode on karna?</td><td>Settings &gt; Booking &gt; Confirmation</td></tr>
+      <tr class="searchable"><td>Cancel kitne ghante pehle tak?</td><td>Settings &gt; Booking &gt; customer cancel cutoff</td></tr>
+      <tr class="searchable"><td>Booking form mein naya sawal?</td><td>Settings &gt; Booking &gt; Booking form tab</td></tr>
+      <tr class="searchable"><td>Client email zaroori banana?</td><td>Settings &gt; Booking &gt; Booking form &gt; Require client email</td></tr>
+      <tr class="searchable"><td>Reminder kitne ghante pehle?</td><td>Settings &gt; Notifications</td></tr>
+      <tr class="searchable"><td>Email gayi ya nahin?</td><td>Appointment drawer ka Messages block, ya Settings &gt; Messages</td></tr>
+      <tr class="searchable"><td>Mujhe push notifications chahiye</td><td>Settings &gt; My notifications &gt; Enable notifications</td></tr>
+      <tr class="searchable"><td>Staff ko login dena?</td><td>Team &gt; Invite (staff profile chuno), ya Staff form &gt; App login</td></tr>
+      <tr class="searchable"><td>Main khud bookable kaise banoon?</td><td>Staff &gt; Add me as staff</td></tr>
+      <tr class="searchable"><td>Kisi ka role badalna / remove karna?</td><td>Team &gt; person &gt; Manage</td></tr>
+      <tr class="searchable"><td>Naya role banana?</td><td>Settings &gt; Roles (Custom roles)</td></tr>
+      <tr class="searchable"><td>Tax rate / address / invoice prefix?</td><td>Settings &gt; Business location (Solo/Team) ya Settings &gt; Locations (Business)</td></tr>
+      <tr class="searchable"><td>Nayi location?</td><td>Settings &gt; Locations (Business plan)</td></tr>
+      <tr class="searchable"><td>Invoice banana?</td><td>Completed appointment &gt; Create invoice, ya Invoices &gt; New</td></tr>
+      <tr class="searchable"><td>Galat invoice theek karna?</td><td>Invoices &gt; invoice &gt; Credit note (Owner/Manager)</td></tr>
+      <tr class="searchable"><td>Refund?</td><td>Credit note, phir payment &gt; Reverse</td></tr>
+      <tr class="searchable"><td>Invoice print / PDF?</td><td>Invoice &gt; Print (web: save as PDF)</td></tr>
+      <tr class="searchable"><td>Mahine ka revenue?</td><td>Reports (basic) ya Reports &gt; Advanced</td></tr>
+      <tr class="searchable"><td>CSV export?</td><td>Settings &gt; Advanced reports &gt; section &gt; CSV</td></tr>
+      <tr class="searchable"><td>Commission rule?</td><td>Commission &gt; Rules (Owner)</td></tr>
+      <tr class="searchable"><td>Review ka jawab?</td><td>Reviews &gt; review &gt; Reply</td></tr>
+      <tr class="searchable"><td>Review link dobara?</td><td>Appointment drawer &gt; Get review link again</td></tr>
+      <tr class="searchable"><td>Website publish?</td><td>Website &gt; Publish (Owner)</td></tr>
+      <tr class="searchable"><td>Mera plan kya hai?</td><td>Settings &gt; Billing</td></tr>
+      <tr class="searchable"><td>Add-on chahiye?</td><td>Settings &gt; Billing &gt; Contact us (super admin on karega)</td></tr>
+      <tr class="searchable"><td>Client ka data export / erase?</td><td>Clients &gt; profile &gt; Export data / Erase personal data</td></tr>
+      <tr class="searchable"><td>Client ki data request?</td><td>Settings &gt; Data requests</td></tr>
+      <tr class="searchable"><td>Password / email badalna, account delete?</td><td>Settings &gt; Account</td></tr>
+      <tr class="searchable"><td>Business delete?</td><td>Settings &gt; Delete this business (Owner)</td></tr>
+      <tr class="searchable"><td>Package session kaatna?</td><td>Appointment drawer &gt; Package sessions &gt; Use a session</td></tr>
+      <tr class="searchable"><td>Stock add karna?</td><td>Inventory &gt; product &gt; stock panel</td></tr>
+      <tr class="searchable"><td>Consent form sign karwana?</td><td>Appointment drawer ya client profile &gt; Forms &gt; Sign here / Send link</td></tr>
+      <tr class="searchable"><td>Photo consent?</td><td>Client profile &gt; Files &gt; consent switch</td></tr>
+      <tr class="searchable"><td>(Super admin) plan assign / trial barhana?</td><td>/admin &gt; business &gt; Assign plan / Extend trial</td></tr>
+      <tr class="searchable"><td>(Super admin) prices badalna?</td><td>/admin/platform</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="sec" id="s13">
+  <div class="sec-head"><span class="sec-num">13</span><h2>Glossary</h2></div>
+  <div class="tbl-wrap"><table id="glossary">
+    <thead><tr><th>Lafz</th><th>Matlab</th></tr></thead>
+    <tbody>
+      <tr class="searchable"><td>Branch / Location</td><td>Business ki ek jagah (dukaan). Currency, time zone, tax, address, invoice series isi ki.</td></tr>
+      <tr class="searchable"><td>Primary (main) location</td><td>Pehli / main branch; website isi ka contact dikhati hai.</td></tr>
+      <tr class="searchable"><td>Slug</td><td>URL mein business ka naam, jaise <code>wapee.online/nova-hair/book</code> mein "nova-hair".</td></tr>
+      <tr class="searchable"><td>Trial</td><td>Shuru ke 14 din, Business plan jaisa sab kuch, muft.</td></tr>
+      <tr class="searchable"><td>Plan</td><td>Solo, Team ya Business: kitne staff aur locations aur kaun se features.</td></tr>
+      <tr class="searchable"><td>Add-on</td><td>Plan ke upar extra module (jaise Inventory), super admin on karta hai.</td></tr>
+      <tr class="searchable"><td>Cap</td><td>Limit, jaise Solo par 1 bookable staff.</td></tr>
+      <tr class="searchable"><td>Active / inactive / suspended</td><td>Active = chal raha. Inactive = trial khatam ya band, app lock. Suspended = admin ne roka, login bhi band.</td></tr>
+      <tr class="searchable"><td>Super admin</td><td>Wapee ka apna admin (aap), jo plans aur add-ons lagata hai.</td></tr>
+      <tr class="searchable"><td>Role</td><td>Permissions ka set: Owner, Manager, Receptionist, Staff, ya custom.</td></tr>
+      <tr class="searchable"><td>Permission / scope</td><td>Koi kaam karne ki ijazat; scope batata hai kitne data par: Own, Branch, All.</td></tr>
+      <tr class="searchable"><td>RLS</td><td>Row Level Security: database ka apna chowkidar jo har line par check karta hai ke ye user ise dekh sakta hai ya nahin. App ka button chhupana nahin, asal tala.</td></tr>
+      <tr class="searchable"><td>Audit log</td><td>Record ke kis ne kab kya badla (roles, paisa, deletes, admin).</td></tr>
+      <tr class="searchable"><td>Slot / slot engine</td><td>Booking ka khaali waqt; engine wo hisaab jo hours, breaks, bookings, notice wagaira dekh kar free times nikaalta hai.</td></tr>
+      <tr class="searchable"><td>Buffer</td><td>Service ke baad safai/tayyari ka waqt jis mein agli booking nahin.</td></tr>
+      <tr class="searchable"><td>Minimum notice</td><td>Kitna pehle tak booking ho sakti hai (default 1 ghanta).</td></tr>
+      <tr class="searchable"><td>Booking window</td><td>Kitne din aage tak booking (default 30).</td></tr>
+      <tr class="searchable"><td>Approval mode</td><td>Online booking pehle "pending", business approve kare to confirmed.</td></tr>
+      <tr class="searchable"><td>Walk-in</td><td>Bina pehle booking ke aaya client; koi message nahin jaata.</td></tr>
+      <tr class="searchable"><td>No-show</td><td>Client nahin aaya; staff haath se mark karta hai.</td></tr>
+      <tr class="searchable"><td>Manage link</td><td>Client ka khufia link jis se wo apni booking cancel/reschedule kare.</td></tr>
+      <tr class="searchable"><td>Token</td><td>Link ke andar lamba khufia code; database sirf us ka hash rakhta hai.</td></tr>
+      <tr class="searchable"><td>Draft / issued invoice</td><td>Draft badal sakti hai, number nahin. Issued = number laga, ab kabhi nahin badlegi.</td></tr>
+      <tr class="searchable"><td>Credit note</td><td>Issued invoice ko (poora ya kuch) wapas lene ka alag document.</td></tr>
+      <tr class="searchable"><td>Gapless numbering</td><td>Invoice numbers mein koi number chhoota nahin (1, 2, 3...).</td></tr>
+      <tr class="searchable"><td>Minor units</td><td>Paisa sab se chhoti ikai mein save (1500 = $15.00), taake hisaab ghalat na ho.</td></tr>
+      <tr class="searchable"><td>Outbox</td><td>Bhejne wale messages ki qatar; har minute worker in ko bhejta hai.</td></tr>
+      <tr class="searchable"><td>Cron</td><td>Fixed waqt par khud chalne wala kaam (jaise har 5 min reminders).</td></tr>
+      <tr class="searchable"><td>Edge Function</td><td>Supabase par chhota server program (booking banana, emails bhejna).</td></tr>
+      <tr class="searchable"><td>PWA</td><td>Progressive Web App: website jo phone par app ki tarah install ho jaye.</td></tr>
+      <tr class="searchable"><td>Web Push</td><td>Browser/PWA ke zariye phone par notification.</td></tr>
+      <tr class="searchable"><td>Native app</td><td>Play Store / App Store wali app (abhi nahin).</td></tr>
+      <tr class="searchable"><td>Resend</td><td>Email bhejne wali service.</td></tr>
+      <tr class="searchable"><td>Twilio</td><td>SMS bhejne wali service (band).</td></tr>
+      <tr class="searchable"><td>Vercel</td><td>Jahan website host hoti hai.</td></tr>
+      <tr class="searchable"><td>Supabase</td><td>Backend: database, login, files, functions.</td></tr>
+      <tr class="searchable"><td>TOTP / 2FA</td><td>Authenticator app ka 6-digit code; super admin ke liye zaroori.</td></tr>
+      <tr class="searchable"><td>Honeypot</td><td>Chhupa field jo sirf bots bharte hain; bhara to booking refuse.</td></tr>
+      <tr class="searchable"><td>Rate limit</td><td>Ek waqt mein kitni dafa koi kaam ho sakta hai (spam se bachao).</td></tr>
+      <tr class="searchable"><td>Polar</td><td>Future payment provider (merchant of record) subscriptions ke liye.</td></tr>
+      <tr class="searchable"><td>GDPR</td><td>Europe ka privacy qanoon; client ka data export/erase ka haq.</td></tr>
+      <tr class="searchable"><td>Consent</td><td>Client ki ijazat (photo consent, consent form).</td></tr>
+      <tr class="searchable"><td>Display-only</td><td>App mein dikhta hai magar system enforce nahin karta.</td></tr>
+      <tr class="searchable"><td>Launch flag</td><td><code>src/config/launch.ts</code>: bani hui cheez ko launch par band rakhne ka switch (sms, widget).</td></tr>
+      <tr class="searchable"><td>Migration</td><td>Database badalne ki likhi hui script; har change isi se.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="sec" id="s14">
+  <div class="sec-head"><span class="sec-num">14</span><h2>Cheat sheet</h2></div>
+  <div class="cheat">
+    <div class="box searchable"><h4>Plans (USD, 11 Oct 2026)</h4><ul>
+      <li><b>Solo</b> $15/mo · 1 staff · 1 location</li>
+      <li><b>Team</b> $39/mo · 5 staff/location · 1 location · commission, advanced reports</li>
+      <li><b>Business</b> $79/mo per location · unlimited · locations, comparison, custom roles</li>
+      <li>Yearly = 10x monthly · Trial 14 din = Business + sab add-ons</li>
+      <li>Billing manual (super admin) · prices /admin/platform</li>
+    </ul></div>
+    <div class="box searchable"><h4>Add-ons</h4><ul>
+      <li>Packages &amp; Sessions $9 <span class="chip live">Live</span></li>
+      <li>Inventory $9 <span class="chip live">Live</span></li>
+      <li>Files &amp; Photos $9 <span class="chip live">Live</span></li>
+      <li>Forms &amp; Consent $12 <span class="chip live">Live</span></li>
+      <li>Client portal $12 <span class="chip live">Live</span></li>
+      <li>Custom roles $10 (Team; Business free) <span class="chip live">Live</span></li>
+      <li>SMS credits <span class="chip off">Off</span> · Embed widget <span class="chip off">Off</span></li>
+    </ul></div>
+    <div class="box searchable"><h4>Roles</h4><ul>
+      <li><b>Owner</b> (47, All): sab kuch, billing, website, roles, erase</li>
+      <li><b>Manager</b> (39, Branch): sab operations, reports, discounts, invite; billing/website/roles nahin</li>
+      <li><b>Receptionist</b> (20, Branch): bookings, clients + contact, invoices + payment</li>
+      <li><b>Staff</b> (12, Own): apni appointments, apne clients (contact nahin), apna schedule</li>
+    </ul></div>
+    <div class="box searchable"><h4>URLs</h4><ul>
+      <li><code>/</code> landing · <code>/login</code> · <code>/signup</code></li>
+      <li><code>/today</code> dashboard · <code>/admin</code> super admin</li>
+      <li><code>/&lt;slug&gt;</code> website · <code>/&lt;slug&gt;/book</code> booking</li>
+      <li><code>/&lt;slug&gt;/manage</code> · <code>/review</code> · <code>/sign</code> · <code>/portal</code></li>
+      <li><code>/privacy</code> · <code>/terms</code> · <code>/refund</code> · <code>/delete-account</code></li>
+    </ul></div>
+    <div class="box searchable"><h4>Pehle slot ke 5 steps</h4><ol>
+      <li>Branch hours</li><li>Service + price</li><li>Staff (ya Add me as staff)</li><li>Staff ko service</li><li>Staff working hours</li>
+    </ol></div>
+    <div class="box searchable"><h4>Launch se pehle zaroori</h4><ul>
+      <li>Prod Supabase (Pro) + backups</li><li>Resend domain + SMTP</li><li>Auth hook on</li><li>Super admin + TOTP</li><li>Legal review</li><li>Monitoring</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============ 15 ============ -->
+<section class="sec" id="s15">
+  <div class="sec-head"><span class="sec-num">+</span><h2>Is guide ko update kaise karein</h2></div>
+  <div class="box searchable">
+    <ol>
+      <li><b>Rule:</b> jab bhi koi feature, plan rule, add-on, launch flag ya workflow badle, <b>usi commit mein</b> <code>docs/wapee-product-guide.html</code> bhi update ho. Ye rule <code>CLAUDE.md</code> mein likha hai.</li>
+      <li>Sahi section dhoondein (feature card, add-on card, workflow, gaps table, cheat sheet) aur status chip badlein: <code>live</code>, <code>off</code>, <code>partial</code>, <code>missing</code>, <code>display</code>.</li>
+      <li>Prices code mein nahin hain: agar super admin ne badle hon to section 2 aur 14 ki table aur "as of" date badlein.</li>
+      <li>Upar "Last verified" badge mein nayi date aur commit hash daalein.</li>
+      <li>Check: <code>npm run guide:check</code> batata hai ke guide aakhri dafa kab badli aur us ke baad kaun se feature files badle (reminder ke liye).</li>
+      <li>Hamesha code se verify karein, purane docs se nahin.</li>
+    </ol>
+  </div>
+</section>
+
+<div class="empty-search" id="emptySearch">Is search ka koi nateeja nahin mila. Doosra lafz try karein (jaise "invoice", "trial", "push").</div>
+<footer>Wapee Product Memory Guide · code se verify: 11 Oct 2026 · commit 2dccb3c · sirf internal use</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  // Theme
+  try{var saved=localStorage.getItem('wg-theme'); if(saved) root.setAttribute('data-theme',saved);}catch(e){}
+  document.getElementById('themeToggle').addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=dark?'light':'dark'; root.setAttribute('data-theme',next);
+    try{localStorage.setItem('wg-theme',next);}catch(e){}
+  });
+
+  // Mobile nav
+  var body=document.body, toggle=document.getElementById('navToggle');
+  function setNav(open){body.classList.toggle('nav-open',open);toggle.setAttribute('aria-expanded',open?'true':'false');}
+  toggle.addEventListener('click',function(){setNav(!body.classList.contains('nav-open'));});
+  document.getElementById('backdrop').addEventListener('click',function(){setNav(false);});
+  document.querySelectorAll('#toc a').forEach(function(a){a.addEventListener('click',function(){setNav(false);});});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')setNav(false);});
+
+  // Expand / collapse
+  function allCards(){return document.querySelectorAll('details.card');}
+  document.getElementById('expandAll').addEventListener('click',function(){allCards().forEach(function(d){d.open=true;});});
+  document.getElementById('collapseAll').addEventListener('click',function(){allCards().forEach(function(d){d.open=false;});});
+
+  // Flow diagrams (inline SVG drawn from data-steps)
+  var NS='http://www.w3.org/2000/svg';
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
+  document.querySelectorAll('.flow[data-steps]').forEach(function(box){
+    var steps=box.getAttribute('data-steps').split('|');
+    var W=340,H=40,G=16,top=6,h=top+steps.length*(H+G)-G+6;
+    var svg=el('svg',{viewBox:'0 0 '+W+' '+h,role:'img','aria-label':'Flow: '+steps.join(', ')});
+    steps.forEach(function(s,i){
+      var y=top+i*(H+G), last=i===steps.length-1, first=i===0;
+      svg.appendChild(el('rect',{x:2,y:y,width:W-4,height:H,rx:11,style:'fill:'+(last?'#d8ff29':(first?'#024751':'var(--primary-soft)'))+';stroke:var(--primary)','stroke-width':1}));
+      var c=el('circle',{cx:24,cy:y+H/2,r:11,fill:first?'#d8ff29':'#024751'}); svg.appendChild(c);
+      var n=el('text',{x:24,y:y+H/2+4,'text-anchor':'middle','font-size':11,'font-weight':700,fill:first?'#024751':'#fff','font-family':'Poppins,system-ui,sans-serif'}); n.textContent=i+1; svg.appendChild(n);
+      var t=el('text',{x:44,y:y+H/2+4.5,'font-size':12.5,'font-weight':first||last?600:500,style:'fill:'+(first?'#fff':(last?'#1d2600':'var(--text)')),'font-family':'Poppins,system-ui,sans-serif'});
+      t.textContent=s; svg.appendChild(t);
+      t._max=W-56;
+      if(!last){svg.appendChild(el('path',{d:'M24 '+(y+H+2)+' V '+(y+H+G-3)+' M19 '+(y+H+G-8)+' L24 '+(y+H+G-3)+' L29 '+(y+H+G-8),stroke:'#6b7280','stroke-width':1.8,fill:'none','stroke-linecap':'round'}));}
+    });
+    box.appendChild(svg);
+  });
+  // Shrink a label that does not fit its box (measured once the card is opened and laid out)
+  function fitLabels(scope){
+    scope.querySelectorAll('.flow svg text').forEach(function(t){
+      if(!t._max||t._fitted)return;
+      var len=t.getComputedTextLength(); if(!len)return;
+      var size=12.5;
+      while(len>t._max&&size>9.5){size-=0.5;t.setAttribute('font-size',size);len=t.getComputedTextLength();}
+      t._fitted=true;
+    });
+  }
+  document.querySelectorAll('details.card').forEach(function(d){d.addEventListener('toggle',function(){if(d.open)fitLabels(d);});});
+  if(window.matchMedia('(max-width:767px)').matches)document.getElementById('q').placeholder='Search...';
+
+  // Search: filters cards, table rows and boxes live
+  var q=document.getElementById('q'), countEl=document.getElementById('qCount'), empty=document.getElementById('emptySearch');
+  var units=Array.prototype.slice.call(document.querySelectorAll('details.card, .searchable'));
+  var sections=Array.prototype.slice.call(document.querySelectorAll('section.sec'));
+  var openState=new Map();
+  var timer;
+  function norm(s){return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+  units.forEach(function(u){u._text=norm(u.textContent);});
+  function run(){
+    var term=norm(q.value.trim());
+    var words=term.split(/\s+/).filter(Boolean);
+    var hits=0;
+    if(!words.length){
+      units.forEach(function(u){u.classList.remove('hidden-by-search');});
+      sections.forEach(function(s){s.classList.remove('hidden-by-search');});
+      openState.forEach(function(v,d){d.open=v;}); openState.clear();
+      countEl.textContent=''; empty.style.display='none'; body.classList.remove('searching'); return;
+    }
+    body.classList.add('searching'); window.scrollTo(0,0);
+    units.forEach(function(u){
+      if(u.matches('.searchable') && u.closest('details.card')) return;
+      var ok=words.every(function(w){return u._text.indexOf(w)!==-1;});
+      u.classList.toggle('hidden-by-search',!ok);
+      if(ok){hits++; if(u.tagName==='DETAILS'){if(!openState.has(u))openState.set(u,u.open); u.open=true;}}
+    });
+    sections.forEach(function(s){
+      var head=norm(s.querySelector('.sec-head').textContent);
+      var headHit=words.every(function(w){return head.indexOf(w)!==-1;});
+      if(headHit){s.querySelectorAll('.hidden-by-search').forEach(function(x){x.classList.remove('hidden-by-search');}); s.classList.remove('hidden-by-search'); return;}
+      var visible=s.querySelector('details.card:not(.hidden-by-search), .searchable:not(.hidden-by-search)');
+      s.classList.toggle('hidden-by-search',!visible);
+    });
+    countEl.textContent=hits+' nateeje';
+    empty.style.display=hits?'none':'block';
+  }
+  q.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(run,120);});
+  document.addEventListener('keydown',function(e){if(e.key==='/'&&document.activeElement!==q){e.preventDefault();q.focus();}});
+
+  // Active section in sidebar
+  var links={}; document.querySelectorAll('#toc a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;});
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){Object.keys(links).forEach(function(k){links[k].classList.remove('active');}); var l=links[en.target.id]; if(l)l.classList.add('active');}});},{rootMargin:'-80px 0px -70% 0px'});
+    sections.forEach(function(s){io.observe(s);});
+  }
+
+  // Go-live checkboxes remembered per browser
+  document.querySelectorAll('[data-checklist] input[type=checkbox]').forEach(function(cb,i){
+    var key='wg-check-'+i;
+    try{cb.checked=localStorage.getItem(key)==='1';}catch(e){}
+    cb.addEventListener('change',function(){try{localStorage.setItem(key,cb.checked?'1':'0');}catch(e){}});
+  });
+})();
+</script>
+</body>
+</html>

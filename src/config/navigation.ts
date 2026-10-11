@@ -1,0 +1,161 @@
+import {
+  CalendarClock,
+  CalendarDays,
+  LayoutDashboard,
+  Percent,
+  BarChart3,
+  Boxes,
+  Package,
+  Receipt,
+  Globe,
+  Scissors,
+  Settings,
+  Star,
+  UserCog,
+  Users,
+  type LucideIcon,
+} from 'lucide-react-native';
+
+import { type PermissionKey } from './permissions';
+
+/**
+ * THE single source of navigation. The sidebar, the mobile bottom tabs and the
+ * "More" screen all read this file, so adding a destination or gating one later
+ * never means touching a layout component.
+ *
+ * Gating is live: `useVisibleNav()` filters this list with `can()`, and
+ * `RouteGuard` blocks a route a user types directly. Hiding is never the
+ * boundary — RLS is (CLAUDE.md §7).
+ */
+
+/** Route under the (app) group. Keep in step with the files in app/(app)/. */
+export type AppRoute =
+  | '/today'
+  | '/calendar'
+  | '/clients'
+  | '/services'
+  | '/staff'
+  | '/members'
+  | '/schedule'
+  | '/invoices'
+  | '/reports'
+  | '/commission'
+  | '/packages'
+  | '/inventory'
+  | '/reviews'
+  | '/website'
+  | '/settings'
+  | '/more';
+
+/** Nav ids, which are also the i18n key suffixes (`nav.<id>`). */
+export type NavId =
+  | 'today'
+  | 'calendar'
+  | 'clients'
+  | 'services'
+  | 'staff'
+  | 'members'
+  | 'schedule'
+  | 'invoices'
+  | 'reports'
+  | 'commission'
+  | 'packages'
+  | 'inventory'
+  | 'reviews'
+  | 'website'
+  | 'settings'
+  | 'more';
+
+export type NavItem = {
+  /** Stable id, also the i18n key suffix: `nav.<id>`. */
+  id: NavId;
+  route: AppRoute;
+  icon: LucideIcon;
+  /**
+   * Permission needed to see it (product doc §9). Undefined = every member.
+   * Plan and add-on gating comes from this key's catalogue entry, so there is no
+   * separate `feature` field to keep in step.
+   */
+  permission?: PermissionKey;
+  /** A second permission that ALSO opens it (either one is enough). */
+  alsoPermission?: PermissionKey;
+  /** Build phase that fills this screen in; shown by the placeholder for now. */
+  phase: number;
+  /** Shown in the mobile bottom tab bar. Exactly three, plus "More". */
+  primary?: boolean;
+};
+
+/**
+ * Flat list, in sidebar order (DESIGN_GUIDE §13.2: one flat list, no section labels).
+ */
+export const navItems: readonly NavItem[] = [
+  { id: 'today', route: '/today', icon: LayoutDashboard, phase: 4, primary: true },
+  {
+    id: 'calendar',
+    route: '/calendar',
+    icon: CalendarDays,
+    permission: 'appointments.view',
+    phase: 4,
+    primary: true,
+  },
+  {
+    id: 'clients',
+    route: '/clients',
+    icon: Users,
+    permission: 'clients.view',
+    phase: 4,
+    primary: true,
+  },
+  { id: 'services', route: '/services', icon: Scissors, permission: 'services.manage', phase: 2 },
+  { id: 'staff', route: '/staff', icon: Users, permission: 'staff.view', phase: 2 },
+  { id: 'members', route: '/members', icon: UserCog, permission: 'staff.view', phase: 1 },
+  {
+    id: 'schedule',
+    route: '/schedule',
+    icon: CalendarClock,
+    // Branch hours need settings.business to EDIT, but anyone who can see the
+    // team can read the schedule, and Staff manage their own time off here.
+    permission: 'staff.view',
+    phase: 2,
+  },
+  { id: 'invoices', route: '/invoices', icon: Receipt, permission: 'invoices.view', phase: 5 },
+  { id: 'reports', route: '/reports', icon: BarChart3, permission: 'reports.view_basic', phase: 5 },
+  {
+    id: 'commission',
+    route: '/commission',
+    icon: Percent,
+    // Own earnings for everyone on a plan with commission (plan gating comes from the catalogue).
+    permission: 'commission.view_own',
+    phase: 9,
+  },
+  // Add-ons (Phase 10): hidden, with their screens, while the add-on is off. The plan gate comes
+  // from the permission catalogue (`packages.*` / `inventory.*` carry their add-on).
+  { id: 'packages', route: '/packages', icon: Package, permission: 'packages.sell', phase: 10 },
+  { id: 'inventory', route: '/inventory', icon: Boxes, permission: 'inventory.view', phase: 10 },
+  { id: 'reviews', route: '/reviews', icon: Star, permission: 'reviews.view', phase: 7 },
+  { id: 'website', route: '/website', icon: Globe, permission: 'website.edit', phase: 7 },
+  // Owner (settings.business) OR a Manager (settings.booking): the hub itself lists only
+  // what the member may open (booking, notifications, SMS credits, message log, own alerts).
+  {
+    id: 'settings',
+    route: '/settings',
+    icon: Settings,
+    permission: 'settings.business',
+    alsoPermission: 'settings.booking',
+    phase: 1,
+  },
+] as const;
+
+/** The three primary destinations in the mobile tab bar (plus "More"). */
+export const primaryNavItems = navItems.filter((item) => item.primary);
+
+/** Everything the "More" screen lists: the destinations not in the tab bar. */
+export const secondaryNavItems = navItems.filter((item) => !item.primary);
+
+/** Route of the mobile "More" tab. */
+export const MORE_ROUTE = '/more' satisfies AppRoute;
+
+/** i18n key for a nav item's label (namespace `common`). */
+export function navLabelKey<T extends NavId>(id: T): `nav.${T}` {
+  return `nav.${id}`;
+}

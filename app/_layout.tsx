@@ -9,10 +9,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { OfflineGate } from '@/components/layout/OfflineGate';
+import { ServiceWorkerUpdater } from '@/components/layout/ServiceWorkerUpdater';
 import { ToastProvider } from '@/components/ui';
+import { AdminAccessGate } from '@/features/admin/components';
+import { AuthGate, SessionProvider } from '@/features/auth';
 import { useTabletOrientation } from '@/lib/device/useTabletOrientation';
 import { applyDirection, i18n } from '@/lib/i18n';
-import { registerServiceWorker } from '@/lib/pwa/registerServiceWorker';
 import { queryClient, useAppFocusManager, useOnlineManager } from '@/lib/query';
 import { useSupabaseAutoRefresh } from '@/lib/supabase';
 import { theme, useAppFonts } from '@/lib/theme';
@@ -32,8 +35,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     applyDirection(i18n.language);
-    // TODO(phase 0 UI): pass onUpdateAvailable to show the "Update available" toast.
-    registerServiceWorker();
   }, []);
 
   useEffect(() => {
@@ -53,13 +54,22 @@ export default function RootLayout() {
           <I18nextProvider i18n={i18n}>
             <QueryClientProvider client={queryClient}>
               <ToastProvider>
+                <ServiceWorkerUpdater />
                 <StatusBar style="dark" />
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: theme.colors.background },
-                  }}
-                />
+                <OfflineGate>
+                  <SessionProvider>
+                    <AdminAccessGate>
+                      <AuthGate>
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
+                            contentStyle: { backgroundColor: theme.colors.background },
+                          }}
+                        />
+                      </AuthGate>
+                    </AdminAccessGate>
+                  </SessionProvider>
+                </OfflineGate>
               </ToastProvider>
             </QueryClientProvider>
           </I18nextProvider>

@@ -61,6 +61,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-font',
     [
+      'expo-image-picker',
+      {
+        photosPermission: `Allow ${brand.name} to access your photos so you can add images to your website.`,
+        cameraPermission: false,
+        microphonePermission: false,
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         image: './assets/images/splash-icon.png',
@@ -69,6 +77,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         backgroundColor: PRIMARY,
       },
     ],
+    // 'dark' = dark buttons on a light bar (windowLightNavigationBar=true),
+    // which suits our light screens. enforceContrast must be false for
+    // Screen's runtime setStyle to take effect.
     ['expo-navigation-bar', { style: 'dark', enforceContrast: false }],
     'expo-notifications',
   ],

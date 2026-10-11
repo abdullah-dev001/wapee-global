@@ -49,7 +49,7 @@ Updated: Oct 1, 2026 · Based on: Wapee_Product_Overview_v2.md
 ## Phase 4 — Calendar, appointments, clients
 - Calendar: day, week, list; staff columns; visible slots; no drag
 - Create / edit / reschedule / cancel via form, walk-ins, statuses, no-show, approve (if manual confirmation)
-- Realtime updates (naya booking turant dikhe)
+- Fresh data without Realtime: refetch on focus/reconnect, 30 s refresh on Today and Calendar, manual refresh
 - Clients: list, search, profile, contact, notes, visit history, sensitive fields gating
 - Today screen (mobile home)
 - **Done jab:** receptionist poora din calendar se chala sakta hai.
@@ -108,6 +108,7 @@ Updated: Oct 1, 2026 · Based on: Wapee_Product_Overview_v2.md
 - Website domain (wapee.site ya jo final ho)
 - App Store / Play Store policy review aur submission
 - Production setup, monitoring, backups
+- **BLOCKER (widget):** booking page must be served with `Content-Security-Policy: frame-ancestors <per-business allowed domains>` (value from `validate_widget` action `frame_policy`) by the web host; without it the widget domain list is not enforced. Also set `PUBLIC_SITE_ORIGINS` / `PUBLIC_WEBSITE_BASE_URL`.
 
 ---
 

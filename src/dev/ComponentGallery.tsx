@@ -18,6 +18,13 @@ import {
   Toggle,
   useToast,
 } from '@/components/ui';
+import {
+  Calendar,
+  DateRangePicker,
+  MoneyInput,
+  SearchInput,
+  TimePicker,
+} from '@/components/shared';
 import { theme, useBreakpoint } from '@/lib/theme';
 
 /**
@@ -27,6 +34,14 @@ import { theme, useBreakpoint } from '@/lib/theme';
  */
 export function ComponentGallery() {
   const insets = useSafeAreaInsets();
+  const [calendarDay, setCalendarDay] = useState<string | null>('2026-06-15');
+  const [range, setRange] = useState<{ startDate: string | null; endDate: string | null }>({
+    startDate: null,
+    endDate: null,
+  });
+  const [minute, setMinute] = useState<number | null>(540);
+  const [price, setPrice] = useState<number | null>(2500);
+  const [searchTerm, setSearchTerm] = useState('');
   const { breakpoint, width, isMobile } = useBreakpoint();
   const padding = isMobile ? theme.layout.pagePaddingMobile : theme.layout.pagePadding;
 
@@ -102,7 +117,7 @@ export function ComponentGallery() {
           onChangeText={setText}
           required
         />
-        <Input label="Slug" prefix="wapee.site/" placeholder="my-salon" autoCapitalize="none" />
+        <Input label="Slug" prefix="wapee.online/" placeholder="my-salon" autoCapitalize="none" />
         <Input
           label="Email"
           placeholder="name@example.com"
@@ -233,6 +248,45 @@ export function ComponentGallery() {
             Info (manual)
           </Button>
         </Row>
+      </Section>
+
+      <Section title="Calendar · single day">
+        <Calendar
+          value={calendarDay}
+          onChange={setCalendarDay}
+          timeZone="Europe/London"
+          // A fortnight of selectable days, with one blocked out, so the
+          // disabled states are visible at a glance.
+          minDate="2026-06-08"
+          maxDate="2026-06-30"
+          disabledDates={['2026-06-17']}
+          initialMonth="2026-06-01"
+        />
+      </Section>
+
+      <Section title="Calendar · range (via DateRangePicker)">
+        <DateRangePicker
+          startDate={range.startDate}
+          endDate={range.endDate}
+          onChange={setRange}
+          timeZone="Europe/London"
+        />
+      </Section>
+
+      <Section title="Shared inputs">
+        <TimePicker label="Time" value={minute} onChange={setMinute} />
+        <MoneyInput
+          label="Price"
+          value={price}
+          onChange={setPrice}
+          currency="GBP"
+          locale="en-GB"
+          symbol="£"
+        />
+        <SearchInput onSearch={setSearchTerm} placeholder="Search" />
+        <Text variant="helper" color="textSecondary">
+          Debounced term: {searchTerm === '' ? '(none)' : searchTerm}
+        </Text>
       </Section>
 
       <Section title="Overlays">

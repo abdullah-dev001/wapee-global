@@ -1,8 +1,10 @@
-import { useTranslation } from 'react-i18next';
-
-import { PlaceholderScreen } from '@/components/shared/PlaceholderScreen';
+import { AdminGuard } from '@/features/admin/components';
+import { BusinessesScreen } from '@/features/admin/components/BusinessesScreen';
 
 export default function AdminHomeScreen() {
-  const { t } = useTranslation();
-  return <PlaceholderScreen title={t('routes.admin')} />;
+  return (
+    <AdminGuard>
+      <BusinessesScreen />
+    </AdminGuard>
+  );
 }

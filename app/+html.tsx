@@ -35,6 +35,9 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
 
+        {/* A secret link (#token=...) is moved out of the address bar BEFORE the bundle loads; the app reads it from memory. */}
+        <script dangerouslySetInnerHTML={{ __html: stripFragmentScript }} />
+
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: baseCss }} />
       </head>
@@ -43,6 +46,13 @@ export default function Root({ children }: PropsWithChildren) {
   );
 }
 
+/**
+ * Runs first, in the browser: if the address carries `#token=...` (manage / sign / review / portal / unsubscribe links), keep
+ * the fragment in `window.__wapeeFragment` (read by `useTokenFromUrl`, memory only) and take it out of the address bar and
+ * history at once. `#access_token=...` (auth redirects) does NOT match: only `token` at the start of a fragment parameter.
+ */
+const stripFragmentScript = `(function(){try{var h=location.hash;if(h&&/[#&]token=/.test(h)){window.__wapeeFragment=h;history.replaceState(history.state,'',location.pathname+location.search);}}catch(e){}})();`;
+
 const baseCss = `
 html, body { background-color: ${colors.background}; }
 body {
@@ -50,6 +60,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+}
+@page { margin: 14mm; }
+@media print {
+  /* The app root is a fixed-height, non-scrolling shell; let the invoice flow across pages. */
+  html, body, body * {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  body, html { background: #fff !important; }
+  [data-no-print] { display: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

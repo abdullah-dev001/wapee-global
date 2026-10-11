@@ -72,10 +72,12 @@ All tokens are declared in `:root` in `src/globals.css`. The table gives each va
 | Token | Value | Used for |
 |---|---|---|
 | `--color-text-primary` | `#111827` | Body text (`body` colour), labels, titles, values |
-| `--color-text-secondary` | `#6b7280` | Subtitles, hints, descriptions, inactive tabs, page-button numbers |
-| `--color-text-muted` | `#9ca3af` | Input prefix, chevrons and icons in inputs, table headers, timestamps, placeholders of empty media, "or" divider, ghost hover border |
+| `--color-text-secondary` | `#4b5563` | Subtitles, hints, descriptions, inactive tabs, page-button numbers |
+| `--color-text-muted` | `#6b7280` | Input prefix, chevrons and icons in inputs, table headers, timestamps, placeholders of empty media, "or" divider, ghost hover border |
 | `--color-text-on-primary` | `#ffffff` | Text on primary/danger fills; sidebar hover text |
 | `--color-text-on-secondary` | `#024751` | Text on lime fills |
+
+> **Contrast (Phase 11, WCAG AA 4.5:1).** `text-muted` was `#9ca3af` (2.5:1 on white) and failed AA for helper text, timestamps and table headers. It is now `#6b7280` (4.8:1 on white, 4.6:1 on `--color-background`); `text-secondary` moved to `#4b5563` (7.6:1) so the two stay visibly different. Status colours (`success` / `warning` / `error` / `info`) are for fills, borders and icons; as small TEXT on their light tints they are 2.1-3.4:1, so text uses `successText #047857`, `warningText #92400e`, `errorText #b91c1c`, `infoText #1d4ed8` (5.2-6.8:1). The `Text` and `Badge` components apply this automatically.
 
 ### Sidebar: `src/globals.css:33-37`
 
@@ -1019,8 +1021,8 @@ These observations come from the code above.
 
   /* Text */
   --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-muted: #9ca3af;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
   --color-text-on-primary: #ffffff;
   --color-text-on-secondary: #024751;
 

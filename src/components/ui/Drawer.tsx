@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react-native';
-import { type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Modal, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { focusRing, shadow, theme, useBreakpoint } from '@/lib/theme';
@@ -28,9 +30,20 @@ export type DrawerProps = {
  * so the body scrolls while the footer stays pinned above the safe area.
  */
 export function Drawer({ open, onClose, title, subtitle, children, footer }: DrawerProps) {
+  const { t } = useTranslation();
   const { isMobile } = useBreakpoint();
   const insets = useSafeAreaInsets();
   useOverlayDismiss(open, onClose);
+
+  // KeyboardAwareScrollView's bottomOffset is how far ABOVE the keyboard it
+  // keeps the focused input clear of — which must be at least the pinned
+  // footer's own height, or the footer (which rises via a transform, not by
+  // shrinking the scroll area) can still cover the input. Measured instead of
+  // guessed, since the footer's content (one button vs. two, wrapped or not)
+  // varies per caller.
+  const [footerHeight, setFooterHeight] = useState(0);
+  const onFooterLayout = (event: LayoutChangeEvent) =>
+    setFooterHeight(event.nativeEvent.layout.height);
 
   return (
     <Modal
@@ -44,7 +57,7 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
-          accessibilityLabel="Close panel"
+          accessibilityLabel={t('actions.closePanel')}
         />
         <View
           accessibilityViewIsModal
@@ -67,18 +80,26 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
             <CloseButton onPress={onClose} />
           </View>
 
-          <ScrollView
+          <KeyboardAwareScrollView
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
             keyboardShouldPersistTaps="handled"
+            bottomOffset={theme.spacing[16] + footerHeight}
           >
             {children}
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
           {footer ? (
-            <View style={[styles.footer, { paddingBottom: theme.spacing[16] + insets.bottom }]}>
-              {footer}
-            </View>
+            // Rises with the keyboard, same mechanism as Screen's sticky footer,
+            // so a focused input near the bottom of the drawer is never covered.
+            <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+              <View
+                onLayout={onFooterLayout}
+                style={[styles.footer, { paddingBottom: theme.spacing[16] + insets.bottom }]}
+              >
+                {footer}
+              </View>
+            </KeyboardStickyView>
           ) : (
             <View style={{ height: insets.bottom }} />
           )}
@@ -89,13 +110,14 @@ export function Drawer({ open, onClose, title, subtitle, children, footer }: Dra
 }
 
 function CloseButton({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
   const { handlers, showHover, showFocusRing } = useInteractionState(false);
   return (
     <Pressable
       {...handlers}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="Close"
+      accessibilityLabel={t('actions.close')}
       style={[
         styles.closeButton,
         showHover ? { backgroundColor: theme.colors.surfaceHover } : null,

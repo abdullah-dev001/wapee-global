@@ -30,6 +30,13 @@ export function createQueryKeys<const TFeature extends string>(feature: TFeature
   return {
     /** Everything for this feature (all businesses). Use for logout-like resets only. */
     all,
+    /**
+     * Everything for this feature in one business, in EVERY branch. `scope({ businessId })` does
+     * NOT do this: it stands for branch `null`, and TanStack matches `null` against a list keyed
+     * by a real branch id as "different", so such a list would silently stay stale. Use this to
+     * invalidate lists that carry a branch id.
+     */
+    business: (businessId: string) => [...all, { businessId }] as const,
     /** Everything for this feature inside one business/branch. */
     scope: (scope: QueryScope) => [...all, scopeOf(scope)] as const,
     /** All lists in a scope (invalidate after create/update/delete). */

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Terms of Service - {{brandName}}</title>
+    <meta name="description" content="The terms for using {{brandName}}." />
+    <meta name="theme-color" content="#024751" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <style>
+      :root {
+        --primary: #024751;
+        --bg: #f8fafb;
+        --text: #111827;
+        --muted: #4b5563;
+        --border: #e5e7eb;
+        --warn-bg: #fffbeb;
+        --warn-bd: #f59e0b;
+        --warn-tx: #78350f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          'DM Sans',
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      header {
+        background: var(--primary);
+        color: #fff;
+        padding: 16px 16px;
+      }
+      header a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 20px;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px 16px 64px;
+      }
+      .draft {
+        background: var(--warn-bg);
+        border: 1px solid var(--warn-bd);
+        color: var(--warn-tx);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-weight: 700;
+        margin-bottom: 24px;
+      }
+      h1 {
+        font-size: 28px;
+        line-height: 1.25;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 32px 0 8px;
+      }
+      p,
+      li {
+        color: var(--text);
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      a {
+        color: var(--primary);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 15px;
+      }
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 8px;
+        text-align: start;
+        vertical-align: top;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        margin-top: 40px;
+        padding-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <header><a href="/">{{brandName}}</a></header>
+    <main>
+      <div class="draft" role="note">
+        DRAFT - replace with reviewed text. This page has not been reviewed by a lawyer.
+      </div>
+      <h1>Terms of Service</h1>
+      <p class="muted">Last updated: 2026-10-09</p>
+
+      <p>
+        These terms govern your use of {{brandName}}, an appointment booking service. By creating an
+        account or using the service you agree to them.
+      </p>
+
+      <h2>1. The service</h2>
+      <p>
+        {{brandName}} lets a business manage appointments, staff, clients, a public booking page and
+        a website. Features depend on the plan a business has.
+      </p>
+
+      <h2>2. Accounts</h2>
+      <ul>
+        <li>
+          You must give accurate information and keep your password safe. You are responsible for
+          activity under your account.
+        </li>
+        <li>
+          The person who creates a business is its Owner and is responsible for the people they
+          invite and the roles they give.
+        </li>
+        <li>
+          You can delete your account at any time (see
+          <a href="/delete-account">how to delete your account</a>).
+        </li>
+      </ul>
+
+      <h2>3. Your data and your clients</h2>
+      <p>
+        You keep ownership of the data you put into {{brandName}}. You are responsible for having a
+        legal basis to collect your clients' data, for telling them how you use it, and for any
+        legal duty to keep records (for example invoices). See the
+        <a href="/privacy">Privacy Policy</a>.
+      </p>
+
+      <h2>4. Acceptable use</h2>
+      <ul>
+        <li>Do not break the law, send spam, or abuse the booking or messaging features.</li>
+        <li>
+          Do not try to access another business's data, probe or overload the service, or reverse
+          engineer it.
+        </li>
+        <li>Do not upload content you have no right to use, or unlawful content.</li>
+      </ul>
+
+      <h2>5. Plans, trial and payment</h2>
+      <p>
+        New businesses start with a free trial. Plans and add-ons, and their prices, are shown in
+        the app. Renewal, cancellation and refunds are described in the
+        <a href="/refund">Refund Policy</a>. Online card payments between a business and its clients
+        are not part of the service.
+      </p>
+
+      <h2>6. Messages</h2>
+      <p>
+        The service sends booking emails on behalf of a business. You are responsible for the
+        messages you choose to send to your clients.
+      </p>
+
+      <h2>7. Availability</h2>
+      <p>
+        We work to keep the service running, but we do not promise it will always be available or
+        error free. We may change or remove features, with notice where reasonable.
+      </p>
+
+      <h2>8. Liability</h2>
+      <p>
+        To the extent the law allows, {{brandName}} is provided "as is" and we are not liable for
+        indirect or lost-profit losses. Nothing here limits liability that cannot be limited by law.
+        (Final wording to be set by a lawyer.)
+      </p>
+
+      <h2>9. Ending</h2>
+      <p>
+        You can stop using {{brandName}} at any time. We may suspend or end an account that breaks
+        these terms. On deletion your data is removed as described in the Privacy Policy.
+      </p>
+
+      <h2>10. Governing law</h2>
+      <p>To be set before launch.</p>
+
+      <h2>11. Contact</h2>
+      <p><a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+
+      <footer class="muted">
+        <a href="/privacy">Privacy Policy</a> &middot; <a href="/refund">Refund Policy</a> &middot;
+        <a href="/delete-account">Delete your account</a> &middot;
+        <a href="mailto:{{supportEmail}}">{{supportEmail}}</a>
+      </footer>
+    </main>
+  </body>
+</html>

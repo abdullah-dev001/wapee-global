@@ -85,7 +85,8 @@ allowed_cidrs_v6 = ["::/0"]
 # enabled = true
 
 [realtime]
-enabled = true
+# Not used by the product (see context/_database.md); off for the local stack.
+enabled = false
 # Bind realtime via either IPv4 or IPv6. (default: IPv4)
 # ip_version = "IPv6"
 # The maximum length in bytes of HTTP request headers. (default: 4096)
@@ -179,7 +180,7 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
 password_requirements = ""
@@ -281,9 +282,11 @@ max_frequency = "5s"
 # uri = "pg-functions://postgres/auth/before-user-created-hook"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
-# [auth.hook.custom_access_token]
-# enabled = true
-# uri = "pg-functions://<database>/<schema>/<hook_name>"
+# Wapee: refuses sign-in / token refresh for users whose businesses are ALL suspended. FAIL-OPEN (any error = token issued).
+# Local stack reads this block. On the hosted project switch it on in the dashboard (Auth > Hooks): see docs/go-live-checklist.
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
@@ -300,8 +303,9 @@ max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+# Super admin 2FA (Phase 8A): every admin RPC and is_super_admin() need an aal2 session.
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]
@@ -384,6 +388,100 @@ deno_version = 2
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
+
+# Public booking endpoints (Phase 3).
+#
+# `verify_jwt = false` because the customer booking a haircut has NO account and
+# sends no Authorization header. These two functions are deliberately the public
+# surface of the product, and they carry their own protection:
+#   * the slug is the only business identifier a caller may send; the branch is
+#     always re-derived from it, so no business_id can be forged
+#   * `anon` has no table privileges and no policy on any booking table, and
+#     `get_free_slots` / `create_booking` are granted to service_role only, so
+#     these functions are the only path to the data
+#   * every failure is mapped to a small set of public reasons that cannot be
+#     used to tell "no such slug" from "trial expired" (see _shared/response.ts)
+#   * rate limiting and bot protection land in step 7 at the seam already called
+#     at the top of both handlers (_shared/rateLimit.ts)
+#
+# Pinned here so a later `supabase functions deploy` without the flag cannot
+# silently turn JWT verification on and break the public page.
+[functions.get_booking_page]
+verify_jwt = false
+
+[functions.get_slots]
+verify_jwt = false
+
+[functions.create_booking]
+verify_jwt = false
+
+# The guest manage link (step 6). Also public: the customer arrives from an email
+# link with no account. The token itself is the credential — 256-bit, scoped to
+# one appointment, expiring at the appointment's end, revoked on cancel — and
+# every token failure returns one identical response so the endpoint cannot be
+# used as a guessing oracle.
+[functions.manage_booking]
+verify_jwt = false
+
+# NOT public, and the one function here that KEEPS JWT verification.
+#
+# A receptionist reissues a lost manage link, so there IS a signed-in user. The
+# function forwards their Authorization header and calls the RPC as them — never
+# with the service role — so `can(business, branch, 'appointments.edit')` inside
+# the RPC sees the real caller. Using the service role here would bypass that
+# check and let any signed-in user reissue a link for any business's appointment.
+#
+# verify_jwt is therefore left at its default (true) and stated explicitly so
+# nobody "tidies" it to match the others.
+[functions.resend_manage_link]
+verify_jwt = true
+
+# Phase 7A public endpoints: the website read, the review page, and the widget
+# key/origin validation. Public for the same reason as the booking endpoints
+# (visitors and customers have no account); each is rate-limited, returns one
+# generic failure shape, and maps responses field by field.
+[functions.get_website]
+verify_jwt = false
+
+[functions.get_review_request]
+verify_jwt = false
+
+[functions.submit_review]
+verify_jwt = false
+
+[functions.validate_widget]
+verify_jwt = false
+
+# Phase 6A. send_outbox is called by pg_cron (via pg_net) with a Vault token that
+# the function checks through outbox_worker_authorize(); it has no user and no JWT.
+# unsubscribe is a link in an email: public, HMAC-signed, rate-limited.
+[functions.send_outbox]
+verify_jwt = false
+
+[functions.unsubscribe]
+verify_jwt = false
+
+# message_preview is called by the signed-in dashboard: JWT verification stays ON.
+[functions.message_preview]
+verify_jwt = true
+
+# Phase 10B. client_files is called by the signed-in dashboard: JWT verification stays ON (it forwards
+# the caller's JWT to the RPCs, which are the real boundary). sign_form is the PUBLIC signing link.
+[functions.client_files]
+verify_jwt = true
+
+[functions.sign_form]
+verify_jwt = false
+
+# Phase 10C. The client portal is PUBLIC (a customer has no Supabase account): its own session tokens are
+# the credential and every RPC behind it is service_role only.
+[functions.portal]
+verify_jwt = false
+
+# Phase 11A. gdpr is called by the signed-in dashboard: JWT verification stays ON; the RPCs behind it
+# (clients.erase / Owner + typed name) are the real boundary.
+[functions.gdpr]
+verify_jwt = true
 
 [analytics]
 enabled = true

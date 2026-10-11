@@ -1,10 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 
-import { PlaceholderScreen } from '@/components/shared/PlaceholderScreen';
+import { PublicWebsitePage } from '@/features/website/components/public';
 
-export default function PublicBusinessScreen() {
-  const { t } = useTranslation();
+/**
+ * The business website: `wapee.online/<slug>`. Data only from the `get_website`
+ * Edge Function. A slug with no published website shows the one generic
+ * not-found page. The booking flow lives at `/<slug>/book`.
+ */
+export default function PublicWebsiteRoute() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  return <PlaceholderScreen title={t('routes.public', { slug })} />;
+  return <PublicWebsitePage slug={slug} />;
 }

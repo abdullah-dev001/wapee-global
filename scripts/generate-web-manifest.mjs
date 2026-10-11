@@ -18,7 +18,8 @@ const manifest = {
   name: brand.name,
   short_name: brand.name,
   description: brand.description,
-  start_url: '/',
+  // "/" is the marketing landing page; the installed app opens the dashboard (signed out: AuthGate sends it to /login).
+  start_url: '/today',
   scope: '/',
   display: 'standalone',
   orientation: 'any',

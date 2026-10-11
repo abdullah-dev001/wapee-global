@@ -120,6 +120,8 @@ export function Button({
       onPress={inactive ? undefined : onPress}
       disabled={inactive}
       accessibilityRole="button"
+      // Small / medium controls are drawn under 44px; the extra touch area keeps the 44px minimum.
+      hitSlop={Math.max(0, (theme.layout.minTouchTarget - sizing.height) / 2)}
       accessibilityLabel={accessibilityLabel ?? children}
       accessibilityState={{ disabled: inactive, busy: loading }}
       testID={testID}

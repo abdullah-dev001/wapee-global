@@ -22,7 +22,7 @@ Companion file: DESIGN_GUIDE.md (extracted from the earlier Wapee web app). Sect
 | 9 | **Languages:** i18n + RTL engine built from day one; any language = one new translation file. No special focus on any one language. Launch base language English. | Decided |
 | 10 | **Launch countries:** all countries (international). | Decided |
 | 11 | **Storage:** unlimited for now; per-plan limits can be added later. | Decided |
-| 12 | **Trial ends = business becomes inactive**, no access to anything until a plan is assigned. | Decided |
+| 12 | **Trial ends = business becomes inactive.** Everything is locked except **Settings, Billing and the mobile More menu**, so the owner can still see their account and get a plan assigned. Nothing is deleted. Super admin is unaffected. | Decided |
 | 13 | **Calendar:** day/week/list, one column per staff, visible slots, **no drag and drop**. Reschedule via form. | Decided |
 | 14 | **Website:** one single page per business, dynamic data. SEO kept basic; revisit later if needed. | Decided |
 | 15 | **Booking stays simple:** no multi-service-per-booking, no recurring appointments, no staff-specific price/duration. | Decided |
@@ -33,6 +33,9 @@ Companion file: DESIGN_GUIDE.md (extracted from the earlier Wapee web app). Sect
 | 20 | **Apple/Google store policy review** postponed until before store submission. | Deferred |
 | 21 | **Timezone/DST and DB-level no-double-booking** must be correct from the very start. | Decided |
 | 22 | Final pricing, add-on prices and SMS rates treated as set (see section 10); still re-check after real data. | Decided |
+| 23 | **Country, currency, timezone, address and tax settings live on the branch**, not the business (branches can be in different countries). Business keeps only default_* values to pre-fill new branches. A branch currency is locked once it has an invoice or payment. | Decided |
+| 24 | **Invoice numbers are sequential per branch** (`prefix-000123`, no gaps), not per business. Replaces the earlier per-business rule. | Decided |
+| 25 | **Reports never add different currencies.** Combined views show separate totals per currency; no conversion at launch. | Decided |
 
 ---
 ## 1. Product summary
@@ -82,7 +85,7 @@ One Expo (React Native) codebase for iOS, Android, web; Supabase backend; whole 
 | Layer | Choice |
 |---|---|
 | App | Expo, Expo Router, React Native Web |
-| Backend | Supabase: Postgres, Auth, Storage, Realtime, Edge Functions |
+| Backend | Supabase: Postgres, Auth, Storage, Edge Functions (no Realtime) |
 | Security | Row Level Security on every tenant table |
 | Fonts / icons | DM Sans (@expo-google-fonts/dm-sans); lucide-react-native |
 | Forms | react-hook-form + zod |
@@ -112,7 +115,7 @@ Surfaces: business app (iOS/Android/web); super admin (same app, platform flag);
 
 Super admin: platform-level flag (never a business role); mandatory 2FA; every action on a business audit-logged.
 Super admin screens: businesses list/detail (plan, add-ons, status, usage); subscription status (manual); SMS balances; logged support view; platform settings (plans, add-on prices, SMS country rates, industry presets).
-**Trial ends: business becomes inactive, no access to anything until super admin activates a plan.**
+**Trial ends: business becomes inactive until a super admin activates a plan.** Everything is locked except **Settings, Billing and the mobile More menu** — an owner who cannot reach their own billing could never get the business running again. Data is hidden, never deleted. A super admin is unaffected and can work inside an inactive business to assign the plan.
 
 ## 6. Core features (every plan)
 ### 6.1 Booking form
@@ -135,7 +138,7 @@ UX: sensible default, one-line explanation, live preview of customer booking pag
 - Services: name, category, duration, price, which staff, which custom fields.
 - Staff and schedule: working hours, breaks, time off, services offered.
 - Clients: profile, contact, notes, visit and invoice history.
-- Invoices: line items, discounts (reason required), **tax/VAT (tax %, business tax number, sequential invoice numbering)**, manual payment (cash, card, bank transfer), status paid/partial/pending, printable, credit notes.
+- Invoices: line items, discounts (reason required), **tax/VAT (tax % and tax number set per branch, invoice numbers sequential per branch with a branch prefix)**, manual payment (cash, card, bank transfer), status paid/partial/pending, printable, credit notes.
 - Notifications: email (Resend) confirmed, reminder, rescheduled, cancelled; **push** to business users (new booking, cancellation, reminder); SMS per section 8.4.
 - Basic reports: today and this month (revenue, appointments, top services).
 - Reviews, website, currency/timezone/language per business (per branch with Multi-branch).
@@ -214,12 +217,12 @@ Three plans per location capped by staff bands; 14-day trial; no free plan; add-
 (Custom domain: skipped. Waitlist: removed.)
 
 Prices (to review after real data): Solo ~$15/mo, Team ~$39/mo, Business ~$79/mo per location, add-ons ~$8-15/mo, annual discount 17-20%.
-Trial: 14 days; after it ends business is inactive. Subscription collection method is decided last; until then super admin assigns plan/status manually. Fact: Stripe does not support businesses registered in Pakistan; usual route is a company in a supported country.
+Trial: 14 days; after it ends the business is inactive (Settings and Billing stay reachable — decision 12). The owner is warned in the app for the last 3 days. Subscription collection method is decided last; until then super admin assigns plan/status manually. Fact: Stripe does not support businesses registered in Pakistan; usual route is a company in a supported country.
 
 ## 11. Data model and business rules
 Every tenant row has business_id (and branch_id where relevant); RLS restricts to the user's businesses. Tables (Recommendation):
 - Platform: profiles (is_super_admin), plans, addons, business_subscriptions, business_addons, industry_presets, sms_country_rates, audit_logs
-- Business: businesses (currency, timezone, language, industry, terminology, tax settings), branches, business_members, roles, role_permissions, member_role_assignments
+- Business: businesses (name, slug, language, industry, terminology, plan/trial/status, default_country/default_currency/default_timezone for pre-fill only), branches (country, currency, timezone, address, tax number, tax rate, invoice prefix and counter), business_members, roles, role_permissions, member_role_assignments
 - Catalogue: service_categories, services, service_staff, resources, service_resources
 - Schedule: staff_working_hours, staff_breaks, staff_time_off, branch_hours
 - Booking form: booking_settings, custom_fields, custom_field_services, form_versions
@@ -229,11 +232,11 @@ Every tenant row has business_id (and branch_id where relevant); RLS restricts t
 - Growth: reviews, review_requests, sms_credit_ledger, messages, push_tokens
 - Website: websites, website_sections, widget_keys (domains table deferred)
 
-Rules: soft delete only; financial records immutable (fix via credit notes/reversals); discounts need a reason; invoice items store price at sale time; **no double-booking enforced in Postgres** (exclusion constraint on staff + time range, and resource + time range when rooms on); session usage cannot exceed purchased + bonus or pass expiry, undo within 10 min by creator, owner reverses any time, reversals are new rows; commission computed when invoice becomes paid and stored permanently; **timestamps stored in UTC, slots computed in business/branch timezone including DST**; money as integers in minor units with currency code; custom field answers stored with form version; invoice numbers sequential per business with no gaps.
+Rules: soft delete only; financial records immutable (fix via credit notes/reversals); discounts need a reason; invoice items store price at sale time; **no double-booking enforced in Postgres** (exclusion constraint on staff + time range, and resource + time range when rooms on); session usage cannot exceed purchased + bonus or pass expiry, undo within 10 min by creator, owner reverses any time, reversals are new rows; commission computed when invoice becomes paid and stored permanently; **timestamps stored in UTC, slots computed in business/branch timezone including DST**; money as integers in minor units with currency code; custom field answers stored with form version; invoice numbers sequential per branch (prefix + number) with no gaps; country, currency, timezone and tax settings come from the branch, and slots/reminders use the branch timezone.
 
 ## 12. Design system
 New Wapee uses the exact visual language of the earlier Wapee web app. Full guide: DESIGN_GUIDE.md.
-Core tokens: Primary #024751 (hover #013640, light #e6f0f2); Secondary lime #d8ff29 (hover #c4eb1a, light #f6ffd6); Background #f8fafb; Surface #fff; Border #e5e7eb; Text #111827 / #6b7280 / #9ca3af; Sidebar bg #024751, text #a8c5ca, active pill #d8ff29 with #024751 text, hover #035f6e; Success #10b981, Warning #f59e0b, Error #ef4444, Info #3b82f6 (each with light and border variants, see Appendix A). Font DM Sans, letter-spacing -0.02em (-0.03em headings). Radius 6/8/12/16/full. Motion 120/180/260ms, colour changes only. Layout: sidebar 240, header 64, page padding 24 (16 mobile), card padding 24 (18 mobile), drawer 480.
+Core tokens: Primary #024751 (hover #013640, light #e6f0f2); Secondary lime #d8ff29 (hover #c4eb1a, light #f6ffd6); Background #f8fafb; Surface #fff; Border #e5e7eb; Text #111827 / #4b5563 / #6b7280; Sidebar bg #024751, text #a8c5ca, active pill #d8ff29 with #024751 text, hover #035f6e; Success #10b981, Warning #f59e0b, Error #ef4444, Info #3b82f6 (each with light and border variants, see Appendix A). Font DM Sans, letter-spacing -0.02em (-0.03em headings). Radius 6/8/12/16/full. Motion 120/180/260ms, colour changes only. Layout: sidebar 240, header 64, page padding 24 (16 mobile), card padding 24 (18 mobile), drawer 480.
 Component specs: Button (primary, secondary lime, ghost, danger; sm 34, md 41, lg 48; radius 8; disabled 0.55); Input (label above 13/600, 1px border, radius 8, ~40px, focus primary border + 3px #e6f0f2 ring, error red); Card (white, 1px border, radius 12, flat); Badge (pill 11/600 tinted); Drawer 480 right (full screen mobile); Dialog max 26rem; Tabs underline; Segmented; Toggle 36x20; Empty states; skeleton loaders (never list spinners).
 Expo translation: all tokens in one typed theme object, no hard-coded hex; shadow() helper per level (iOS shadow*, Android elevation, web boxShadow); hover only on web via Pressable; web keyboard focus ring kept; rem -> numbers with 16px base, mobile scale-down in theme; one icon library (lucide, stroke 1.75, sizes 14-22).
 New components to design: calendar/scheduler (day/week, multi-staff columns, **no drag**), date and date-range pickers, time-slot picker, phone input with country code, checkbox/radio, toasts, charts (one library for web+native), bottom tab bar, website section templates, booking flow screens, signature pad. Dark mode: not at launch. Fix old inconsistencies: one focus style, one disabled opacity (0.55), one spinner speed (600ms).
@@ -275,7 +278,7 @@ primary #024751 | primary-hover #013640 | primary-light #e6f0f2
 secondary #d8ff29 | secondary-hover #c4eb1a | secondary-light #f6ffd6
 background #f8fafb | surface #ffffff | surface-hover #f3f4f6
 border #e5e7eb | border-subtle #f0f0f0
-text-primary #111827 | text-secondary #6b7280 | text-muted #9ca3af
+text-primary #111827 | text-secondary #4b5563 | text-muted #6b7280
 text-on-primary #ffffff | text-on-secondary #024751
 sidebar-bg #024751 | sidebar-text #a8c5ca | sidebar-active #d8ff29
 sidebar-active-text #024751 | sidebar-hover #035f6e
