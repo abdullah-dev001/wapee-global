@@ -46,3 +46,82 @@ export function shouldWaitForRejoin(
 ): boolean {
   return !hasBusiness && isFetchingBusinesses && !onOnboardingScreen && !onAcceptInviteScreen;
 }
+
+/** Route groups that an unauthenticated visitor may open. */
+export const PUBLIC_GROUPS = new Set(['(auth)', '(public)']);
+/** Screens inside (auth) that a signed-in but unverified user still needs. */
+export const VERIFY_ROUTE = 'verify';
+/** Where a verified user with no business goes. */
+export const ONBOARDING_ROUTE = 'onboarding';
+/**
+ * The invite screen. An invited person arrives here with no account and no
+ * business, so it must be reachable while signed out AND must not be
+ * redirected to onboarding — accepting the invite is what gives them a
+ * business.
+ */
+export const ACCEPT_INVITE_ROUTE = 'accept-invite';
+
+export type AuthGateDecision =
+  | { kind: 'wait' }
+  | { kind: 'render' }
+  | { kind: 'redirect'; href: '/login' | '/verify' | '/onboarding' | '/' };
+
+/**
+ * Pure routing decision for `AuthGate` (CLAUDE.md §4, §7):
+ * - signed out, private route     -> /login
+ * - signed in, unverified         -> /verify
+ * - verified, but has no business -> /onboarding
+ * - fully set up, on an auth page -> /
+ *
+ * `'wait'` means: render the route tree as-is and overlay a spinner, never
+ * unmount it — see AuthGate's own comment for why unmounting the tree for a
+ * loading spinner is unsafe (it can lose the current URL, including a
+ * `?token=…` query on `/accept-invite`).
+ */
+export function authGateDecision(input: {
+  isSupabaseConfigured: boolean;
+  loading: boolean;
+  isAuthenticated: boolean;
+  isEmailVerified: boolean;
+  segments: readonly string[];
+  hasBusiness: boolean;
+  waitForBusinesses: boolean;
+  waitForRejoin: boolean;
+}): AuthGateDecision {
+  const {
+    isSupabaseConfigured,
+    loading,
+    isAuthenticated,
+    isEmailVerified,
+    segments,
+    hasBusiness,
+    waitForBusinesses,
+    waitForRejoin,
+  } = input;
+
+  if (!isSupabaseConfigured) return { kind: 'render' };
+  if (loading) return { kind: 'wait' };
+
+  const group = segments[0];
+  const isPublicGroup = typeof group === 'string' && PUBLIC_GROUPS.has(group);
+  const isAuthGroup = group === '(auth)';
+  const onAdminRoute = group === '(admin)';
+  const onVerifyScreen = segments.includes(VERIFY_ROUTE);
+  const onOnboardingScreen = segments.includes(ONBOARDING_ROUTE);
+  const onAcceptInviteScreen = segments.includes(ACCEPT_INVITE_ROUTE);
+
+  if (!isAuthenticated && !isPublicGroup) return { kind: 'redirect', href: '/login' };
+  if (isAuthenticated && !isEmailVerified && !onVerifyScreen) {
+    return { kind: 'redirect', href: '/verify' };
+  }
+  if (isAuthenticated && isEmailVerified) {
+    if (waitForBusinesses || waitForRejoin) return { kind: 'wait' };
+    // Accepting an invite is how an invited person gets their first business,
+    // so that screen is never redirected to onboarding or away from (auth).
+    if (!hasBusiness && !onOnboardingScreen && !onAcceptInviteScreen && !onAdminRoute) {
+      return { kind: 'redirect', href: '/onboarding' };
+    }
+    if (hasBusiness && isAuthGroup && !onAcceptInviteScreen) return { kind: 'redirect', href: '/' };
+  }
+  return { kind: 'render' };
+}

@@ -45,6 +45,12 @@ land in comes from `profiles.default_business_id` (switcher arrives with onboard
 Business-level checks (no business → onboarding, inactive → lock screen) are added
 in the onboarding and trial steps.
 
+**The routing DECISION is a pure function**, `authGateDecision()` in `gateSettled.ts`
+(unit-tested directly, `gateSettled.test.ts`) — `AuthGate` only wires session/router/
+query state into it. **The route tree (`children`) is never unmounted while a decision
+is pending**: a `'wait'` result overlays the spinner on top instead of replacing the
+tree. See the 2026-10-12 changelog entry below for why that distinction matters.
+
 ## Email (IMPORTANT, temporary)
 Verification and reset emails are sent by **Supabase's built-in sender**. Two limits
 to know while developing:
@@ -97,6 +103,7 @@ display text and can be reused server-side.
 - **Creating an `auth.users` row by hand needs `''`, not NULL, in `confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`.** GoTrue scans those columns as non-nullable strings, so a hand-made user fails sign-in with a 500 "Database error querying schema". Found 2026-10-02 with a SQL-inserted test user. Prefer the real `/auth/v1/signup` endpoint.
 
 ## Changelog
+- 2026-10-12: FIX the REAL cause of the invite-accept cold-load bug (the fix below this entry was correct but did not fix it on production; full story in members.md changelog and `_handoff.md`). `AuthGate`/`AdminAccessGate` used to unmount their entire `children` (the whole `Stack`) and render a bare spinner while a decision was pending. That unmount made React Navigation lose its navigation state; on recovery it fell back to the default route and overwrote the real URL via its own internal `history.replace` — silently turning `/accept-invite?token=…#access_token=…` into `/` before any app code ever read it. Confirmed with a live browser trace against the dev project, not by further reading. Fix: both gates now ALWAYS render `children`, overlaying the spinner instead of replacing the tree. The decision logic itself moved into a pure, unit-tested `authGateDecision()` (`gateSettled.ts`/`gateSettled.test.ts`, 15 new cases) so this class of regression is covered without needing a browser. Verified end-to-end on the dev project with two independent throwaway invited users (real tokens via the Auth REST API, cold tab, cleared storage): both landed directly on the dashboard with the membership active, no `/onboarding` detour.
 - 2026-10-12: FIX invite-accept routing bugs (full detail in members.md changelog): `useSignup` gained an optional `confirmRedirectPath` so the invite screen's signed-out signup returns email confirmation to `/accept-invite?token=…` instead of the generic `/verify` (token no longer lost); `AuthGate` gained `shouldWaitForRejoin()` so it waits for the membership refetch after an invite accept instead of deciding on the stale "zero businesses" value and flashing `/onboarding`.
 - 2026-10-09: FIX tab-refocus reload. supabase-js re-emits `SIGNED_IN` on every tab refocus and `SessionProvider` ran `queryClient.clear()` on it, so every screen fell back to skeletons. Now `sessionState.ts` (`nextSessionState`, tested) clears the cache only when the user id changes or on `SIGNED_OUT`; same-user events keep the cache and the session object.
 - 2026-10-09: `AuthLayout` side padding fixed (it sat on `Screen`'s content container, where `paddingStart/End: 0` overrode it, so the card touched the screen edges); padding now on an inner wrapper.
