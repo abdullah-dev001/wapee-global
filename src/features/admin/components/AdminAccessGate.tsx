@@ -18,6 +18,11 @@ import { useAdminAccess } from '../api/useAdminAccess';
  * and a business-less admin is sent to /admin instead of onboarding.
  *
  * Convenience only: every admin RPC checks the flag and aal2 itself.
+ *
+ * `children` is always rendered, even while `waiting` (a spinner overlays it
+ * instead) — see AuthGate's own comment for why: unmounting the route tree
+ * for a loading spinner loses React Navigation's state and can silently
+ * rewrite the URL out from under whatever screen was actually requested.
  */
 export function AdminAccessGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, isEmailVerified, loading, user } = useSession();
@@ -30,11 +35,15 @@ export function AdminAccessGate({ children }: { children: ReactNode }) {
   if (!isSupabaseConfigured || loading || !isAuthenticated || !isEmailVerified) {
     return <>{children}</>;
   }
+
   if (waiting) {
     return (
-      <View style={styles.loading}>
-        <Spinner size={24} />
-      </View>
+      <>
+        {children}
+        <View style={styles.overlay}>
+          <Spinner size={24} />
+        </View>
+      </>
     );
   }
 
@@ -43,13 +52,18 @@ export function AdminAccessGate({ children }: { children: ReactNode }) {
     pathname,
     hasBusiness: (businesses.data?.length ?? 0) > 0,
   });
-  if (target && target !== pathname) return <Redirect href={target as Href} />;
-  return <>{children}</>;
+
+  return (
+    <>
+      {children}
+      {target && target !== pathname ? <Redirect href={target as Href} /> : null}
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
+  overlay: {
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.background,

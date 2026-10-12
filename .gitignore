@@ -56,3 +56,6 @@ app/*.devonly
 
 # Vercel CLI (local project link / build output)
 .vercel/
+
+# One-off production data scripts: never committed
+docs/prod-test-data-wipe.sql
