@@ -7,6 +7,7 @@ export { DayHoursRow, type DayHoursRowProps, type DayInterval } from './DayHours
 export { FormField, type FormFieldProps } from './FormField';
 export { IntegerInput, type IntegerInputProps } from './IntegerInput';
 export { MoneyInput, type MoneyInputProps } from './MoneyInput';
+export { NoIndexHead } from './NoIndexHead';
 export { PhoneInput, type PhoneInputProps } from './PhoneInput';
 export { SEARCH_MIN_LENGTH, SearchInput, type SearchInputProps } from './SearchInput';
 export { SignaturePad, SignatureView } from './SignaturePad';

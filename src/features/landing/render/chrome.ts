@@ -73,17 +73,21 @@ export type HeadOptions = {
   css: string;
   /** Extra tags (preloads, JSON-LD, inline scripts), already safe HTML. */
   extra?: string;
+  /** "index, follow" unless stated; every page `head()` builds is public. */
+  robots?: string;
 };
 
 export function head(ctx: PageContext, o: HeadOptions): string {
   const url = `${ctx.siteUrl}${o.path}`;
-  const image = `${ctx.siteUrl}/icons/icon-512.png`;
+  const image = `${ctx.siteUrl}/icons/og-image.png`;
+  const imageAlt = tx(ctx, ctx.s.meta.ogImageAlt);
   return `<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${attr(o.title)}</title>
 <meta name="description" content="${attr(o.description)}">
 <link rel="canonical" href="${attr(url)}">
+<meta name="robots" content="${attr(o.robots ?? 'index, follow')}">
 <meta name="theme-color" content="${colors.primary}">
 <meta name="color-scheme" content="light">
 <meta property="og:type" content="website">
@@ -92,8 +96,14 @@ export function head(ctx: PageContext, o: HeadOptions): string {
 <meta property="og:description" content="${attr(o.description)}">
 <meta property="og:url" content="${attr(url)}">
 <meta property="og:image" content="${attr(image)}">
-<meta property="og:image:alt" content="${tx(ctx, ctx.s.meta.ogImageAlt)}">
-<meta name="twitter:card" content="summary">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${imageAlt}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${attr(o.title)}">
+<meta name="twitter:description" content="${attr(o.description)}">
+<meta name="twitter:image" content="${attr(image)}">
+<meta name="twitter:image:alt" content="${imageAlt}">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 ${o.extra ?? ''}

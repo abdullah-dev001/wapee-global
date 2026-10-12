@@ -3,6 +3,7 @@
  * functions; `scripts/build-landing.mjs` calls them after `expo export` and writes
  * the files. No prices here: they are loaded at runtime (see landingClient.ts).
  */
+import { interpolate } from '../pricingModel.ts';
 import { attr, inlineJson, tx, type PageContext } from './context.ts';
 import { footer, head, header, logo } from './chrome.ts';
 import { pricing } from './pricingSection.ts';
@@ -10,6 +11,11 @@ import { ctaBand, faq, features, hero, how, who } from './sections.ts';
 import { heroVisualCss } from './heroVisual.ts';
 import { motionCss } from './motion.ts';
 import { landingCss, legalCss } from './styles.ts';
+
+/** Plain text (no HTML escaping) for JSON-LD: `inlineJson` already makes the script tag safe. */
+function plain(ctx: PageContext, template: string, vars: Record<string, string | number> = {}) {
+  return interpolate(template, { name: ctx.brandName, email: ctx.supportEmail, ...vars });
+}
 
 export type LandingAssets = {
   /** URL of the browser script (content-hashed). */
@@ -40,20 +46,77 @@ export function headScript(sessionKey: string, authScript: string): string {
 var u=readSignedIn(readStoredSession(window.localStorage,${inlineJson(sessionKey)}),Date.now());if(u){d.setAttribute('data-auth','in');window.__landingUser=u.name||'';}}catch(e){}setTimeout(function(){if(!window.__landingMotion)d.classList.add('reveal-all');},3000);})();</script>`;
 }
 
-export function softwareJsonLd(ctx: PageContext): Record<string, unknown> {
-  return {
+export type JsonLdOffer = { price: string; priceCurrency: string; name: string; url: string };
+
+/**
+ * `offers` built from `get_public_pricing()` at build time (scripts/build-landing.mjs): never a
+ * price literal in source. Omitted entirely (not a placeholder) when the fetch failed or
+ * returned nothing usable, per the "no price literals in code" rule — leaving offers out is
+ * correct, a fabricated one is not.
+ */
+export function softwareJsonLd(ctx: PageContext, offers: JsonLdOffer[] | null): Record<string, unknown> {
+  const base: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: ctx.brandName,
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     url: `${ctx.siteUrl}/`,
-    description: tx(ctx, ctx.s.meta.description),
+    description: plain(ctx, ctx.s.meta.description),
+  };
+  if (offers && offers.length > 0) {
+    base.offers = offers.map((o) => ({
+      '@type': 'Offer',
+      name: o.name,
+      price: o.price,
+      priceCurrency: o.priceCurrency,
+      url: o.url,
+    }));
+  }
+  return base;
+}
+
+export function organizationJsonLd(ctx: PageContext): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: ctx.brandName,
+    url: `${ctx.siteUrl}/`,
+    logo: `${ctx.siteUrl}/icons/icon-512.png`,
+    email: ctx.supportEmail,
+  };
+}
+
+export function websiteJsonLd(ctx: PageContext): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: ctx.brandName,
+    url: `${ctx.siteUrl}/`,
+  };
+}
+
+/**
+ * Built from the SAME `ctx.s.faq.items` the rendered FAQ section reads (`sections.ts`'s `faq()`),
+ * so the two can never drift apart. Order follows `Object.values`, same as the rendered list.
+ */
+export function faqJsonLd(ctx: PageContext): Record<string, unknown> {
+  const items = Object.values(ctx.s.faq.items).map((item) => ({
+    '@type': 'Question',
+    name: plain(ctx, item.q),
+    acceptedAnswer: { '@type': 'Answer', text: plain(ctx, item.a) },
+  }));
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items,
   };
 }
 
 export function renderLanding(ctx: PageContext, assets: LandingAssets): string {
-  const jsonLd = softwareJsonLd(ctx);
+  // No price literal at build time: landingClient.ts's updateJsonLd() adds real `offers` once
+  // get_public_pricing() resolves in the browser (same live data the pricing cards show).
+  const jsonLd = softwareJsonLd(ctx, null);
   const config = {
     rpcUrl: assets.rpcUrl,
     apiKey: assets.apiKey,
@@ -70,6 +133,9 @@ export function renderLanding(ctx: PageContext, assets: LandingAssets): string {
     `<link rel="preconnect" href="${attr(new URL(assets.rpcUrl).origin)}" crossorigin>`,
     `<link rel="manifest" href="/manifest.json">`,
     `<script type="application/ld+json" id="ld-json">${inlineJson(jsonLd)}</script>`,
+    `<script type="application/ld+json">${inlineJson(organizationJsonLd(ctx))}</script>`,
+    `<script type="application/ld+json">${inlineJson(websiteJsonLd(ctx))}</script>`,
+    `<script type="application/ld+json">${inlineJson(faqJsonLd(ctx))}</script>`,
   ].join('\n');
   return `<!doctype html>
 <html lang="en" dir="ltr" class="no-js">

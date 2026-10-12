@@ -6,7 +6,9 @@
  *   dist/refund.html           the Refund Policy (DRAFT)
  *   dist/privacy.html, dist/terms.html   from src/features/landing/legal/*.html ({{brandName}}, {{supportEmail}})
  *   dist/assets/landing/*      the browser script (content-hashed) and DM Sans font files
- *   dist/robots.txt, dist/sitemap.xml
+ *   dist/icons/og-image.png    Open Graph / Twitter share image (1200x630, brand style; scripts/ogImage.mjs)
+ *   dist/robots.txt, dist/sitemap.xml   Allow landing + legal pages, Disallow every private app route and
+ *                               guest-token page (derived from app/(app)+(admin)+(auth) at build time)
  *
  * Why: Expo's static render of "/" is an empty <div id="root"> (the root layout waits for fonts), so it has
  * no text for search engines or for a payment-provider review. Prices are NOT baked in: the page loads them
@@ -23,6 +25,7 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   renameSync,
   rmSync,
@@ -34,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 
 import { brand } from '../src/config/brand.ts';
 import { renderLanding, renderRefund } from '../src/features/landing/render/page.ts';
+import { renderOgImage } from './ogImage.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outArg = process.argv.indexOf('--out');
@@ -149,6 +153,15 @@ const ctx = {
     refund: '/refund',
   },
 };
+// OG/Twitter share image (1200x630, brand style): same hero copy the page shows, no price, no new text.
+const ogIconsDir = join(out, 'icons');
+mkdirSync(ogIconsDir, { recursive: true });
+const tagline = strings.hero.title.replace('{{highlight}}', strings.hero.titleHighlight);
+writeFileSync(
+  join(ogIconsDir, 'og-image.png'),
+  await renderOgImage({ brandName: brand.name, tagline }),
+);
+
 const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
 writeFileSync(
   indexPath,
@@ -168,18 +181,54 @@ writeFileSync(
   renderRefund(ctx, { fontCss, updated: REFUND_UPDATED, reseller: RESELLER }),
 );
 
-// Legal pages: templates with the product name and support email from brand.ts (no hardcoded copy).
+// Legal pages: templates with the product name, support email and site URL from brand.ts (no hardcoded copy).
 for (const page of ['privacy', 'terms']) {
   const html = readFileSync(join(landingSrc, 'legal', `${page}.html`), 'utf8')
     .replaceAll('{{brandName}}', brand.name)
-    .replaceAll('{{supportEmail}}', brand.supportEmail);
+    .replaceAll('{{supportEmail}}', brand.supportEmail)
+    .replaceAll('{{siteUrl}}', brand.urls.site);
   if (html.includes('{{')) fail(`legal/${page}.html has an unknown {{placeholder}}.`);
   writeFileSync(join(out, `${page}.html`), html);
 }
 
 // 5. robots.txt + sitemap.xml (absolute URLs from brand.ts).
+// Allow only the marketing landing + legal pages; everything else needs a session (dashboard, admin,
+// auth) or is a guest-token page not meant for search (manage/portal/review/sign, the booking flow).
+// Derived from app/(app)+(admin)+(auth)'s own top-level route names so it can't drift from the routes
+// themselves (same derivation reservedSlugs.test.ts uses for the reserved-slug list).
+function topLevelRouteNames(groupDir) {
+  const dir = join(root, 'app', groupDir);
+  if (!existsSync(dir)) return [];
+  return [
+    ...new Set(
+      readdirSync(dir)
+        .filter((f) => f !== '_layout.tsx')
+        .map((f) => f.replace(/\.tsx?$/, ''))
+        .filter((name) => name && name !== 'index'),
+    ),
+  ];
+}
+const privateRoutes = [
+  ...topLevelRouteNames('(app)'),
+  ...topLevelRouteNames('(admin)'),
+  ...topLevelRouteNames('(auth)'),
+];
 const site = brand.urls.site;
-writeFileSync(join(out, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${site}/sitemap.xml\n`);
+const disallow = [
+  ...privateRoutes.map((r) => `Disallow: /${r}`),
+  // Guest-token pages on a business's public page: not landing content, not meant for search.
+  'Disallow: /*/manage',
+  'Disallow: /*/portal',
+  'Disallow: /*/review',
+  'Disallow: /*/sign',
+  'Disallow: /*/book',
+]
+  .sort()
+  .join('\n');
+writeFileSync(
+  join(out, 'robots.txt'),
+  `User-agent: *\nAllow: /\n${disallow}\n\nSitemap: ${site}/sitemap.xml\n`,
+);
 const pages = ['/', '/privacy', '/terms', '/refund'];
 writeFileSync(
   join(out, 'sitemap.xml'),
@@ -189,5 +238,5 @@ writeFileSync(
 );
 
 console.log(
-  `[build-landing] wrote index.html, refund.html, privacy.html, terms.html, _app/shell.html, landing.${hash}.js`,
+  `[build-landing] wrote index.html, refund.html, privacy.html, terms.html, _app/shell.html, landing.${hash}.js, icons/og-image.png, robots.txt, sitemap.xml`,
 );

@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 
+import { NoIndexHead } from '@/components/shared';
 import { theme } from '@/lib/theme';
 
 /**
@@ -11,11 +12,14 @@ import { theme } from '@/lib/theme';
  */
 export default function AdminLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: theme.colors.background },
-      }}
-    />
+    <>
+      <NoIndexHead />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.background },
+        }}
+      />
+    </>
   );
 }
