@@ -2,8 +2,9 @@ import { Platform } from 'react-native';
 
 import { brand } from '@/config/brand';
 
-/** The route that handles an invite link. */
-export const INVITE_PATH = '/accept-invite';
+import { inviteAcceptPath } from './inviteAcceptPath';
+
+export { INVITE_PATH, inviteAcceptPath } from './inviteAcceptPath';
 
 /**
  * The link the inviter copies and sends.
@@ -15,7 +16,7 @@ export const INVITE_PATH = '/accept-invite';
  * origin, so the site URL is used.
  */
 export function buildInviteUrl(token: string): string {
-  const path = `${INVITE_PATH}?token=${encodeURIComponent(token)}`;
+  const path = inviteAcceptPath(token);
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return new URL(path, window.location.origin).toString();

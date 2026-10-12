@@ -270,7 +270,7 @@
       "joined": "You have joined",
       "createFor": "You have been invited to join {{business}}. Create your account for {{email}} to continue.",
       "createAndJoin": "Create account and join",
-      "confirmEmail": "Check your email to confirm your address, then open the invite link again.",
+      "confirmEmail": "Check your email to confirm your address. Confirming it brings you straight back here.",
       "wrongAccount": "This invite is for {{invited}}. Sign out and sign in with that address to accept it.",
       "switchAccount": "Sign out",
       "backToLogin": "Go to sign in"

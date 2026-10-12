@@ -38,6 +38,7 @@ land in comes from `profiles.default_business_id` (switcher arrives with onboard
 | Signed in + verified, on an `(auth)` screen | `/` |
 | Business inactive (trial over) | operational screens show the lock screen; `/settings`, `/billing`, `/more` still open — see [billing.md](billing.md). Applied by `RouteGuard`, not `AuthGate`. |
 | On `/accept-invite` | always rendered — not redirected to onboarding or away from `(auth)`, because accepting is how an invited user gets their first business |
+| Just accepted an invite, membership refetch still in flight | waits (spinner), not `/onboarding` — `shouldWaitForRejoin()` in `gateSettled.ts`, see members.md changelog 2026-10-12 |
 | No Supabase keys configured | renders through, so the dev warning and gallery still work |
 
 `(auth)` and `(public)` are the only groups an unauthenticated visitor may open.
@@ -96,6 +97,7 @@ display text and can be reused server-side.
 - **Creating an `auth.users` row by hand needs `''`, not NULL, in `confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`.** GoTrue scans those columns as non-nullable strings, so a hand-made user fails sign-in with a 500 "Database error querying schema". Found 2026-10-02 with a SQL-inserted test user. Prefer the real `/auth/v1/signup` endpoint.
 
 ## Changelog
+- 2026-10-12: FIX invite-accept routing bugs (full detail in members.md changelog): `useSignup` gained an optional `confirmRedirectPath` so the invite screen's signed-out signup returns email confirmation to `/accept-invite?token=…` instead of the generic `/verify` (token no longer lost); `AuthGate` gained `shouldWaitForRejoin()` so it waits for the membership refetch after an invite accept instead of deciding on the stale "zero businesses" value and flashing `/onboarding`.
 - 2026-10-09: FIX tab-refocus reload. supabase-js re-emits `SIGNED_IN` on every tab refocus and `SessionProvider` ran `queryClient.clear()` on it, so every screen fell back to skeletons. Now `sessionState.ts` (`nextSessionState`, tested) clears the cache only when the user id changes or on `SIGNED_OUT`; same-user events keep the cache and the session object.
 - 2026-10-09: `AuthLayout` side padding fixed (it sat on `Screen`'s content container, where `paddingStart/End: 0` overrode it, so the card touched the screen edges); padding now on an inner wrapper.
 - 2026-10-02: Trial lock wired into `RouteGuard` (see billing.md).

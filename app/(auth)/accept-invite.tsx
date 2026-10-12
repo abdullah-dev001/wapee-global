@@ -8,6 +8,7 @@ import { StyleSheet, View } from 'react-native';
 import { FormField } from '@/components/shared/FormField';
 import { Button, Spinner, Text, useToast } from '@/components/ui';
 import { AuthLayout, PasswordField, useSession, useSignOut, useSignup } from '@/features/auth';
+import { inviteAcceptPath } from '@/features/members/inviteAcceptPath';
 import { useAcceptInvite, useInvitePreview } from '@/features/members/api/useMembers';
 import {
   acceptInviteSchema,
@@ -20,9 +21,13 @@ import { theme } from '@/lib/theme';
  *
  * Three cases, decided by who is signed in:
  * - **Signed out:** the form creates the account for the invited address, then
- *   accepts. The address is fixed by the token and cannot be edited.
- * - **Signed in with the invited address:** one button, no form — the account
- *   already exists, so only the membership is added.
+ *   accepts. The address is fixed by the token and cannot be edited. Email
+ *   confirmation sends them back to THIS screen with the token still attached
+ *   (`confirmRedirectPath`), not to the generic `/verify` screen, so the join
+ *   finishes automatically once they confirm and return.
+ * - **Signed in with the invited address:** joins automatically, no button —
+ *   the account already exists (or just confirmed), so only the membership is
+ *   added.
  * - **Signed in as somebody else:** refused with a way to switch account. A link
  *   must never attach a membership to whatever account happens to be open.
  *
@@ -48,10 +53,35 @@ export default function AcceptInviteScreen() {
     defaultValues: { fullName: '', password: '' },
   });
 
+  const invitedEmail = preview.data?.invitedEmail ?? null;
+  const signedInEmail = user?.email?.toLowerCase() ?? null;
+  const sameAccount =
+    invitedEmail !== null && signedInEmail !== null && signedInEmail === invitedEmail.toLowerCase();
+
+  const acceptNow = () => {
+    if (!token) return;
+    accept.mutate(token, {
+      onSuccess: () => {
+        toast.show({ message: t('members.accept.joined'), tone: 'success' });
+        setJoined(true);
+      },
+      onError: () => toast.show({ message: t('members.accept.invalid'), tone: 'error' }),
+    });
+  };
+
   // Once the membership exists, the gate sends them into the business.
   useEffect(() => {
     if (joined) router.replace('/');
   }, [joined, router]);
+
+  // Signed in as the invited person (including just back from email
+  // confirmation) with nothing joined yet: accept right away, no tap needed.
+  useEffect(() => {
+    if (sameAccount && !joined && !accept.isPending && !accept.isError) acceptNow();
+    // acceptNow closes over token/accept, which are stable for this purpose;
+    // re-running on every render of accept would retry a failed attempt in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sameAccount, joined]);
 
   if (!token) return <InviteProblem message={t('members.accept.invalid')} />;
   if (loading || preview.isPending) {
@@ -66,19 +96,7 @@ export default function AcceptInviteScreen() {
 
   // No row = unknown, used or expired token. One message for all three.
   if (!preview.data) return <InviteProblem message={t('members.accept.invalid')} />;
-
-  const invitedEmail = preview.data.invitedEmail;
-  const signedInEmail = user?.email?.toLowerCase() ?? null;
-  const sameAccount = signedInEmail !== null && signedInEmail === invitedEmail.toLowerCase();
-
-  const acceptNow = () =>
-    accept.mutate(token, {
-      onSuccess: () => {
-        toast.show({ message: t('members.accept.joined'), tone: 'success' });
-        setJoined(true);
-      },
-      onError: () => toast.show({ message: t('members.accept.invalid'), tone: 'error' }),
-    });
+  const invite = preview.data;
 
   // Signed in as the wrong person.
   if (isAuthenticated && !sameAccount) {
@@ -86,7 +104,7 @@ export default function AcceptInviteScreen() {
       <AuthLayout title={t('members.accept.title')}>
         <View style={styles.block}>
           <Text variant="paragraph" color="textSecondary">
-            {t('members.accept.wrongAccount', { invited: invitedEmail })}
+            {t('members.accept.wrongAccount', { invited: invite.invitedEmail })}
           </Text>
           <Button
             variant="ghost"
@@ -101,20 +119,15 @@ export default function AcceptInviteScreen() {
     );
   }
 
-  // Signed in as the invited person: nothing to create, just join.
+  // Signed in as the invited person: the effect above is already joining. On
+  // failure (the token was used/expired in the meantime), fall back to the
+  // single generic message rather than retrying silently forever.
   if (isAuthenticated && sameAccount) {
+    if (accept.isError) return <InviteProblem message={t('members.accept.invalid')} />;
     return (
       <AuthLayout title={t('members.accept.title')}>
-        <View style={styles.block}>
-          <Text variant="paragraph" color="textSecondary">
-            {t('members.accept.joinAs', {
-              business: preview.data.businessName,
-              email: invitedEmail,
-            })}
-          </Text>
-          <Button fullWidth loading={accept.isPending} onPress={acceptNow}>
-            {t('members.accept.join')}
-          </Button>
+        <View style={styles.centre}>
+          <Spinner size={24} />
         </View>
       </AuthLayout>
     );
@@ -123,14 +136,20 @@ export default function AcceptInviteScreen() {
   // Signed out: create the account for the invited address, then accept.
   const onSubmit = handleSubmit((values) => {
     signup.mutate(
-      { fullName: values.fullName, email: invitedEmail, password: values.password },
+      {
+        fullName: values.fullName,
+        email: invite.invitedEmail,
+        password: values.password,
+        // Keep the token through email confirmation: return here, not /verify.
+        confirmRedirectPath: inviteAcceptPath(token),
+      },
       {
         onSuccess: ({ sessionCreated }) => {
           // Email confirmation is on, so a session may not exist yet. The invite
-          // stays valid for 7 days; they confirm, sign in and open the link again.
+          // stays valid for 7 days; confirming the email returns them to this
+          // same screen (confirmRedirectPath above), which then joins automatically.
           if (!sessionCreated) {
             toast.show({ message: t('members.accept.confirmEmail'), tone: 'info', duration: 0 });
-            router.replace('/verify');
             return;
           }
           acceptNow();
@@ -145,8 +164,8 @@ export default function AcceptInviteScreen() {
       <View style={styles.block}>
         <Text variant="paragraph" color="textSecondary">
           {t('members.accept.createFor', {
-            business: preview.data.businessName,
-            email: invitedEmail,
+            business: invite.businessName,
+            email: invite.invitedEmail,
           })}
         </Text>
 

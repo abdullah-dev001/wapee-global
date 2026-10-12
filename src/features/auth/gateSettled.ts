@@ -27,3 +27,22 @@ export function useGateSpinner(pending: boolean, userId: string | null): boolean
 
   return showGateSpinner(pending, settledFor, userId);
 }
+
+/**
+ * Whether the gate should wait rather than decide, while the membership list
+ * currently reads empty. A membership-changing mutation (accepting an invite,
+ * creating a business) invalidates that list; the cached value is stale "zero
+ * businesses" while the refetch it triggered is still in flight, and deciding
+ * on it would redirect someone who just joined to onboarding before the
+ * refetch lands. Only matters away from onboarding/accept-invite, which both
+ * handle zero businesses on purpose — so this never adds a wait for a routine
+ * focus/reconnect refetch of a user legitimately sitting on either of those.
+ */
+export function shouldWaitForRejoin(
+  hasBusiness: boolean,
+  isFetchingBusinesses: boolean,
+  onOnboardingScreen: boolean,
+  onAcceptInviteScreen: boolean,
+): boolean {
+  return !hasBusiness && isFetchingBusinesses && !onOnboardingScreen && !onAcceptInviteScreen;
+}

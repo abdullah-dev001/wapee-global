@@ -8,7 +8,7 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
 
 import { useAccessGuard } from '../api/useAccessGuard';
-import { useGateSpinner } from '../gateSettled';
+import { shouldWaitForRejoin, useGateSpinner } from '../gateSettled';
 import { useSession } from '../SessionProvider';
 
 /** Route groups that an unauthenticated visitor may open. */
@@ -41,6 +41,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // Ends the session when every business of this account is suspended (checked on focus / reconnect).
   useAccessGuard();
   const waitForBusinesses = useGateSpinner(businesses.isPending, user?.id ?? null);
+  const hasBusiness = (businesses.data?.length ?? 0) > 0;
 
   const group = segments[0];
   const isPublicGroup = typeof group === 'string' && PUBLIC_GROUPS.has(group);
@@ -51,6 +52,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const onAcceptInviteScreen = path.includes(ACCEPT_INVITE_ROUTE);
   // The super admin area has its own guard; an admin may own no business at all.
   const onAdminRoute = group === '(admin)';
+  const waitForRejoin = shouldWaitForRejoin(
+    hasBusiness,
+    businesses.isFetching,
+    onOnboardingScreen,
+    onAcceptInviteScreen,
+  );
 
   // Without Supabase keys there is no auth at all; let the app render so the
   // dev warning and the gallery stay reachable.
@@ -70,8 +77,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (isAuthenticated && isEmailVerified) {
     // Wait for the membership list before deciding; redirecting early would
-    // bounce an existing owner through onboarding on every cold start.
-    if (waitForBusinesses) {
+    // bounce an existing owner through onboarding on every cold start, or
+    // someone who just joined through a refetch still catching up.
+    if (waitForBusinesses || waitForRejoin) {
       return (
         <View style={styles.loading}>
           <Spinner size={24} />
@@ -79,7 +87,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
       );
     }
 
-    const hasBusiness = (businesses.data?.length ?? 0) > 0;
     // Accepting an invite is how an invited person gets their first business, so
     // that screen is never redirected to onboarding or away from (auth).
     if (!hasBusiness && !onOnboardingScreen && !onAcceptInviteScreen && !onAdminRoute) {
