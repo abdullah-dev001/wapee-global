@@ -43,9 +43,58 @@ describe('landing page HTML', () => {
     expect(html).toMatch(/<title>[^<]+<\/title>/);
     expect(html).toContain('<meta name="description"');
     expect(html).toContain('<link rel="canonical" href="https://example.com/">');
+    expect(html).toContain('<meta name="robots" content="index, follow">');
     expect(html).toContain('property="og:title"');
+    expect(html).toContain('property="og:image"');
+    expect(html).toContain('property="og:image:width" content="1200"');
+    expect(html).toContain('property="og:image:height" content="630"');
+    expect(html).toContain('name="twitter:card" content="summary_large_image"');
+    expect(html).toContain('name="twitter:title"');
+    expect(html).toContain('name="twitter:image"');
     expect(html).toContain('"@type":"SoftwareApplication"');
     expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
+  });
+
+  it('keeps the title under 60 chars and the description under 160 with the real brand name', () => {
+    // Built with the real brand name ("Wapee"), not the longer test fixture ("Brandname"): the
+    // length budget is about what a search result actually shows, which depends on the real name.
+    const realHtml = renderLanding({ ...ctx, brandName: 'Wapee' }, assets);
+    const title = realHtml.match(/<title>([^<]+)<\/title>/)?.[1] ?? '';
+    const description = realHtml.match(/<meta name="description" content="([^"]+)">/)?.[1] ?? '';
+    expect(title.length).toBeGreaterThan(0);
+    expect(title.length).toBeLessThanOrEqual(60);
+    expect(description.length).toBeGreaterThan(0);
+    expect(description.length).toBeLessThanOrEqual(160);
+  });
+
+  it('has Organization, WebSite and FAQPage JSON-LD, and the FAQ schema matches the page text exactly', () => {
+    const blocks = [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
+      .map((m) => JSON.parse(m[1] ?? '{}') as Record<string, unknown>);
+    expect(blocks.some((b) => b['@type'] === 'Organization')).toBe(true);
+    expect(blocks.some((b) => b['@type'] === 'WebSite')).toBe(true);
+
+    const faqBlock = blocks.find((b) => b['@type'] === 'FAQPage') as
+      | { mainEntity: { name: string; acceptedAnswer: { text: string } }[] }
+      | undefined;
+    expect(faqBlock).toBeDefined();
+    const faqItems = Object.values(en.faq.items);
+    expect(faqBlock?.mainEntity).toHaveLength(faqItems.length);
+    faqItems.forEach((item, i) => {
+      // The page interpolates {{name}}/{{email}}; the JSON-LD must carry the SAME resolved text,
+      // not the raw template, so a crawler reading only the schema sees what a visitor reads.
+      const expectedQ = item.q.replace(/\{\{name\}\}/g, ctx.brandName);
+      const expectedA = item.a
+        .replace(/\{\{name\}\}/g, ctx.brandName)
+        .replace(/\{\{email\}\}/g, ctx.supportEmail);
+      expect(faqBlock?.mainEntity[i]?.name).toBe(expectedQ);
+      expect(faqBlock?.mainEntity[i]?.acceptedAnswer.text).toBe(expectedA);
+    });
+  });
+
+  it('SoftwareApplication JSON-LD carries no price at build time (runtime adds offers, see landingClient.ts)', () => {
+    const match = html.match(/<script type="application\/ld\+json" id="ld-json">([\s\S]*?)<\/script>/);
+    const ld = JSON.parse(match?.[1] ?? '{}') as Record<string, unknown>;
+    expect(ld.offers).toBeUndefined();
   });
 
   it('ships no price: the pricing section is a skeleton filled at runtime', () => {
@@ -122,6 +171,35 @@ describe('refund page', () => {
     expect(html).toContain('mailto:help@example.com');
     expect(html).toContain(en.refund.resellerPending);
     expect(html).toContain('<link rel="canonical" href="https://example.com/refund">');
+  });
+
+  it('has the same robots/OG basics as the landing page', () => {
+    expect(html).toContain('<meta name="robots" content="index, follow">');
+    expect(html).toContain('property="og:image"');
+    expect(html).toContain('name="twitter:card" content="summary_large_image"');
+  });
+});
+
+describe('legal page templates (privacy.html, terms.html)', () => {
+  it('have canonical, robots and Open Graph tags with {{siteUrl}} filled, no leftover placeholder', async () => {
+    const nodeFs = await loadNodeFs();
+    for (const page of ['privacy', 'terms']) {
+      const template = nodeFs.readFileSync(
+        nodeFs.join(nodeFs.root, 'src/features/landing/legal', `${page}.html`),
+        'utf8',
+      );
+      expect(template).toContain('<link rel="canonical" href="{{siteUrl}}/' + page + '" />');
+      expect(template).toContain('<meta name="robots" content="index, follow" />');
+      expect(template).toContain('property="og:title"');
+      // build-landing.mjs fails the build if any {{placeholder}} survives substitution; this just
+      // confirms siteUrl is one of the placeholders it is expected to fill.
+      expect(template).toContain('{{siteUrl}}');
+    }
+    const buildScript = nodeFs.readFileSync(
+      nodeFs.join(nodeFs.root, 'scripts/build-landing.mjs'),
+      'utf8',
+    );
+    expect(buildScript).toContain("replaceAll('{{siteUrl}}', brand.urls.site)");
   });
 });
 

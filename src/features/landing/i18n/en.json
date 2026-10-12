@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "{{name}}: online booking and management for service businesses",
-    "description": "{{name}} gives salons, clinics, barbers and other service businesses a 24/7 booking page, a team calendar, client records and invoices. 14-day free trial, no credit card.",
+    "description": "{{name}} gives salons, clinics and barbers a 24/7 booking page, team calendar, client records and invoices. 14-day free trial, no credit card.",
     "ogImageAlt": "{{name}} logo"
   },
   "skip": "Skip to content",

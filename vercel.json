@@ -38,6 +38,14 @@
       ]
     },
     {
+      "source": "/(accept-invite|admin|admin/.*|calendar|clients|clients/.*|commission|forgot-password|inventory|invoices|login|members|more|onboarding|packages|reports|reset-password|reviews|schedule|services|settings|settings/.*|signup|staff|today|verify|website)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/:slug/(manage|portal|review|sign|book)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
       "source": "/((?![^/]+/(?:manage|review|sign|portal)/?$|unsubscribe/?$).*)",
       "headers": [{ "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }]
     },
