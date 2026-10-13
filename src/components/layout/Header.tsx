@@ -1,17 +1,20 @@
 import { CalendarClock, Menu } from 'lucide-react-native';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { Avatar } from '@/components/shared/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Text } from '@/components/ui/Text';
 import { useInteractionState } from '@/components/ui/useInteractionState';
-import { brand } from '@/config/brand';
 import { LowStockBadge } from '@/features/inventory/components/LowStockBadge';
 import { usePendingApprovalCount } from '@/features/appointments/api/usePendingApprovalCount';
 import { BranchSwitcher } from '@/features/branches/components';
-import { useCurrentScope, usePermission } from '@/lib/permissions';
+import { useCurrentScope, useMyProfile, useMyRoleLabel, usePermission } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
+
+import { AccountMenu } from './AccountMenu';
 
 export type HeaderProps = {
   /** Shown on tablet to open the off-canvas sidebar. Omitted on desktop. */
@@ -26,11 +29,22 @@ export type HeaderProps = {
 export function Header({ onOpenMenu }: HeaderProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { businessId, branchId } = useCurrentScope();
+  const { business, businessId, branchId } = useCurrentScope();
+  const profile = useMyProfile();
+  const role = useMyRoleLabel();
   const canApprove = usePermission('appointments.approve');
   // Only roles holding appointments.approve see this (doc §9) — a Staff
   // member can't act on a pending appointment, so it would just be noise.
   const pendingApproval = usePendingApprovalCount(canApprove.allowed ? businessId : null, branchId);
+  const [accountOpen, setAccountOpen] = useState(false);
+
+  const name = profile.data?.full_name ?? '';
+  const email = profile.data?.email ?? '';
+  const branchName = business?.branches.find((item) => item.id === branchId)?.name;
+  const businessLabel =
+    branchName && business && business.branches.length > 1
+      ? `${business.name} · ${branchName}`
+      : (business?.name ?? '');
 
   return (
     <View style={styles.header}>
@@ -45,8 +59,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
       ) : null}
 
       <Text variant="cardTitle" numberOfLines={1} style={styles.businessName}>
-        {/* TODO(phase 1): the signed-in business name. */}
-        {brand.name}
+        {businessLabel}
       </Text>
 
       <BranchSwitcher compact />
@@ -67,18 +80,56 @@ export function Header({ onOpenMenu }: HeaderProps) {
           </Pressable>
         ) : null}
         <LowStockBadge />
-        {/* TODO(phase 1): user menu (profile, switch business, sign out). */}
-        <View
-          style={styles.avatar}
-          accessibilityRole="button"
-          accessibilityLabel={t('nav.account')}
-        >
-          <Text variant="label" color="primary">
-            W
-          </Text>
-        </View>
+        <AccountTrigger
+          name={name}
+          email={email}
+          roleLabel={role.label}
+          onPress={() => setAccountOpen(true)}
+        />
       </View>
+
+      <AccountMenu open={accountOpen} onClose={() => setAccountOpen(false)} />
     </View>
+  );
+}
+
+function AccountTrigger({
+  name,
+  email,
+  roleLabel,
+  onPress,
+}: {
+  name: string;
+  email: string;
+  roleLabel: string | null;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const { handlers, showHover, showFocusRing } = useInteractionState(false);
+  return (
+    <Pressable
+      {...handlers}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('accountMenu.open')}
+      style={[
+        styles.account,
+        showHover ? { backgroundColor: theme.colors.surfaceHover } : null,
+        showFocusRing ? focusRing() : null,
+      ]}
+    >
+      <View style={styles.accountText}>
+        <Text variant="label" numberOfLines={1} style={styles.accountName}>
+          {name || email}
+        </Text>
+        {roleLabel ? (
+          <Text variant="small" color="textSecondary" numberOfLines={1}>
+            {roleLabel}
+          </Text>
+        ) : null}
+      </View>
+      <Avatar name={name} email={email} size={32} />
+    </Pressable>
   );
 }
 
@@ -138,12 +189,19 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     marginStart: -theme.spacing[8],
   },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.primaryLight,
+  account: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: theme.spacing[8],
+    minHeight: theme.layout.minTouchTarget,
+    paddingHorizontal: theme.spacing[4],
+    borderRadius: theme.radius.md,
+  },
+  accountText: {
+    alignItems: 'flex-end',
+    maxWidth: 160,
+  },
+  accountName: {
+    maxWidth: 160,
   },
 });

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 
 import { useSession } from '@/features/auth';
 import { planUsageKeys } from '@/features/plans/api/useMyFeatures';
-import { grantKeys } from '@/lib/permissions';
+import { grantKeys, roleLabelKeys } from '@/lib/permissions';
 import { createQueryKeys, staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 import { unwrapRpc } from '@/lib/supabase/rpcResult';
@@ -94,6 +94,7 @@ function refresh(queryClient: QueryClient, businessId: string) {
   void queryClient.invalidateQueries({ queryKey: ['businesses', 'mine'] });
   void queryClient.invalidateQueries({ queryKey: planUsageKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
+  void queryClient.invalidateQueries({ queryKey: roleLabelKeys.forBusiness(businessId) });
   // Reports and combined views depend on which branches exist.
   void queryClient.invalidateQueries({ queryKey: ['advanced-report'] });
 }

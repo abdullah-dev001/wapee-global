@@ -1,3 +1,4 @@
+export { AccountMenu, type AccountMenuProps } from './AccountMenu';
 export { AppShell, type AppShellProps } from './AppShell';
 export { BottomTabBar } from './BottomTabBar';
 export { ConsumedInsetsProvider, useConsumedInsets, type ConsumedInsets } from './ConsumedInsets';

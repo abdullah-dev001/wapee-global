@@ -6083,6 +6083,14 @@ export type Database = {
         Returns: number
       }
       my_plan_usage: { Args: { p_business_id: string }; Returns: Json }
+      my_role_labels: {
+        Args: { p_business_id: string }
+        Returns: {
+          branch_id: string
+          permission_count: number
+          role_name: string
+        }[]
+      }
       my_staff_profile_id: { Args: { p_business_id: string }; Returns: string }
       normalise_invoice_items: {
         Args: {

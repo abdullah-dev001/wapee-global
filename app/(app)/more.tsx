@@ -1,16 +1,18 @@
 import { useRouter } from 'expo-router';
 import { ChevronRight, LogOut } from 'lucide-react-native';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import { PageContainer, Screen } from '@/components/layout';
+import { AccountMenu, PageContainer, Screen } from '@/components/layout';
+import { Avatar } from '@/components/shared/Avatar';
 import { Card, Skeleton, Text } from '@/components/ui';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 import { navLabelKey, type NavItem } from '@/config/navigation';
 import { AdminEntry } from '@/features/admin/components';
 import { BranchSwitcher } from '@/features/branches/components';
 import { RouteGuard, useSignOut } from '@/features/auth';
-import { useVisibleNav } from '@/lib/permissions';
+import { useMyProfile, useMyRoleLabel, useVisibleNav } from '@/lib/permissions';
 import { focusRing, theme } from '@/lib/theme';
 
 /**
@@ -23,10 +25,15 @@ export default function MoreScreen() {
   // Only the destinations this member may open (CLAUDE.md §7).
   const { secondary, isPending } = useVisibleNav();
 
+  const [accountOpen, setAccountOpen] = useState(false);
+
   return (
     <RouteGuard>
       <Screen edges={['top']}>
         <PageContainer title={t('nav.more')}>
+          <View style={styles.account}>
+            <AccountRow onPress={() => setAccountOpen(true)} />
+          </View>
           <View style={styles.switcher}>
             <BranchSwitcher />
           </View>
@@ -55,7 +62,48 @@ export default function MoreScreen() {
           </View>
         </PageContainer>
       </Screen>
+
+      <AccountMenu open={accountOpen} onClose={() => setAccountOpen(false)} />
     </RouteGuard>
+  );
+}
+
+function AccountRow({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
+  const { handlers, showHover, showFocusRing } = useInteractionState(false);
+  const profile = useMyProfile();
+  const role = useMyRoleLabel();
+
+  const name = profile.data?.full_name ?? '';
+  const email = profile.data?.email ?? '';
+
+  return (
+    <Card noPadding>
+      <Pressable
+        {...handlers}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={t('accountMenu.open')}
+        style={[
+          styles.row,
+          showHover ? { backgroundColor: theme.colors.surfaceHover } : null,
+          showFocusRing ? focusRing() : null,
+        ]}
+      >
+        <Avatar name={name} email={email} size={36} />
+        <View style={styles.accountTextBlock}>
+          <Text variant="bodyStrong" numberOfLines={1}>
+            {name || email}
+          </Text>
+          {role.label ? (
+            <Text variant="small" color="textSecondary" numberOfLines={1}>
+              {role.label}
+            </Text>
+          ) : null}
+        </View>
+        <ChevronRight size={theme.iconSize.sm} strokeWidth={2} color={theme.colors.textMuted} />
+      </Pressable>
+    </Card>
   );
 }
 
@@ -141,6 +189,12 @@ function SignOutRow() {
 }
 
 const styles = StyleSheet.create({
+  account: { marginBottom: theme.spacing[16] },
+  accountTextBlock: {
+    flex: 1,
+    minWidth: 0,
+    gap: theme.spacing[2],
+  },
   switcher: { marginBottom: theme.spacing[12] },
   row: {
     flexDirection: 'row',

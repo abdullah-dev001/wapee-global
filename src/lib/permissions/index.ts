@@ -7,6 +7,13 @@ export {
   useScopeSelection,
   type CurrentScope,
 } from './useCurrentScope';
-export { grantKeys, isBusinessActive, useGrantSet, type GrantSetResult } from './useGrants';
+export {
+  grantKeys,
+  isBusinessActive,
+  roleLabelKeys,
+  useGrantSet,
+  useMyRoleLabel,
+  type GrantSetResult,
+} from './useGrants';
 export { useFeature, useFeatureFlag, usePermission, type PermissionResult } from './usePermission';
 export { useFallbackRoute, useVisibleNav, type VisibleNav } from './useVisibleNav';

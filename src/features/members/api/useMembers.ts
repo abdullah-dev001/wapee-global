@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tan
 
 import { useSession } from '@/features/auth';
 import { invalidateMyFeatures } from '@/features/plans/api/useMyFeatures';
-import { grantKeys } from '@/lib/permissions';
+import { grantKeys, roleLabelKeys } from '@/lib/permissions';
 import { createQueryKeys, staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 import { unwrapRpc } from '@/lib/supabase/rpcResult';
@@ -213,6 +213,7 @@ export function useAcceptInvite() {
       // membership list and their permission set both change.
       void queryClient.invalidateQueries({ queryKey: ['businesses', 'mine'] });
       void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
+      void queryClient.invalidateQueries({ queryKey: roleLabelKeys.forBusiness(businessId) });
       // A role or membership change can also change what the plan lets this member use.
       void invalidateMyFeatures(queryClient, businessId);
     },
@@ -257,6 +258,7 @@ function refreshAfterMemberChange(
   void queryClient.invalidateQueries({ queryKey: memberKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: roleKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
+  void queryClient.invalidateQueries({ queryKey: roleLabelKeys.forBusiness(businessId) });
   void invalidateMyFeatures(queryClient, businessId);
 }
 
