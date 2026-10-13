@@ -8,7 +8,7 @@ Scope covered: `docs/Wapee_Product_Overview_v2.md` §9, `src/config/permissions.
 
 ## Findings
 
-### F2-01 — Last-Owner protection can be bypassed by a direct UPDATE of `member_role_assignments` — **Blocker**, CODE-READ
+### F2-01 — Last-Owner protection can be bypassed by a direct UPDATE of `member_role_assignments` — **re-rated Blocker → High after live verification on dev; see addendum below** — CODE-READ, then VERIFIED
 `enforce_last_owner()` (`supabase/migrations/20261001190000_phase1_rls_policies.sql:211`, redefined in `20261016100000`/`20261016110000` for the GDPR-erase exemption) is wired as:
 ```sql
 create trigger member_role_assignments_last_owner
@@ -37,10 +37,12 @@ create policy member_role_assignments_write
 - The write **is still audit-logged** (`AFTER INSERT OR UPDATE OR DELETE` on the same table, `audit_role_assignment()` → `role.assignment_changed`), so the event is traceable after the fact — but nothing prevents it from happening.
 - **Recommendation**: extend `enforce_last_owner()`'s trigger to also fire `BEFORE UPDATE OF role_id, branch_id` (or `BEFORE UPDATE` generally) so an UPDATE that would remove the business's last active Owner assignment is refused the same way a DELETE is. The function body already computes `v_owner_count` generically from `old`/`new`; it would need the UPDATE case to check against the *old* role being an Owner row and reject if the new role is not (mirroring the existing DELETE logic, which already uses `coalesce(old.member_id, new.member_id)`).
 
-### F2-02 — Needs live verification: does a Manager's `branch`-scope `roles.manage` satisfy the business-wide RLS check on `member_role_assignments`? — **High**, UNVERIFIED
-Doc §9 shows Manager's "Roles and invites" as "Invite staff" (narrower than Owner's "Yes"), suggesting Manager should not have full `roles.manage`. But the RLS policy on `member_role_assignments` only calls `public.can(m.business_id, null, 'roles.manage')` — i.e. "does the caller hold `roles.manage` **anywhere** in the business" (branch param is `null` = "anywhere" per `has_permission`'s scope rules) — not scoped to the specific branch of the target assignment.
-- If Manager's seed actually holds `roles.manage` at `branch` scope (need to confirm against the live seed — the doc's "Invite staff" wording for Manager might map to `users.invite` only, not `roles.manage`), then this RLS check would still pass for a Manager with `roles.manage` at even one branch, letting them write/delete role assignments for members at OTHER branches or for branch-less (all-branch) assignments like the Owner's — a potential Branch-scope escape.
-- **Could not verify this phase** (code-read only): would need to inspect the actual seeded `role_permissions` rows for the Manager system role to confirm whether `roles.manage` is seeded for Manager at all, and at what scope. `context/roles.md` states Manager has "39 permissions, branch" scope but doesn't enumerate which permissions. Flagging for Phase 2 live-testing follow-up.
+### F2-02 — RESOLVED, no bug — VERIFIED live against dev's seed data
+Queried `role_permissions` live on dev (`rfuovquhultjydtswtqf`) for every permission named `roles.manage` across every system role:
+```
+roles.manage: ONLY 'owner' (scope 'all'). Manager, Receptionist, Staff: none hold it.
+```
+Manager's seed does **not** include `roles.manage` at any scope — doc §9's table is accurate as written ("Roles and invites: Owner Yes, Manager Invite staff" — i.e. `users.invite` only). The RLS-scope-escape concern this finding raised does not apply: there is no default role below Owner that could reach the `member_role_assignments_write` policy at all, regardless of the `branch`-vs-`all` scope question. Also confirmed: **zero custom roles on dev currently hold `roles.manage`** either, so the live exploit surface for F2-01 (below) is Owner-only today, not "any Manager."
 
 ### F2-03 — Escalation guard (`can_grant_at`) correctly scope- and branch-aware — **no bug found**
 `enforce_role_assignment_guard()` (Phase 9 version, `20261011090000_phase9_custom_roles.sql:246`) correctly: refuses a role from another business, refuses a deleted role, refuses an unknown branch, exempts the founding-Owner bootstrap case (zero existing assignments) and the super admin/service-role case, gates custom roles behind the `custom_roles` feature on INSERT, and checks every `role_permissions` row of the role being assigned against `can_grant_at` (scope- and branch-aware, not just permission-name matching as the original Phase 1 guard was). This matches doc §9's "nobody grants a permission they lack" rule precisely, including the branch nuance ("one person Manager at branch A, Staff at branch B" from the audit brief) — `can_grant_at`'s branch-covering logic (`rp.scope = 'all' or a.branch_id is null or a.branch_id = p_branch_id`) is correct.
@@ -59,6 +61,22 @@ Verified three independent enforcement points: (1) `roles_enforce_custom_roles_f
 
 ---
 
+## Live-verification addendum (dev project, rolled back, nothing committed)
+
+**F2-01 was proven exploitable, live, on dev**, inside a transaction that was rolled back immediately after (confirmed clean afterward: Nova Hair Studio shows 1 remaining owner, the test assignment's `role_id` is back to the Owner role). The test impersonated the real Owner of a real business (Nova Hair Studio) via `set_config('request.jwt.claims', ...)` + `set local role authenticated`, then ran:
+```sql
+update member_role_assignments set role_id = '<manager-role-id>' where id = '<the-owner's-own-sole-owner-assignment>';
+```
+This succeeded with no exception. A follow-up query in the same transaction confirmed `remaining_owners = 0` for that business immediately after.
+
+**Live seed data resolves who can actually do this** (see F2-02 above): only `owner` holds `roles.manage` by default, and zero custom roles on dev currently hold it either. So the real actor is:
+- the Owner themselves (via a direct API call bypassing the UI, which only exposes the properly-guarded `assign_member_role`/`remove_member_role` RPCs), or
+- someone the Owner has explicitly handed `roles.manage` to via a custom role — a real, available path (nothing blocks `roles.manage` from being included in a custom role; only `settings.billing` is specially locked) but not exercised by any business on dev today.
+
+**This is not a stranger-escalation path** — a default Manager/Receptionist/Staff cannot reach `member_role_assignments_write`'s RLS check at all, confirmed by the live seed. **Severity re-rated: Blocker → High.** The blast radius if triggered is still severe (a business can permanently lose every Owner, with billing unreachable by anyone short of a super admin or hand SQL), which is why this stays High rather than Medium — but it requires an already-privileged actor (the Owner or their own delegate) rather than any signed-in stranger or even a default lower-privileged role. The fix recommendation is unchanged: extend `enforce_last_owner()` to also fire `BEFORE UPDATE`.
+
+---
+
 ## Things not yet checked this phase (deferred to live-role testing or later phases)
 - Actual RLS behavior per role against every table (requires test users per role — explicitly deferred by the user's "code-read only" choice).
 - Whether a role assigned at branch A for a Manager actually fails to read/write branch B data (the branch-scope RLS rework from Phase 9B, `20261012090000_phase9b_branch_scope.sql`, is referenced in context files as tested by `21_branch_scope.sql`, but was not re-run this session).
@@ -69,23 +87,28 @@ Verified three independent enforcement points: (1) `roles_enforce_custom_roles_f
 - Custom-role assignments made before a downgrade are not retroactively revoked (`plan-features.md`'s documented decision) — intentional.
 - `has_permission()`/`can_grant_at()`/`can_define_at()` were never redefined to join `roles.deleted_at` directly — safe in practice only because every write path that could create a dangling reference (`delete_custom_role`) already cleans up `member_role_assignments` in the same transaction, and the INSERT/UPDATE guard explicitly checks `role_deleted`. Not a finding, but worth noting as a single point of reliance (if a future migration ever modifies `roles.deleted_at` directly without going through `delete_custom_role`, dangling permission grants could resurrect silently since `has_permission` doesn't defend against it independently).
 
-## Severity summary
+## Severity summary (updated after live verification)
 | Severity | Count | IDs |
 |---|---|---|
-| Blocker | 1 | F2-01 |
-| High | 1 | F2-02 (unverified, needs live check) |
+| Blocker | 0 | — |
+| High | 1 | F2-01 (re-rated from Blocker after live seed data showed the actor must already hold `roles.manage`, which only Owner has by default) |
 | Medium | 0 | — |
 | Low | 0 | — |
 
-## What could not be verified this phase
-Code-read only, as in Phase 1:
-- F2-02 (Manager's actual seeded `roles.manage` scope) needs the live seed data or a grep of the seed migration's Manager `role_permissions` rows — not done this session (time-boxed to the highest-value finding, F2-01).
-- Whether `21_branch_scope.sql` / the custom-roles suite (`19_phase9_plan_features.sql`, 543 assertions per context files) still pass was not re-run.
-- No actual attempt was made to execute the F2-01 raw-UPDATE against a live database (would require a test business + test owner/manager — deferred per the user's code-read-only choice this session).
+F2-02 is resolved (no bug — see above), not carried forward as a finding.
+
+## What was verified live this round
+- F2-02: the live `role_permissions` seed data, queried directly on dev — Manager does not hold `roles.manage`.
+- F2-01: the raw-UPDATE exploit itself, run inside a rolled-back transaction against a real business (Nova Hair Studio) on dev, impersonating its real Owner — succeeded, left 0 remaining owners, rolled back cleanly with no lasting effect.
+- Suites `21_branch_scope.sql` (113/113), `28_view_contact.sql` (43/43), `29_gdpr.sql` (72/72), `31_rls_equivalence.sql` (6/6) all run live on dev this round — 234/234, 0 failures (see Phase 6's addendum for the full breakdown; these suites span branch-scope RLS for every default role, which bears on this phase's "per-branch role assignment" checks).
+
+## What could not be verified this round
+- `19_phase9_plan_features.sql` (543 assertions, the dedicated custom-roles suite) was not run live this round — the four suites above were the ones specifically requested.
+- Sensitive-field RLS-vs-role verification beyond what suites 28/31 cover.
 
 ## Top 5 issues
-1. **F2-01** (Blocker) — Last-Owner protection trigger only fires on DELETE; a direct UPDATE of `member_role_assignments.role_id` via RLS-permitted write (not RPC) can silently remove a business's only Owner, with no code path to prevent it (only to audit-log it after the fact).
-2. **F2-02** (High, unverified) — Need to confirm live whether Manager's `roles.manage` scope lets them write/delete assignments business-wide via the RLS policy (which checks "anywhere" rather than per-target-branch) — possible branch-scope escape, pending seed-data confirmation.
-3. No other findings reached Medium or above — the escalation guard, billing-owner-only rule, default-role immutability, and feature-gating-in-three-places pattern are all correctly implemented and match the product doc precisely.
+1. **F2-01** (High, re-rated from Blocker) — Last-Owner protection trigger only fires on DELETE; a direct UPDATE of `member_role_assignments.role_id` succeeds live on dev with 0 remaining owners as the result, proven in a rolled-back transaction. The realistic actor, per live seed data, is the Owner themselves or a delegate they explicitly granted `roles.manage` — not any Manager/Receptionist/Staff by default. Fix: extend `enforce_last_owner()` to also fire on UPDATE.
+2. **F2-02** (resolved, no bug) — live seed data confirms Manager does not hold `roles.manage`, closing the scope-escape concern this finding raised.
+3. No other findings reached Medium or above — the escalation guard, billing-owner-only rule, default-role immutability, and feature-gating-in-three-places pattern are all correctly implemented and match the product doc precisely, now reinforced by 234 live-passing pgTAP assertions.
 4. Audit logging is solid and would make F2-01 fully traceable after the fact, which helps triage but does not reduce its severity (prevention, not just detection, is the safety rule in doc §9).
-5. Sensitive-field and per-table RLS-vs-role verification remains fully unverified live — recommend prioritizing live-role testing before launch given F2-01's severity.
+5. The four requested pgTAP suites (21, 28, 29, 31) all pass live with zero failures — real evidence for the per-role RLS matrix this phase's original "code-read only" scope could not provide.
