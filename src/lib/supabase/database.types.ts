@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       addons: {
@@ -6083,6 +6058,14 @@ export type Database = {
         Returns: number
       }
       my_plan_usage: { Args: { p_business_id: string }; Returns: Json }
+      my_role_labels: {
+        Args: { p_business_id: string }
+        Returns: {
+          branch_id: string
+          permission_count: number
+          role_name: string
+        }[]
+      }
       my_staff_profile_id: { Args: { p_business_id: string }; Returns: string }
       normalise_invoice_items: {
         Args: {
@@ -6983,9 +6966,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       appointment_status: [

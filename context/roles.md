@@ -26,7 +26,7 @@ to every feature.
 | src/config/permissions.ts | The 47-permission catalogue mirroring the table: `PermissionKey` type, `minPlan`, `addon`, `PLAN_ORDER`, `planAtLeast()` |
 | src/lib/permissions/can.ts | Pure logic: `hasPermission()`, `hasFeature()`, `can()`, `ALWAYS_ALLOWED_WHEN_INACTIVE` |
 | src/lib/permissions/types.ts | `Grant`, `GrantSet`, `PermissionScope` |
-| src/lib/permissions/useGrants.ts | `my_grants()` query, `useGrantSet()`, `isBusinessActive()`, `grantKeys` |
+| src/lib/permissions/useGrants.ts | `my_grants()` query, `useGrantSet()`, `isBusinessActive()`, `grantKeys`; `my_role_labels()` query, `useMyRoleLabel()`, `roleLabelKeys` |
 | src/lib/permissions/usePermission.ts | `usePermission()`, `useFeature()` |
 | src/lib/permissions/useCurrentScope.ts | Zustand selection store, `useCurrentScope()`, `useMyProfile()` |
 | src/lib/permissions/useVisibleNav.ts | `useVisibleNav()` (filtered nav + `isRouteAllowed`), `useFallbackRoute()` |
@@ -35,11 +35,13 @@ to every feature.
 
 ## Database
 - RPC: **`my_grants(p_business_id)` → (permission, scope, branch_id)** — the caller's own grants for one business, in one round trip. `SECURITY DEFINER`, `STABLE`, `search_path = ''`, EXECUTE to `authenticated` only. **UI gating only; RLS stays the boundary.**
+- RPC: **`my_role_labels(p_business_id)` → (role_name, branch_id, permission_count)** — the caller's own role name(s) per branch (same self-only scope and non-boundary status as `my_grants`). Display only (dashboard header's role label); `permission_count` lets the UI pick the "highest" role for a custom role, which has no fixed rank.
 - Everything else as before: `has_permission()`, `can()`, `enforce_role_assignment_guard`, `enforce_last_owner`.
-- Migrations: `20261002140000_my_grants.sql`.
+- Migrations: `20261002140000_my_grants.sql`, `20261024090000_my_role_labels.sql`.
 
 ## Data & caching
 - `grantKeys.forBusiness(businessId)`, `staleTime` = `staticLong` (10 min). Product doc §9 wants the set cached per session; **a role change must invalidate this key.**
+- `roleLabelKeys.forBusiness(businessId)`, same `staticLong` staleTime; invalidated everywhere `grantKeys` is (role assign/remove, invite accept, branch delete).
 - `useMyProfile()` → `['profile','me',userId]`, `staleTime` static (5 min). Supplies `is_super_admin` and `default_business_id`.
 - Business status/plan/trial come from `useMyBusinesses()` (`staleTime` list, 30 s), so a trial ending is noticed within 30 s and immediately on any refetch.
 - The current business/branch is **client-only state in Zustand** (`useScopeSelection`), never server data. It initialises from `profiles.default_business_id`, else the first business, and the branch from `is_primary`. A stale selection (business left or deleted) resets to that default.
@@ -90,6 +92,7 @@ executed from the scratchpad rather than committed as a suite — see TODO below
 - Super admin 2FA: enforced in Phase 8A as an `aal2` JWT check in every admin RPC; TOTP enrolment still needs enabling + UI (see plans-super-admin.md).
 
 ## Changelog
+- 2026-10-24: Header/avatar menu now shows the signed-in user's own role label (name on desktop/tablet header, inside the avatar menu on mobile). New `my_role_labels()` RPC + `useMyRoleLabel()` (picks the current branch's role, or the one with the most permissions when no branch is selected). See [_foundation.md](_foundation.md) for the shared `AccountMenu` component.
 - 2026-10-23: **QA audit fix**: `enforce_last_owner` on `member_role_assignments` previously fired only on DELETE; a raw UPDATE of `role_id`/`member_id`/`branch_id` on a business's sole Owner assignment bypassed it entirely (RLS write, not RPC-only), proven live to leave zero active Owners. Now also fires on UPDATE; a companion trigger on `business_members` closes the same hole for a direct soft-delete/deactivate of the sole Owner's membership row. Ownership transfer, the founding-Owner bootstrap, and the GDPR/account-delete erase-flag exemption are all unaffected (18 new assertions, suite `41_last_owner_update_guard.sql`; see `_database.md`). Only the system Owner role holds `roles.manage` by default (confirmed live) — Manager/Receptionist/Staff cannot reach this at all.
 - 2026-10-07: Phase 11A: new permission `clients.erase` (47th; Owner only, `all` scope; Manager / Receptionist / Staff unchanged at 39 / 20 / 12). Label `roles.perm.clients_erase`.
 - 2026-10-07: Phase 10B: Staff seed gains `files.upload` at own scope (`20261014090000`); `forms.manage` stays Owner/Manager; signing a form needs `appointments.edit`; the matrix hides `files.*` / `forms.*` while their add-on is off.

@@ -64,6 +64,12 @@
     "packages": "Packages",
     "inventory": "Inventory"
   },
+  "accountMenu": {
+    "open": "Account menu",
+    "email": "Email",
+    "business": "Business",
+    "branch": "Branch"
+  },
   "screens": {
     "comingSoon": "Coming in phase {{phase}}",
     "comingSoonBody": "This screen is not built yet. It arrives in phase {{phase}} of the build plan."

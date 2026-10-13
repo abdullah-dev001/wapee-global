@@ -21,6 +21,11 @@ export const grantKeys = {
   forBusiness: (businessId: string) => ['grants', businessId] as const,
 };
 
+/** A role change invalidates this alongside `grantKeys` — same cache lifetime, same trigger. */
+export const roleLabelKeys = {
+  forBusiness: (businessId: string) => ['role-labels', businessId] as const,
+};
+
 /** Raw `my_grants()` rows for one business. */
 function useGrantRows(businessId: string | null): UseQueryResult<Grant[], Error> {
   const { isAuthenticated } = useSession();
@@ -86,6 +91,64 @@ export function useGrantSet(): GrantSetResult {
       profile.isPending ||
       (Boolean(businessId) && (grants.isPending || features.isPending)),
     error: grants.error ?? (profile.error as Error | null) ?? null,
+  };
+}
+
+/** One row of `my_role_labels()`: a role the signed-in member holds, where, and how big it is. */
+type RoleLabelRow = {
+  roleName: string;
+  branchId: string | null;
+  permissionCount: number;
+};
+
+function useRoleLabelRows(businessId: string | null): UseQueryResult<RoleLabelRow[], Error> {
+  const { isAuthenticated } = useSession();
+
+  return useQuery({
+    queryKey: businessId ? roleLabelKeys.forBusiness(businessId) : ['role-labels', 'none'],
+    enabled: isAuthenticated && Boolean(businessId),
+    // Roles change rarely, and a role change invalidates grantKeys for the same reason.
+    staleTime: staleTimes.staticLong,
+    queryFn: async () => {
+      if (!businessId) return [];
+      const { data, error } = await getSupabase().rpc('my_role_labels', {
+        p_business_id: businessId,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => ({
+        roleName: row.role_name,
+        branchId: row.branch_id ?? null,
+        permissionCount: row.permission_count,
+      }));
+    },
+  });
+}
+
+/**
+ * The display label for the signed-in member's role in the current business —
+ * the role for the selected branch, or, if none is selected, the one with the
+ * most permissions (robust for a custom role, which has no fixed rank).
+ *
+ * Display only, like `my_grants()`: never a permission check.
+ */
+export function useMyRoleLabel(): { label: string | null; isPending: boolean } {
+  const { businessId, branchId, isPending: scopePending } = useCurrentScope();
+  const roles = useRoleLabelRows(businessId);
+  const rows = roles.data ?? [];
+
+  const matchingBranch = branchId ? rows.filter((row) => row.branchId === branchId) : [];
+  // A role assigned to "every branch" (branchId null) still applies at a selected branch.
+  const everyBranch = rows.filter((row) => row.branchId === null);
+  const candidates = branchId ? [...matchingBranch, ...everyBranch] : rows;
+
+  const best = candidates.reduce<RoleLabelRow | null>((top, row) => {
+    if (!top || row.permissionCount > top.permissionCount) return row;
+    return top;
+  }, null);
+
+  return {
+    label: best?.roleName ?? null,
+    isPending: scopePending || (Boolean(businessId) && roles.isPending),
   };
 }
 

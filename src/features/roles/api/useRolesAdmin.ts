@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { useSession } from '@/features/auth';
 import { memberKeys, roleKeys } from '@/features/members/api/useMembers';
 import { invalidateMyFeatures } from '@/features/plans/api/useMyFeatures';
-import { grantKeys } from '@/lib/permissions';
+import { grantKeys, roleLabelKeys } from '@/lib/permissions';
 import { staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 import { unwrapRpc } from '@/lib/supabase/rpcResult';
@@ -68,6 +68,7 @@ export function invalidateAfterRoleChange(queryClient: QueryClient, businessId: 
   void queryClient.invalidateQueries({ queryKey: roleKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: memberKeys.business(businessId) });
   void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
+  void queryClient.invalidateQueries({ queryKey: roleLabelKeys.forBusiness(businessId) });
   void invalidateMyFeatures(queryClient, businessId);
 }
 
