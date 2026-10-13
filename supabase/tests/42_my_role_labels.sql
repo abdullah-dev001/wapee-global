@@ -2,7 +2,7 @@
 -- assignments for one business (dashboard header display, not a permission check). Covers: owner, a
 -- same-business receptionist (different role, different permission_count), another business's member
 -- querying a business they do not belong to (empty, no leak), a member with no role assignment at all,
--- and anon (must be refused outright now that migration 20261013133000 revoked anon's stray EXECUTE
+-- and anon (must be refused outright now that migration 20261024100000 revoked anon's stray EXECUTE
 -- grant -- before that fix anon got a silent empty result, not a refusal). Also asserts no unintended
 -- function in public is anon-executable (closes the same migration's other half).
 --   supabase db query --linked -f supabase/tests/42_my_role_labels.sql
@@ -191,7 +191,7 @@ end $$;
 
 -- ===========================================================================
 -- 5. anon must be REFUSED outright (permission denied), not given a silent empty 200. This is the exact
---    gap migration 20261013133000 closed: before it, anon had a stray EXECUTE grant from the schema's
+--    gap migration 20261024100000 closed: before it, anon had a stray EXECUTE grant from the schema's
 --    default ACL and got [] back instead of an error.
 -- ===========================================================================
 do $$

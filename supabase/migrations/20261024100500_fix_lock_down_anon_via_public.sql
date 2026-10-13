@@ -1,4 +1,4 @@
--- Follow-up to 20261013133000: that migration's `revoke execute ... from anon` was a no-op for
+-- Follow-up to 20261024100000: that migration's `revoke execute ... from anon` was a no-op for
 -- enforce_staff_member_link, is_allowed_appointment_transition and website_asset_path_ok, because those
 -- three never had a direct anon grant in the first place -- anon was reaching them through the PUBLIC
 -- pseudo-role grant (`=X/postgres` in pg_proc.proacl), which only `revoke ... from public` removes.
