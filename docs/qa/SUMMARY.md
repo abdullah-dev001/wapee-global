@@ -1,5 +1,14 @@
 # QA Audit — Summary (Phases 1-6, with a live-verification round on dev)
 
+**Update (2026-10-23): F2-01 and F6-S1/F6-S2 are FIXED and applied to dev.** Two new migrations
+(`20261023090000_fix_last_owner_update_guard`, `20261023100000_fix_cross_tenant_oracle_leaks`) ship the fixes
+proven in the live-verification round below. New test suite `41_last_owner_update_guard.sql` (18/18 passing)
+plus regression suites 18/21/28/29/31 (590/590 passing) were run live on dev after applying. F6-S1/F6-S2 were
+also re-verified over real HTTP (GoTrue + PostgREST, not just SQL) as a real cross-business Receptionist
+session. **Not yet applied to production** — pending explicit approval; see the separate implementation report
+for the exact `supabase db push` steps. The rest of this document is the original audit as written before the
+fix; treat F2-01/F6-S1/F6-S2's rows below as historical (the finding was real, and is now shipped on dev).
+
 Mode: audit only, no fixes applied to the real schema. Phases 1-6 were **CODE-READ only** (the user chose this at the start). After Phase 6, the user asked for targeted live verification on the **dev** project (`rfuovquhultjydtswtqf`) for the two highest-value open questions: whether F6-S1/F6-S2's proposed fix actually works without breaking real call sites, and who can really exploit F2-01 given the live role seed — plus running pgTAP suites 21/28/29/31 live. **Production (`bvnurpuqrcwfqguxniio`) was never touched at any point.** Every test against dev ran inside a transaction that was rolled back (`begin; ... rollback;`) except the four pgTAP suites, which are themselves self-contained rollback blocks. Nothing was committed to dev's schema or data during this audit.
 
 Full detail, code excerpts, and reasoning live in the per-phase files: `phase-1-plans-gating-matrix.md` through `phase-6-security-abuse.md` (Phase 2 and Phase 6 both have live-verification addenda).
