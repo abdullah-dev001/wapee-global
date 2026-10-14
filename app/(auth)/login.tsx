@@ -10,6 +10,7 @@ import { Button, Text } from '@/components/ui';
 import { brand } from '@/config/brand';
 import { isAccountDisabledError, useDisabledNotice } from '@/features/auth/accountDisabled';
 import { useLogin } from '@/features/auth/api/useAuthMutations';
+import { authErrorKey } from '@/features/auth/authErrorKey';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
 import { PasswordField } from '@/features/auth/components/PasswordField';
 import { loginSchema, type LoginValues } from '@/features/auth/schemas/auth.schemas';
@@ -37,7 +38,7 @@ export default function LoginScreen() {
         setServerError(
           isAccountDisabledError(error)
             ? t('auth.accountDisabled', { email: brand.supportEmail })
-            : error.message,
+            : t(authErrorKey(error)),
         ),
     });
   });

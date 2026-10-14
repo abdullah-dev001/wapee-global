@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
 import { useResetPassword } from '@/features/auth/api/useAuthMutations';
+import { authErrorKey } from '@/features/auth/authErrorKey';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
 import { PasswordField } from '@/features/auth/components/PasswordField';
 import {
@@ -32,7 +33,7 @@ export default function ResetPasswordScreen() {
 
   const onSubmit = handleSubmit((values) => {
     setServerError(null);
-    reset.mutate(values, { onError: (error) => setServerError(error.message) });
+    reset.mutate(values, { onError: (error) => setServerError(t(authErrorKey(error))) });
   });
 
   if (reset.isSuccess) {

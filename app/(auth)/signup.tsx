@@ -9,6 +9,7 @@ import { FormField } from '@/components/shared/FormField';
 import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Button, Text } from '@/components/ui';
 import { useSignup } from '@/features/auth/api/useAuthMutations';
+import { authErrorKey } from '@/features/auth/authErrorKey';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
 import { PasswordField } from '@/features/auth/components/PasswordField';
 import { signupSchema, type SignupValues } from '@/features/auth/schemas/auth.schemas';
@@ -31,7 +32,7 @@ export default function SignupScreen() {
       // Email confirmation is on, so there is no session yet: wait on /verify.
       onSuccess: () =>
         router.replace({ pathname: '/verify', params: { email: getValues('email') } }),
-      onError: (error) => setServerError(error.message),
+      onError: (error) => setServerError(t(authErrorKey(error))),
     });
   });
 

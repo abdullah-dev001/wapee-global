@@ -8,6 +8,7 @@ import { StyleSheet, View } from 'react-native';
 import { FormField } from '@/components/shared/FormField';
 import { Button, Spinner, Text, useToast } from '@/components/ui';
 import { AuthLayout, PasswordField, useSession, useSignOut, useSignup } from '@/features/auth';
+import { authErrorKey } from '@/features/auth/authErrorKey';
 import { inviteAcceptPath } from '@/features/members/inviteAcceptPath';
 import { useAcceptInvite, useInvitePreview } from '@/features/members/api/useMembers';
 import {
@@ -154,7 +155,7 @@ export default function AcceptInviteScreen() {
           }
           acceptNow();
         },
-        onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+        onError: (error) => toast.show({ message: t(authErrorKey(error)), tone: 'error' }),
       },
     );
   });

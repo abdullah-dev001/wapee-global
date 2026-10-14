@@ -7,6 +7,17 @@ invite-link signup flow (for comparison), against the actual current code —
 not against `context/_handoff.md`'s notes, which are verified below rather
 than trusted blindly.
 
+**Update 2026-10-14: F1 fixed.** All 6 call sites now use a new `authErrorKey()`
+helper (`src/features/auth/authErrorKey.ts`) that maps the Supabase/Postgrest
+error's `code`/`status` to an `auth.errors.*` i18n key, same pattern as
+`adminLogic.ts`'s `adminErrorKey`. The duplicate-email signup case (F2) was
+resolved per the product decision taken with this fix: show a friendly,
+specific "that email already has an account" message rather than full
+enumeration-safe masking (forgot-password's stronger "always claim success"
+behaviour is intentionally untouched, as is `accept-invite.tsx`'s own
+generic-failure design for its other cases). See `context/auth.md`'s
+2026-10-14 changelog entry for the full file list and test counts.
+
 ---
 
 ## 1. Scope & files involved

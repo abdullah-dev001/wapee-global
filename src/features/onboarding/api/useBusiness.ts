@@ -106,7 +106,11 @@ export function useCreateBusiness() {
         p_industry: values.industry ?? undefined,
         p_branch_name: values.branchName ?? undefined,
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        const wrapped = new Error(error.message) as Error & { code?: string };
+        wrapped.code = error.code;
+        throw wrapped;
+      }
       if (!data) throw new Error('Business was not created');
       return data;
     },

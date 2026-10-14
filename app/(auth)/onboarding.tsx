@@ -12,6 +12,7 @@ import { brand } from '@/config/brand';
 import { DEFAULT_COUNTRY, findCountry, timezoneOptionsFor } from '@/config/countries';
 import { allCountries, allCurrencies } from '@/config/localeData.generated';
 import { AuthLayout } from '@/features/auth';
+import { authErrorKey } from '@/features/auth/authErrorKey';
 import { useCreateBusiness, useSlugAvailable } from '@/features/onboarding/api/useBusiness';
 import {
   onboardingSchema,
@@ -129,7 +130,7 @@ export default function OnboardingScreen() {
     setServerError(null);
     createBusiness.mutate(values, {
       onSuccess: () => router.replace('/today'),
-      onError: (error) => setServerError(error.message),
+      onError: (error) => setServerError(t(authErrorKey(error))),
     });
   });
 
