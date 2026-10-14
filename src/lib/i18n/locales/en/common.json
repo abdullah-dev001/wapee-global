@@ -452,12 +452,38 @@
       "bufferTooLong": "That gap is too long",
       "priceInvalid": "A price cannot be negative",
       "categoryNameRequired": "Enter a category name",
-      "categoryNameTooLong": "That category name is too long"
+      "categoryNameTooLong": "That category name is too long",
+      "duplicateName": "A service with that name already exists",
+      "forbidden": "You don't have permission to do that",
+      "inUse": "This service has appointments or invoices and can't be removed",
+      "invalidInput": "Check the details and try again",
+      "unknown": "Something went wrong. Try again."
     },
     "categories": {
       "title": "Categories",
       "create": "Add category",
-      "saved": "Category added"
+      "saved": "Category saved",
+      "rename": "Rename",
+      "delete": "Delete",
+      "renameTitle": "Rename category",
+      "namePlaceholder": "e.g. Hair",
+      "fields": {
+        "name": "Name"
+      },
+      "empty": {
+        "title": "No categories yet",
+        "description": "Add one to group your services."
+      },
+      "deleteConfirm": {
+        "title": "Delete this category?",
+        "message": "Its services move to Uncategorised. Nothing else changes."
+      },
+      "errors": {
+        "duplicateName": "A category with that name already exists",
+        "forbidden": "You don't have permission to do that",
+        "invalidInput": "Enter a valid name",
+        "unknown": "Something went wrong. Try again."
+      }
     }
   },
   "staff": {

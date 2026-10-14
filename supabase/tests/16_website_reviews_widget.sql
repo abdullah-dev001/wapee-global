@@ -833,6 +833,19 @@ update public.booking_settings set show_prices = false where branch_id = pg_temp
 select pg_temp.chk('show_prices = false: NO price field at all',
   (select count(*)::int from jsonb_array_elements((select s -> 'services' from jsonb_array_elements(public.get_website_public('p7-a') -> 'sections') s where s ->> 'type' = 'services')) x where x ? 'price_minor'), 0);
 update public.booking_settings set show_prices = true where branch_id = pg_temp.id('brancha');
+
+-- Feature 9 audit (2026-10-14): is_active alone used to gate the public website's
+-- services, so a service turned "not bookable online" (but still active/shown
+-- internally) kept leaking onto the marketing site, priced, with no way to hide
+-- it short of deactivating the whole service. Same filter every other public
+-- catalogue read already used (get_booking_page_catalogue, the slot engine).
+update public.services set is_bookable_online = false where id = pg_temp.id('svc');
+select pg_temp.chk('is_bookable_online = false: service dropped from the website even though still active',
+  (select count(*)::int from jsonb_array_elements((select s -> 'services' from jsonb_array_elements(public.get_website_public('p7-a') -> 'sections') s where s ->> 'type' = 'services')) x where x ->> 'name' = 'Cut'), 0);
+update public.services set is_bookable_online = true where id = pg_temp.id('svc');
+select pg_temp.chk('is_bookable_online restored to true: service is back',
+  (select count(*)::int from jsonb_array_elements((select s -> 'services' from jsonb_array_elements(public.get_website_public('p7-a') -> 'sections') s where s ->> 'type' = 'services')) x where x ->> 'name' = 'Cut'), 1);
+
 update public.services set is_active = false where id = pg_temp.id('svc');
 select pg_temp.chk('no live services -> services section dropped',
   (select count(*)::int from jsonb_array_elements(public.get_website_public('p7-a') -> 'sections') s where s ->> 'type' = 'services'), 0);
