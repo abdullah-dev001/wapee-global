@@ -19,6 +19,7 @@ import {
   type InviteResult,
   type MemberRow,
 } from '../api/useMembers';
+import { inviteMemberErrorKey } from '../inviteMemberErrorKey';
 import { InviteLink } from './InviteMemberForm';
 
 const ALL = 'all';
@@ -272,7 +273,8 @@ function Body({
                       toast.show({ message: t('members.manage.resent'), tone: 'success' });
                       setLink(result);
                     },
-                    onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+                    onError: (error) =>
+                      toast.show({ message: t(inviteMemberErrorKey(error)), tone: 'error' }),
                   },
                 );
               }}

@@ -43,7 +43,7 @@ export default function MembersScreen() {
           {members.isError ? (
             <ErrorState
               title={t('members.error.title')}
-              description={members.error.message}
+              description={t('auth.errors.generic')}
               onRetry={() => void members.refetch()}
               retryLabel={t('actions.retry')}
             />

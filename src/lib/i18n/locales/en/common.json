@@ -258,7 +258,11 @@
       "title": "Could not load the team"
     },
     "errors": {
-      "roleRequired": "Choose a role"
+      "roleRequired": "Choose a role",
+      "forbidden": "You do not have permission to do that.",
+      "invalidInput": "Check the role, branch and staff profile and try again.",
+      "alreadyMember": "That person is already part of this team, or the staff profile already has a login.",
+      "unknown": "Something went wrong. Please try again."
     },
     "invite": {
       "action": "Invite",

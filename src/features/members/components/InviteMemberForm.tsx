@@ -14,6 +14,7 @@ import { theme } from '@/lib/theme';
 
 import { useAssignableRoles } from '../api/useAssignableRoles';
 import { useInviteMember, type InviteResult } from '../api/useMembers';
+import { inviteMemberErrorKey } from '../inviteMemberErrorKey';
 import { inviteSchema, type InviteValues } from '../schemas/invite.schemas';
 
 /** Value used by the branch picker for "every branch" (the RPC wants null). */
@@ -62,7 +63,7 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
         setResult(data);
         reset({ email: '', roleId: '', branchId, staffId: null });
       },
-      onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+      onError: (error) => toast.show({ message: t(inviteMemberErrorKey(error)), tone: 'error' }),
     });
   });
 
