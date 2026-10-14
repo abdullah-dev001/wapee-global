@@ -643,6 +643,8 @@ begin
   perform pg_temp.chk('list: search < 2 chars refused', pg_temp.adm($q$select public.list_businesses('a')$q$) ->> 'code', 'search_too_short');
   perform pg_temp.chk('list: search finds by name', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('Alpha')$q$) -> 'items'), 1);
   perform pg_temp.chk('list: search finds by slug', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('p8-gamma')$q$) -> 'items'), 1);
+  perform pg_temp.chk('list: search finds by the owner''s email', (select i ->> 'slug' from jsonb_array_elements(pg_temp.adm($q$select public.list_businesses('p8.owner@example.com')$q$) -> 'items') i), 'p8-alpha');
+  perform pg_temp.chk('list: owner-email search does not match a NON-owner''s email (manager)', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('p8.manager@example.com')$q$) -> 'items'), 0);
   perform pg_temp.chk('list: a LIKE wildcard is escaped (matches nothing)', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('%%')$q$) -> 'items'), 0);
   perform pg_temp.chk('list: status filter (trialing P8s: the trial one only)', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('P8 ', 'trialing')$q$) -> 'items'), 1);
   perform pg_temp.chk('list: plan filter (team: A and the downgraded B)', (select string_agg(i ->> 'slug', ',' order by i ->> 'slug') from jsonb_array_elements(pg_temp.adm($q$select public.list_businesses('P8 ', null, 'team')$q$) -> 'items') i), 'p8-alpha,p8-beta');

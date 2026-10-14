@@ -1896,7 +1896,7 @@
       "title": "Businesses",
       "subtitle": "Every business on the platform.",
       "search": "Search",
-      "searchPlaceholder": "Name or address",
+      "searchPlaceholder": "Name, slug or owner email",
       "plan": "Plan",
       "status": "Status",
       "all": "All",
