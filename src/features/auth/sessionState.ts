@@ -6,6 +6,13 @@ export type SessionTransition = {
   session: Session | null;
   /** Drop the whole query cache: the signed-in user changed, or signed out. */
   clearCache: boolean;
+  /**
+   * Opening a password-recovery email link signs the user in via a distinct
+   * `PASSWORD_RECOVERY` event. The gates read this to force the session onto
+   * `/reset-password` instead of wherever it would otherwise send a signed-in
+   * user (home, the admin 2FA screen, …) — see gateSettled.ts.
+   */
+  isPasswordRecovery: boolean;
 };
 
 /**
@@ -18,15 +25,23 @@ export function nextSessionState(
   event: string,
   previous: Session | null,
   next: Session | null,
+  wasPasswordRecovery: boolean,
 ): SessionTransition {
   const previousId = previous?.user.id ?? null;
   const nextId = next?.user.id ?? null;
   const userChanged = previousId !== nextId;
   const clearCache = userChanged || event === 'SIGNED_OUT';
 
+  // Sticky until the password is actually saved (USER_UPDATED) or the session
+  // ends — a stray same-user SIGNED_IN/TOKEN_REFRESHED while the reset form is
+  // still open must not un-flag it and let the gates bounce the user away.
+  const isPasswordRecovery =
+    event === 'PASSWORD_RECOVERY' ||
+    (wasPasswordRecovery && event !== 'USER_UPDATED' && event !== 'SIGNED_OUT' && Boolean(next));
+
   // Same user and same token: nothing to tell React about.
   if (!userChanged && previous && next && previous.access_token === next.access_token) {
-    return { session: previous, clearCache };
+    return { session: previous, clearCache, isPasswordRecovery };
   }
-  return { session: next, clearCache };
+  return { session: next, clearCache, isPasswordRecovery };
 }

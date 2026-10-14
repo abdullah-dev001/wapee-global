@@ -1,5 +1,5 @@
 # Plans, add-ons, feature gating, super admin (backend)
-Status: **Phase 8A backend + Phase 8B UI done** · Last updated: 2026-10-06
+Status: **Phase 8A backend + Phase 8B UI done** · Last updated: 2026-10-14
 
 ## Business rules (decided with the user)
 - Plans per location: **solo** (1 staff, 1 location), **team** (5 staff, 1 location), **business** (unlimited). Staff cap is **per location**: active, non-deleted staff assigned (`staff_branches`) to a branch. Inactive/soft-deleted staff do not count. A staff member in two locations counts in each.
@@ -66,6 +66,7 @@ Then enrol TOTP for that user (see above) so a session can reach `aal2`.
 - Appointments-this-month uses the UTC month.
 
 ## Changelog
+- 2026-10-14: FIX — a password-recovery session for a 2FA-enrolled super admin no longer gets forced through `/admin/2fa` with no way back; `adminRedirect()` now takes `isPasswordRecovery` and defers to `AuthGate`'s own recovery rule, which sends the session to `/reset-password` instead. Full detail (root cause, the reset screen's new inline TOTP step-up) in `context/auth.md`'s 2026-10-14 entry. Normal sign-in 2FA enforcement is unchanged.
 - 2026-10-10: Price fields for the landing page: plans per-location toggle, add-on yearly price and plan availability in /admin/platform (not screenshotted: needs the aal2 super admin); suite 18 still green (356).
 - 2026-10-07: Phase 10A uses the module-RPC pattern for real (`feature_gate_error` in every Packages/Inventory RPC, `my_features()` in the UI): nav items, screens, invoice-editor pickers, appointment/client blocks and matrix rows disappear while the add-on is off.
 - 2026-10-06: Phase 8B UI (gating from `my_features`, billing, admin area, 2FA) + `admin_list_reviews`, `my_plan_usage`; `is_super_admin()` requires aal2; TOTP enabled in config.

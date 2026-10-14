@@ -118,7 +118,9 @@
       "subtitle": "Pick something you haven't used before.",
       "submit": "Save password",
       "done": "Password updated",
-      "doneBody": "You can now sign in with your new password."
+      "doneBody": "You can now sign in with your new password.",
+      "twoFactorTitle": "Confirm it's you",
+      "twoFactorIntro": "This account has two-factor sign-in. Enter the 6-digit code from your authenticator app to finish resetting your password."
     },
     "verify": {
       "title": "Confirm your email",
@@ -155,6 +157,7 @@
       "network": "No connection. Check your internet and try again.",
       "expiredLink": "This link has expired or was already used. Request a new one.",
       "slugTaken": "That address was just taken. Choose another.",
+      "insufficientAal": "Enter your two-factor code to continue.",
       "generic": "Something went wrong. Please try again."
     },
     "showPassword": "Show password",

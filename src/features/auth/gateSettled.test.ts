@@ -52,6 +52,7 @@ describe('authGateDecision', () => {
     loading: false,
     isAuthenticated: false,
     isEmailVerified: false,
+    isPasswordRecovery: false,
     segments: [] as readonly string[],
     hasBusiness: false,
     waitForBusinesses: false,
@@ -214,5 +215,86 @@ describe('authGateDecision', () => {
         segments: ['(app)', 'today'],
       }),
     ).toEqual({ kind: 'render' });
+  });
+
+  describe('password recovery (the production bug this guards against)', () => {
+    it('sends a recovery session to /reset-password from an ordinary private route, even with a business', () => {
+      // Without this rule, a verified user with a business opening a reset
+      // link would be bounced straight to "/" by the hasBusiness+isAuthGroup
+      // rule below, before ever seeing the reset screen.
+      expect(
+        authGateDecision({
+          ...base,
+          isAuthenticated: true,
+          isEmailVerified: true,
+          isPasswordRecovery: true,
+          hasBusiness: true,
+          segments: ['(app)', 'today'],
+        }),
+      ).toEqual({ kind: 'redirect', href: '/reset-password' });
+    });
+
+    it('sends a recovery session to /reset-password even with no business yet (would otherwise go to onboarding)', () => {
+      expect(
+        authGateDecision({
+          ...base,
+          isAuthenticated: true,
+          isEmailVerified: true,
+          isPasswordRecovery: true,
+          hasBusiness: false,
+          segments: ['(app)', 'today'],
+        }),
+      ).toEqual({ kind: 'redirect', href: '/reset-password' });
+    });
+
+    it('sends a recovery session to /reset-password even from an (auth) screen with a business (would otherwise go to /)', () => {
+      expect(
+        authGateDecision({
+          ...base,
+          isAuthenticated: true,
+          isEmailVerified: true,
+          isPasswordRecovery: true,
+          hasBusiness: true,
+          segments: ['(auth)', 'login'],
+        }),
+      ).toEqual({ kind: 'redirect', href: '/reset-password' });
+    });
+
+    it('never redirects a recovery session once it is already on /reset-password', () => {
+      expect(
+        authGateDecision({
+          ...base,
+          isAuthenticated: true,
+          isEmailVerified: true,
+          isPasswordRecovery: true,
+          hasBusiness: true,
+          segments: ['(auth)', 'reset-password'],
+        }),
+      ).toEqual({ kind: 'render' });
+      // Also true for a business-less / unverified-looking combination — the
+      // reset screen is reachable unconditionally once recovery is flagged.
+      expect(
+        authGateDecision({
+          ...base,
+          isAuthenticated: true,
+          isEmailVerified: true,
+          isPasswordRecovery: true,
+          hasBusiness: false,
+          segments: ['(auth)', 'reset-password'],
+        }),
+      ).toEqual({ kind: 'render' });
+    });
+
+    it('recovery outranks the unverified-email redirect too', () => {
+      expect(
+        authGateDecision({
+          ...base,
+          isAuthenticated: true,
+          isEmailVerified: false,
+          isPasswordRecovery: true,
+          segments: ['(app)', 'today'],
+        }),
+      ).toEqual({ kind: 'redirect', href: '/reset-password' });
+    });
   });
 });

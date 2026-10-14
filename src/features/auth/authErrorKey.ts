@@ -17,6 +17,7 @@ export const AUTH_ERROR_KEYS = {
   network: 'auth.errors.network',
   expiredLink: 'auth.errors.expiredLink',
   slugTaken: 'auth.errors.slugTaken',
+  insufficientAal: 'auth.errors.insufficientAal',
   generic: 'auth.errors.generic',
 } as const;
 
@@ -63,6 +64,8 @@ export function authErrorKey(error: unknown): AuthErrorKey {
     // not AuthError, but the same field carries the code).
     case '23514':
       return AUTH_ERROR_KEYS.slugTaken;
+    case 'insufficient_aal':
+      return AUTH_ERROR_KEYS.insufficientAal;
     default:
       break;
   }
@@ -73,4 +76,15 @@ export function authErrorKey(error: unknown): AuthErrorKey {
   if (isNetworkError(e)) return AUTH_ERROR_KEYS.network;
 
   return AUTH_ERROR_KEYS.generic;
+}
+
+/**
+ * `auth.updateUser({ password })` returns this when the account has a
+ * verified MFA factor and the current session is only aal1 — exactly the case
+ * for a super admin who just opened a recovery link (recovery always signs in
+ * at aal1, never aal2). The reset screen uses this to decide whether to show
+ * a TOTP step-up instead of just a translated error.
+ */
+export function isInsufficientAalError(error: unknown): boolean {
+  return asErrorLike(error)?.code === 'insufficient_aal';
 }

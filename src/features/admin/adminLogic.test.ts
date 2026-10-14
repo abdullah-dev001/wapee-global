@@ -83,34 +83,125 @@ describe('adminAccess', () => {
 
 describe('adminRedirect', () => {
   it('forces a flagged aal1 user to the 2FA screen, from anywhere', () => {
-    expect(adminRedirect({ access: 'needs_2fa', pathname: '/today', hasBusiness: true })).toBe(
-      ADMIN_2FA,
-    );
-    expect(adminRedirect({ access: 'needs_2fa', pathname: '/login', hasBusiness: false })).toBe(
-      ADMIN_2FA,
-    );
     expect(
-      adminRedirect({ access: 'needs_2fa', pathname: ADMIN_2FA, hasBusiness: false }),
+      adminRedirect({
+        access: 'needs_2fa',
+        pathname: '/today',
+        hasBusiness: true,
+        isPasswordRecovery: false,
+      }),
+    ).toBe(ADMIN_2FA);
+    expect(
+      adminRedirect({
+        access: 'needs_2fa',
+        pathname: '/login',
+        hasBusiness: false,
+        isPasswordRecovery: false,
+      }),
+    ).toBe(ADMIN_2FA);
+    expect(
+      adminRedirect({
+        access: 'needs_2fa',
+        pathname: ADMIN_2FA,
+        hasBusiness: false,
+        isPasswordRecovery: false,
+      }),
     ).toBeNull();
   });
   it('sends a business-less admin to /admin instead of onboarding', () => {
-    expect(adminRedirect({ access: 'granted', pathname: '/', hasBusiness: false })).toBe('/admin');
-    expect(adminRedirect({ access: 'granted', pathname: '/onboarding', hasBusiness: false })).toBe(
-      '/admin',
-    );
     expect(
-      adminRedirect({ access: 'granted', pathname: '/admin/platform', hasBusiness: false }),
+      adminRedirect({
+        access: 'granted',
+        pathname: '/',
+        hasBusiness: false,
+        isPasswordRecovery: false,
+      }),
+    ).toBe('/admin');
+    expect(
+      adminRedirect({
+        access: 'granted',
+        pathname: '/onboarding',
+        hasBusiness: false,
+        isPasswordRecovery: false,
+      }),
+    ).toBe('/admin');
+    expect(
+      adminRedirect({
+        access: 'granted',
+        pathname: '/admin/platform',
+        hasBusiness: false,
+        isPasswordRecovery: false,
+      }),
     ).toBeNull();
   });
   it('leaves an admin who owns a business alone, and bounces off the 2FA screen once done', () => {
-    expect(adminRedirect({ access: 'granted', pathname: '/today', hasBusiness: true })).toBeNull();
-    expect(adminRedirect({ access: 'granted', pathname: ADMIN_2FA, hasBusiness: true })).toBe(
-      '/admin',
-    );
+    expect(
+      adminRedirect({
+        access: 'granted',
+        pathname: '/today',
+        hasBusiness: true,
+        isPasswordRecovery: false,
+      }),
+    ).toBeNull();
+    expect(
+      adminRedirect({
+        access: 'granted',
+        pathname: ADMIN_2FA,
+        hasBusiness: true,
+        isPasswordRecovery: false,
+      }),
+    ).toBe('/admin');
   });
   it('never redirects normal users or while loading', () => {
-    expect(adminRedirect({ access: 'hidden', pathname: '/', hasBusiness: false })).toBeNull();
-    expect(adminRedirect({ access: 'loading', pathname: '/', hasBusiness: false })).toBeNull();
+    expect(
+      adminRedirect({
+        access: 'hidden',
+        pathname: '/',
+        hasBusiness: false,
+        isPasswordRecovery: false,
+      }),
+    ).toBeNull();
+    expect(
+      adminRedirect({
+        access: 'loading',
+        pathname: '/',
+        hasBusiness: false,
+        isPasswordRecovery: false,
+      }),
+    ).toBeNull();
+  });
+
+  it('never forces a password-recovery session through the 2FA screen, from anywhere — the production bug this guards against', () => {
+    // A 2FA-enrolled super admin opening a reset link is aal1 (needs_2fa) until
+    // they verify, exactly like signing in — but AuthGate is already sending
+    // them to /reset-password, and forcing /admin/2fa here first would strand
+    // them with no way back to actually resetting the password.
+    expect(
+      adminRedirect({
+        access: 'needs_2fa',
+        pathname: '/reset-password',
+        hasBusiness: true,
+        isPasswordRecovery: true,
+      }),
+    ).toBeNull();
+    expect(
+      adminRedirect({
+        access: 'needs_2fa',
+        pathname: '/today',
+        hasBusiness: true,
+        isPasswordRecovery: true,
+      }),
+    ).toBeNull();
+    // Same for a business-less admin and a fully granted one: a recovery
+    // session is never redirected by this function at all.
+    expect(
+      adminRedirect({
+        access: 'granted',
+        pathname: '/',
+        hasBusiness: false,
+        isPasswordRecovery: true,
+      }),
+    ).toBeNull();
   });
 });
 

@@ -98,13 +98,22 @@ export function adminAccess(input: {
  * Where a signed-in, verified user must be sent right now (or null = stay).
  * Flagged accounts are forced through 2FA at sign-in (decided with the user), and
  * a business-less admin skips onboarding.
+ *
+ * A password-recovery session is the one exception: `AuthGate` is already
+ * sending it to `/reset-password` (not an admin route), and that screen asks
+ * for the TOTP code itself if the account turns out to need aal2 to save the
+ * new password — forcing the separate `/admin/2fa` detour first would strand
+ * the user there with no way back to actually resetting the password (the
+ * real production bug this guards against).
  */
 export function adminRedirect(input: {
   access: AdminAccess;
   pathname: string;
   hasBusiness: boolean;
+  isPasswordRecovery: boolean;
 }): string | null {
-  const { access, pathname, hasBusiness } = input;
+  const { access, pathname, hasBusiness, isPasswordRecovery } = input;
+  if (isPasswordRecovery) return null;
   const onAdmin = pathname === ADMIN_HOME || pathname.startsWith(`${ADMIN_HOME}/`);
   if (access === 'needs_2fa') return pathname === ADMIN_2FA ? null : ADMIN_2FA;
   if (access === 'granted' && !hasBusiness && !onAdmin) return ADMIN_HOME;
