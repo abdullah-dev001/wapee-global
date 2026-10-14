@@ -17,7 +17,7 @@ Status: in progress · Phase: 6B · Last updated: 2026-10-09
 | Table | Key columns | Notes |
 |---|---|---|
 | `profiles` | id→auth.users, email, full_name, **is_super_admin**, default_business_id, locale | 1:1 with auth.users via trigger. `is_super_admin` set **only by hand in SQL**. |
-| `businesses` | name, **slug** (citext unique), industry, language, **plan**, **status**, **trial_ends_at**, plan_activated_at, `default_country_code`, `default_currency`, `default_timezone` (all nullable) | Tenant root. The `default_*` columns are **PRE-FILL ONLY** for a new branch — never read them for tax, SMS rates, slots or reporting. |
+| `businesses` | name, **slug** (citext unique), industry, language, **plan**, **status**, **trial_ends_at**, **current_period_end** (mirrored, 2026-10-14), plan_activated_at, `default_country_code`, `default_currency`, `default_timezone` (all nullable) | Tenant root. The `default_*` columns are **PRE-FILL ONLY** for a new branch — never read them for tax, SMS rates, slots or reporting. |
 | `branches` | business_id, name, is_primary, **country_code**, **currency**, **timezone** (all NOT NULL), address, phone, **tax_number**, **tax_rate_bp**, **invoice_prefix**, **invoice_next_no**, **credit_note_next_no** | **Owns country, currency, timezone and tax** (decision 23). A business can have branches in different countries. `tax_rate_bp` = basis points (2000 = 20%). |
 | `business_members` | business_id, user_id, status, invited_email, **invite_token_hash**, invite_expires_at, invited_by, joined_at | One user ↔ many businesses. Only the token *hash* is stored. |
 | `roles` | business_id (**null = system role**), key, name, is_system | 4 system roles; custom roles (Phase 9) carry a business_id. |
@@ -544,6 +544,7 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
   design, not an oversight.
 
 ## Changelog
+- 2026-10-14: `20261014140132_enforce_current_period_end` — mirrors `business_subscriptions.current_period_end` into `businesses` (same pattern as plan/status/trial_ends_at/plan_activated_at); `business_is_active()` now locks a `status='active'` business whose period has elapsed; `set_business_status('active')` clears a stale PAST period end on reactivation only. Also `20261014104921_list_businesses_search_owner_email` (Feature 6 round). Both older than `20261024100500`; `npm run check:migrations` confirms 154/154 from empty, correct filename order.
 - 2026-10-20: `20261020130000_message_retry` (`get_appointment_messages` + error/outbox_id/can_retry, `retry_message`).
 - 2026-10-07: **Phase 10B** — add-ons Files & Photos and Forms & Consent (4 migrations `20261014090000`..`120000`, 8 tables, private bucket, 15 RPCs, 2 Edge Functions `client_files` + `sign_form`).
 - 2026-10-07: **Phase 10A** — add-ons Packages & Sessions and Inventory (6 migrations `20261013090000`..`140000`, 9 tables, 13 RPCs, invoice integration, low-stock alert); `list_business_member_names` for the Team list.

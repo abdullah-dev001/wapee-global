@@ -859,6 +859,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          current_period_end: string | null
           default_country_code: string | null
           default_currency: string | null
           default_timezone: string | null
@@ -878,6 +879,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          current_period_end?: string | null
           default_country_code?: string | null
           default_currency?: string | null
           default_timezone?: string | null
@@ -897,6 +899,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          current_period_end?: string | null
           default_country_code?: string | null
           default_currency?: string | null
           default_timezone?: string | null

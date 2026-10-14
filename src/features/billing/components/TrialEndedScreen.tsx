@@ -46,13 +46,15 @@ export function TrialEndedScreen() {
           </View>
 
           <Text variant="dialogTitle" align="center">
-            {t('billing.locked.title')}
+            {business?.status === 'active' ? t('billing.locked.periodEndedTitle') : t('billing.locked.title')}
           </Text>
 
           <Text variant="paragraph" color="textSecondary" align="center">
             {business?.status === 'suspended'
               ? t('billing.locked.suspended')
-              : t('billing.locked.trialEnded')}
+              : business?.status === 'active'
+                ? t('billing.locked.periodEnded')
+                : t('billing.locked.trialEnded')}
           </Text>
 
           <Text variant="helper" color="textMuted" align="center">

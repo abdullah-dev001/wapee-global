@@ -336,6 +336,8 @@
     "locked": {
       "title": "Your trial has ended",
       "trialEnded": "Your 14-day trial is over, so this business is paused. Get in touch and we will set up a plan for you.",
+      "periodEndedTitle": "Your plan has ended",
+      "periodEnded": "Your billing period has ended, so this business is paused. Get in touch and we will renew your plan.",
       "suspended": "This business has been paused. Get in touch and we will help you sort it out.",
       "dataSafe": "Nothing has been deleted. Your bookings, clients and invoices are all still here.",
       "contact": "Contact us",
@@ -1863,6 +1865,7 @@
       "trialEnds_other": "Your trial ends on {{date}} ({{count}} days left).",
       "trialEnded": "Your trial ended on {{date}}.",
       "periodEnds": "Current period ends on {{date}}.",
+  "periodEndedPast": "Your billing period ended on {{date}}.",
       "suspendedNote": "This business is suspended. Get in touch and we'll help you sort it out.",
       "dataSafe": "Your data is never deleted when a plan changes or a trial ends.",
       "usageTitle": "Staff per location",
