@@ -11,6 +11,7 @@ import { brand } from '@/config/brand';
 import { isAccountDisabledError, useDisabledNotice } from '@/features/auth/accountDisabled';
 import { useLogin } from '@/features/auth/api/useAuthMutations';
 import { authErrorKey } from '@/features/auth/authErrorKey';
+import { useDeletedAccountNotice } from '@/features/auth/deletedAccount';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
 import { PasswordField } from '@/features/auth/components/PasswordField';
 import { loginSchema, type LoginValues } from '@/features/auth/schemas/auth.schemas';
@@ -22,6 +23,7 @@ export default function LoginScreen() {
   const login = useLogin();
   const [serverError, setServerError] = useState<string | null>(null);
   const disabledNotice = useDisabledNotice();
+  const deletedNotice = useDeletedAccountNotice();
 
   const { control, handleSubmit, formState } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -31,6 +33,7 @@ export default function LoginScreen() {
   const onSubmit = handleSubmit((values) => {
     setServerError(null);
     disabledNotice.clear();
+    deletedNotice.clear();
     login.mutate(values, {
       // The session listener redirects; replace() avoids a back-to-login entry.
       onSuccess: () => router.replace('/'),
@@ -63,6 +66,13 @@ export default function LoginScreen() {
           <View accessibilityRole="alert" style={styles.alert}>
             <Text variant="small" color="error">
               {t('auth.accountDisabled', { email: brand.supportEmail })}
+            </Text>
+          </View>
+        ) : null}
+        {deletedNotice.visible && !serverError ? (
+          <View accessibilityRole="alert" style={styles.alert}>
+            <Text variant="small" color="error">
+              {t('auth.accountDeleted')}
             </Text>
           </View>
         ) : null}

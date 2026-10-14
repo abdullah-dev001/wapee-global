@@ -90,6 +90,7 @@
   },
   "auth": {
     "accountDisabled": "This account is disabled. Contact {{email}}",
+    "accountDeleted": "Your account no longer exists. Sign up again to continue.",
     "login": {
       "title": "Welcome back",
       "subtitle": "Sign in to your {{appName}} account",
