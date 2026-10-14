@@ -57,7 +57,6 @@ function Body({
   const { businessId, business } = useCurrentScope();
   const canRoles = usePermission('roles.manage');
   const canInvite = usePermission('users.invite');
-  const { roles } = useAssignableRoles(businessId);
   const assign = useAssignMemberRole(businessId);
   const unassign = useRemoveMemberRole(businessId);
   const removeMember = useRemoveMember(businessId);
@@ -80,7 +79,17 @@ function Body({
       ? (branches.find((branch) => branch.id === id)?.name ?? '')
       : t('members.manage.allBranches');
   const name = member.fullName ?? member.email ?? t('members.unknown');
-  const roleOptions = roles.map((role) => ({ value: role.id, label: role.name }));
+  // Each picker targets its own branch, so each is filtered to what the signed-in
+  // person may actually grant THERE (changing: the assignment's own branch; add:
+  // whichever branch is currently selected below) — a role grantable at one
+  // branch is not always grantable at another (`can_grant_at`).
+  const { roles: changeRoleOptions } = useAssignableRoles(businessId, changing?.branchId ?? null);
+  const { roles: addRoleOptionsRaw } = useAssignableRoles(
+    businessId,
+    addBranch === ALL ? null : addBranch,
+  );
+  const roleOptions = changeRoleOptions.map((role) => ({ value: role.id, label: role.name }));
+  const addRoleOptions = addRoleOptionsRaw.map((role) => ({ value: role.id, label: role.name }));
   const branchOptions = [
     { value: ALL, label: t('members.manage.allBranches') },
     ...branches.map((branch) => ({ value: branch.id, label: branch.name })),
@@ -213,7 +222,7 @@ function Body({
             <Text variant="sectionTitle">{t('members.manage.addTitle')}</Text>
             <Select
               label={t('members.manage.addRole')}
-              options={roleOptions}
+              options={addRoleOptions}
               value={addRole}
               onChange={setAddRole}
               placeholder={t('members.invite.rolePlaceholder')}
@@ -223,7 +232,12 @@ function Body({
                 label={t('members.manage.addBranch')}
                 options={branchOptions}
                 value={addBranch}
-                onChange={setAddBranch}
+                onChange={(value) => {
+                  // The role picker is about to be re-filtered for the new
+                  // branch; the previous choice may no longer be offered.
+                  setAddBranch(value);
+                  setAddRole(null);
+                }}
               />
             ) : null}
             <Button

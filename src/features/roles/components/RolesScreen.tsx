@@ -6,11 +6,13 @@ import { StyleSheet, View } from 'react-native';
 import { PageContainer, Screen } from '@/components/layout';
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, Text } from '@/components/ui';
 import { useCurrentScope } from '@/lib/permissions';
+import { rpcCode } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
 
 import { useRolesAdmin, type RoleRow } from '../api/useRolesAdmin';
 import { DeleteRoleDialog } from './DeleteRoleDialog';
 import { RoleEditor, type EditorMode } from './RoleEditor';
+import { roleErrorKey } from '../rolesLogic';
 
 /**
  * Default and custom roles. Default roles are read-only (view / clone); custom
@@ -46,7 +48,7 @@ export function RolesScreen() {
         {roles.isError ? (
           <ErrorState
             title={t('roles.error.title')}
-            description={roles.error.message}
+            description={t(roleErrorKey(rpcCode(roles.error)))}
             onRetry={() => void roles.refetch()}
             retryLabel={t('actions.retry')}
           />

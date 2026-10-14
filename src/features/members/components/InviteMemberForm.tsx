@@ -33,7 +33,6 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
   const { t } = useTranslation();
   const toast = useToast();
   const { businessId, branchId, business } = useCurrentScope();
-  const { roles, isPending: rolesPending } = useAssignableRoles(businessId, branchId);
   const invite = useInviteMember(businessId);
   // Linking a staff profile is a staff.manage action (the RPC checks it again).
   const canManageStaff = usePermission('staff.manage');
@@ -51,6 +50,14 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
   const selectedRole = useWatch({ control, name: 'roleId' });
   const selectedBranch = useWatch({ control, name: 'branchId' });
   const selectedStaff = useWatch({ control, name: 'staffId' });
+
+  // Re-filtered as the form's own branch choice changes: a role grantable at
+  // one branch is not always grantable at another (`can_grant_at`); `branchId`
+  // (the caller's own current scope) is only the form's starting value.
+  const { roles, isPending: rolesPending } = useAssignableRoles(
+    businessId,
+    selectedBranch ?? null,
+  );
 
   const branchOptions = [
     { value: ALL_BRANCHES, label: t('members.invite.allBranches') },
@@ -112,9 +119,12 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
           label={t('members.invite.branch')}
           options={branchOptions}
           value={selectedBranch ?? ALL_BRANCHES}
-          onChange={(value) =>
-            setValue('branchId', value === ALL_BRANCHES ? null : value, { shouldValidate: true })
-          }
+          onChange={(value) => {
+            setValue('branchId', value === ALL_BRANCHES ? null : value, { shouldValidate: true });
+            // The role list is about to be re-filtered for the new branch; the
+            // previous choice may no longer be offered.
+            setValue('roleId', '', { shouldValidate: true });
+          }}
         />
       ) : null}
 

@@ -59,6 +59,35 @@ export function heldRank(
 }
 
 /**
+ * The highest scope the CALLER holds a permission at for ONE target branch
+ * (0 = not at all), mirroring `can_grant_at`: an `all`-scope grant or a
+ * `branch_id IS NULL` ("every branch") grant counts everywhere; a branch-tied
+ * grant counts only at that same branch. Used where the UI is about to assign
+ * a role AT a specific branch, not just define a role's own ceiling.
+ */
+export function heldRankAtBranch(
+  grants: readonly Grant[],
+  permission: PermissionKey,
+  branchId: string | null,
+  isSuperAdmin = false,
+): number {
+  if (isSuperAdmin) return RANK.all;
+  let best = 0;
+  for (const grant of grants) {
+    if (grant.permission !== permission) continue;
+    // Assigning "every branch" (branchId null) needs an `all`-scope grant or the
+    // caller's own "every branch" grant — a branch-tied grant does not reach a
+    // target of "every branch" even though it reaches that one branch.
+    const appliesHere =
+      grant.scope === 'all' ||
+      grant.branchId === null ||
+      (branchId !== null && grant.branchId === branchId);
+    if (appliesHere) best = Math.max(best, RANK[grant.scope]);
+  }
+  return best;
+}
+
+/**
  * The scopes the editor may pick for one permission: "none" always (taking
  * something away is always allowed), anything up to what the caller holds, and the
  * role's CURRENT value even if it is above that (so an untouched higher
