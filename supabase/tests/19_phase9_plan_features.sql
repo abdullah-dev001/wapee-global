@@ -113,8 +113,12 @@ $$;
 create or replace function pg_temp.perms(p_role uuid) returns text language sql as $$
   select coalesce(string_agg(permission || ':' || scope, ',' order by permission), '') from public.role_permissions where role_id = p_role
 $$;
-create or replace function pg_temp.audit_n(p_action text) returns text language sql as $$
-  select count(*)::text from public.audit_logs where action = p_action
+-- Scoped to one fixture business (default 'biza', every real call site's
+-- context) so this suite is not thrown off by `audit_logs` rows that already
+-- exist on a database with real history — this function used to count the
+-- action GLOBALLY, which only looked right on an empty database.
+create or replace function pg_temp.audit_n(p_action text, p_biz text default 'biza') returns text language sql as $$
+  select count(*)::text from public.audit_logs where action = p_action and business_id = pg_temp.id(p_biz)
 $$;
 create or replace function pg_temp.member(p_biz text, p_user text) returns uuid language sql as $$
   select id from public.business_members where business_id = pg_temp.id(p_biz) and user_id = pg_temp.id(p_user)
