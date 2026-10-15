@@ -15,9 +15,10 @@ Shared files:
 | Roles & permissions | roles.md | DB + app gating done | 1 | Catalogue, 4 system roles, scope-aware checks, `usePermission`/`useFeature`, nav + route gating |
 | Members & invites | members.md | done (Phase 1 scope) | 1 | Team list, invite with role + branch, one-time 7-day link, accept screen |
 | Billing & trial lock | billing.md | trial lock + banner done; plans Phase 8 | 1 | Inactive business locks the app; Settings/Billing/More stay reachable; 3-day warning banner |
-| Services (catalogue) | services.md | done (Phase 2 scope) | 2 | Categories, services, per-branch prices, resources |
-| Staff | staff.md | done (Phase 2 scope) | 2 | Staff profiles (login optional), branch + service assignment |
-| Schedule | schedule.md | done (Phase 2 scope) | 2 | Working hours, breaks, time off, branch hours, holidays, rooms |
+| Services (catalogue) | services.md | done (Phase 2 scope) + Feature 9 audit | 2 | Categories, services, per-branch prices, resources |
+| Staff | staff.md | done (Phase 2 scope) + Feature 10 audit | 2 | Staff profiles (login optional), branch + service assignment |
+| Schedule | schedule.md | done (Phase 2 scope) + Feature 10/11 audit | 2 | Working hours, breaks, time off, branch hours, holidays, rooms |
+| Branches (locations) | branches.md | done (Phase 9) + Feature 11 audit | 9 | Locations, locks (currency/timezone/prefix), archive/restore/primary, rooms double-booking |
 | Booking settings & form | booking-settings.md | DB + UI done | 3 | Per-branch settings (doc §6.2) + form builder, live preview, warnings, booking link |
 | Booking engine | booking-engine.md | backend complete, public UI done | 3 | Clients, appointments, no-double-booking, DST-correct slot engine, `create_booking` |
 | Booking public API | booking-public-api.md | deployed + verified | 3 | 5 Edge Functions, rate-limited and bot-protected — the only public path |

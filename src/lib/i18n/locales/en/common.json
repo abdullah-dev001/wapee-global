@@ -385,6 +385,17 @@
       "message_one": "{{count}} upcoming appointment falls inside this time off. It will stay on the calendar, but book this time off anyway?",
       "message_other": "{{count}} upcoming appointments fall inside this time off. They will stay on the calendar, but book this time off anyway?"
     },
+    "closureConflict": {
+      "message_one": "{{count}} upcoming appointment falls inside this closure. It will stay on the calendar, but close anyway?",
+      "message_other": "{{count}} upcoming appointments fall inside this closure. They will stay on the calendar, but close anyway?"
+    },
+    "resourceArchiveErrors": {
+      "futureAppointments_one": "{{count}} upcoming appointment is using this room. Move or cancel it first.",
+      "futureAppointments_other": "{{count}} upcoming appointments are using this room. Move or cancel them first.",
+      "futureAppointments": "This room has upcoming appointments. Move or cancel them first.",
+      "notFound": "This room no longer exists.",
+      "forbidden": "You don't have permission to do that"
+    },
     "cancelTimeOff": "Cancel this time off",
     "branchHours": "Opening hours",
     "branchHoursHint": "When this branch is open. Staff hours sit inside these.",

@@ -17,10 +17,12 @@ import {
   useToast,
 } from '@/components/ui';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
+import { RpcError } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
 import { type LocalDate } from '@/lib/time';
 
 import {
+  getBranchClosureConflicts,
   useBranchSchedule,
   useDeleteClosure,
   useDeleteResource,
@@ -28,7 +30,7 @@ import {
   useSaveClosure,
   useSaveResource,
 } from '../api/useBranchSchedule';
-import { scheduleErrorKey } from '../scheduleErrorKey';
+import { resourceArchiveErrorKey, scheduleErrorKey } from '../scheduleErrorKey';
 
 /** Holidays and closed days for the branch. */
 export function ClosuresList() {
@@ -48,6 +50,11 @@ export function ClosuresList() {
     startDate: null,
     endDate: null,
   });
+  // Set when the chosen closure range covers a future appointment: asks
+  // before saving rather than silently closing the branch on a day with a
+  // real booking (nothing is deleted either way — see branch_closure_conflicts).
+  const [conflictCount, setConflictCount] = useState<number | null>(null);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
 
   const formatter = new Intl.DateTimeFormat(i18n.language, {
     day: 'numeric',
@@ -57,6 +64,39 @@ export function ClosuresList() {
   });
 
   const closures = schedule.data?.closures ?? [];
+
+  const doSaveClosure = (startsOn: LocalDate, endsOn: LocalDate) => {
+    save.mutate(
+      { startsOn, endsOn, name: name.trim() },
+      {
+        onSuccess: () => {
+          toast.show({ message: t('schedule.saved'), tone: 'success' });
+          setAdding(false);
+          setName('');
+          setRange({ startDate: null, endDate: null });
+        },
+        onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
+      },
+    );
+  };
+
+  const onSubmitClosure = async () => {
+    if (!range.startDate || !range.endDate || !branchId) return;
+    setCheckingConflicts(true);
+    try {
+      const count = await getBranchClosureConflicts(branchId, range.startDate, range.endDate);
+      setCheckingConflicts(false);
+      if (count > 0) {
+        setConflictCount(count);
+        return;
+      }
+    } catch {
+      setCheckingConflicts(false);
+      // The check itself failing must not block a save the person can
+      // otherwise make; the save call below still validates normally.
+    }
+    doSaveClosure(range.startDate, range.endDate);
+  };
 
   return (
     <View style={styles.container}>
@@ -148,28 +188,32 @@ export function ClosuresList() {
 
           <Button
             fullWidth
-            loading={save.isPending}
+            loading={save.isPending || checkingConflicts}
             disabled={name.trim() === '' || !range.startDate || !range.endDate}
-            onPress={() => {
-              if (!range.startDate || !range.endDate) return;
-              save.mutate(
-                { startsOn: range.startDate, endsOn: range.endDate, name: name.trim() },
-                {
-                  onSuccess: () => {
-                    toast.show({ message: t('schedule.saved'), tone: 'success' });
-                    setAdding(false);
-                    setName('');
-                    setRange({ startDate: null, endDate: null });
-                  },
-                  onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
-                },
-              );
-            }}
+            onPress={onSubmitClosure}
           >
             {t('actions.save')}
           </Button>
         </View>
       </Drawer>
+
+      <Dialog
+        open={conflictCount !== null}
+        onClose={() => setConflictCount(null)}
+        title={t('schedule.hoursConflict.title')}
+        message={t('schedule.closureConflict.message', { count: conflictCount ?? 0 })}
+        busy={save.isPending}
+        confirm={{
+          label: t('schedule.hoursConflict.confirm'),
+          variant: 'danger',
+          onPress: () => {
+            if (!range.startDate || !range.endDate) return;
+            setConflictCount(null);
+            doSaveClosure(range.startDate, range.endDate);
+          },
+        }}
+        cancelLabel={t('actions.cancel')}
+      />
 
       <Dialog
         open={deleting !== null}
@@ -322,7 +366,11 @@ export function ResourcesList() {
             if (!deleting) return;
             remove.mutate(deleting, {
               onSuccess: () => setDeleting(null),
-              onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
+              onError: (error) => {
+                const count = error instanceof RpcError ? (error.extra.count as number) : 0;
+                const key = resourceArchiveErrorKey(error) ?? scheduleErrorKey(error);
+                toast.show({ message: t(key, { count }), tone: 'error' });
+              },
             });
           },
         }}

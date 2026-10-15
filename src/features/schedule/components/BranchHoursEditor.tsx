@@ -3,11 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { DayHoursRow, type DayInterval } from '@/components/shared';
-import { Button, ErrorState, Skeleton, Text, useToast } from '@/components/ui';
+import { Button, Dialog, ErrorState, Skeleton, Text, useToast } from '@/components/ui';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
-import { useBranchSchedule, useSaveBranchHours, type BranchHour } from '../api/useBranchSchedule';
+import {
+  getBranchHoursConflicts,
+  useBranchSchedule,
+  useSaveBranchHours,
+  type BranchHour,
+} from '../api/useBranchSchedule';
 import { scheduleErrorKey } from '../scheduleErrorKey';
 import { orderedWeekdays, weekdayNames, type DayOfWeek } from '../weekdays';
 
@@ -34,6 +39,11 @@ export function BranchHoursEditor() {
 
   const [draft, setDraft] = useState<Map<number, DayInterval[]> | null>(null);
   const [draftFor, setDraftFor] = useState<string | null>(null);
+  // Set when saving would leave future appointments (any staff member)
+  // outside the new hours: asks before saving rather than silently going
+  // ahead (nothing is deleted either way — see staff_schedule_conflicts).
+  const [conflictCount, setConflictCount] = useState<number | null>(null);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
 
   // Reset in render when the branch or the loaded data changes: no stale frame.
   if (schedule.data && (draft === null || draftFor !== branchId)) {
@@ -72,6 +82,45 @@ export function BranchHoursEditor() {
     setDraft(next);
   };
 
+  const currentIntervals = () =>
+    [...draft.entries()].flatMap(([day, list]) =>
+      list.map((interval) => ({
+        dayOfWeek: day,
+        startMinute: interval.startMinute,
+        endMinute: interval.endMinute,
+      })),
+    );
+
+  const doSave = (intervals: ReturnType<typeof currentIntervals>) => {
+    save.mutate(
+      { intervals },
+      {
+        onSuccess: () => toast.show({ message: t('schedule.saved'), tone: 'success' }),
+        onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
+      },
+    );
+  };
+
+  const onSave = async () => {
+    const intervals = currentIntervals();
+    if (branchId) {
+      setCheckingConflicts(true);
+      try {
+        const count = await getBranchHoursConflicts(branchId, intervals);
+        setCheckingConflicts(false);
+        if (count > 0) {
+          setConflictCount(count);
+          return;
+        }
+      } catch {
+        setCheckingConflicts(false);
+        // The check itself failing must not block a save the person can
+        // otherwise make; the save call below still validates normally.
+      }
+    }
+    doSave(intervals);
+  };
+
   return (
     <View style={styles.container}>
       <Text variant="helper" color="textSecondary">
@@ -91,30 +140,27 @@ export function BranchHoursEditor() {
       </View>
 
       {canEdit.allowed ? (
-        <Button
-          fullWidth
-          loading={save.isPending}
-          onPress={() =>
-            save.mutate(
-              {
-                intervals: [...draft.entries()].flatMap(([day, list]) =>
-                  list.map((interval) => ({
-                    dayOfWeek: day,
-                    startMinute: interval.startMinute,
-                    endMinute: interval.endMinute,
-                  })),
-                ),
-              },
-              {
-                onSuccess: () => toast.show({ message: t('schedule.saved'), tone: 'success' }),
-                onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
-              },
-            )
-          }
-        >
+        <Button fullWidth loading={save.isPending || checkingConflicts} onPress={onSave}>
           {t('actions.save')}
         </Button>
       ) : null}
+
+      <Dialog
+        open={conflictCount !== null}
+        onClose={() => setConflictCount(null)}
+        title={t('schedule.hoursConflict.title')}
+        message={t('schedule.hoursConflict.message', { count: conflictCount ?? 0 })}
+        busy={save.isPending}
+        confirm={{
+          label: t('schedule.hoursConflict.confirm'),
+          variant: 'danger',
+          onPress: () => {
+            setConflictCount(null);
+            doSave(currentIntervals());
+          },
+        }}
+        cancelLabel={t('actions.cancel')}
+      />
     </View>
   );
 }

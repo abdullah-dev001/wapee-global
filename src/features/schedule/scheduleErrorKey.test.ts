@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SCHEDULE_ERROR_KEYS, scheduleErrorKey } from './scheduleErrorKey';
+import { SCHEDULE_ERROR_KEYS, resourceArchiveErrorKey, scheduleErrorKey } from './scheduleErrorKey';
 
 function errorWithCode(code: string): Error {
   const error = new Error('raw db text') as Error & { code?: string };
@@ -33,5 +33,28 @@ describe('scheduleErrorKey', () => {
     expect(scheduleErrorKey(errorWithCode('99999'))).toBe(SCHEDULE_ERROR_KEYS.unknown);
     expect(scheduleErrorKey(new Error('boom'))).toBe(SCHEDULE_ERROR_KEYS.unknown);
     expect(scheduleErrorKey(null)).toBe(SCHEDULE_ERROR_KEYS.unknown);
+  });
+});
+
+describe('resourceArchiveErrorKey', () => {
+  it('maps future_appointments to a specific key', () => {
+    expect(resourceArchiveErrorKey(errorWithCode('future_appointments'))).toBe(
+      'schedule.resourceArchiveErrors.futureAppointments',
+    );
+  });
+
+  it('maps not_found and forbidden', () => {
+    expect(resourceArchiveErrorKey(errorWithCode('not_found'))).toBe(
+      'schedule.resourceArchiveErrors.notFound',
+    );
+    expect(resourceArchiveErrorKey(errorWithCode('forbidden'))).toBe(
+      'schedule.resourceArchiveErrors.forbidden',
+    );
+  });
+
+  it('returns null for an unrecognised code or no code (caller falls back)', () => {
+    expect(resourceArchiveErrorKey(errorWithCode('99999'))).toBeNull();
+    expect(resourceArchiveErrorKey(new Error('boom'))).toBeNull();
+    expect(resourceArchiveErrorKey(null)).toBeNull();
   });
 });

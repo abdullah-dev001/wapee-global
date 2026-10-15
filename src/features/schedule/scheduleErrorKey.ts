@@ -49,3 +49,24 @@ export function scheduleErrorKey(error: unknown): ScheduleErrorKey {
       return SCHEDULE_ERROR_KEYS.unknown;
   }
 }
+
+const RESOURCE_ARCHIVE_ERROR_KEYS = {
+  future_appointments: 'schedule.resourceArchiveErrors.futureAppointments',
+  not_found: 'schedule.resourceArchiveErrors.notFound',
+  forbidden: 'schedule.resourceArchiveErrors.forbidden',
+} as const;
+
+/**
+ * i18n key for a code returned by `archive_resource` (the `{ok:false,code}`
+ * convention via `RpcError`, a different code space than the Postgres
+ * SQLSTATEs `scheduleErrorKey` handles), or null for anything else.
+ */
+export function resourceArchiveErrorKey(
+  error: unknown,
+): (typeof RESOURCE_ARCHIVE_ERROR_KEYS)[keyof typeof RESOURCE_ARCHIVE_ERROR_KEYS] | null {
+  const code = codeOf(error);
+  if (code && code in RESOURCE_ARCHIVE_ERROR_KEYS) {
+    return RESOURCE_ARCHIVE_ERROR_KEYS[code as keyof typeof RESOURCE_ARCHIVE_ERROR_KEYS];
+  }
+  return null;
+}

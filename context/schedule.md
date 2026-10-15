@@ -1,5 +1,5 @@
 # Schedule
-Status: done (Phase 2 scope) + Feature 10 audit · Phase: 2 · Last updated: 2026-10-15
+Status: done (Phase 2 scope) + Feature 10/11 audit · Phase: 2 · Last updated: 2026-10-16
 
 ## What it does
 When people and places are available: recurring weekly hours per staff per branch,
@@ -50,8 +50,10 @@ what the Phase 3 slot engine reads to decide what a customer may book.
 | src/features/schedule/components/ClosuresList.tsx | Holidays, and the rooms list |
 | src/features/schedule/weekdays.ts (+ test) | Locale weekday names and week start |
 | src/components/shared/Calendar.tsx · calendarGrid.ts (+ test) | Month grid used by `DateRangePicker` on native (see _foundation.md) |
-| src/features/schedule/scheduleErrorKey.ts (+ test) | NEW: raw-error-text mapper for every schedule write |
-| supabase/migrations/20261024130000_schedule_appointment_conflicts.sql | NEW: `staff_schedule_conflicts`, `staff_time_off_conflicts` (warn-before-save) |
+| src/features/schedule/scheduleErrorKey.ts (+ test) | `scheduleErrorKey` + NEW `resourceArchiveErrorKey` |
+| supabase/migrations/20261024130000_schedule_appointment_conflicts.sql | `staff_schedule_conflicts`, `staff_time_off_conflicts` (warn-before-save) |
+| supabase/migrations/20261024140000_branch_appointment_conflicts.sql | NEW: `branch_hours_conflicts`, `branch_closure_conflicts` (warn-before-save) |
+| supabase/migrations/20261024150000_archive_resource.sql | NEW: `resource_archive_blockers`, `archive_resource` RPC |
 
 ## Database
 | Table | Key columns |
@@ -167,14 +169,19 @@ Advisors: security 0 errors, performance 0 warnings.
 ## Known limits / TODO
 - Time off is always whole days; no half-day or specific-hours absence, and
   `is_all_day` is always written true.
-- Resources have no capacity editor (always 1) and no service linking UI; the
-  `service_resources` table is ready for Phase 3.
+- Resources have no capacity editor in the UI (always 1 at creation; the DB
+  column supports more) and no service-linking UI (`service_resources` has no
+  screen) — **confirmed this round (2026-10-16) that resources are otherwise
+  LIVE**: `use_resources` is toggleable in Booking Settings today, the slot
+  engine consumes capacity and `service_resources` correctly, and the
+  double-booking exclusion constraint is real. Only the capacity/linking EDIT
+  UI is still missing, not the backend. Not fixed (not asked for).
 - A break outside the working day is still accepted (see below) — **confirmed
   live again (2026-10-15)**, still cosmetic, still not fixed (not asked for).
 - `supabase/tests/05_catalogue_and_schedule.sql` **now runs as a suite** (via
-  `run_pgtap.py`, no Docker needed) — 23/23, re-verified 2026-10-14 and
-  2026-10-15. The `plan(23)` count is confirmed, not just the individual
-  assertions.
+  `run_pgtap.py`, no Docker needed) — 27/27 (was 23), re-verified 2026-10-14,
+  2026-10-15, 2026-10-16. The `plan(27)` count is confirmed, not just the
+  individual assertions.
 - No overnight shifts (see above).
 - Breaks are not validated against working hours: a break outside the shift is
   allowed and simply has no effect. The slot engine intersects them anyway, so
@@ -200,7 +207,33 @@ schedule edit is common). DST itself was re-verified correct and unrelated to
 either bug: a shift's UTC instant correctly shifts by exactly one hour across
 the November 2026 fall-back.
 
+## Feature 11 audit (2026-10-16)
+See [branches.md](branches.md) for the full writeup (branch lifecycle, locks,
+RLS). Specific to THIS file's own code: the exact same "no warning on an
+hours/closure change" gap Feature 10 fixed for a staff member's own hours
+applied to the BRANCH's opening hours and closures too, with a bigger blast
+radius (every staff member at that branch, not just one). New read-only
+`branch_hours_conflicts(p_branch_id, p_intervals)` /
+`branch_closure_conflicts(p_branch_id, p_starts_on, p_ends_on)` (migration
+`20261024140000`), wired into `BranchHoursEditor` and `ClosuresList`'s
+closure-add flow with the same warn-and-confirm dialog as the staff version.
+Proven live against a real fixture appointment (same mechanics as Feature
+10's proof): hours/closures excluding or covering it count 1 conflict; ones
+that don't count 0. Also fixed: archiving a resource (room/chair/bay) was a
+bare `update ... deleted_at`, no RPC, no check for future appointments —
+`use_resources` is genuinely reachable in Booking Settings today (not a
+stub), so this is the same "archive X with future appointments" class as
+`archive_branch`/`archive_staff` (a hard refusal, since archiving actually
+removes something, unlike an hours edit). New `resource_archive_blockers` +
+`archive_resource` RPC (migration `20261024150000`), proven live with a real
+resource + a real future appointment assigned to it. Suite 05 gained 4
+assertions for the branch-hours/closure conflict functions (27/27, was 23) —
+while writing them, caught the test's OWN DST-naive bug (assumed UTC
+midnight = London local midnight in October, when BST is UTC+1), same trap
+the production code already avoids correctly.
+
 ## Changelog
+- 2026-10-16: Feature 11 audit — see "Feature 11 audit" above.
 - 2026-10-15: Feature 10 audit — see "Feature 10 audit" above.
 - 2026-10-20: Staff with no working hours at a branch get ZERO slots (engine has no fallback to branch hours). Now flagged: `branch_is_bookable` reason `no_staff_hours` (migration `20261020120000`), Staff list badge + "Set working hours" button in the edit panel (`staffHours.ts`).
 - 2026-10-02: Schedule UI: per-person week editor (from the Staff screen), branch hours, time off, holidays, rooms. Locale weekday names from Intl with a timezone-shift guard.

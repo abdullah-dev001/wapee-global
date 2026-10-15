@@ -5325,6 +5325,7 @@ export type Database = {
       appointment_forms: { Args: { p_appointment_id: string }; Returns: Json }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       archive_branch: { Args: { p_branch_id: string }; Returns: Json }
+      archive_resource: { Args: { p_resource_id: string }; Returns: Json }
       archive_staff: { Args: { p_staff_id: string }; Returns: Json }
       assign_member_role: {
         Args: { p_branch_id?: string; p_member_id: string; p_role_id: string }
@@ -5342,6 +5343,14 @@ export type Database = {
       bp_of: { Args: { p_part: number; p_whole: number }; Returns: number }
       branch_admin_gate: { Args: { p_business_id: string }; Returns: Json }
       branch_archive_blockers: { Args: { p_branch_id: string }; Returns: Json }
+      branch_closure_conflicts: {
+        Args: { p_branch_id: string; p_ends_on: string; p_starts_on: string }
+        Returns: number
+      }
+      branch_hours_conflicts: {
+        Args: { p_branch_id: string; p_intervals: Json }
+        Returns: number
+      }
       branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
       branch_metrics: {
         Args: {
@@ -6452,6 +6461,10 @@ export type Database = {
         Returns: Json
       }
       resolve_manage_token: { Args: { p_token: string }; Returns: string }
+      resource_archive_blockers: {
+        Args: { p_resource_id: string }
+        Returns: Json
+      }
       restore_branch: { Args: { p_branch_id: string }; Returns: Json }
       retry_message: { Args: { p_outbox_id: string }; Returns: Json }
       reverse_payment: {
