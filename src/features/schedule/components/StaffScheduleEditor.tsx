@@ -3,11 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { DayHoursRow, type DayInterval } from '@/components/shared';
-import { Button, Skeleton, Tabs, Text, useToast } from '@/components/ui';
+import { Button, Dialog, Skeleton, Tabs, Text, useToast } from '@/components/ui';
 import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
-import { useSaveStaffSchedule, useStaffSchedule, type ScheduleInterval } from '../api/useSchedule';
+import {
+  getStaffScheduleConflicts,
+  useSaveStaffSchedule,
+  useStaffSchedule,
+  type ScheduleInterval,
+} from '../api/useSchedule';
+import { scheduleErrorKey } from '../scheduleErrorKey';
 import { orderedWeekdays, weekdayNames, type DayOfWeek } from '../weekdays';
 
 type Which = 'hours' | 'breaks';
@@ -46,6 +52,12 @@ export function StaffScheduleEditor({ staffId, onDone }: { staffId: string; onDo
   // null until loaded, so an edit is never applied to an empty week.
   const [draft, setDraft] = useState<Map<number, DayInterval[]> | null>(null);
   const [draftFor, setDraftFor] = useState<{ staffId: string; which: Which } | null>(null);
+  // Set when saving the draft hours would leave future appointments outside
+  // them: asks before saving rather than silently going ahead (nothing is
+  // deleted either way, so this warns rather than refusing — see the
+  // migration this reads, staff_schedule_conflicts).
+  const [conflictCount, setConflictCount] = useState<number | null>(null);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
 
   const stored = which === 'hours' ? schedule.data?.workingHours : schedule.data?.breaks;
 
@@ -76,8 +88,8 @@ export function StaffScheduleEditor({ staffId, onDone }: { staffId: string; onDo
     setDraft(next);
   };
 
-  const onSave = () => {
-    const intervals = [...draft.entries()].flatMap(([day, list]) =>
+  const currentIntervals = () =>
+    [...draft.entries()].flatMap(([day, list]) =>
       list.map((interval) => ({
         dayOfWeek: day,
         startMinute: interval.startMinute,
@@ -85,6 +97,7 @@ export function StaffScheduleEditor({ staffId, onDone }: { staffId: string; onDo
       })),
     );
 
+  const doSave = (intervals: ReturnType<typeof currentIntervals>) => {
     save.mutate(
       {
         staffId,
@@ -96,11 +109,35 @@ export function StaffScheduleEditor({ staffId, onDone }: { staffId: string; onDo
           toast.show({ message: t('schedule.saved'), tone: 'success' });
           onDone();
         },
-        // The DB refuses overlaps and overnight shifts; surface that verbatim
-        // rather than guessing which row was at fault.
-        onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+        // The DB refuses overlaps and overnight shifts; map the code rather
+        // than showing raw server text (CLAUDE.md: zero hard-coded strings).
+        onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
       },
     );
+  };
+
+  const onSave = async () => {
+    const intervals = currentIntervals();
+
+    // Only working hours can leave a future appointment stranded outside
+    // them; breaks are fine-grained and already tolerated outside hours
+    // with no effect (context/schedule.md).
+    if (which === 'hours' && branchId) {
+      setCheckingConflicts(true);
+      try {
+        const count = await getStaffScheduleConflicts(staffId, branchId, intervals);
+        setCheckingConflicts(false);
+        if (count > 0) {
+          setConflictCount(count);
+          return;
+        }
+      } catch {
+        setCheckingConflicts(false);
+        // The check itself failing must not block a save the person can
+        // otherwise make; the save call below still validates normally.
+      }
+    }
+    doSave(intervals);
   };
 
   return (
@@ -131,9 +168,26 @@ export function StaffScheduleEditor({ staffId, onDone }: { staffId: string; onDo
         ))}
       </View>
 
-      <Button onPress={onSave} loading={save.isPending} fullWidth>
+      <Button onPress={onSave} loading={save.isPending || checkingConflicts} fullWidth>
         {t('actions.save')}
       </Button>
+
+      <Dialog
+        open={conflictCount !== null}
+        onClose={() => setConflictCount(null)}
+        title={t('schedule.hoursConflict.title')}
+        message={t('schedule.hoursConflict.message', { count: conflictCount ?? 0 })}
+        busy={save.isPending}
+        confirm={{
+          label: t('schedule.hoursConflict.confirm'),
+          variant: 'danger',
+          onPress: () => {
+            setConflictCount(null);
+            doSave(currentIntervals());
+          },
+        }}
+        cancelLabel={t('actions.cancel')}
+      />
     </View>
   );
 }

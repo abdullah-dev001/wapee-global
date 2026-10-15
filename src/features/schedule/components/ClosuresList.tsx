@@ -10,6 +10,7 @@ import {
   Dialog,
   Drawer,
   EmptyState,
+  ErrorState,
   Input,
   Skeleton,
   Text,
@@ -27,6 +28,7 @@ import {
   useSaveClosure,
   useSaveResource,
 } from '../api/useBranchSchedule';
+import { scheduleErrorKey } from '../scheduleErrorKey';
 
 /** Holidays and closed days for the branch. */
 export function ClosuresList() {
@@ -64,7 +66,14 @@ export function ClosuresList() {
         </Button>
       ) : null}
 
-      {schedule.isPending ? (
+      {schedule.isError ? (
+        <ErrorState
+          title={t('schedule.error.title')}
+          description={t(scheduleErrorKey(schedule.error))}
+          onRetry={() => void schedule.refetch()}
+          retryLabel={t('actions.retry')}
+        />
+      ) : schedule.isPending ? (
         <Card noPadding>
           {[0, 1].map((row) => (
             <View key={row} style={styles.row}>
@@ -152,7 +161,7 @@ export function ClosuresList() {
                     setName('');
                     setRange({ startDate: null, endDate: null });
                   },
-                  onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+                  onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
                 },
               );
             }}
@@ -172,7 +181,10 @@ export function ClosuresList() {
           variant: 'danger',
           onPress: () => {
             if (!deleting) return;
-            remove.mutate(deleting, { onSuccess: () => setDeleting(null) });
+            remove.mutate(deleting, {
+              onSuccess: () => setDeleting(null),
+              onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
+            });
           },
         }}
         cancelLabel={t('actions.cancel')}
@@ -216,7 +228,14 @@ export function ResourcesList() {
         </Button>
       ) : null}
 
-      {resources.isPending ? (
+      {resources.isError ? (
+        <ErrorState
+          title={t('schedule.error.title')}
+          description={t(scheduleErrorKey(resources.error))}
+          onRetry={() => void resources.refetch()}
+          retryLabel={t('actions.retry')}
+        />
+      ) : resources.isPending ? (
         <Card noPadding>
           <View style={styles.row}>
             <Skeleton height={18} width="50%" radius="sm" />
@@ -281,7 +300,7 @@ export function ResourcesList() {
                     setAdding(false);
                     setName('');
                   },
-                  onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+                  onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
                 },
               )
             }
@@ -301,7 +320,10 @@ export function ResourcesList() {
           variant: 'danger',
           onPress: () => {
             if (!deleting) return;
-            remove.mutate(deleting, { onSuccess: () => setDeleting(null) });
+            remove.mutate(deleting, {
+              onSuccess: () => setDeleting(null),
+              onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
+            });
           },
         }}
         cancelLabel={t('actions.cancel')}

@@ -62,13 +62,28 @@ export function DayView({
   const pagePadding = usePagePadding();
   const canViewAllStaff = usePermission('calendar.view_all_staff');
   const myStaffProfile = useMyStaffProfile(businessId);
-  const staff = useStaff(businessId, branchId, { includeInactive: false });
+  // includeInactive: true, then filtered below — an inactive staff member must
+  // still get a column on a day where they have an appointment, or that
+  // appointment becomes invisible on this view (it is not cancelled, just
+  // unreachable here). Deactivating someone must never silently orphan their
+  // existing bookings this way.
+  const staff = useStaff(businessId, branchId, { includeInactive: true });
   const branchSchedule = useBranchSchedule(businessId, branchId);
   const dayShading = useDayShading(businessId, branchId, date, timeZone);
   const calendar = useCalendarAppointments(businessId, branchId, date, date, null, { live: true });
 
   const isOwnScopeOnly = !canViewAllStaff.allowed;
-  const allStaff = useMemo(() => staff.data ?? [], [staff.data]);
+  const staffWithAppointmentsToday = useMemo(
+    () => new Set((calendar.data?.rows ?? []).map((row) => row.staffId)),
+    [calendar.data],
+  );
+  const allStaff = useMemo(
+    () =>
+      (staff.data ?? []).filter(
+        (member) => member.isActive || staffWithAppointmentsToday.has(member.id),
+      ),
+    [staff.data, staffWithAppointmentsToday],
+  );
   const visibleStaff = useMemo(() => {
     if (!isOwnScopeOnly) return allStaff;
     return allStaff.filter((member) => member.id === myStaffProfile.data);
@@ -128,7 +143,9 @@ export function DayView({
           <Select
             options={visibleStaff.map((member) => ({
               value: member.id,
-              label: member.displayName,
+              label: member.isActive
+                ? member.displayName
+                : `${member.displayName} (${t('staff.inactive')})`,
             }))}
             value={activeStaffId}
             onChange={setMobileStaffId}
@@ -178,7 +195,9 @@ export function DayView({
 
               return {
                 staffId: member.id,
-                staffName: member.displayName,
+                staffName: member.isActive
+                  ? member.displayName
+                  : `${member.displayName} (${t('staff.inactive')})`,
                 appointments,
                 workingIntervals,
                 closedIntervals: shading?.closedIntervals ?? [],

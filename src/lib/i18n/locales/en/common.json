@@ -375,6 +375,16 @@
     "timeOffReason": "Reason",
     "timeOffReasonPlaceholder": "Optional, e.g. Holiday",
     "staffMember": "Staff member",
+    "hoursConflict": {
+      "title": "This affects existing bookings",
+      "message_one": "{{count}} upcoming appointment falls outside these hours. It will stay on the calendar, but save anyway?",
+      "message_other": "{{count}} upcoming appointments fall outside these hours. They will stay on the calendar, but save anyway?",
+      "confirm": "Save anyway"
+    },
+    "timeOffConflict": {
+      "message_one": "{{count}} upcoming appointment falls inside this time off. It will stay on the calendar, but book this time off anyway?",
+      "message_other": "{{count}} upcoming appointments fall inside this time off. They will stay on the calendar, but book this time off anyway?"
+    },
     "cancelTimeOff": "Cancel this time off",
     "branchHours": "Opening hours",
     "branchHoursHint": "When this branch is open. Staff hours sit inside these.",
@@ -388,6 +398,14 @@
     },
     "error": {
       "title": "Could not load the schedule"
+    },
+    "errors": {
+      "overlap": "That overlaps an existing time. Adjust it and try again.",
+      "invalidInterval": "That time isn't valid. Check the start and end.",
+      "duplicateName": "That name is already used here",
+      "forbidden": "You don't have permission to do that",
+      "invalidInput": "Check the details and try again",
+      "unknown": "Something went wrong. Try again."
     },
     "resources": "Rooms",
     "resourcesHint": "Rooms, chairs or bays. These are saved now but do not affect bookings until the booking engine arrives.",
@@ -527,7 +545,16 @@
       "nameRequired": "Enter a name",
       "nameTooLong": "That name is too long",
       "jobTitleTooLong": "That job title is too long",
-      "phoneTooLong": "That phone number is too long"
+      "phoneTooLong": "That phone number is too long",
+      "forbidden": "You don't have permission to do that",
+      "unknown": "Something went wrong. Try again."
+    },
+    "archiveErrors": {
+      "futureAppointments_one": "This person has {{count}} upcoming booking. Move or cancel it first.",
+      "futureAppointments_other": "This person has {{count}} upcoming bookings. Move or cancel them first.",
+      "futureAppointments": "This person has upcoming bookings. Move or cancel them first.",
+      "notFound": "This staff profile no longer exists.",
+      "forbidden": "You don't have permission to do that"
     },
     "login": {
       "label": "App login",

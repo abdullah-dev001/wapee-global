@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { DayHoursRow, type DayInterval } from '@/components/shared';
-import { Button, Skeleton, Text, useToast } from '@/components/ui';
+import { Button, ErrorState, Skeleton, Text, useToast } from '@/components/ui';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useBranchSchedule, useSaveBranchHours, type BranchHour } from '../api/useBranchSchedule';
+import { scheduleErrorKey } from '../scheduleErrorKey';
 import { orderedWeekdays, weekdayNames, type DayOfWeek } from '../weekdays';
 
 function toDayMap(hours: readonly BranchHour[]): Map<number, DayInterval[]> {
@@ -38,6 +39,17 @@ export function BranchHoursEditor() {
   if (schedule.data && (draft === null || draftFor !== branchId)) {
     setDraft(toDayMap(schedule.data.hours));
     setDraftFor(branchId);
+  }
+
+  if (schedule.isError) {
+    return (
+      <ErrorState
+        title={t('schedule.error.title')}
+        description={t(scheduleErrorKey(schedule.error))}
+        onRetry={() => void schedule.refetch()}
+        retryLabel={t('actions.retry')}
+      />
+    );
   }
 
   if (schedule.isPending || draft === null) {
@@ -95,7 +107,7 @@ export function BranchHoursEditor() {
               },
               {
                 onSuccess: () => toast.show({ message: t('schedule.saved'), tone: 'success' }),
-                onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+                onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
               },
             )
           }

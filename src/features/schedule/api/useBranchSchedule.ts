@@ -52,8 +52,8 @@ export function useBranchSchedule(
           .order('starts_on'),
       ]);
 
-      if (hours.error) throw new Error(hours.error.message);
-      if (closures.error) throw new Error(closures.error.message);
+      if (hours.error) throw Object.assign(new Error(hours.error.message), { code: hours.error.code });
+      if (closures.error) throw Object.assign(new Error(closures.error.message), { code: closures.error.code });
 
       return {
         hours: (hours.data ?? []).map((row) => ({
@@ -101,7 +101,7 @@ export function useSaveBranchHours(businessId: string | null, branchId: string |
         })),
       });
 
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return data ?? 0;
     },
     onSuccess: () => {
@@ -134,7 +134,7 @@ export function useSaveClosure(businessId: string | null, branchId: string | nul
         })
         .select('id')
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return data.id;
     },
     onSuccess: () => {
@@ -152,7 +152,7 @@ export function useDeleteClosure(businessId: string | null) {
   return useMutation<undefined, Error, string>({
     mutationFn: async (id) => {
       const { error } = await getSupabase().from('branch_closures').delete().eq('id', id);
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return undefined;
     },
     onSuccess: () => {
@@ -193,7 +193,7 @@ export function useResources(
         .eq('branch_id', branchId ?? '')
         .is('deleted_at', null)
         .order('name');
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return (data ?? []).map((row) => ({
         id: row.id,
         name: row.name,
@@ -216,7 +216,7 @@ export function useSaveResource(businessId: string | null, branchId: string | nu
         .insert({ business_id: businessId, branch_id: branchId, name, capacity })
         .select('id')
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return data.id;
     },
     onSuccess: () => {
@@ -237,7 +237,7 @@ export function useDeleteResource(businessId: string | null) {
         .from('resources')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id);
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return undefined;
     },
     onSuccess: () => {

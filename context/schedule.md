@@ -1,5 +1,5 @@
 # Schedule
-Status: done (Phase 2 scope) · Phase: 2 · Last updated: 2026-10-02
+Status: done (Phase 2 scope) + Feature 10 audit · Phase: 2 · Last updated: 2026-10-15
 
 ## What it does
 When people and places are available: recurring weekly hours per staff per branch,
@@ -50,6 +50,8 @@ what the Phase 3 slot engine reads to decide what a customer may book.
 | src/features/schedule/components/ClosuresList.tsx | Holidays, and the rooms list |
 | src/features/schedule/weekdays.ts (+ test) | Locale weekday names and week start |
 | src/components/shared/Calendar.tsx · calendarGrid.ts (+ test) | Month grid used by `DateRangePicker` on native (see _foundation.md) |
+| src/features/schedule/scheduleErrorKey.ts (+ test) | NEW: raw-error-text mapper for every schedule write |
+| supabase/migrations/20261024130000_schedule_appointment_conflicts.sql | NEW: `staff_schedule_conflicts`, `staff_time_off_conflicts` (warn-before-save) |
 
 ## Database
 | Table | Key columns |
@@ -167,17 +169,39 @@ Advisors: security 0 errors, performance 0 warnings.
   `is_all_day` is always written true.
 - Resources have no capacity editor (always 1) and no service linking UI; the
   `service_resources` table is ready for Phase 3.
-- A break outside the working day is still accepted (see below).
-- **`supabase/tests/05_catalogue_and_schedule.sql` has never run as a suite** (no
-  Docker), so its `plan(20)` count is unverified even though the assertions were
-  checked individually.
+- A break outside the working day is still accepted (see below) — **confirmed
+  live again (2026-10-15)**, still cosmetic, still not fixed (not asked for).
+- `supabase/tests/05_catalogue_and_schedule.sql` **now runs as a suite** (via
+  `run_pgtap.py`, no Docker needed) — 23/23, re-verified 2026-10-14 and
+  2026-10-15. The `plan(23)` count is confirmed, not just the individual
+  assertions.
 - No overnight shifts (see above).
 - Breaks are not validated against working hours: a break outside the shift is
   allowed and simply has no effect. The slot engine intersects them anyway, so
-  this is cosmetic — worth a UI warning.
+  this is cosmetic — worth a UI warning. Not fixed (not asked for).
 - Time off has no approval workflow (deliberate, see Business rules).
 
+## Feature 10 audit (2026-10-15)
+See [staff.md](staff.md) for the full writeup — the three real "never silently
+orphan a booking" bugs (Calendar grid hiding an inactive staff member's
+appointment, no archive refusal, no warning on an hours/time-off change) and
+the raw-error-text fix across this whole feature live there, since the brief
+grouped staff and schedule as one audit. Specific to THIS file's own code:
+**time off was stored at UTC midnight of the chosen date, not the branch's
+local midnight** — `TimeOffList.tsx` now uses the already-existing
+`dayRangeUtc()` helper (`lib/time`, already DST-tested) instead of
+`` `${date}T00:00:00.000Z` ``. Proven live: the old value did not cover 23:30
+local time on the intended day off; the fix does. New read-only
+`staff_schedule_conflicts(p_staff_id, p_branch_id, p_intervals)` /
+`staff_time_off_conflicts(p_staff_id, p_starts_at, p_ends_at)` (migration
+`20261024130000`) — called before `replace_staff_working_hours` / booking time
+off, never a hard refusal (decided with the user: nothing is actually lost, a
+schedule edit is common). DST itself was re-verified correct and unrelated to
+either bug: a shift's UTC instant correctly shifts by exactly one hour across
+the November 2026 fall-back.
+
 ## Changelog
+- 2026-10-15: Feature 10 audit — see "Feature 10 audit" above.
 - 2026-10-20: Staff with no working hours at a branch get ZERO slots (engine has no fallback to branch hours). Now flagged: `branch_is_bookable` reason `no_staff_hours` (migration `20261020120000`), Staff list badge + "Set working hours" button in the edit panel (`staffHours.ts`).
 - 2026-10-02: Schedule UI: per-person week editor (from the Staff screen), branch hours, time off, holidays, rooms. Locale weekday names from Intl with a timezone-shift guard.
 - 2026-10-02: Schedule schema: working hours, breaks, time off, branch hours, closures; 5 exclusion constraints; Own-scope RLS; minute-of-day helpers + tests.

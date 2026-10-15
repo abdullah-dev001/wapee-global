@@ -5325,6 +5325,7 @@ export type Database = {
       appointment_forms: { Args: { p_appointment_id: string }; Returns: Json }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       archive_branch: { Args: { p_branch_id: string }; Returns: Json }
+      archive_staff: { Args: { p_staff_id: string }; Returns: Json }
       assign_member_role: {
         Args: { p_branch_id?: string; p_member_id: string; p_role_id: string }
         Returns: Json
@@ -6666,6 +6667,7 @@ export type Database = {
           out_units: number
         }[]
       }
+      staff_archive_blockers: { Args: { p_staff_id: string }; Returns: Json }
       staff_in_scope: {
         Args: {
           p_business_id: string
@@ -6673,6 +6675,14 @@ export type Database = {
           p_staff_id: string
         }
         Returns: boolean
+      }
+      staff_schedule_conflicts: {
+        Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
+        Returns: number
+      }
+      staff_time_off_conflicts: {
+        Args: { p_ends_at: string; p_staff_id: string; p_starts_at: string }
+        Returns: number
       }
       submit_form_request: {
         Args: {

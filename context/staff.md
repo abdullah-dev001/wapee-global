@@ -1,5 +1,5 @@
 # Staff
-Status: done (Phase 2 scope + login link) · Phase: 2 · Last updated: 2026-10-22
+Status: done (Phase 2 scope + login link) + Feature 10 audit · Phase: 2 · Last updated: 2026-10-15
 
 ## What it does
 The people who perform services. A staff member is a profile, not necessarily an
@@ -37,6 +37,8 @@ Also records which branches they work at and which services they perform.
 | src/features/staff/staffLogin.ts | Login picker options (members not taken by another profile) + link error keys |
 | supabase/migrations/20261022090000_staff_member_link.sql | `link_staff_member`, `add_me_as_staff`, `invite_member` + staff, guard + release triggers |
 | supabase/tests/37_staff_member_link.sql | 57 assertions (link rules, guard, invite -> accept, add-me, own scope, push recipients) |
+| supabase/migrations/20261024120000_archive_staff.sql | `staff_archive_blockers`, `archive_staff` RPC (mirrors `archive_branch`) |
+| src/features/staff/staffLogin.ts | Also: `archiveErrorKey`, `staffErrorKey` (generic fallback) |
 
 ## Database
 | Table | Key columns |
@@ -106,10 +108,100 @@ Against the live database, in rolled-back transactions:
   the owner invites from Members and may pick the profile there, or picks an
   existing member in the staff form.
 - No reordering (`sort_order` exists but nothing sets it).
-- `useSaveStaff` is not atomic (see above).
+- `useSaveStaff` is not atomic (confirmed again this round, not fixed — see
+  below; recoverable, does not corrupt anything).
 - No avatar/photo (needs the files add-on, Phase 8).
+- A staff member with zero assigned services/staff shows no badge calling that
+  out (unlike "no working hours"); not fixed — not asked for, and the slot
+  engine already makes them unbookable by construction.
+- Breaks outside a person's working hours are silently accepted and have no
+  effect (confirmed live again this round) — a pre-existing, documented,
+  cosmetic limitation in [schedule.md](schedule.md), not fixed here.
+
+## Feature 10 audit (2026-10-15)
+Full trace of create/edit/archive for staff profiles, the login link, working
+hours/breaks/time off/branch hours/closures/resources, the slot engine's DST
+handling, and the Calendar's staff-column visibility. Verified LIVE against
+dev inside rolled-back transactions; no data left behind.
+
+**Confirmed correct, no bug:**
+- `useSaveStaff`'s rollback-the-new-profile-on-cap-refusal logic (so a staff
+  cap rejection never leaves an active profile assigned to no branch).
+- The slot engine's DST handling: a shift stored as "9:00–17:00 local" resolves
+  to the correct UTC instant on both sides of the November 2026 fall-back
+  (13:00 UTC before, 14:00 UTC after — the correct 1-hour shift), proven live
+  with a real staff fixture.
+- Breaks correctly block their exact interval in `get_free_slots` (11:45–12:45
+  unavailable around a 12:00–13:00 lunch break on a 30-minute service) and
+  resume cleanly outside it.
+- The overnight-shift CHECK and the overlap exclusion constraint both still
+  refuse as documented.
+- `is_active` already correctly blocks a NEW booking or reschedule onto that
+  person (`create_appointment`/`update_appointment`); it never touches an
+  EXISTING appointment's own `staff_id`.
+
+**Three real bugs found and fixed**, all in the "never silently orphan a
+booking" area the brief asked about directly:
+1. **Deactivating a staff member hid their existing future appointments from
+   the Calendar Day/Week grid entirely.** `DayView` fetched staff with
+   `includeInactive: false`, so an inactive person got no column at all — any
+   appointment still pointing at them (never deleted, never touched) became
+   unreachable on that view, while still showing correctly in the List view's
+   filter (which already used `includeInactive: true`). Fixed: `DayView` now
+   includes an inactive staff member's column on any day they still have an
+   appointment, labelled "(Inactive)" so it is never mistaken for someone
+   still bookable.
+2. **There was no refusal at all for archiving a staff member with future
+   appointments** — only a bare `update staff_profiles set deleted_at = ...`,
+   RLS as the sole boundary, unlike `archive_branch`/`branch_archive_blockers`
+   for a branch. Fixed with the same shape: `staff_archive_blockers` +
+   `archive_staff` RPC (migration `20261024120000`), refusing with a count
+   when the person has a future pending/confirmed appointment. Verified live
+   (`not_found`/`forbidden` paths over a real call; the blocker function
+   itself proven with a real future-appointment fixture).
+3. **Saving reduced hours or new time off had no idea existing future
+   appointments existed at all** — decided with the user: warn with a count
+   and let the owner proceed (nothing is actually lost; a schedule edit is
+   common, unlike archiving). New read-only `staff_schedule_conflicts` /
+   `staff_time_off_conflicts` (same migration), called by
+   `StaffScheduleEditor`/`TimeOffList` right before saving; a `Dialog` shows
+   the count and the save only proceeds on confirmation. Proven live with a
+   real future appointment: hours that exclude its time count 1 conflict,
+   hours that include it count 0, a covering time-off range counts 1, a
+   non-overlapping one counts 0.
+
+**A fourth real bug, found while building #3's time-off check:**
+`TimeOffList`'s "whole day(s) off" save built `starts_at`/`ends_at` as
+`${date}T00:00:00.000Z` — **UTC** midnight of the chosen local date, not the
+BRANCH's local midnight. For `America/New_York` this is 4–5 hours off in both
+directions: the stored range started 4–5 hours into the previous calendar day
+and ended 4–5 hours before the actual end of the last day off. **Proven live**:
+the old literal range did NOT cover 23:30 local time on the intended day off;
+the fix does. Fixed with the already-existing, already-DST-tested
+`dayRangeUtc()` helper (`lib/time`) instead of raw string concatenation — no
+new helper needed, this one case had just never used it.
+
+Also fixed, matching this task's explicit ask: the same raw-server-error-text
+pattern as Feature 9, across the ENTIRE schedule feature (staff hours, breaks,
+time off, branch hours, closures, resources) and the remaining spots in
+staff's own save/delete/list paths — `scheduleErrorKey()` /
+`staffErrorKey()`/`archiveErrorKey()` (same reason-code pattern as
+`serviceErrorKey`), `.code` preserved on every throw. Two screens
+(`BranchHoursEditor`, `ClosuresList`) had NO error state at all for their list
+queries — a failed load either stuck on the loading skeleton forever or looked
+exactly like "nothing here yet," with no retry; both now show `ErrorState`.
+Three delete confirmations (time off, closure, resource) had no `onError`
+handler wired at all; all three now do.
+
+Suite 05 re-verified (23/23); suite 16's two new assertions from Feature 9
+still pass; suite 37 (staff/login link) re-verified unaffected (57/57); suite
+12 (dashboard appointments) re-verified unaffected (153/153). `npm run
+check:migrations` 157/157 from empty (was 155). 6 new unit tests
+(`scheduleErrorKey.test.ts`); 848/848 full suite, tsc/lint clean. Not applied
+to prod.
 
 ## Changelog
+- 2026-10-15: Feature 10 audit — see "Feature 10 audit" above for the full list.
 - 2026-10-22: Saving a profile whose login link is refused now throws `StaffLinkError` (profile id + reason). The form shows "Profile saved. Login not linked." with the reason, keeps editing THAT profile (retry updates instead of creating a duplicate) and resets the login picker to No login. Verified in a browser for edit and create.
 - 2026-10-22: Login <-> profile link: "App login" field in the staff form, login name in the list, "Add me as staff" button (Owner/Manager without a profile), invite form picks an unlinked profile. Verified on dev over HTTP as dev.manager / dev.staff: unlinked staff sees 0 appointments, linked sees only its own (1 of 3), push recipients include them for their bookings only.
 - 2026-10-20: row badge "No working hours set — no online slots" + "Set working hours" button in the edit panel (`staffHours.ts`); list query now embeds `staff_working_hours(branch_id)`.

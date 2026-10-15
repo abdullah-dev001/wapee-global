@@ -20,9 +20,15 @@ import {
 import { useStaff } from '@/features/staff/api/useStaff';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
-import { todayInZone, type LocalDate } from '@/lib/time';
+import { dayRangeUtc, todayInZone, type LocalDate } from '@/lib/time';
 
-import { useDeleteTimeOff, useSaveTimeOff, useTimeOff } from '../api/useSchedule';
+import {
+  getStaffTimeOffConflicts,
+  useDeleteTimeOff,
+  useSaveTimeOff,
+  useTimeOff,
+} from '../api/useSchedule';
+import { scheduleErrorKey } from '../scheduleErrorKey';
 
 /** Upcoming time off, with a form to add more. No approval step (doc §6.3). */
 export function TimeOffList() {
@@ -45,6 +51,15 @@ export function TimeOffList() {
     endDate: null,
   });
   const [reason, setReason] = useState('');
+  // Set when the chosen range overlaps a future appointment: asks before
+  // saving rather than silently booking the time off (nothing is deleted
+  // either way, so this warns rather than refusing — see the migration this
+  // reads, staff_time_off_conflicts).
+  const [conflictCount, setConflictCount] = useState<number | null>(null);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
+  const [pendingSave, setPendingSave] = useState<{ startsAt: string; endsAt: string } | null>(
+    null,
+  );
 
   const dateFormatter = new Intl.DateTimeFormat(i18n.language, {
     day: 'numeric',
@@ -53,17 +68,10 @@ export function TimeOffList() {
     timeZone: 'UTC',
   });
 
-  const submit = () => {
-    if (!staffId || !range.startDate || !range.endDate) return;
+  const doSave = (startsAt: string, endsAt: string) => {
+    if (!staffId) return;
     save.mutate(
-      {
-        staffId,
-        // Whole days: start at midnight, end at the start of the day AFTER the
-        // last day off, so a one-day absence covers that whole day.
-        startsAt: `${range.startDate}T00:00:00.000Z`,
-        endsAt: `${addDays(range.endDate, 1)}T00:00:00.000Z`,
-        reason: reason.trim() === '' ? null : reason.trim(),
-      },
+      { staffId, startsAt, endsAt, reason: reason.trim() === '' ? null : reason.trim() },
       {
         onSuccess: () => {
           toast.show({ message: t('schedule.timeOffSaved'), tone: 'success' });
@@ -72,9 +80,37 @@ export function TimeOffList() {
           setRange({ startDate: null, endDate: null });
           setReason('');
         },
-        onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+        onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
       },
     );
+  };
+
+  const submit = async () => {
+    if (!staffId || !range.startDate || !range.endDate || !branchTimeZone) return;
+    // Whole days IN THE BRANCH'S TIMEZONE, not UTC: a plain "T00:00:00.000Z"
+    // suffix is midnight UTC, which is 20:00/19:00 the PREVIOUS day in
+    // America/New_York — a staff member's day off started and ended 4-5 hours
+    // too early. `dayRangeUtc` converts the local calendar date correctly
+    // (and stays correct across a DST change, since it resolves each day's
+    // own offset rather than assuming one for the whole range).
+    const startsAt = dayRangeUtc(range.startDate, branchTimeZone).start;
+    const endsAt = dayRangeUtc(range.endDate, branchTimeZone).end;
+
+    setCheckingConflicts(true);
+    try {
+      const count = await getStaffTimeOffConflicts(staffId, startsAt, endsAt);
+      setCheckingConflicts(false);
+      if (count > 0) {
+        setConflictCount(count);
+        setPendingSave({ startsAt, endsAt });
+        return;
+      }
+    } catch {
+      setCheckingConflicts(false);
+      // The check itself failing must not block a save the person can
+      // otherwise make; the save call below still validates normally.
+    }
+    doSave(startsAt, endsAt);
   };
 
   return (
@@ -88,7 +124,7 @@ export function TimeOffList() {
       {timeOff.isError ? (
         <ErrorState
           title={t('schedule.error.title')}
-          description={timeOff.error.message}
+          description={t(scheduleErrorKey(timeOff.error))}
           onRetry={() => void timeOff.refetch()}
           retryLabel={t('actions.retry')}
         />
@@ -184,7 +220,7 @@ export function TimeOffList() {
 
           <Button
             fullWidth
-            loading={save.isPending}
+            loading={save.isPending || checkingConflicts}
             disabled={!staffId || !range.startDate || !range.endDate}
             onPress={submit}
           >
@@ -192,6 +228,27 @@ export function TimeOffList() {
           </Button>
         </View>
       </Drawer>
+
+      <Dialog
+        open={conflictCount !== null}
+        onClose={() => {
+          setConflictCount(null);
+          setPendingSave(null);
+        }}
+        title={t('schedule.hoursConflict.title')}
+        message={t('schedule.timeOffConflict.message', { count: conflictCount ?? 0 })}
+        busy={save.isPending}
+        confirm={{
+          label: t('schedule.hoursConflict.confirm'),
+          variant: 'danger',
+          onPress: () => {
+            if (!pendingSave) return;
+            setConflictCount(null);
+            doSave(pendingSave.startsAt, pendingSave.endsAt);
+          },
+        }}
+        cancelLabel={t('actions.cancel')}
+      />
 
       <Dialog
         open={deleting !== null}
@@ -203,20 +260,16 @@ export function TimeOffList() {
           variant: 'danger',
           onPress: () => {
             if (!deleting) return;
-            remove.mutate(deleting, { onSuccess: () => setDeleting(null) });
+            remove.mutate(deleting, {
+              onSuccess: () => setDeleting(null),
+              onError: (error) => toast.show({ message: t(scheduleErrorKey(error)), tone: 'error' }),
+            });
           },
         }}
         cancelLabel={t('actions.cancel')}
       />
     </View>
   );
-}
-
-/** Adds whole days to a "YYYY-MM-DD" date, staying in UTC. */
-function addDays(date: LocalDate, days: number): LocalDate {
-  const parsed = new Date(`${date}T00:00:00.000Z`);
-  parsed.setUTCDate(parsed.getUTCDate() + days);
-  return parsed.toISOString().slice(0, 10);
 }
 
 const styles = StyleSheet.create({

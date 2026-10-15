@@ -15,7 +15,7 @@ import { theme } from '@/lib/theme';
 
 import { StaffLinkError, useSaveStaff, useStaff, type StaffListItem } from '../api/useStaff';
 import { hasNoWorkingHours } from '../staffHours';
-import { linkErrorKey, loginOptions, NO_LOGIN } from '../staffLogin';
+import { linkErrorKey, loginOptions, NO_LOGIN, staffErrorKey } from '../staffLogin';
 import { emptyStaff, staffSchema, type StaffValues } from '../schemas/staff.schemas';
 
 export function StaffForm({
@@ -112,7 +112,7 @@ export function StaffForm({
           const planKey = planErrorKey(error);
           const linkKey = linkErrorKey(error);
           toast.show({
-            message: planKey ? t(planKey) : linkKey ? t(linkKey) : error.message,
+            message: t(planKey ?? linkKey ?? staffErrorKey(error)),
             tone: 'error',
           });
         },
