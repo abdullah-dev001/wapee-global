@@ -2,7 +2,7 @@
 
 Written 2026-10-16 on branch `dev` (head `a7d10f8`). Read-only analysis: nothing was changed, deleted or applied anywhere. Production was only read (migration list, Edge Function list, row counts, one HTTP check of the live site).
 
-> **Update 2026-10-16 (on `dev`, not yet on prod):** dashboard **Reschedule** built (Part 3 #5); **booking-form answers** now shown on the appointment and the client profile (#10); raw error text removed from **Calendar, Clients and Invoices** (#9, add-on screens still to do); the two out-of-order migrations were **renamed** and the from-empty replay now produces the correct `set_business_status` (#4, Part 2.2). The 6 screenshots in Part 6 group A were deleted. Dev's migration-history repair (Part 2.3) is still waiting for approval.
+> **Update 2026-10-16 (on `dev`, not yet on prod):** dashboard **Reschedule** built (Part 3 #5); **booking-form answers** now shown on the appointment and the client profile (#10); raw error text removed from **Calendar, Clients and Invoices** (#9, add-on screens still to do); the two out-of-order migrations were **renamed** and the from-empty replay now produces the correct `set_business_status` (#4, Part 2.2). The 6 screenshots in Part 6 group A were deleted. Dev's migration-history repair (Part 2.3) was run on 2026-10-17: 159/159 matched, schema unchanged.
 
 ## Executive summary (10 lines)
 
@@ -89,7 +89,7 @@ Production's latest applied migration is `20261024100500`; it has 152 applied, a
 - `supabase db push --include-all` on prod today would give the correct result, because it applies the missing files after everything else. **But the repo would still rebuild wrongly.**
 - **Recommendation:** rename both files to timestamps after `20261024150000` (for example `20261024160000_…` and `20261024160100_…`). Then fix dev's history with `supabase migration repair`. That needs your sign-off, because it edits `schema_migrations`.
 
-### 2.3 Dev's own migration history does not match the files (trap)
+### 2.3 Dev's own migration history does not match the files (trap) — FIXED 2026-10-17 (repair run on dev; 159/159 matched, schema fingerprint unchanged)
 Dev records 7 migrations under different version numbers than their filenames:
 - `20261024100000` / `20261024100500` are recorded as `20261013083426` / `20261013083516`.
 - `20261024110000…150000` are recorded as `20261014143620`, `20261015175756`, `20261015181336`, `20261015185038`, `20261015185044`.
