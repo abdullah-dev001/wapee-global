@@ -31,7 +31,7 @@ export function usePendingApprovalCount(
       if (branchId) query = query.eq('branch_id', branchId);
 
       const { count, error } = await query;
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return count ?? 0;
     },
   });

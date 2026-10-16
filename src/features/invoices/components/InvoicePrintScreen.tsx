@@ -11,8 +11,9 @@ import { formatDate, type UtcIso } from '@/lib/time';
 
 import { useInvoiceDetail } from '../api/useInvoices';
 import { formatMinor } from '../format';
-import { InvoiceRpcError, type InvoiceDetail } from '../types';
+import { type InvoiceDetail } from '../types';
 import { InvoiceDocument } from './InvoiceDocument';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 /** Marks the toolbar so the print stylesheet (app/+html.tsx) hides it. */
 const NO_PRINT = { dataSet: { noPrint: 'true' } } as object;
@@ -96,11 +97,7 @@ export function InvoicePrintScreen({ invoiceId }: { invoiceId: string }) {
         {detail.isError ? (
           <ErrorState
             title={t('invoices.print.loadError')}
-            description={
-              detail.error instanceof InvoiceRpcError
-                ? t(`invoices.errors.${detail.error.code}`)
-                : detail.error.message
-            }
+            description={t(invoiceErrorKey(detail.error))}
             onRetry={() => void detail.refetch()}
             retryLabel={t('actions.retry')}
           />

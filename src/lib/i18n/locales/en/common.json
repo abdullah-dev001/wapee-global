@@ -1001,6 +1001,24 @@
       "invalid_transition": "That action isn't allowed for this appointment's current status.",
       "invoiced": "This appointment has an invoice and cannot be reopened.",
       "unknown": "Something went wrong. Please try again."
+    },
+    "reschedule": {
+      "title": "Reschedule",
+      "current": "Currently",
+      "save": "Save new time",
+      "saved": "Appointment moved",
+      "back": "Back to details",
+      "outOfHours": "This time is outside working hours. You can still move the appointment here.",
+      "clientNotified": "If the client has an email address, they will get a message with the new time."
+    },
+    "answers": {
+      "title": "Booking form answers",
+      "empty": "No booking form answers for this appointment.",
+      "emptyClient": "No booking form answers yet.",
+      "unknownField": "Question no longer available",
+      "sensitive": "Sensitive",
+      "loadError": "Could not load the answers",
+      "loadMore": "Load more"
     }
   },
   "clients": {
@@ -1062,7 +1080,10 @@
       "nameTooLong": "Name is too long.",
       "phoneInvalid": "Enter a valid phone number.",
       "notesTooLong": "Notes are too long.",
-      "duplicatePhone": "This phone number already belongs to another client."
+      "duplicatePhone": "This phone number already belongs to another client.",
+      "forbidden": "You don't have permission to do that.",
+      "invalidInput": "Check the details and try again.",
+      "unknown": "Something went wrong. Please try again."
     },
     "packagesSection": "Packages"
   },
@@ -1929,7 +1950,7 @@
       "trialEnds_other": "Your trial ends on {{date}} ({{count}} days left).",
       "trialEnded": "Your trial ended on {{date}}.",
       "periodEnds": "Current period ends on {{date}}.",
-  "periodEndedPast": "Your billing period ended on {{date}}.",
+      "periodEndedPast": "Your billing period ended on {{date}}.",
       "suspendedNote": "This business is suspended. Get in touch and we'll help you sort it out.",
       "dataSafe": "Your data is never deleted when a plan changes or a trial ends.",
       "usageTitle": "Staff per location",

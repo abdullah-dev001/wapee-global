@@ -29,6 +29,7 @@ import {
 } from '../schemas/invoice.schemas';
 import { InvoiceRpcError, type InvoiceDetail } from '../types';
 import { ClientPickerField } from './ClientPickerField';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 export type InvoiceEditorProps = {
   /** Set to edit an existing DRAFT; omit to create a blank one. */
@@ -135,8 +136,8 @@ export function InvoiceEditor({
       discountReason: line.discountMinor > 0 ? line.discountReason : null,
     }));
     const fail = (error: Error) => {
-      if (error instanceof InvoiceRpcError) setServerError(t(`invoices.errors.${error.code}`));
-      else toast.show({ message: error.message, tone: 'error' });
+      if (error instanceof InvoiceRpcError) setServerError(t(invoiceErrorKey(error)));
+      else toast.show({ message: t(invoiceErrorKey(error)), tone: 'error' });
     };
 
     if (draft) {

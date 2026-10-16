@@ -13,6 +13,7 @@ import { useInvoiceList, type InvoiceListFilters } from '../api/useInvoices';
 import { formatInvoiceDate, formatMinor } from '../format';
 import { type InvoiceListRow } from '../types';
 import { InvoiceStateBadge } from './InvoiceStateBadge';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 export type InvoiceListViewProps = {
   businessId: string | null;
@@ -45,7 +46,7 @@ export function InvoiceListView({
     return (
       <ErrorState
         title={t('invoices.error.title')}
-        description={query.error.message}
+        description={t(invoiceErrorKey(query.error))}
         onRetry={() => void query.refetch()}
         retryLabel={t('actions.retry')}
       />

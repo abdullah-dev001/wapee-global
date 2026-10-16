@@ -24,7 +24,7 @@ export function useMyStaffProfile(businessId: string | null): UseQueryResult<str
       const { data, error } = await getSupabase().rpc('my_staff_profile_id', {
         p_business_id: businessId ?? '',
       });
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return data ?? null;
     },
   });

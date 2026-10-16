@@ -27,6 +27,7 @@ import { useDayShading } from '../api/useDayShading';
 import { useMyStaffProfile } from '../api/useMyStaffProfile';
 import { minuteOfDayFromTime } from '../timeGrid';
 import { type AppointmentRow } from '../types';
+import { appointmentErrorKey } from '../appointmentErrorKey';
 import { DateNavButton } from './DateNavButton';
 
 export type DayViewProps = {
@@ -106,7 +107,7 @@ export function DayView({
     return (
       <ErrorState
         title={t('appointments.loadError')}
-        description={calendar.error.message}
+        description={t(appointmentErrorKey(calendar.error))}
         onRetry={() => void calendar.refetch()}
         retryLabel={t('actions.retry')}
       />

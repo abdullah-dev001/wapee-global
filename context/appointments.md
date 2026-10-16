@@ -88,7 +88,7 @@ untouched and unrelated; this is the staff-facing path, callable by
 | supabase/migrations/20261004045723_fix_dashboard_resource_id_not_stored.sql | `appointment_collision_result` composite type + `check_appointment_collision_v2` (the REAL bug fix — see Changelog) |
 | supabase/migrations/20261004043628, 20261004045004, 20261004045754, 20261004045817, 20261004045901 | Historical no-op placeholders: these timestamps are real entries in the remote migration-history table (from intermediate `apply_migration` calls this session), folded into the FINAL function bodies in the files above rather than replayed as separate changes. Local files are kept at current content; see each placeholder's own comment. |
 | supabase/migrations/20261004143401_is_owner_or_manager.sql | `is_owner_or_manager(business_id, branch_id?)` (new) + `reopen_appointment` refactored to call it instead of its own inline query (Phase 4 part B1 fix 1 — see Changelog) |
-| supabase/tests/12_dashboard_appointments.sql | 148 assertions |
+| supabase/tests/12_dashboard_appointments.sql | 171 assertions (2026-10-16) |
 
 No app code in this file's scope — see [appointments-ui.md](appointments-ui.md) for the Calendar screen and drawers built on top of this RPC surface.
 
@@ -201,6 +201,7 @@ See [appointments-ui.md](appointments-ui.md).
   anywhere) but a candidate for real removal once the tooling allows it.
 
 ## Changelog
+- 2026-10-16: No RPC change. The dashboard UI now calls `update_appointment` (Reschedule, see appointments-ui.md). Suite 12 gained the reschedule cases the UI relies on (171/171, was 153): a time change queues exactly one client `rescheduled` outbox row, a staff-only move queues none, a staff member without the service is refused (`staff_unavailable`) with the row exactly unchanged, a move into the branch buffer is refused and the next start after it is allowed, a pending appointment stays pending, Own-scope staff can move but not hand over their own appointment.
 - 2026-10-08 (Phase 6A): an AFTER INSERT/UPDATE trigger on `appointments` queues client and staff notifications for create / approve / cancel / reschedule (walk-ins excluded); `scheduled_at` column added. RPC behaviour unchanged. See [notifications.md](notifications.md).
 - 2026-10-07 (Phase 7A): `mark_completed` now also creates the review request in the same transaction and returns `review_request:{token,expires_at}` once (only when new). Nothing else changed. See [website-reviews-widget.md](website-reviews-widget.md).
 - 2026-10-05 (Phase 4 part B2): `list_appointments` gained `p_client_id`

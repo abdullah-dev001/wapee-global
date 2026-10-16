@@ -38,6 +38,7 @@ import {
 import { minuteOfDayFromTime } from '../timeGrid';
 import { AppointmentDetailDrawer } from './AppointmentDetailDrawer';
 import { type AppointmentRow, type AppointmentStatus } from '../types';
+import { appointmentErrorKey } from '../appointmentErrorKey';
 
 /**
  * Mobile home / Today screen: today's appointments in the branch timezone,
@@ -104,7 +105,7 @@ export function TodayScreen() {
         <PageContainer title={t('appointments.today')}>
           <ErrorState
             title={t('appointments.loadError')}
-            description={calendar.error.message}
+            description={t(appointmentErrorKey(calendar.error))}
             onRetry={() => void calendar.refetch()}
             retryLabel={t('actions.retry')}
           />
@@ -389,7 +390,7 @@ function QuickActionDialog({
                 onClose();
               },
               onError: (error) => {
-                toast.show({ message: error.message, tone: 'error' });
+                toast.show({ message: t(appointmentErrorKey(error)), tone: 'error' });
                 onClose();
               },
             },

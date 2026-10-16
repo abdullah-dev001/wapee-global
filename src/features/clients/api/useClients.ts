@@ -106,7 +106,7 @@ export function useClients(
         .order('full_name', { ascending: true })
         .order('id', { ascending: true })
         .limit(PAGE_SIZE + 1);
-      if (error) throw new Error(error.message);
+      if (error) throw error;
 
       const rows = (data ?? []) as unknown as Parameters<typeof mapRow>[0][];
       const hasMore = rows.length > PAGE_SIZE;
@@ -147,7 +147,7 @@ export function useClient(
         )
         .eq('id', clientId ?? '')
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       const row = data as unknown as Parameters<typeof mapRow>[0] & {
         notes: string | null;
         first_branch_id: string | null;
@@ -201,7 +201,7 @@ export function useSaveClient(businessId: string | null) {
                 notes: values.notes ?? null,
               };
         const { error } = await supabase.from('clients').update(fields).eq('id', values.id);
-        if (error) throw Object.assign(new Error(error.message), { code: error.code });
+        if (error) throw error;
         return values.id;
       }
 
@@ -216,7 +216,7 @@ export function useSaveClient(businessId: string | null) {
         })
         .select('id')
         .single();
-      if (error) throw Object.assign(new Error(error.message), { code: error.code });
+      if (error) throw error;
       return data.id;
     },
     onSuccess: () => invalidateClients(queryClient, businessId),
@@ -233,7 +233,7 @@ export function useArchiveClient(businessId: string | null) {
         .from('clients')
         .update({ deleted_at: archived ? new Date().toISOString() : null })
         .eq('id', id);
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return undefined;
     },
     onSuccess: () => invalidateClients(queryClient, businessId),
@@ -259,7 +259,7 @@ export function useFindClientByPhone(businessId: string | null, phoneE164: strin
         .eq('phone_e164', phoneE164 ?? '')
         .is('deleted_at', null)
         .maybeSingle();
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return data && data.id && data.full_name ? { id: data.id, full_name: data.full_name } : null;
     },
   });

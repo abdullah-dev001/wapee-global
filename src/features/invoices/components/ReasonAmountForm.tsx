@@ -10,6 +10,7 @@ import { theme } from '@/lib/theme';
 
 import { reasonAmountSchema, type ReasonAmountValues } from '../schemas/invoice.schemas';
 import { InvoiceRpcError } from '../types';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 export type ReasonAmountFormProps = {
   currency: string;
@@ -54,8 +55,8 @@ export function ReasonAmountForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      if (error instanceof InvoiceRpcError) setServerError(t(`invoices.errors.${error.code}`));
-      else setServerError(error instanceof Error ? error.message : t('invoices.errors.unknown'));
+      if (error instanceof InvoiceRpcError) setServerError(t(invoiceErrorKey(error)));
+      else setServerError(t(invoiceErrorKey(error)));
     }
   });
 

@@ -11,6 +11,7 @@ import { formatDate, formatTime, type IanaTimeZone, type LocaleTag } from '@/lib
 
 import { type AppointmentListFilters, useAppointmentList } from '../api/useAppointments';
 import { type AppointmentRow } from '../types';
+import { appointmentErrorKey } from '../appointmentErrorKey';
 
 export type AppointmentListViewProps = {
   businessId: string | null;
@@ -41,7 +42,7 @@ export function AppointmentListView({
     return (
       <ErrorState
         title={t('appointments.loadError')}
-        description={query.error.message}
+        description={t(appointmentErrorKey(query.error))}
         onRetry={() => void query.refetch()}
         retryLabel={t('actions.retry')}
       />

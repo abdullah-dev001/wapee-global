@@ -2,6 +2,8 @@
 
 Written 2026-10-16 on branch `dev` (head `a7d10f8`). Read-only analysis: nothing was changed, deleted or applied anywhere. Production was only read (migration list, Edge Function list, row counts, one HTTP check of the live site).
 
+> **Update 2026-10-16 (on `dev`, not yet on prod):** dashboard **Reschedule** built (Part 3 #5); **booking-form answers** now shown on the appointment and the client profile (#10); raw error text removed from **Calendar, Clients and Invoices** (#9, add-on screens still to do); the two out-of-order migrations were **renamed** and the from-empty replay now produces the correct `set_business_status` (#4, Part 2.2). The 6 screenshots in Part 6 group A were deleted. Dev's migration-history repair (Part 2.3) is still waiting for approval.
+
 ## Executive summary (10 lines)
 
 1. **Not ready for a real clinic tomorrow.** The booking engine, security and money logic are strong and heavily tested, but a clinic would hit gaps in daily use within the first hour.
@@ -73,15 +75,15 @@ Production's latest applied migration is `20261024100500`; it has 152 applied, a
 
 | File | Older than prod's latest? | What it does |
 |---|---|---|
-| `20261014104921_list_businesses_search_owner_email.sql` | **YES: needs renaming** | Super admin can find a business by the owner's email |
-| `20261014140132_enforce_current_period_end.sql` | **YES: needs renaming** (see 2.2) | Paid plan locks when its period ends |
+| `20261014104921_list_businesses_search_owner_email.sql` → **renamed 2026-10-16 to `20261024160000_…`** | was YES; fixed | Super admin can find a business by the owner's email |
+| `20261014140132_enforce_current_period_end.sql` → **renamed 2026-10-16 to `20261024160100_…`** | was YES (see 2.2); fixed | Paid plan locks when its period ends |
 | `20261024110000_website_services_bookable_online.sql` | no | Website stops showing services hidden from online booking |
 | `20261024120000_archive_staff.sql` | no | Archiving staff with future bookings is refused |
 | `20261024130000_schedule_appointment_conflicts.sql` | no | Warnings when cutting hours or adding time off |
 | `20261024140000_branch_appointment_conflicts.sql` | no | Warnings when cutting branch hours or adding closures |
 | `20261024150000_archive_resource.sql` | no | Archiving a room with future bookings is refused |
 
-### 2.2 New finding: the period-end migration would be undone by a from-empty rebuild
+### 2.2 New finding: the period-end migration would be undone by a from-empty rebuild — FIXED 2026-10-16 (renamed; replay verified)
 `20261014140132` redefines `set_business_status`. `20261020110000_suspended_login_block.sql` also defines it and sorts later by filename. When migrations run in filename order (CI, a new environment, a disaster rebuild), the older body wins. It loses the "clear a stale period end when re-activating" fix, and nothing errors (`check:migrations` only checks for failures). On dev it works only because the file was applied last in real time.
 
 - `supabase db push --include-all` on prod today would give the correct result, because it applies the missing files after everything else. **But the repo would still rebuild wrongly.**
@@ -152,13 +154,13 @@ Both projects have the same 17 functions. No function source changed in git afte
 | 1 | **Blocker** | No backups until Supabase Pro; Free plan can also pause the project | `_handoff`, pre-launch A3/B6.1 | **Fix before launch** |
 | 2 | **Blocker** | Email to customers and auth emails not proven on prod (Resend domain, custom SMTP) | notifications.md, pre-launch A6/B2.1 | **Fix before launch** |
 | 3 | **Blocker** | Prod is missing 7 migrations + 13 commits of fixes (incl. website leaking hidden services) | Part 2 | **Fix before launch** |
-| 4 | **High** | Migration ordering: a from-empty rebuild silently loses the period-end fix | Part 2.2 (new) | **Fix before launch** |
-| 5 | **High** | No dashboard reschedule/edit of an appointment | launch-test-checklist, confirmed in code today | **Fix before launch** (clinics move bookings daily) |
+| 4 | **High → fixed on dev 2026-10-16** | Migration ordering: a from-empty rebuild silently loses the period-end fix | Part 2.2 (new) | **Fix before launch** |
+| 5 | **High → fixed on dev 2026-10-16** | No dashboard reschedule/edit of an appointment | launch-test-checklist, confirmed in code today | **Fix before launch** (clinics move bookings daily) |
 | 6 | **High** | Most UI never clicked (calendar drawers, invoices, clients profile, commission, add-ons, portal dialogs) | every context file | **Before launch:** founder runs Part 5 |
 | 7 | **High** | Suspended-login hook must be ON in prod dashboard (fail-open, otherwise only a 30-second client check) | auth.md, F6-01 | **Before launch** (one toggle + test) |
 | 8 | **High** | No monitoring/alerts (Edge errors, dead emails, cron not running) | pre-launch B6.2 | **Before launch**, at least basic |
-| 9 | Medium | Raw server error text in ~25 places: Calendar (`DayView`, `TodayScreen`, `CreateAppointmentForm`, `AppointmentDetailDrawer`, `AppointmentListView`), Clients (`ClientListView`, `ClientForm`, `ClientProfileScreen`), Invoices (`InvoiceEditor`, `InvoiceDrawer`, `PaymentForm`, `InvoiceListView`, `InvoicePrintScreen`, `ReportsScreen`, `AppointmentInvoiceButton`), `SetupChecklist`, Commission `RulesTab`, `ScheduleTab`, Packages, Inventory, Files, Forms | grep today | **Before launch** for calendar/clients/invoices; after launch for add-ons |
-| 10 | Medium | Booking-form answers never shown to staff | launch-test-checklist, confirmed in code | **Before launch** for clinics (intake answers matter) |
+| 9 | Medium → **Calendar / Clients / Invoices fixed on dev 2026-10-16**; rest open | Raw server error text in ~25 places: Calendar (`DayView`, `TodayScreen`, `CreateAppointmentForm`, `AppointmentDetailDrawer`, `AppointmentListView`), Clients (`ClientListView`, `ClientForm`, `ClientProfileScreen`), Invoices (`InvoiceEditor`, `InvoiceDrawer`, `PaymentForm`, `InvoiceListView`, `InvoicePrintScreen`, `ReportsScreen`, `AppointmentInvoiceButton`), `SetupChecklist`, Commission `RulesTab`, `ScheduleTab`, Packages, Inventory, Files, Forms | grep today | **Before launch** for calendar/clients/invoices; after launch for add-ons |
+| 10 | Medium → fixed on dev 2026-10-16 | Booking-form answers never shown to staff | launch-test-checklist, confirmed in code | **Before launch** for clinics (intake answers matter) |
 | 11 | Medium | Clients without email get no notifications (SMS is off) | notifications.md | **Accept, with mitigation:** turn on "require client email" in Booking settings for each clinic branch (the toggle already exists) |
 | 12 | Medium | GDPR suite 30 (real HTTP + storage) never run | qa/SUMMARY | **Before launch**: run on dev with its seed/cleanup scripts |
 | 13 | Medium | Solo "owner only" not enforced (Solo can invite staff) | F1-04 | **Accept**: the landing page no longer promises it; update product doc §10 |
@@ -307,7 +309,7 @@ Do this on **production after the push** (Part 2.7), or on dev first. Use a **ph
 
 Everything below is still in git history after deletion: `git log -- <path>` and `git checkout <commit> -- <path>` bring it back. Deleting from the working tree does **not** shrink the repo; only a history rewrite would, and that is forbidden by CLAUDE.md §6. Nothing listed here is a migration, a test, a context file, CLAUDE.md, or a source-of-truth doc.
 
-### A) Safe to delete
+### A) Safe to delete — DONE 2026-10-16 (the 6 screenshots below were deleted)
 | Path | Size | Why safe | Referenced by |
 |---|---|---|---|
 | `docs/screenshots/verification/b1-fresh.png` | 124 KB | Exact duplicate of `docs/screenshots/setup-checklist-1440.png` (same md5) | Only the folder is named in `docs/business-flows.md` |

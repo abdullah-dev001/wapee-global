@@ -11,6 +11,7 @@ import { theme } from '@/lib/theme';
 
 import { useFindClientByPhone, useSaveClient, type ClientListItem } from '../api/useClients';
 import { clientSchema, emptyClient, type ClientValues } from '../schemas/client.schemas';
+import { clientErrorKey } from '../clientErrorKey';
 
 export type ClientFormProps = {
   client?: ClientListItem & { notes: string | null };
@@ -69,7 +70,7 @@ export function ClientForm({ client, businessId, onDone, onOpenExisting }: Clien
             if (existing) setDuplicateOf({ id: existing.id, name: existing.full_name });
             else setError('phoneE164', { message: 'clients.errors.duplicatePhone' });
           } else {
-            toast.show({ message: error.message, tone: 'error' });
+            toast.show({ message: t(clientErrorKey(error)), tone: 'error' });
           }
         },
       },

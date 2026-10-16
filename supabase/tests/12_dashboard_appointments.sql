@@ -512,6 +512,164 @@ begin
   r := public.update_appointment(v_appt, p_starts_at => pg_temp.in_hours_slot(14));
   reset role;
   perform pg_temp.chk('staff cannot reschedule SOMEONE ELSE''s appointment', r->>'code', 'forbidden');
+  perform pg_temp.chk('and that appointment''s time is untouched',
+    (select starts_at from public.appointments where id = v_appt), pg_temp.in_hours_slot(13));
+end $$;
+
+-- 2b. Dashboard "Reschedule" (2026-10-16): the email trigger, staff-only
+-- moves, the buffer, eligibility, and pending staying pending. Weeks 40+ are
+-- used only here, so nothing else in this suite collides with them.
+
+-- A time change queues the customer's "rescheduled" message; a staff-only
+-- change (same time) queues nothing for the customer (owner decision).
+do $$
+declare r jsonb; v_appt uuid; v_before int;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.create_appointment(pg_temp.id('brancha'), pg_temp.id('svc'), pg_temp.in_hours_slot(40),
+    p_staff_id => pg_temp.id('staffa_profile'), p_client_id => pg_temp.id('client2'));
+  reset role;
+  v_appt := (r->>'appointment_id')::uuid;
+  insert into ids values ('appt_move', v_appt);
+
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.update_appointment(v_appt, p_starts_at => pg_temp.in_hours_slot(40) + interval '2 hours');
+  reset role;
+  perform pg_temp.chk('reschedule (time) succeeds', r->>'ok', 'true');
+  perform pg_temp.chk('the new time is stored',
+    (select starts_at from public.appointments where id = v_appt),
+    pg_temp.in_hours_slot(40) + interval '2 hours');
+  perform pg_temp.chk('a time change queues exactly one "rescheduled" message for the client',
+    (select count(*)::int from public.message_outbox
+     where appointment_id = v_appt and event = 'rescheduled' and client_id = pg_temp.id('client2')), 1);
+
+  select count(*)::int into v_before from public.message_outbox
+  where appointment_id = v_appt and client_id is not null;
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.update_appointment(v_appt, p_staff_id => pg_temp.id('other_profile'));
+  reset role;
+  perform pg_temp.chk('a staff-only move succeeds', r->>'ok', 'true');
+  perform pg_temp.chk('the new staff member is stored',
+    (select staff_id from public.appointments where id = v_appt), pg_temp.id('other_profile'));
+  perform pg_temp.chk('a staff-only move queues no customer message',
+    (select count(*)::int from public.message_outbox
+     where appointment_id = v_appt and client_id is not null), v_before);
+  perform pg_temp.chk('no second "rescheduled" message after the staff-only move',
+    (select count(*)::int from public.message_outbox
+     where appointment_id = v_appt and event = 'rescheduled'), 1);
+end $$;
+
+-- A staff member who does not offer the service is refused (staff_unavailable)
+-- and the stored row is EXACTLY as it was.
+do $$
+declare r jsonb; v_stray uuid; v_before record; v_after record;
+begin
+  insert into public.staff_profiles (business_id, display_name)
+  values (pg_temp.id('biza'), 'No Service Person') returning id into v_stray;
+  insert into public.staff_branches (staff_id, branch_id, business_id)
+  values (v_stray, pg_temp.id('brancha'), pg_temp.id('biza'));
+
+  select starts_at, ends_at, staff_id, status, resource_id into v_before
+  from public.appointments where id = pg_temp.id('appt_move');
+
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.update_appointment(pg_temp.id('appt_move'), p_staff_id => v_stray,
+    p_starts_at => pg_temp.in_hours_slot(41));
+  reset role;
+  perform pg_temp.chk('moving to a staff member without the service is refused', r->>'code', 'staff_unavailable');
+
+  select starts_at, ends_at, staff_id, status, resource_id into v_after
+  from public.appointments where id = pg_temp.id('appt_move');
+  perform pg_temp.chk('the refused move left the row exactly as it was',
+    row(v_after.starts_at, v_after.ends_at, v_after.staff_id, v_after.status, v_after.resource_id)::text,
+    row(v_before.starts_at, v_before.ends_at, v_before.staff_id, v_before.status, v_before.resource_id)::text);
+end $$;
+
+-- The branch buffer is respected: moving to start 5 minutes after another
+-- booking of the same staff member ends is refused with a 15-minute buffer,
+-- and the original survives. The setting is restored afterwards.
+do $$
+declare r jsonb; v_neighbour uuid; v_before timestamptz;
+begin
+  update public.booking_settings set buffer_minutes = 15 where branch_id = pg_temp.id('brancha');
+
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.create_appointment(pg_temp.id('brancha'), pg_temp.id('svc'), pg_temp.in_hours_slot(42),
+    p_staff_id => pg_temp.id('other_profile'), p_client_id => pg_temp.id('client1'));
+  reset role;
+  v_neighbour := (r->>'appointment_id')::uuid;
+
+  select starts_at into v_before from public.appointments where id = pg_temp.id('appt_move');
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  -- Neighbour runs 10:00-11:00; 11:05 is inside its 15-minute buffer.
+  r := public.update_appointment(pg_temp.id('appt_move'),
+    p_starts_at => pg_temp.in_hours_slot(42) + interval '65 minutes');
+  reset role;
+  perform pg_temp.chk('a move into the buffer after another booking is refused', r->>'code', 'slot_unavailable');
+  perform pg_temp.chk('and the original time survives',
+    (select starts_at from public.appointments where id = pg_temp.id('appt_move')), v_before);
+
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.update_appointment(pg_temp.id('appt_move'),
+    p_starts_at => pg_temp.in_hours_slot(42) + interval '75 minutes');
+  reset role;
+  perform pg_temp.chk('the first start after the buffer is allowed', r->>'ok', 'true');
+
+  update public.booking_settings set buffer_minutes = 0 where branch_id = pg_temp.id('brancha');
+end $$;
+
+-- A PENDING appointment can be moved and stays pending (moving is not approving).
+do $$
+declare r jsonb; v_appt uuid; v_fv uuid;
+begin
+  select id into v_fv from public.form_versions where business_id = pg_temp.id('biza') order by version desc limit 1;
+  insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
+    starts_at, ends_at, duration_minutes, status, form_version_id, is_exclusive)
+  values (pg_temp.id('biza'), pg_temp.id('brancha'), pg_temp.id('client1'), pg_temp.id('svc'),
+    pg_temp.id('staffa_profile'), pg_temp.in_hours_slot(43), pg_temp.in_hours_slot(43) + interval '1 hour',
+    60, 'pending', v_fv, true)
+  returning id into v_appt;
+
+  perform pg_temp.act_as(pg_temp.id('recep'));
+  set local role authenticated;
+  r := public.update_appointment(v_appt, p_starts_at => pg_temp.in_hours_slot(43) + interval '1 hour');
+  reset role;
+  perform pg_temp.chk('a receptionist (Branch scope) moves a pending appointment', r->>'ok', 'true');
+  perform pg_temp.chk('it is still pending afterwards',
+    (select status from public.appointments where id = v_appt)::text, 'pending');
+end $$;
+
+-- Own-scope Staff moves their OWN appointment; a move to another staff member is refused.
+do $$
+declare r jsonb; v_appt uuid;
+begin
+  perform pg_temp.act_as(pg_temp.id('owner'));
+  set local role authenticated;
+  r := public.create_appointment(pg_temp.id('brancha'), pg_temp.id('svc'), pg_temp.in_hours_slot(44),
+    p_staff_id => pg_temp.id('staffa_profile'), p_client_id => pg_temp.id('client1'));
+  reset role;
+  v_appt := (r->>'appointment_id')::uuid;
+
+  perform pg_temp.act_as(pg_temp.id('staffa'));
+  set local role authenticated;
+  r := public.update_appointment(v_appt, p_staff_id => pg_temp.id('other_profile'));
+  reset role;
+  perform pg_temp.chk('own-scope staff cannot hand their appointment to someone else', r->>'code', 'forbidden');
+  perform pg_temp.chk('the staff member is unchanged',
+    (select staff_id from public.appointments where id = v_appt), pg_temp.id('staffa_profile'));
+
+  perform pg_temp.act_as(pg_temp.id('staffa'));
+  set local role authenticated;
+  r := public.update_appointment(v_appt, p_starts_at => pg_temp.in_hours_slot(44) + interval '2 hours');
+  reset role;
+  perform pg_temp.chk('own-scope staff moves their own appointment', r->>'ok', 'true');
 end $$;
 
 -- ===========================================================================

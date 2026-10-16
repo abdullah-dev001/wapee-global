@@ -59,9 +59,9 @@ export function useDayShading(
           .gt('ends_at', start),
       ]);
 
-      if (hours.error) throw new Error(hours.error.message);
-      if (breaks.error) throw new Error(breaks.error.message);
-      if (timeOff.error) throw new Error(timeOff.error.message);
+      if (hours.error) throw hours.error;
+      if (breaks.error) throw breaks.error;
+      if (timeOff.error) throw timeOff.error;
 
       return buildDayShading(
         hours.data ?? [],

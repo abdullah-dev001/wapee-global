@@ -1,5 +1,5 @@
 # Clients
-Status: done (Phase 4 part B2) · Phase: 4 · Last updated: 2026-10-05
+Status: done (Phase 4 part B2) · Phase: 4 · Last updated: 2026-10-16
 
 ## What it does
 The client list (search, keyset pagination, archive/unarchive), create/edit
@@ -127,6 +127,7 @@ Namespace `common`, group `clients.*` (incl. `clients.profile.*`).
   other mutation in Phase 4.
 
 ## Changelog
+- 2026-10-16: Profile shows **Booking form answers** per visit (`ClientAnswersSection`, `useClientAnswers`: 20 visits a page, keyset, newest first; labels from each answer's own form version; RLS decides visibility incl. sensitive). New `clientErrorKey()` (23505 duplicate phone, 42501 forbidden, 23514/23502/22001 invalid input, else unknown) on the list, form and profile; api rethrows the original Postgrest error. i18n `clients.errors.forbidden/invalidInput/unknown`.
 - 2026-10-20: `contactLinks.ts` (tel / wa.me digits-only / mailto / display format / `contactState`); `useClient` takes `{enabled}`.
 - 2026-10-07: Phase 11B: `notes` is blanked by `clients_v` without `clients.view_contact`; the edit form for a caller without it shows the name only and sends only the name.
 - 2026-10-07: Phase 11A: contact lock is a database boundary (`clients_v`), profile gets Export data / Erase personal data (`gdpr.md`), list reads indexed `(business_id, full_name, id)`.

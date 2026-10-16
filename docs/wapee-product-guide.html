@@ -242,8 +242,8 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
   <h1>Wapee Product Memory Guide</h1>
   <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
   <div class="badges">
-    <span class="badge lime">Last verified: 11 Oct 2026</span>
-    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">2dccb3c</span> (branch dev)</span>
+    <span class="badge lime">Last verified: 17 Oct 2026</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">9fa987a</span> (branch dev)</span>
     <span class="badge">Prices dev database se, 11 Oct 2026</span>
   </div>
 </div>
@@ -483,17 +483,19 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
         <li><b>Cancel</b>: <code>appointments.cancel</code> (Staff ke paas nahin). Cancelled hamesha ke liye final.</li>
         <li><b>Reopen</b> (completed/no-show se confirmed): sirf Owner ya Manager, aur sirf jab invoice na bana ho.</li>
         <li>Drawer mein client ka phone/email (Call, WhatsApp, Email, Copy) agar <code>clients.view_contact</code> ho; messages ka status aur fail hone par "Try again".</li>
+        <li><b>Booking form answers</b>: customer ne booking form ke sawalon ke jo jawab diye, wohi sawal ke us waqt ke label ke saath. Sensitive jawab sirf <code>clients.view_sensitive</code> walon ko (lock ke saath "Sensitive"); Staff sirf apni appointments ke.</li>
       </ul></dd>
     </dl></div></details>
 
-    <details class="card"><summary><span class="ct">Appointments: edit / reschedule from dashboard<small>Business ki taraf se time badalna</small></span><span class="chip missing">Missing</span></summary><div class="cb"><dl>
-      <dt>Haqiqat</dt><dd>Database function (<code>update_appointment</code>) aur app hook dono bane hain, magar <b>koi screen ya button inhein use nahin karta</b>. Dashboard se time ya staff badalne ka raasta nahin.</dd>
-      <dt>Abhi kya karein</dt><dd>Cancel kar ke nayi appointment banayein, ya client ko apne manage link se reschedule karne ko kahein.</dd>
-      <dt>Note</dt><dd>business-flows.md mein "receptionist moves a booking by 30 minutes" likha hai; code is ko support nahin karta.</dd>
+    <details class="card"><summary><span class="ct">Appointments: reschedule from dashboard<small>Appointment drawer &gt; Reschedule</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya karta hai</dt><dd>Appointment ko doosre din/waqt aur/ya doosre staff par move karna (service wahi rehti hai). Drawer mein "Reschedule" button; form mein abhi ka waqt, staff picker, calendar aur time; kuch na badle to Save band.</dd>
+      <dt>Kaun</dt><dd><code>appointments.edit</code>: Owner, Manager, Receptionist apni branch ki koi bhi appointment; Staff sirf <b>apni</b> appointment ka waqt badal sakta hai (staff picker nahin dikhta, kisi aur ko de nahin sakta).</dd>
+      <dt>Rules</dt><dd><ul><li>Sirf <b>pending</b> ya <b>confirmed</b>; completed / no-show / cancelled move nahin hoti. Pending move hone ke baad bhi pending rehti hai.</li><li>Double booking aur buffer ka check database karta hai (appointment ka apna purana slot gina nahin jaata); takraav par saaf error, appointment waisi hi rehti hai.</li><li>Working hours ke bahar move ho sakti hai, sirf warning.</li><li>Waqt aur din hamesha branch ke time zone mein.</li><li>Waqt badle to client ko "rescheduled" email (agar email ho, walk-in nahin). <b>Sirf staff badle to client ko email nahin</b> (owner decision, 16 Oct 2026).</li></ul></dd>
+      <dt>Verified</dt><dd>16 Oct 2026: SQL suite 12 (171) + dev par asal HTTP aur browser mein save (375 / 1440).</dd>
     </dl></div></details>
 
     <details class="card"><summary><span class="ct">Clients<small>Menu: Clients · clients.view</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
-      <dt>Kya karta hai</dt><dd>List (server search, pages, archived toggle; mobile cards, desktop table), naya / edit, archive / unarchive. Profile: contact, notes, upcoming, visit history (har branch), invoices, aur add-on sections (Packages, Files, Forms).</dd>
+      <dt>Kya karta hai</dt><dd>List (server search, pages, archived toggle; mobile cards, desktop table), naya / edit, archive / unarchive. Profile: contact, notes, upcoming, visit history (har branch), <b>booking form answers</b> (har visit ke, naye pehle, 20 ek page), invoices, aur add-on sections (Packages, Files, Forms).</dd>
       <dt>Kaun</dt><dd>Owner/Manager/Receptionist apni scope ke clients; Staff sirf wo clients jin ki un ke saath appointment hai.</dd>
       <dt>Sensitive fields</dt><dd><ul><li><b>Phone, email, notes</b> sirf <code>clients.view_contact</code> walon ko (Owner, Manager, Receptionist). Database khud blank karta hai, sirf UI nahin.</li><li><b>Sensitive custom field answers</b> sirf <code>clients.view_sensitive</code>.</li></ul></dd>
       <dt>Rules</dt><dd><ul><li>Client poore business ka hai, branch ka nahin. Phone business mein unique; duplicate par "yeh client pehle se hai" link.</li><li>Delete nahin, archive.</li><li>Export data (JSON) aur Erase personal data buttons profile par (workflow N).</li></ul></dd>
@@ -980,7 +982,6 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr><td>Email delivery: verified Resend domain + custom SMTP abhi nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">J</a>, <a href="#s11">Go-live</a></td></tr>
       <tr><td>Bina email wale client ko koi confirmation/reminder nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">B, J</a></td></tr>
       <tr><td>Invite email nahin, link haath se bhejna</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">O</a></td></tr>
-      <tr><td>Dashboard se appointment reschedule/edit</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Appointments</a></td></tr>
       <tr><td>Manage link dobara bhejne ka button</td><td><span class="chip missing">Missing</span></td><td><a href="#s6">B</a></td></tr>
       <tr><td>Google review link ka setting screen</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Reviews</a></td></tr>
       <tr><td>Service category banane ka screen</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Services</a></td></tr>

@@ -6,7 +6,7 @@ import { Button, useToast, type ButtonSize, type ButtonVariant } from '@/compone
 import { usePermission } from '@/lib/permissions';
 
 import { useCreateInvoiceDraft } from '../api/useInvoices';
-import { InvoiceRpcError } from '../types';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 export type AppointmentInvoiceButtonProps = {
   businessId: string | null;
@@ -71,10 +71,7 @@ export function AppointmentInvoiceButton({
             },
             onError: (error) =>
               toast.show({
-                message:
-                  error instanceof InvoiceRpcError
-                    ? t(`invoices.errors.${error.code}`)
-                    : error.message,
+                message: t(invoiceErrorKey(error)),
                 tone: 'error',
               }),
           },
