@@ -51,7 +51,7 @@ export function useServiceCategories(
         .is('deleted_at', null)
         .order('sort_order')
         .order('name');
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return (data ?? []).map((row) => ({
         id: row.id,
         name: row.name,
@@ -101,7 +101,7 @@ export function useServices(
       if (!includeInactive) query = query.eq('is_active', true);
 
       const { data, error } = await query.order('sort_order').order('name');
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
 
       return (data ?? []).map((row) => {
         // Only this branch's price row matters.
@@ -170,14 +170,14 @@ export function useSaveService(businessId: string | null, branchId: string | nul
       let serviceId = values.id;
       if (serviceId) {
         const { error } = await supabase.from('services').update(fields).eq('id', serviceId);
-        if (error) throw new Error(error.message);
+        if (error) throw Object.assign(new Error(error.message), { code: error.code });
       } else {
         const { data, error } = await supabase
           .from('services')
           .insert(fields)
           .select('id')
           .single();
-        if (error) throw new Error(error.message);
+        if (error) throw Object.assign(new Error(error.message), { code: error.code });
         serviceId = data.id;
       }
 
@@ -193,7 +193,7 @@ export function useSaveService(businessId: string | null, branchId: string | nul
           },
           { onConflict: 'service_id,branch_id' },
         );
-        if (error) throw new Error(error.message);
+        if (error) throw Object.assign(new Error(error.message), { code: error.code });
       }
 
       // Replace the staff assignment wholesale: simpler than diffing, and the
@@ -202,7 +202,7 @@ export function useSaveService(businessId: string | null, branchId: string | nul
         .from('service_staff')
         .delete()
         .eq('service_id', serviceId);
-      if (clearError) throw new Error(clearError.message);
+      if (clearError) throw Object.assign(new Error(clearError.message), { code: clearError.code });
 
       if (values.staffIds.length > 0) {
         const { error: linkError } = await supabase.from('service_staff').insert(
@@ -212,7 +212,7 @@ export function useSaveService(businessId: string | null, branchId: string | nul
             business_id: businessId,
           })),
         );
-        if (linkError) throw new Error(linkError.message);
+        if (linkError) throw Object.assign(new Error(linkError.message), { code: linkError.code });
       }
 
       return serviceId;
@@ -231,10 +231,19 @@ export function useDeleteService(businessId: string | null) {
         .from('services')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', serviceId);
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return undefined;
     },
     onSuccess: () => invalidateServices(queryClient, businessId),
+  });
+}
+
+function invalidateCategories(
+  queryClient: ReturnType<typeof useQueryClient>,
+  businessId: string | null,
+) {
+  void queryClient.invalidateQueries({
+    queryKey: categoryKeys.business(businessId ?? 'none'),
   });
 }
 
@@ -250,13 +259,64 @@ export function useCreateCategory(businessId: string | null) {
         .insert({ business_id: businessId, name })
         .select('id')
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return data.id;
     },
+    onSuccess: () => invalidateCategories(queryClient, businessId),
+  });
+}
+
+/** Renames a category. */
+export function useUpdateCategory(businessId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<undefined, Error, { id: string; name: string }>({
+    mutationFn: async ({ id, name }) => {
+      const { error } = await getSupabase()
+        .from('service_categories')
+        .update({ name })
+        .eq('id', id);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
+      return undefined;
+    },
+    onSuccess: () => invalidateCategories(queryClient, businessId),
+  });
+}
+
+/**
+ * Soft-deletes a category and moves its services to "Uncategorised"
+ * (`category_id = null`). `category_id`'s FK is `on delete set null`, but
+ * that trigger only fires on a hard DELETE, never on this soft delete — so
+ * the client clears it explicitly, matching the documented behaviour
+ * (context/services.md: "Deleting a category leaves its services"). Without
+ * this, a service kept pointing at a dead category id, which the picker no
+ * longer offered and the list's embedded join still rendered by name.
+ */
+export function useDeleteCategory(businessId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<undefined, Error, string>({
+    mutationFn: async (categoryId) => {
+      const supabase = getSupabase();
+      const { error: unlinkError } = await supabase
+        .from('services')
+        .update({ category_id: null })
+        .eq('category_id', categoryId);
+      if (unlinkError) {
+        throw Object.assign(new Error(unlinkError.message), { code: unlinkError.code });
+      }
+
+      const { error } = await supabase
+        .from('service_categories')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', categoryId);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
+      return undefined;
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: categoryKeys.business(businessId ?? 'none'),
-      });
+      invalidateCategories(queryClient, businessId);
+      // A category disappearing changes what the service list groups show.
+      invalidateServices(queryClient, businessId);
     },
   });
 }

@@ -31,7 +31,7 @@ export function useBasicReport(businessId: string | null, branchId: string | nul
         p_business_id: businessId ?? '',
         p_branch_id: branchId ?? undefined,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       const result = (data ?? {}) as Raw;
       if (result.ok === false) throw new InvoiceRpcError(String(result.code ?? 'unknown'));
       return mapReport(result);

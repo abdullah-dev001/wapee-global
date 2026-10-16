@@ -6,10 +6,11 @@ import { StyleSheet, View } from 'react-native';
 import { PageContainer, Screen } from '@/components/layout';
 import { Badge, Button, Card, ErrorState, Skeleton, Text } from '@/components/ui';
 import { useCurrentScope } from '@/lib/permissions';
+import { rpcCode } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
 
 import { useBranchAdmin } from '../api/useBranches';
-import { bpToPercentText, type BranchRow } from '../branchLogic';
+import { bpToPercentText, branchErrorKey, type BranchRow } from '../branchLogic';
 import { BranchFormDrawer } from './BranchFormDrawer';
 
 /**
@@ -36,7 +37,7 @@ export function LocationScreen() {
         {branches.isError ? (
           <ErrorState
             title={t('branches.error.title')}
-            description={branches.error.message}
+            description={t(branchErrorKey(rpcCode(branches.error)))}
             onRetry={() => void branches.refetch()}
             retryLabel={t('actions.retry')}
           />

@@ -34,7 +34,7 @@ import { useSession } from '../SessionProvider';
  * mid-flight, well before any redirect decision below ever ran.
  */
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isEmailVerified, loading, user } = useSession();
+  const { isAuthenticated, isEmailVerified, isPasswordRecovery, loading, user } = useSession();
   const segments = useSegments();
   // Only runs once signed in (the hook is disabled otherwise).
   const businesses = useMyBusinesses();
@@ -55,6 +55,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     loading,
     isAuthenticated,
     isEmailVerified,
+    isPasswordRecovery,
     segments: path,
     hasBusiness,
     waitForBusinesses,

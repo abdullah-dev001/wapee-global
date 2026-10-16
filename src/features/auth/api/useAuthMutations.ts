@@ -37,9 +37,17 @@ export function redirectTo(path: string): string {
   return Linking.createURL(path);
 }
 
-/** Supabase auth errors are already human-readable; pass the message through. */
-function toError(error: { message: string } | null): void {
-  if (error) throw new Error(error.message);
+/**
+ * Supabase auth errors carry a stable `code`/`status` that screens map to an
+ * i18n key via `authErrorKey()`; re-throwing a plain `Error` would discard both,
+ * so they are copied onto the thrown error.
+ */
+function toError(error: { message: string; code?: string; status?: number } | null): void {
+  if (!error) return;
+  const wrapped = new Error(error.message) as Error & { code?: string; status?: number };
+  wrapped.code = error.code;
+  wrapped.status = error.status;
+  throw wrapped;
 }
 
 export function useLogin(): UseMutationResult<void, Error, LoginValues> {

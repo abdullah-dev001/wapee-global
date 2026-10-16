@@ -32,7 +32,9 @@ import {
   useExportClient,
 } from '@/features/data-rights';
 import { useArchiveClient, useClient } from '../api/useClients';
+import { clientErrorKey } from '../clientErrorKey';
 import { ClientInvoicesSection } from '@/features/invoices/components/ClientInvoicesSection';
+import { ClientAnswersSection } from './ClientAnswersSection';
 import { ClientForm } from './ClientForm';
 
 export type ClientProfileScreenProps = {
@@ -82,7 +84,7 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
         <PageContainer title={t('clients.title')}>
           <ErrorState
             title={t('clients.error.title')}
-            description={client.error.message}
+            description={t(clientErrorKey(client.error))}
             onRetry={() => void client.refetch()}
             retryLabel={t('actions.retry')}
           />
@@ -296,6 +298,8 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
                 ) : null}
               </View>
 
+              <ClientAnswersSection clientId={data.id} timeZone={timeZone} locale={i18n.language} />
+
               <ClientInvoicesSection businessId={businessId} clientId={data.id} />
             </>
           ) : null}
@@ -334,7 +338,8 @@ export function ClientProfileScreen({ clientId }: ClientProfileScreenProps) {
                   setConfirmArchive(false);
                   toast.show({ message: t('clients.saved'), tone: 'success' });
                 },
-                onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+                onError: (error) =>
+                  toast.show({ message: t(clientErrorKey(error)), tone: 'error' }),
               },
             ),
         }}

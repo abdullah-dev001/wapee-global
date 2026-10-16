@@ -13,6 +13,7 @@ import {
   draftsEqual,
   groupPermissions,
   heldRank,
+  heldRankAtBranch,
   isOwnerOnly,
   roleDraftProblem,
   roleErrorKey,
@@ -37,6 +38,40 @@ describe('heldRank', () => {
   });
   it('a super admin holds everything at all scope', () => {
     expect(heldRank([], 'invoices.create', true)).toBe(3);
+  });
+});
+
+describe('heldRankAtBranch', () => {
+  // Manager at branch A only, Staff at branch B only — the live dual-role shape
+  // this fix was found against (`roles.manage` held at branch A only).
+  const dual: Grant[] = [
+    { permission: 'appointments.view', scope: 'branch', branchId: 'a' },
+    { permission: 'roles.manage', scope: 'branch', branchId: 'a' },
+    { permission: 'appointments.view', scope: 'own', branchId: 'b' },
+  ];
+
+  it('reaches a branch-tied grant only at that same branch', () => {
+    expect(heldRankAtBranch(dual, 'roles.manage', 'a')).toBe(2); // branch
+    expect(heldRankAtBranch(dual, 'roles.manage', 'b')).toBe(0); // not held there
+  });
+
+  it('an `all`-scope grant reaches every branch', () => {
+    const all: Grant[] = [{ permission: 'roles.manage', scope: 'all', branchId: 'a' }];
+    expect(heldRankAtBranch(all, 'roles.manage', 'b')).toBe(3);
+  });
+
+  it('the caller\'s own "every branch" grant (branchId null) reaches every target branch', () => {
+    const everyBranch: Grant[] = [{ permission: 'roles.manage', scope: 'branch', branchId: null }];
+    expect(heldRankAtBranch(everyBranch, 'roles.manage', 'a')).toBe(2);
+    expect(heldRankAtBranch(everyBranch, 'roles.manage', 'b')).toBe(2);
+  });
+
+  it('a branch-tied grant does NOT reach a target of "every branch"', () => {
+    expect(heldRankAtBranch(dual, 'roles.manage', null)).toBe(0);
+  });
+
+  it('a super admin holds everything everywhere', () => {
+    expect(heldRankAtBranch([], 'invoices.create', 'a', true)).toBe(3);
   });
 });
 

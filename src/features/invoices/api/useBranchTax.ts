@@ -22,7 +22,7 @@ export function useBranchTax(businessId: string | null, branchId: string | null)
         .select('tax_rate_bp, tax_number')
         .eq('id', branchId ?? '')
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return { taxRateBp: data.tax_rate_bp, taxNumber: data.tax_number };
     },
   });

@@ -13,6 +13,7 @@ import { useAddPayment } from '../api/useInvoices';
 import { formatMinor } from '../format';
 import { paymentSchema, type PaymentValues } from '../schemas/invoice.schemas';
 import { InvoiceRpcError, PAYMENT_METHODS, type InvoiceDetail, type PaymentMethod } from '../types';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 export type PaymentFormProps = {
   businessId: string | null;
@@ -65,8 +66,8 @@ export function PaymentForm({ businessId, invoice, onDone, onCancel }: PaymentFo
           onDone();
         },
         onError: (error) => {
-          if (error instanceof InvoiceRpcError) setServerError(t(`invoices.errors.${error.code}`));
-          else toast.show({ message: error.message, tone: 'error' });
+          if (error instanceof InvoiceRpcError) setServerError(t(invoiceErrorKey(error)));
+          else toast.show({ message: t(invoiceErrorKey(error)), tone: 'error' });
         },
       },
     );

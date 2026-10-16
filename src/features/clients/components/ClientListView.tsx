@@ -10,6 +10,7 @@ import { usePermission } from '@/lib/permissions';
 import { focusRing, theme, useBreakpoint } from '@/lib/theme';
 
 import { useClients, type ClientListFilters, type ClientListItem } from '../api/useClients';
+import { clientErrorKey } from '../clientErrorKey';
 
 export type ClientListViewProps = {
   businessId: string | null;
@@ -33,7 +34,7 @@ export function ClientListView({ businessId, filters, onSelect }: ClientListView
     return (
       <ErrorState
         title={t('clients.error.title')}
-        description={query.error.message}
+        description={t(clientErrorKey(query.error))}
         onRetry={() => void query.refetch()}
         retryLabel={t('actions.retry')}
       />

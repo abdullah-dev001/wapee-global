@@ -93,6 +93,7 @@ Migrations: `20261006130000_report_basic_at_internal` (removed the public `p_as_
 - Draft invoices are not audited on create (only discard), by choice.
 
 ## Changelog
+- 2026-10-16: New `invoiceErrorKey()` (InvoiceRpcError code -> `invoices.errors.<code>`, 42501 -> forbidden, else unknown) on every invoice / payment / credit / print / report / appointment-invoice error; no screen shows raw server text any more. Api rethrows the original Postgrest error.
 - 2026-10-07: Phase 10A: package and product lines (see above).
 - 2026-10-06: Phase 5B UI (Invoices, detail/editor drawer, payments/reversal/credit note, print/share, Reports, appointment invoice buttons). Removed public `p_as_of` (`report_basic_at` internal).
 - 2026-10-06: Phase 5A backend built (schema, 10 RPCs, immutability, currency lock, reports). 310 SQL assertions + real concurrent-issue test.

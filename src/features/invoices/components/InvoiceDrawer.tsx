@@ -21,6 +21,7 @@ import { InvoiceDetailBody } from './InvoiceDetailBody';
 import { InvoiceEditor } from './InvoiceEditor';
 import { PaymentForm } from './PaymentForm';
 import { ReasonAmountForm } from './ReasonAmountForm';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 /** `invoiceId === 'new'` opens the blank editor; a uuid opens that invoice; null closes. */
 export const NEW_INVOICE = 'new';
@@ -82,8 +83,8 @@ export function InvoiceDrawer({
   const actions = invoice ? actionsForInvoice(invoice, permissions) : [];
   const fail = (error: Error) => {
     setConfirm(null);
-    if (error instanceof InvoiceRpcError) setActionError(t(`invoices.errors.${error.code}`));
-    else toast.show({ message: error.message, tone: 'error' });
+    if (error instanceof InvoiceRpcError) setActionError(t(invoiceErrorKey(error)));
+    else toast.show({ message: t(invoiceErrorKey(error)), tone: 'error' });
   };
 
   const title = isNew
@@ -115,11 +116,7 @@ export function InvoiceDrawer({
         ) : detail.isError ? (
           <ErrorState
             title={t('invoices.detail.loadError')}
-            description={
-              detail.error instanceof InvoiceRpcError
-                ? t(`invoices.errors.${detail.error.code}`)
-                : detail.error.message
-            }
+            description={t(invoiceErrorKey(detail.error))}
             onRetry={() => void detail.refetch()}
             retryLabel={t('actions.retry')}
           />

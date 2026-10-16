@@ -60,15 +60,26 @@ export const ONBOARDING_ROUTE = 'onboarding';
  * business.
  */
 export const ACCEPT_INVITE_ROUTE = 'accept-invite';
+/**
+ * Opening a password-recovery email link signs the user in like any other
+ * session — verified, often with a business already — so every OTHER rule
+ * below would normally bounce them off this screen before they can set a new
+ * password (home if they have a business, `/admin/2fa` via `AdminAccessGate`
+ * if they are a 2FA-enrolled super admin). This route is the one place a
+ * recovery session is always sent, and the only (auth) screen it is never
+ * redirected away from.
+ */
+export const RESET_PASSWORD_ROUTE = 'reset-password';
 
 export type AuthGateDecision =
   | { kind: 'wait' }
   | { kind: 'render' }
-  | { kind: 'redirect'; href: '/login' | '/verify' | '/onboarding' | '/' };
+  | { kind: 'redirect'; href: '/login' | '/verify' | '/onboarding' | '/reset-password' | '/' };
 
 /**
  * Pure routing decision for `AuthGate` (CLAUDE.md §4, §7):
  * - signed out, private route     -> /login
+ * - password-recovery session     -> /reset-password (before anything else)
  * - signed in, unverified         -> /verify
  * - verified, but has no business -> /onboarding
  * - fully set up, on an auth page -> /
@@ -83,6 +94,7 @@ export function authGateDecision(input: {
   loading: boolean;
   isAuthenticated: boolean;
   isEmailVerified: boolean;
+  isPasswordRecovery: boolean;
   segments: readonly string[];
   hasBusiness: boolean;
   waitForBusinesses: boolean;
@@ -93,6 +105,7 @@ export function authGateDecision(input: {
     loading,
     isAuthenticated,
     isEmailVerified,
+    isPasswordRecovery,
     segments,
     hasBusiness,
     waitForBusinesses,
@@ -109,8 +122,16 @@ export function authGateDecision(input: {
   const onVerifyScreen = segments.includes(VERIFY_ROUTE);
   const onOnboardingScreen = segments.includes(ONBOARDING_ROUTE);
   const onAcceptInviteScreen = segments.includes(ACCEPT_INVITE_ROUTE);
+  const onResetPasswordScreen = segments.includes(RESET_PASSWORD_ROUTE);
 
   if (!isAuthenticated && !isPublicGroup) return { kind: 'redirect', href: '/login' };
+  // A recovery session outranks every other rule below (unverified, no
+  // business, already has a business): wherever it is, it goes to the reset
+  // screen, and once there it is never bounced off it again.
+  if (isAuthenticated && isPasswordRecovery && !onResetPasswordScreen) {
+    return { kind: 'redirect', href: '/reset-password' };
+  }
+  if (isAuthenticated && onResetPasswordScreen) return { kind: 'render' };
   if (isAuthenticated && !isEmailVerified && !onVerifyScreen) {
     return { kind: 'redirect', href: '/verify' };
   }

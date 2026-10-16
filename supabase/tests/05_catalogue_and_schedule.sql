@@ -10,7 +10,7 @@
 -- installed; the plan count below is therefore unverified.
 
 begin;
-select plan(23);
+select plan(27);
 
 create temporary table t (k text primary key, v uuid) on commit drop;
 do $g$ declare s text; begin
@@ -262,6 +262,46 @@ select is(
 
 reset role;
 select set_config('request.jwt.claims', '', true);   -- fixtures below are written as the table owner
+
+-- ---------------------------------------------------------------------------
+-- 9. Feature 11 audit: branch_hours_conflicts / branch_closure_conflicts
+-- (migration 20261024140000) — the same warn-with-a-count check already
+-- proven for staff_schedule_conflicts/staff_time_off_conflicts, but for a
+-- branch-wide hours or closure change. Reset to the table owner: these are
+-- read-only SECURITY DEFINER functions, not RLS-boundary writes.
+-- ---------------------------------------------------------------------------
+insert into public.clients (business_id, full_name, phone_e164)
+values ((select v from t where k='biz_a'), 'Conflict Test Client', '+447700900555');
+insert into t values ('client_a', (select id from public.clients
+  where business_id=(select v from t where k='biz_a') and full_name='Conflict Test Client'));
+
+-- 2026-10-19 is a Monday; Europe/London is on BST (UTC+1) in October, so
+-- 09:00 local is 08:00Z.
+insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
+  starts_at, ends_at, duration_minutes, status, form_version_id)
+values ((select v from t where k='biz_a'), (select v from t where k='branch_a'),
+  (select v from t where k='client_a'), (select v from t where k='svc_cut'),
+  (select v from t where k='staff_a'),
+  '2026-10-19T08:00:00Z', '2026-10-19T08:30:00Z', 30, 'confirmed',
+  public.ensure_form_version((select v from t where k='biz_a')));
+
+select is(
+  public.branch_hours_conflicts((select v from t where k='branch_a'),
+    '[{"day_of_week":1,"start_minute":600,"end_minute":1020}]'::jsonb),
+  1, 'branch hours excluding the appointment''s time count 1 conflict');
+
+select is(
+  public.branch_hours_conflicts((select v from t where k='branch_a'),
+    '[{"day_of_week":1,"start_minute":540,"end_minute":1020}]'::jsonb),
+  0, 'branch hours including the appointment''s time count 0 conflicts');
+
+select is(
+  public.branch_closure_conflicts((select v from t where k='branch_a'), '2026-10-19', '2026-10-19'),
+  1, 'a closure covering the appointment''s day counts 1 conflict');
+
+select is(
+  public.branch_closure_conflicts((select v from t where k='branch_a'), '2026-10-21', '2026-10-21'),
+  0, 'a closure on a different day counts 0 conflicts');
 
 select * from finish();
 rollback;

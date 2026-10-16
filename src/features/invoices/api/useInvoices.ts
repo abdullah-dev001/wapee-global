@@ -28,7 +28,7 @@ export const reportKeys = createQueryKeys('reports');
 
 /** `{ok:false,code}` -> `InvoiceRpcError`; a transport error stays a plain Error. */
 function unwrap(data: unknown, error: { message: string } | null): Raw {
-  if (error) throw new Error(error.message);
+  if (error) throw error;
   const result = (data ?? {}) as Raw;
   if (result.ok === false) throw new InvoiceRpcError(String(result.code ?? 'unknown'));
   return result;

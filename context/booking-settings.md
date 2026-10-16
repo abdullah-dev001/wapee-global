@@ -209,6 +209,7 @@ feature and checks each against the locale file.
 - **Android never run** (no emulator). Reviewed in code at the end of the task.
 
 ## Changelog
+- 2026-10-16: Answers are now SHOWN in the dashboard (appointment drawer + client profile, see appointments-ui.md). New suite `43_appointment_answers_scope.sql` (9) proves the existing `appointment_field_values` policies: Own-scope Staff see only answers on their own appointments (the policies' `can()` ignores Own, but their `exists (select ... from appointments)` runs under the caller's RLS, which does honour it), Receptionist sees no sensitive answers, another business sees nothing; Staff cannot update an answer on someone else's appointment. Run on the local replay and live on dev, 9/9. No migration.
 - 2026-10-22: `fixRouteFor()` exported from `bookingWarnings.ts`; services / staff / hours writes now invalidate `branch-bookable`, so the Today checklist refreshes. See today.md.
 - 2026-10-22: Booking link card lists one link per location (`?branch=<invoice prefix>`, copy button each, greyed with "Not ready" until THAT location passes `branch_is_bookable`) when the business has two or more locations; the main link now says customers choose a location first. `useBranchesBookable` shares the `branch-bookable` cache.
 - 2026-10-20: new warning `no_staff_hours` (branch_is_bookable), fix route /staff.

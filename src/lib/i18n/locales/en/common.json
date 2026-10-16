@@ -90,6 +90,7 @@
   },
   "auth": {
     "accountDisabled": "This account is disabled. Contact {{email}}",
+    "accountDeleted": "Your account no longer exists. Sign up again to continue.",
     "login": {
       "title": "Welcome back",
       "subtitle": "Sign in to your {{appName}} account",
@@ -118,7 +119,9 @@
       "subtitle": "Pick something you haven't used before.",
       "submit": "Save password",
       "done": "Password updated",
-      "doneBody": "You can now sign in with your new password."
+      "doneBody": "You can now sign in with your new password.",
+      "twoFactorTitle": "Confirm it's you",
+      "twoFactorIntro": "This account has two-factor sign-in. Enter the 6-digit code from your authenticator app to finish resetting your password."
     },
     "verify": {
       "title": "Confirm your email",
@@ -147,6 +150,15 @@
       "passwordTooShort": "Use at least 8 characters",
       "passwordTooLong": "That password is too long",
       "passwordsDoNotMatch": "Both passwords must match",
+      "invalidCredentials": "Incorrect email or password.",
+      "emailNotConfirmed": "Confirm your email before signing in. Check your inbox for the link.",
+      "alreadyRegistered": "That email already has an account. Try signing in instead.",
+      "weakPasswordServer": "Choose a stronger password.",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again.",
+      "network": "No connection. Check your internet and try again.",
+      "expiredLink": "This link has expired or was already used. Request a new one.",
+      "slugTaken": "That address was just taken. Choose another.",
+      "insufficientAal": "Enter your two-factor code to continue.",
       "generic": "Something went wrong. Please try again."
     },
     "showPassword": "Show password",
@@ -246,7 +258,11 @@
       "title": "Could not load the team"
     },
     "errors": {
-      "roleRequired": "Choose a role"
+      "roleRequired": "Choose a role",
+      "forbidden": "You do not have permission to do that.",
+      "invalidInput": "Check the role, branch and staff profile and try again.",
+      "alreadyMember": "That person is already part of this team, or the staff profile already has a login.",
+      "unknown": "Something went wrong. Please try again."
     },
     "invite": {
       "action": "Invite",
@@ -320,6 +336,8 @@
     "locked": {
       "title": "Your trial has ended",
       "trialEnded": "Your 14-day trial is over, so this business is paused. Get in touch and we will set up a plan for you.",
+      "periodEndedTitle": "Your plan has ended",
+      "periodEnded": "Your billing period has ended, so this business is paused. Get in touch and we will renew your plan.",
       "suspended": "This business has been paused. Get in touch and we will help you sort it out.",
       "dataSafe": "Nothing has been deleted. Your bookings, clients and invoices are all still here.",
       "contact": "Contact us",
@@ -357,6 +375,27 @@
     "timeOffReason": "Reason",
     "timeOffReasonPlaceholder": "Optional, e.g. Holiday",
     "staffMember": "Staff member",
+    "hoursConflict": {
+      "title": "This affects existing bookings",
+      "message_one": "{{count}} upcoming appointment falls outside these hours. It will stay on the calendar, but save anyway?",
+      "message_other": "{{count}} upcoming appointments fall outside these hours. They will stay on the calendar, but save anyway?",
+      "confirm": "Save anyway"
+    },
+    "timeOffConflict": {
+      "message_one": "{{count}} upcoming appointment falls inside this time off. It will stay on the calendar, but book this time off anyway?",
+      "message_other": "{{count}} upcoming appointments fall inside this time off. They will stay on the calendar, but book this time off anyway?"
+    },
+    "closureConflict": {
+      "message_one": "{{count}} upcoming appointment falls inside this closure. It will stay on the calendar, but close anyway?",
+      "message_other": "{{count}} upcoming appointments fall inside this closure. They will stay on the calendar, but close anyway?"
+    },
+    "resourceArchiveErrors": {
+      "futureAppointments_one": "{{count}} upcoming appointment is using this room. Move or cancel it first.",
+      "futureAppointments_other": "{{count}} upcoming appointments are using this room. Move or cancel them first.",
+      "futureAppointments": "This room has upcoming appointments. Move or cancel them first.",
+      "notFound": "This room no longer exists.",
+      "forbidden": "You don't have permission to do that"
+    },
     "cancelTimeOff": "Cancel this time off",
     "branchHours": "Opening hours",
     "branchHoursHint": "When this branch is open. Staff hours sit inside these.",
@@ -370,6 +409,14 @@
     },
     "error": {
       "title": "Could not load the schedule"
+    },
+    "errors": {
+      "overlap": "That overlaps an existing time. Adjust it and try again.",
+      "invalidInterval": "That time isn't valid. Check the start and end.",
+      "duplicateName": "That name is already used here",
+      "forbidden": "You don't have permission to do that",
+      "invalidInput": "Check the details and try again",
+      "unknown": "Something went wrong. Try again."
     },
     "resources": "Rooms",
     "resourcesHint": "Rooms, chairs or bays. These are saved now but do not affect bookings until the booking engine arrives.",
@@ -434,12 +481,38 @@
       "bufferTooLong": "That gap is too long",
       "priceInvalid": "A price cannot be negative",
       "categoryNameRequired": "Enter a category name",
-      "categoryNameTooLong": "That category name is too long"
+      "categoryNameTooLong": "That category name is too long",
+      "duplicateName": "A service with that name already exists",
+      "forbidden": "You don't have permission to do that",
+      "inUse": "This service has appointments or invoices and can't be removed",
+      "invalidInput": "Check the details and try again",
+      "unknown": "Something went wrong. Try again."
     },
     "categories": {
       "title": "Categories",
       "create": "Add category",
-      "saved": "Category added"
+      "saved": "Category saved",
+      "rename": "Rename",
+      "delete": "Delete",
+      "renameTitle": "Rename category",
+      "namePlaceholder": "e.g. Hair",
+      "fields": {
+        "name": "Name"
+      },
+      "empty": {
+        "title": "No categories yet",
+        "description": "Add one to group your services."
+      },
+      "deleteConfirm": {
+        "title": "Delete this category?",
+        "message": "Its services move to Uncategorised. Nothing else changes."
+      },
+      "errors": {
+        "duplicateName": "A category with that name already exists",
+        "forbidden": "You don't have permission to do that",
+        "invalidInput": "Enter a valid name",
+        "unknown": "Something went wrong. Try again."
+      }
     }
   },
   "staff": {
@@ -483,7 +556,16 @@
       "nameRequired": "Enter a name",
       "nameTooLong": "That name is too long",
       "jobTitleTooLong": "That job title is too long",
-      "phoneTooLong": "That phone number is too long"
+      "phoneTooLong": "That phone number is too long",
+      "forbidden": "You don't have permission to do that",
+      "unknown": "Something went wrong. Try again."
+    },
+    "archiveErrors": {
+      "futureAppointments_one": "This person has {{count}} upcoming booking. Move or cancel it first.",
+      "futureAppointments_other": "This person has {{count}} upcoming bookings. Move or cancel them first.",
+      "futureAppointments": "This person has upcoming bookings. Move or cancel them first.",
+      "notFound": "This staff profile no longer exists.",
+      "forbidden": "You don't have permission to do that"
     },
     "login": {
       "label": "App login",
@@ -919,6 +1001,24 @@
       "invalid_transition": "That action isn't allowed for this appointment's current status.",
       "invoiced": "This appointment has an invoice and cannot be reopened.",
       "unknown": "Something went wrong. Please try again."
+    },
+    "reschedule": {
+      "title": "Reschedule",
+      "current": "Currently",
+      "save": "Save new time",
+      "saved": "Appointment moved",
+      "back": "Back to details",
+      "outOfHours": "This time is outside working hours. You can still move the appointment here.",
+      "clientNotified": "If the client has an email address, they will get a message with the new time."
+    },
+    "answers": {
+      "title": "Booking form answers",
+      "empty": "No booking form answers for this appointment.",
+      "emptyClient": "No booking form answers yet.",
+      "unknownField": "Question no longer available",
+      "sensitive": "Sensitive",
+      "loadError": "Could not load the answers",
+      "loadMore": "Load more"
     }
   },
   "clients": {
@@ -980,7 +1080,10 @@
       "nameTooLong": "Name is too long.",
       "phoneInvalid": "Enter a valid phone number.",
       "notesTooLong": "Notes are too long.",
-      "duplicatePhone": "This phone number already belongs to another client."
+      "duplicatePhone": "This phone number already belongs to another client.",
+      "forbidden": "You don't have permission to do that.",
+      "invalidInput": "Check the details and try again.",
+      "unknown": "Something went wrong. Please try again."
     },
     "packagesSection": "Packages"
   },
@@ -1847,6 +1950,7 @@
       "trialEnds_other": "Your trial ends on {{date}} ({{count}} days left).",
       "trialEnded": "Your trial ended on {{date}}.",
       "periodEnds": "Current period ends on {{date}}.",
+      "periodEndedPast": "Your billing period ended on {{date}}.",
       "suspendedNote": "This business is suspended. Get in touch and we'll help you sort it out.",
       "dataSafe": "Your data is never deleted when a plan changes or a trial ends.",
       "usageTitle": "Staff per location",
@@ -1880,7 +1984,7 @@
       "title": "Businesses",
       "subtitle": "Every business on the platform.",
       "search": "Search",
-      "searchPlaceholder": "Name or address",
+      "searchPlaceholder": "Name, slug or owner email",
       "plan": "Plan",
       "status": "Status",
       "all": "All",

@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { StatusBadge } from '@/components/shared';
 import { Button, Dialog, Drawer, Text, useToast } from '@/components/ui';
-import { useCurrentScope, usePermission } from '@/lib/permissions';
+import { useCurrentScope, useGrantSet, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 import { formatDateTime, type IanaTimeZone, type LocaleTag } from '@/lib/time';
 
@@ -25,10 +25,17 @@ import { AppointmentMessages } from '@/features/notifications/components/Appoint
 import { ReviewLinkAction } from '@/features/reviews/components/ReviewLinkAction';
 import { showReviewLink } from '@/features/reviews/reviewLinkStore';
 
+import { AppointmentAnswersSection } from './AppointmentAnswersSection';
 import { AppointmentClientContact } from './AppointmentClientContact';
+import { DetailRow } from './DetailRow';
+import { RescheduleForm } from './RescheduleForm';
+import { CONFIRM_KEYS, toActionKey } from '../actionKeys';
 import { useIsOwnerOrManager } from '../api/useIsOwnerOrManager';
+import { useMyStaffProfile } from '../api/useMyStaffProfile';
+import { appointmentErrorKey, type AppointmentErrorKey } from '../appointmentErrorKey';
+import { canShowReschedule, rescheduleScope } from '../reschedule';
 import { actionsForStatus, type AppointmentAction } from '../statusActions';
-import { AppointmentRpcError, type AppointmentErrorCode, type AppointmentRow } from '../types';
+import { type AppointmentRow } from '../types';
 
 export type AppointmentDetailDrawerProps = {
   appointment: AppointmentRow | null;
@@ -56,6 +63,12 @@ export function AppointmentDetailDrawer({
   // internally to gate the action itself, so the button can never show when
   // the RPC would refuse, or hide when it would allow.
   const isOwnerOrManager = useIsOwnerOrManager(businessId, appointment?.branchId ?? null);
+  const { set: grantSet } = useGrantSet();
+  const myStaffProfile = useMyStaffProfile(businessId);
+  const moveScope =
+    appointment && grantSet ? rescheduleScope(grantSet, appointment.branchId) : 'none';
+  const showReschedule =
+    appointment !== null && canShowReschedule(appointment, moveScope, myStaffProfile.data ?? null);
 
   const invoices = useAppointmentInvoices(businessId, appointment ? [appointment.id] : []);
   const linkedInvoiceId = appointment
@@ -69,7 +82,16 @@ export function AppointmentDetailDrawer({
   const reopen = useReopenAppointment(businessId);
 
   const [confirmAction, setConfirmAction] = useState<AppointmentAction | null>(null);
-  const [actionError, setActionError] = useState<AppointmentErrorCode | null>(null);
+  const [actionError, setActionError] = useState<AppointmentErrorKey | null>(null);
+  // The reschedule form replaces the details inside the same drawer; keyed by id
+  // so opening another appointment always starts on its details.
+  const [rescheduleId, setRescheduleId] = useState<string | null>(null);
+  const isRescheduling = appointment !== null && rescheduleId === appointment.id;
+  // Close (button, scrim, Escape, Android back) leaves the form first, then the drawer.
+  const handleClose = () => {
+    if (isRescheduling) setRescheduleId(null);
+    else onClose();
+  };
 
   const mutationFor: Record<AppointmentAction, typeof approve> = {
     approve,
@@ -106,11 +128,7 @@ export function AppointmentDetailDrawer({
           if (action === 'cancel') onClose();
         },
         onError: (error) => {
-          if (error instanceof AppointmentRpcError) {
-            setActionError(error.code as AppointmentErrorCode);
-          } else {
-            toast.show({ message: error.message, tone: 'error' });
-          }
+          setActionError(appointmentErrorKey(error));
           setConfirmAction(null);
         },
       },
@@ -119,8 +137,25 @@ export function AppointmentDetailDrawer({
 
   return (
     <>
-      <Drawer open={Boolean(appointment)} onClose={onClose} title={t('appointments.detail.title')}>
-        {appointment ? (
+      <Drawer
+        open={Boolean(appointment)}
+        onClose={handleClose}
+        title={t(isRescheduling ? 'appointments.reschedule.title' : 'appointments.detail.title')}
+      >
+        {appointment && isRescheduling && moveScope !== 'none' ? (
+          <RescheduleForm
+            appointment={appointment}
+            scope={moveScope}
+            timeZone={timeZone}
+            locale={locale}
+            onCancel={() => setRescheduleId(null)}
+            onDone={() => {
+              setRescheduleId(null);
+              // The row passed in still holds the old time: close rather than show stale data.
+              onClose();
+            }}
+          />
+        ) : appointment ? (
           <View style={styles.container}>
             <View style={styles.row}>
               <Text variant="label" color="textSecondary">
@@ -146,9 +181,11 @@ export function AppointmentDetailDrawer({
               />
             ) : null}
 
+            <AppointmentAnswersSection appointmentId={appointment.id} />
+
             {actionError ? (
               <Text variant="helper" color="error">
-                {t(`appointments.errors.${actionError}`)}
+                {t(actionError)}
               </Text>
             ) : null}
 
@@ -191,8 +228,19 @@ export function AppointmentDetailDrawer({
               status={appointment.status}
             />
 
-            {available.length > 0 ? (
+            {available.length > 0 || showReschedule ? (
               <View style={styles.actions}>
+                {showReschedule ? (
+                  <Button
+                    variant="secondary"
+                    onPress={() => {
+                      setActionError(null);
+                      setRescheduleId(appointment.id);
+                    }}
+                  >
+                    {t('appointments.detail.reschedule')}
+                  </Button>
+                ) : null}
                 {available.map((action) => (
                   <Button
                     key={action}
@@ -226,61 +274,6 @@ export function AppointmentDetailDrawer({
         }
       />
     </>
-  );
-}
-
-function toActionKey(
-  action: AppointmentAction,
-): 'approve' | 'cancel' | 'complete' | 'noShow' | 'reopen' {
-  if (action === 'no_show') return 'noShow';
-  return action;
-}
-
-type ConfirmKey = 'approve' | 'cancel' | 'noShow' | 'complete' | 'reopen';
-
-const CONFIRM_KEYS: Record<
-  AppointmentAction,
-  {
-    title: `appointments.confirm.${ConfirmKey}Title`;
-    message: `appointments.confirm.${ConfirmKey}Message`;
-    confirm: `appointments.confirm.${ConfirmKey}Confirm`;
-  }
-> = {
-  approve: {
-    title: 'appointments.confirm.approveTitle',
-    message: 'appointments.confirm.approveMessage',
-    confirm: 'appointments.confirm.approveConfirm',
-  },
-  cancel: {
-    title: 'appointments.confirm.cancelTitle',
-    message: 'appointments.confirm.cancelMessage',
-    confirm: 'appointments.confirm.cancelConfirm',
-  },
-  no_show: {
-    title: 'appointments.confirm.noShowTitle',
-    message: 'appointments.confirm.noShowMessage',
-    confirm: 'appointments.confirm.noShowConfirm',
-  },
-  complete: {
-    title: 'appointments.confirm.completeTitle',
-    message: 'appointments.confirm.completeMessage',
-    confirm: 'appointments.confirm.completeConfirm',
-  },
-  reopen: {
-    title: 'appointments.confirm.reopenTitle',
-    message: 'appointments.confirm.reopenMessage',
-    confirm: 'appointments.confirm.reopenConfirm',
-  },
-};
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.row}>
-      <Text variant="label" color="textSecondary">
-        {label}
-      </Text>
-      <Text variant="body">{value}</Text>
-    </View>
   );
 }
 

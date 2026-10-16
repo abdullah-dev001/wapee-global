@@ -9,6 +9,7 @@ import { Button, Dialog, Drawer, ErrorState, useToast } from '@/components/ui';
 import { useMyStaffProfile } from '@/features/appointments/api/useMyStaffProfile';
 import { RouteGuard } from '@/features/auth';
 import { planErrorKey } from '@/features/plans/planErrors';
+import { RpcError } from '@/lib/supabase';
 import { StaffScheduleEditor } from '@/features/schedule/components/StaffScheduleEditor';
 import {
   useAddMeAsStaff,
@@ -18,7 +19,7 @@ import {
 } from '@/features/staff/api/useStaff';
 import { StaffForm } from '@/features/staff/components/StaffForm';
 import { StaffList } from '@/features/staff/components/StaffList';
-import { linkErrorKey } from '@/features/staff/staffLogin';
+import { archiveErrorKey, linkErrorKey, staffErrorKey } from '@/features/staff/staffLogin';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
@@ -66,9 +67,8 @@ export default function StaffScreen() {
                         onSuccess: () =>
                           toast.show({ message: t('staff.addMe.done'), tone: 'success' }),
                         onError: (error) => {
-                          const planKey = planErrorKey(error);
-                          const key = planKey ?? linkErrorKey(error);
-                          toast.show({ message: key ? t(key) : error.message, tone: 'error' });
+                          const key = planErrorKey(error) ?? linkErrorKey(error);
+                          toast.show({ message: t(key ?? staffErrorKey(error)), tone: 'error' });
                         },
                       })
                     }
@@ -93,7 +93,7 @@ export default function StaffScreen() {
             {staff.isError ? (
               <ErrorState
                 title={t('staff.error.title')}
-                description={staff.error.message}
+                description={t(staffErrorKey(staff.error))}
                 onRetry={() => void staff.refetch()}
                 retryLabel={t('actions.retry')}
               />
@@ -172,7 +172,14 @@ export default function StaffScreen() {
             variant: 'danger',
             onPress: () => {
               if (!deleting) return;
-              remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
+              remove.mutate(deleting.id, {
+                onSuccess: () => setDeleting(null),
+                onError: (error) => {
+                  const count = error instanceof RpcError ? (error.extra.count as number) : 0;
+                  const key = archiveErrorKey(error) ?? staffErrorKey(error);
+                  toast.show({ message: t(key, { count }), tone: 'error' });
+                },
+              });
             },
           }}
           cancelLabel={t('actions.cancel')}

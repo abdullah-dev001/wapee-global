@@ -63,7 +63,7 @@ function unwrapRpc<T extends { ok?: boolean; code?: string }>(
   data: unknown,
   error: { message: string } | null,
 ): T {
-  if (error) throw new Error(error.message);
+  if (error) throw error;
   const result = data as T;
   if (result && result.ok === false) {
     throw new AppointmentRpcError((result.code as AppointmentErrorCode) ?? 'unknown');
@@ -130,7 +130,7 @@ export function useAppointmentList(
         p_cursor_starts_at: cursor?.starts_at,
         p_cursor_id: cursor?.id,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       const result = data as {
         rows: RawAppointmentRow[];
         next_cursor: AppointmentListPage['nextCursor'];
@@ -219,7 +219,7 @@ export function useCalendarAppointments(
         p_to_date: toDate,
         p_staff_ids: staffIds ?? undefined,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       const result = data as {
         timezone: string;
         rows: {

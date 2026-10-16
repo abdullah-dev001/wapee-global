@@ -25,7 +25,7 @@ import { useAdminAccess } from '../api/useAdminAccess';
  * rewrite the URL out from under whatever screen was actually requested.
  */
 export function AdminAccessGate({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isEmailVerified, loading, user } = useSession();
+  const { isAuthenticated, isEmailVerified, isPasswordRecovery, loading, user } = useSession();
   const access = useAdminAccess();
   const businesses = useMyBusinesses();
   const pathname = usePathname();
@@ -51,6 +51,7 @@ export function AdminAccessGate({ children }: { children: ReactNode }) {
     access,
     pathname,
     hasBusiness: (businesses.data?.length ?? 0) > 0,
+    isPasswordRecovery,
   });
 
   return (

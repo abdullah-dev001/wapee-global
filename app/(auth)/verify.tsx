@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, Text, useToast } from '@/components/ui';
 import { useResendVerification, useSignOut } from '@/features/auth/api/useAuthMutations';
+import { authErrorKey } from '@/features/auth/authErrorKey';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
 import { useSession } from '@/features/auth/SessionProvider';
 import { theme } from '@/lib/theme';
@@ -41,7 +42,7 @@ export default function VerifyScreen() {
               { email },
               {
                 onSuccess: () => toast.show({ message: t('auth.verify.resent'), tone: 'success' }),
-                onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+                onError: (error) => toast.show({ message: t(authErrorKey(error)), tone: 'error' }),
               },
             )
           }

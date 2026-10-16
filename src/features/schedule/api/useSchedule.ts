@@ -57,8 +57,8 @@ export function useStaffSchedule(
           .order('start_minute'),
       ]);
 
-      if (hours.error) throw new Error(hours.error.message);
-      if (breaks.error) throw new Error(breaks.error.message);
+      if (hours.error) throw Object.assign(new Error(hours.error.message), { code: hours.error.code });
+      if (breaks.error) throw Object.assign(new Error(breaks.error.message), { code: breaks.error.code });
 
       return {
         workingHours: (hours.data ?? []).map((row) => ({
@@ -85,6 +85,34 @@ export type SaveScheduleInput = {
   intervals: { dayOfWeek: number; startMinute: MinuteOfDay; endMinute: MinuteOfDay }[];
   table: 'staff_working_hours' | 'staff_breaks';
 };
+
+/**
+ * How many of this person's future appointments at this branch would fall
+ * outside the given candidate working-hours intervals. Called right before
+ * saving (not a query hook: it is imperative, one-shot, run from an event
+ * handler) so the editor can warn with a count and let the owner proceed —
+ * nothing is deleted or hidden either way, so this is a warning, not a
+ * refusal (decided with the user). Breaks are not checked: they are
+ * fine-grained and the slot engine already tolerates one outside working
+ * hours with no effect (see context/schedule.md).
+ */
+export async function getStaffScheduleConflicts(
+  staffId: string,
+  branchId: string,
+  intervals: SaveScheduleInput['intervals'],
+): Promise<number> {
+  const { data, error } = await getSupabase().rpc('staff_schedule_conflicts', {
+    p_staff_id: staffId,
+    p_branch_id: branchId,
+    p_intervals: intervals.map((interval) => ({
+      day_of_week: interval.dayOfWeek,
+      start_minute: interval.startMinute,
+      end_minute: interval.endMinute,
+    })),
+  });
+  if (error) throw Object.assign(new Error(error.message), { code: error.code });
+  return data ?? 0;
+}
 
 /**
  * Replaces a person's week at one branch, **in one transaction**.
@@ -123,7 +151,7 @@ export function useSaveStaffSchedule(businessId: string | null, branchId: string
               p_intervals: payload,
             });
 
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return data ?? 0;
     },
     onSuccess: () => {
@@ -166,7 +194,7 @@ export function useTimeOff(businessId: string | null): UseQueryResult<TimeOffEnt
         // Past absences are history; the editor only manages what is to come.
         .gte('ends_at', new Date().toISOString())
         .order('starts_at');
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
 
       return (data ?? []).map((row) => ({
         id: row.id,
@@ -179,6 +207,24 @@ export function useTimeOff(businessId: string | null): UseQueryResult<TimeOffEnt
       }));
     },
   });
+}
+
+/**
+ * How many of this person's future appointments overlap a candidate time-off
+ * range. Same imperative, warn-and-proceed use as `getStaffScheduleConflicts`.
+ */
+export async function getStaffTimeOffConflicts(
+  staffId: string,
+  startsAt: string,
+  endsAt: string,
+): Promise<number> {
+  const { data, error } = await getSupabase().rpc('staff_time_off_conflicts', {
+    p_staff_id: staffId,
+    p_starts_at: startsAt,
+    p_ends_at: endsAt,
+  });
+  if (error) throw Object.assign(new Error(error.message), { code: error.code });
+  return data ?? 0;
 }
 
 /** Books time off. No approval step — see context/schedule.md. */
@@ -204,7 +250,7 @@ export function useSaveTimeOff(businessId: string | null) {
         })
         .select('id')
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return data.id;
     },
     onSuccess: () => {
@@ -222,7 +268,7 @@ export function useDeleteTimeOff(businessId: string | null) {
   return useMutation<undefined, Error, string>({
     mutationFn: async (id) => {
       const { error } = await getSupabase().from('staff_time_off').delete().eq('id', id);
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return undefined;
     },
     onSuccess: () => {

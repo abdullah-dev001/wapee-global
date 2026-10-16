@@ -27,7 +27,7 @@ export function useIsOwnerOrManager(
         p_business_id: businessId ?? '',
         p_branch_id: branchId ?? undefined,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return data ?? false;
     },
   });

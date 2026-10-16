@@ -17,7 +17,7 @@ import {
 } from '../api/useReport';
 import { formatMinor } from '../format';
 import { barPercent, sortByCurrency, statusCountRows } from '../invoiceLogic';
-import { InvoiceRpcError } from '../types';
+import { invoiceErrorKey } from '../invoiceErrorKey';
 
 /**
  * Today and This month, from `get_basic_report` (each branch in its OWN
@@ -69,11 +69,7 @@ export function ReportsScreen() {
           {report.isError ? (
             <ErrorState
               title={t('reports.error.title')}
-              description={
-                report.error instanceof InvoiceRpcError
-                  ? t(`invoices.errors.${report.error.code}`)
-                  : report.error.message
-              }
+              description={t(invoiceErrorKey(report.error))}
               onRetry={() => void report.refetch()}
               retryLabel={t('actions.retry')}
             />

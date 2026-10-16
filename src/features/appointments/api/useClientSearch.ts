@@ -41,7 +41,7 @@ export function useClientSearch(
         .or(`full_name.ilike.%${search}%,phone_e164.ilike.%${search}%`)
         .order('full_name')
         .limit(20);
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return (data ?? []).flatMap((row) =>
         row.id && row.full_name
           ? [{ id: row.id, fullName: row.full_name, phoneE164: row.phone_e164, email: row.email }]

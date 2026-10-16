@@ -30,6 +30,7 @@ export type MyBusiness = Pick<
   | 'status'
   | 'plan'
   | 'trial_ends_at'
+  | 'current_period_end'
   | 'language'
   | 'setup_checklist_dismissed_at'
 > & {
@@ -55,7 +56,7 @@ export function useMyBusinesses(): UseQueryResult<MyBusiness[], Error> {
       const { data, error } = await getSupabase()
         .from('businesses')
         .select(
-          'id, name, slug, status, plan, trial_ends_at, language, setup_checklist_dismissed_at, branches(id, name, is_primary, country_code, currency, timezone, invoice_prefix, deleted_at)',
+          'id, name, slug, status, plan, trial_ends_at, current_period_end, language, setup_checklist_dismissed_at, branches(id, name, is_primary, country_code, currency, timezone, invoice_prefix, deleted_at)',
         )
         .is('deleted_at', null)
         .order('created_at', { ascending: true });
@@ -106,7 +107,11 @@ export function useCreateBusiness() {
         p_industry: values.industry ?? undefined,
         p_branch_name: values.branchName ?? undefined,
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        const wrapped = new Error(error.message) as Error & { code?: string };
+        wrapped.code = error.code;
+        throw wrapped;
+      }
       if (!data) throw new Error('Business was not created');
       return data;
     },

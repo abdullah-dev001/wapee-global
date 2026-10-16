@@ -1,5 +1,5 @@
 # Dashboard appointments — UI
-Status: done (Phase 4 part B1, fixed in B2) · Phase: 4 · Last updated: 2026-10-05
+Status: done (Phase 4 part B1, fixed in B2; reschedule + answers 2026-10-16) · Phase: 4 · Last updated: 2026-10-16
 
 The Today screen (`context/today.md`) reuses this file's hooks/components
 directly: `useCalendarAppointments`, `useLiveRefetchInterval`,
@@ -44,6 +44,9 @@ documents the UI layer on top of it.
   `useOverlayDismiss` routes all three through one `onClose` callback — no
   new back-handling needed, just a dirty check before deciding what
   `onClose` does).
+- **Reschedule (2026-10-16)** = drawer button -> `RescheduleForm` inside the same drawer (close / scrim / Escape / Android back leave the form first, then the drawer). Shown only for `pending`/`confirmed` and `rescheduleScope()`: Branch/All scope of `appointments.edit` at that branch = any appointment + staff picker (`eligibleStaff`: active, at the branch, does the service, as `update_appointment` requires); Own scope = only the caller's own appointment, no staff picker. Values are branch-timezone date + minute (`initialRescheduleValues`); only changed fields are sent (`rescheduleInput`, Save disabled when nothing changed). The RPC owns every rule (collision with its own row excluded, buffer, scope, `not_editable`). On success the drawer closes (its row prop holds the old time). The customer gets the existing "rescheduled" email from the appointments trigger when the TIME changes; a staff-only move sends the customer nothing (owner decision 2026-10-16).
+- **Booking-form answers (2026-10-16)** show in the drawer (`AppointmentAnswersSection`) and on the client profile (`clients.md`). Labels / type / order come from the answer row's OWN `form_version_id` snapshot, never live `custom_fields`. Visibility is RLS only: Own/Branch/All like the appointment, sensitive only with `clients.view_sensitive` (suite 43, proven live).
+- **Errors never show raw server text**: every read/write error goes through `appointmentErrorKey()` (RPC `{ok:false,code}` -> `appointments.errors.<code>`, SQLSTATE 42501 -> forbidden, 23P01 -> slot_unavailable, else unknown). The api layer rethrows the original Postgrest error (keeps `.code`) instead of `new Error(message)`.
 - **Out-of-hours is a warning, never a block** (doc §6.2: staff can book
   outside hours in the dashboard) — shown in the create form by comparing
   the chosen slot to `useStaffSchedule`/`useBranchSchedule`, purely
@@ -69,7 +72,15 @@ documents the UI layer on top of it.
 | src/features/appointments/components/DayView.tsx | one `StaffColumnsGrid` for one date |
 | src/features/appointments/components/WeekView.tsx | 7-day strip + `DayView` |
 | src/features/appointments/components/CreateAppointmentForm.tsx | client search/new, service, staff, date/time, notes, walk-in toggle, out-of-hours warning |
-| src/features/appointments/components/AppointmentDetailDrawer.tsx | fields, `StatusBadge`, status+permission-filtered actions, confirm dialogs |
+| src/features/appointments/components/AppointmentDetailDrawer.tsx | fields, `StatusBadge`, status+permission-filtered actions, confirm dialogs, Reschedule button, booking answers |
+| src/features/appointments/components/RescheduleForm.tsx | (2026-10-16) move time and/or staff via `useUpdateAppointment` |
+| src/features/appointments/reschedule.ts | (2026-10-16) pure: `rescheduleScope`, `canShowReschedule`, `initialRescheduleValues`, `rescheduleInput`, `eligibleStaff` (tests incl. DST) |
+| src/features/appointments/useOutOfHoursWarning.ts | (2026-10-16) advisory out-of-hours check, shared by the create and reschedule forms (moved out of `CreateAppointmentForm`) |
+| src/features/appointments/appointmentErrorKey.ts | (2026-10-16) error -> i18n key mapper |
+| src/features/appointments/answers.ts | (2026-10-16) pure: join answers to their own form-version snapshot, order, yes/no |
+| src/features/appointments/api/useAppointmentAnswers.ts | (2026-10-16) `useAppointmentAnswers` (one appointment) + `useClientAnswers` (client profile, 20 visits/page, keyset on `starts_at desc, id desc`, `!inner` join) |
+| src/features/appointments/components/AppointmentAnswersSection.tsx, BookingAnswersList.tsx | (2026-10-16) drawer section + shared question/answer list (lock + "Sensitive") |
+| src/features/appointments/components/DetailRow.tsx, src/features/appointments/actionKeys.ts | (2026-10-16) split out of the drawer to keep it under 300 lines |
 | src/features/appointments/components/AppointmentListView.tsx | `FlatList` + keyset `onEndReached`, pull-to-refresh |
 | src/features/appointments/components/AppointmentListFilterBar.tsx | status/staff/service `Select`s + `SearchInput` |
 | src/features/appointments/components/DateNavButton.tsx | icon-only prev/next button — see Known limits |
@@ -117,7 +128,7 @@ selected day.
 `FlatList` (pull-to-refresh, skeleton/empty/error states).
 
 ## i18n
-Namespace `common`, group `appointments.*`.
+Namespace `common`, group `appointments.*` (`appointments.reschedule.*`, `appointments.answers.*` added 2026-10-16).
 
 ## Known limits / TODO
 - **Click-tested on the iOS simulator (2026-10-05, Phase 4 part B2
@@ -144,6 +155,7 @@ Namespace `common`, group `appointments.*`.
   `setQueryData` — fine given Realtime already re-invalidates.
 
 ## Changelog
+- 2026-10-16: Reschedule from the detail drawer (time and/or staff, same service; `update_appointment`), booking-form answers in the drawer, and `appointmentErrorKey` on every Calendar/Today/list/create/drawer error (no raw server text). Live on dev: 17 HTTP checks as real Owner/Staff sessions + a UI save at 375 (out-of-hours warning, toast, stored 20:00 London, one `rescheduled` outbox row); screenshots 375/1440 of drawer, form, client answers. Suite 12 171/171 (+18). Android: reviewed in code, not run.
 - 2026-10-20: Appointment popup (Calendar + Today share it) shows the client's phone/email with Call / WhatsApp / Email / Copy and a View client link (`AppointmentClientContact`). Data = `clients_v` via `useClient` (DB blanks it without `clients.view_contact` and returns no row for clients outside the viewer's scope; the calendar query carries no contact data). No access -> name only; allowed but empty -> "No phone/email on file". Link builders + display in `features/clients/contactLinks.ts`.
 - 2026-10-20: FIX hour labels drifted up 8px per hour (`marginTop:-8` on 64px rows = 56px pitch), so 12:00 cards sat near the 1 PM label; labels now absolute from `minuteToOffsetPx`. Cards: 96px/hour, min height 28, compact (1 line) / standard / full (service) by height, hour lines drawn, `minuteOfDayFromTime` uses h23. Branch timezone was already used.
 - 2026-10-07: Phase 10B: the detail drawer shows Forms (pending / signed per attached template, sign here, send link) and Files and photos for that visit while the add-ons are on.

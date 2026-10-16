@@ -24,6 +24,13 @@ export type SessionState = {
   /** Supabase only issues a session once the email is confirmed, but a project
    *  with confirmation disabled can produce an unverified one — check explicitly. */
   isEmailVerified: boolean;
+  /**
+   * True from the moment a password-recovery email link signs the user in
+   * until the password is actually saved (or the session ends). The gates
+   * (`AuthGate`, `AdminAccessGate`) read this to force `/reset-password`
+   * instead of their ordinary redirect, including for a 2FA-enrolled admin.
+   */
+  isPasswordRecovery: boolean;
 };
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -39,8 +46,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // Whether Supabase is configured is known at import time, so start settled
   // when there is no client to wait for.
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   // Latest session for the auth listener, which must not re-subscribe on change.
   const sessionRef = useRef<Session | null>(null);
+  const isPasswordRecoveryRef = useRef(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -56,9 +65,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     const { data: subscription } = client.auth.onAuthStateChange((event, nextSession) => {
       // Same-user SIGNED_IN / TOKEN_REFRESHED (fired on every tab refocus) is silent.
-      const transition = nextSessionState(event, sessionRef.current, nextSession);
+      const transition = nextSessionState(
+        event,
+        sessionRef.current,
+        nextSession,
+        isPasswordRecoveryRef.current,
+      );
       sessionRef.current = transition.session;
+      isPasswordRecoveryRef.current = transition.isPasswordRecovery;
       setSession(transition.session);
+      setIsPasswordRecovery(transition.isPasswordRecovery);
       setLoading(false);
       // A different user (or none) must never see the previous user's cache.
       if (transition.clearCache) queryClient.clear();
@@ -77,8 +93,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       loading,
       isAuthenticated: Boolean(session),
       isEmailVerified: Boolean(session?.user.email_confirmed_at),
+      isPasswordRecovery,
     }),
-    [session, loading],
+    [session, loading, isPasswordRecovery],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

@@ -334,7 +334,72 @@ select pg_temp.chk('assign solo ok', pg_temp.adm(format($q$select public.assign_
 select pg_temp.chk('assign stored plan, status, period, assigned_by, notes',
   (select plan::text || ':' || status::text || ':' || (current_period_end > now())::text || ':' || (assigned_by = pg_temp.id('sadmin'))::text || ':' || notes from public.business_subscriptions where business_id = pg_temp.id('biza')),
   'solo:active:true:true:first plan');
-select pg_temp.chk('...mirrored to businesses', (select plan::text || ':' || status::text from public.businesses where id = pg_temp.id('biza')), 'solo:active');
+select pg_temp.chk('...current_period_end ALSO mirrored to businesses', (select (b.current_period_end = s.current_period_end)::text from public.businesses b join public.business_subscriptions s on s.business_id = b.id where b.id = pg_temp.id('biza')), 'true');
+select pg_temp.chk('a future period end does not lock the business', public.business_is_active(pg_temp.id('biza'))::text, 'true');
+
+-- current_period_end enforcement: a PAID period that has ended, with an
+-- explicit end date, locks the business the same way an expired trial does;
+-- a null period end (manual billing, no expiry) never locks anything.
+update public.business_subscriptions set current_period_start = now() - interval '35 days', current_period_end = now() - interval '1 day' where business_id = pg_temp.id('biza');
+select pg_temp.chk('elapsed period_end mirrors to businesses', (select (current_period_end < now())::text from public.businesses where id = pg_temp.id('biza')), 'true');
+select pg_temp.chk('an elapsed PAID period locks the business even though status is still active',
+  (select status::text from public.businesses where id = pg_temp.id('biza')) || public.business_is_active(pg_temp.id('biza'))::text, 'activefalse');
+select pg_temp.chk('...my_grants still returns the full set (UI gating only, not the boundary)',
+  (pg_temp.try_as(pg_temp.id('owner'), format($q$select * from public.my_grants(%L)$q$, pg_temp.id('biza'))) not in ('ok:0'))::text, 'true');
+select pg_temp.chk('...but every operational feature goes off too (can() -> business_is_active() false)',
+  pg_temp.feat('biza', 'core'), 'false');
+-- Split into separate statements: a scalar subquery in the SAME expression
+-- as a volatile call does not see that call's own writes (the same trap
+-- documented elsewhere in this suite set — Phase 9A/9B/10A).
+do $$
+declare r jsonb;
+begin
+  r := pg_temp.adm(format($q$select public.assign_plan(%L, 'solo')$q$, pg_temp.id('biza')));
+  perform pg_temp.chk('null current_period_end never locks (manual billing, no expiry)',
+    (r ->> 'ok') ||
+    (select (current_period_end is null)::text from public.business_subscriptions where business_id = pg_temp.id('biza')) ||
+    public.business_is_active(pg_temp.id('biza'))::text,
+    'truetruetrue');
+end $$;
+
+-- set_business_status('active') clears a STALE PAST period end instead of
+-- immediately re-locking the business it was just asked to reactivate — a
+-- real UI path independent of assign_plan (the status dialog). Each check is
+-- its own statement: a scalar subquery in the same expression as the volatile
+-- call above it does not see that call's own write.
+update public.business_subscriptions set current_period_start = now() - interval '35 days', current_period_end = now() - interval '2 days' where business_id = pg_temp.id('biza');
+select pg_temp.adm(format($q$select public.set_business_status(%L, 'suspended')$q$, pg_temp.id('biza')));
+do $$
+declare r jsonb;
+begin
+  r := pg_temp.adm(format($q$select public.set_business_status(%L, 'active')$q$, pg_temp.id('biza')));
+  perform pg_temp.chk('reactivating with a stale PAST period end clears it, does not re-lock',
+    (r ->> 'ok') ||
+    (select (current_period_end is null)::text from public.business_subscriptions where business_id = pg_temp.id('biza')) ||
+    public.business_is_active(pg_temp.id('biza'))::text,
+    'truetruetrue');
+end $$;
+
+do $$
+declare r jsonb;
+begin
+  r := pg_temp.adm(format($q$select public.assign_plan(%L, 'solo', now() + interval '10 days')$q$, pg_temp.id('biza')));
+  perform pg_temp.chk('reactivating with a FUTURE period end leaves it alone', r ->> 'ok', 'true');
+end $$;
+select pg_temp.adm(format($q$select public.set_business_status(%L, 'suspended')$q$, pg_temp.id('biza')));
+do $$
+declare r jsonb;
+begin
+  r := pg_temp.adm(format($q$select public.set_business_status(%L, 'active')$q$, pg_temp.id('biza')));
+  perform pg_temp.chk('...reactivate keeps a future period end untouched',
+    (r ->> 'ok') ||
+    (select (current_period_end > now())::text from public.business_subscriptions where business_id = pg_temp.id('biza')) ||
+    public.business_is_active(pg_temp.id('biza'))::text,
+    'truetruetrue');
+end $$;
+-- Clear it for the rest of the suite's own assumptions below.
+update public.business_subscriptions set current_period_end = null where business_id = pg_temp.id('biza');
+
 select pg_temp.chk('SOLO core/website/reviews/booking_link on',
   pg_temp.feat('biza', 'core') || pg_temp.feat('biza', 'website') || pg_temp.feat('biza', 'reviews') || pg_temp.feat('biza', 'booking_link'), 'truetruetruetrue');
 select pg_temp.chk('SOLO commission/widget/advanced_reports/custom_roles/multi_branch off',
@@ -643,6 +708,8 @@ begin
   perform pg_temp.chk('list: search < 2 chars refused', pg_temp.adm($q$select public.list_businesses('a')$q$) ->> 'code', 'search_too_short');
   perform pg_temp.chk('list: search finds by name', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('Alpha')$q$) -> 'items'), 1);
   perform pg_temp.chk('list: search finds by slug', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('p8-gamma')$q$) -> 'items'), 1);
+  perform pg_temp.chk('list: search finds by the owner''s email', (select i ->> 'slug' from jsonb_array_elements(pg_temp.adm($q$select public.list_businesses('p8.owner@example.com')$q$) -> 'items') i), 'p8-alpha');
+  perform pg_temp.chk('list: owner-email search does not match a NON-owner''s email (manager)', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('p8.manager@example.com')$q$) -> 'items'), 0);
   perform pg_temp.chk('list: a LIKE wildcard is escaped (matches nothing)', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('%%')$q$) -> 'items'), 0);
   perform pg_temp.chk('list: status filter (trialing P8s: the trial one only)', jsonb_array_length(pg_temp.adm($q$select public.list_businesses('P8 ', 'trialing')$q$) -> 'items'), 1);
   perform pg_temp.chk('list: plan filter (team: A and the downgraded B)', (select string_agg(i ->> 'slug', ',' order by i ->> 'slug') from jsonb_array_elements(pg_temp.adm($q$select public.list_businesses('P8 ', null, 'team')$q$) -> 'items') i), 'p8-alpha,p8-beta');

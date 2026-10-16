@@ -1,5 +1,5 @@
 # Billing & trial lock
-Status: trial lock done · plans/subscriptions are Phase 8 · Phase: 1 · Last updated: 2026-10-02
+Status: trial lock done · plans/subscriptions are Phase 8 · audited live end-to-end · Phase: 1 · Last updated: 2026-10-14
 
 ## What it does
 When a business becomes inactive — the 14-day trial ran out, or a super admin
@@ -36,19 +36,20 @@ doc agree; there is no outstanding deviation.
 | src/features/billing/inactiveRoutes.test.ts | 5 tests pinning the allowed-route list |
 | src/features/auth/components/RouteGuard.tsx | Now `ActiveBusinessGate` → `PermissionGuard` |
 | src/config/brand.ts | `supportEmail` (PLACEHOLDER) |
+| src/lib/permissions/businessActive.ts | `isBusinessActive()` — pure, unit-tested client mirror of SQL `business_is_active()`, now period-end aware |
+| src/features/plans/components/BillingScreen.tsx | Owner billing screen: plan, status, trial/period end (past vs future wording), staff/location usage, add-ons, "Contact us" |
 
 ## Database
-Nothing new. The boundary already existed:
-- `business_is_active(business_id)` — status `active`, or `trialing` with `trial_ends_at > now()`.
+- `business_is_active(business_id)` — `active` (and, if `current_period_end` is set, still before it), or `trialing` with `trial_ends_at > now()`. A paid period that has ended, with an explicit end date, locks the business the same way an expired trial does; `current_period_end is null` (manual billing, no expiry) never locks anything (migration `20261014140132`, 2026-10-14).
+- `current_period_end` is mirrored `business_subscriptions` → `businesses`, same pattern as `plan`/`status`/`trial_ends_at`/`plan_activated_at`. `set_business_status('active')` clears a STALE PAST period end on reactivation only (a real UI path independent of `assign_plan`), so reactivating never instantly re-locks; a future period end is left untouched.
 - `can(business, branch, perm)` = `business_is_active()` AND `has_permission()`, used by every operational policy.
 - `businesses` RLS is **deliberately not** gated on `business_is_active()`, so settings and billing keep working.
-- A tenant cannot change its own `plan`, `status` or trial dates (`enforce_business_guard`).
+- A tenant cannot change its own `plan`, `status`, trial dates or `current_period_end` (`enforce_business_guard`).
 
 ## Data & caching
-`isActive` comes from `useGrantSet()`, which reads status and `trial_ends_at` via
-`useMyBusinesses()` (staleTime 30 s). So a trial expiring while the app is open
-locks it within 30 seconds, and immediately on any refetch. The client mirror is
-`isBusinessActive()` in `lib/permissions/useGrants.ts`.
+`isActive` comes from `useGrantSet()`, via the pure `isBusinessActive()` (now in its own file, `lib/permissions/businessActive.ts`, so it is unit-testable — same reason as `trialCountdown.ts`), which reads status, `trial_ends_at` AND `current_period_end` via
+`useMyBusinesses()` (staleTime 30 s). So a trial or a paid period expiring while the app is open
+locks it within 30 seconds, and immediately on any refetch.
 
 ## Permissions & gating
 `can()` already refuses every permission except `settings.business` and
@@ -112,6 +113,8 @@ Plans, subscriptions, trial rules, the super admin lifecycle RPCs (`assign_plan`
 - No plan self-service, no checkout, no invoice history (Phase 8, super admin assigns plans by hand).
 
 ## Changelog
+- 2026-10-16: Migrations renamed (content unchanged) so they sort after everything on prod: `20261014104921_list_businesses_search_owner_email` -> `20261024160000_…`, `20261014140132_enforce_current_period_end` -> `20261024160100_…`. Reason: `20261020110000_suspended_login_block` also defines `set_business_status`; in filename order it overwrote the period-end version on any from-empty replay. Proven: `check:migrations` 159/159 and the replayed `set_business_status` has both the stale-period fix and the session revoke. Dev's `schema_migrations` still records the old versions (repair pending the user's approval, see _handoff).
+- 2026-10-14: **Features 7/8 audit, live against dev, two real bugs fixed.** (1) `current_period_end` was a documented-known gap: it existed on `business_subscriptions` but nothing ever read it, so a paid plan with an elapsed period stayed "active" forever. Fixed with the smallest safe change: mirrored into `businesses`, `business_is_active()` now locks a business whose `status = 'active'` AND whose `current_period_end` has passed — `null` (manual billing, no expiry) never locks anything, proven live end-to-end (assign a near-future period, wait for it to elapse, confirm `my_features().active` flips false and an operational read is refused while settings/billing stay reachable, confirm a super admin assigning a new plan immediately unlocks it). A second, subtler case found and fixed in the same migration: `set_business_status('active')` (the status dialog, independent of `assign_plan`) would otherwise instantly re-lock a business being reactivated if its `current_period_end` was already stale in the past — now clears a PAST period end on that one transition only; a future one is left untouched (confirmed with the user before applying). (2) `TrialEndedScreen`/`BillingScreen` both only had wording for "trial ended" or "suspended" — a business locked by an elapsed PAID period (a brand-new case created by fixing (1)) showed the misleading "Your 14-day trial is over" text; added a third `periodEnded`/`periodEndedPast` wording branch to both. Full live proof of the whole trial lifecycle (14-day start, Business-level/everything-on during trial, owner vs. staff grants during and after expiry, data never deleted, super-admin-assigns-plan-after-expiry immediately unlocks) and the Solo/Team/Business feature matrix vs. product doc §10 (staff cap, branch limit, every feature flag) found **no other bugs** — everything else matched exactly. The billing screen's period-end display and the admin detail screen's period-end display were already built in advance (read `business_subscriptions.current_period_end` directly, not through the new mirror) and needed no change. Migration `20261014140132_enforce_current_period_end.sql` — **older than `20261024100500`**, applies cleanly in filename order right after `phase10b_outbox_form_request` (20261014120000) with no dependency on anything from 20261013–20261024; `npm run check:migrations` confirms 154/154 from an empty database. New `heldRankAtBranch`-style pure module `lib/permissions/businessActive.ts` (split out of `useGrants.ts`, which pulled in React Native and could not be unit tested directly), 10 new tests. Suite 18 gained 1 new real bug fix of its own: a scalar subquery in the same expression as a volatile call (`pg_temp.adm(...)`) does not see that call's own write — the exact trap this suite set already documents elsewhere — caught while adding the new period-end assertions, fixed by splitting each into its own statement; 367/367 (was 356). Suites 19/21/41/42 unaffected, all green. 833/833 unit tests (10 new), tsc/lint clean. **Not applied to prod** — dev only, as instructed.
 - 2026-10-02: Product doc decision 12 / §5 / §10 updated to match what is built (Settings + Billing + More stay reachable).
 - 2026-10-02: Trial banner added (last 3 days, Owner only, stronger on the last day) with `ConsumedInsets` so the mobile inset is not applied twice.
 - 2026-10-02: Trial lock built: `ActiveBusinessGate`, `TrialEndedScreen`, allowed-route list + tests, `RouteGuard` now checks active-business before permission.

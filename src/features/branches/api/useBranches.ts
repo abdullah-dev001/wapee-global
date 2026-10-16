@@ -68,7 +68,7 @@ export function useBranchAdmin(businessId: string | null) {
         .eq('business_id', businessId ?? '')
         .order('is_primary', { ascending: false })
         .order('name');
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       return (data ?? []).map((row) => ({
         id: row.id,
         name: row.name,

@@ -159,7 +159,13 @@ export function useInviteMember(businessId: string | null) {
         ...(values.branchId ? { p_branch_id: values.branchId } : {}),
         ...(values.staffId ? { p_staff_id: values.staffId } : {}),
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        // invite_member raises (Postgres errcode), not the {ok,code} shape —
+        // keep the code so inviteMemberErrorKey() can map it to an i18n key.
+        const wrapped = new Error(error.message) as Error & { code?: string };
+        wrapped.code = error.code;
+        throw wrapped;
+      }
 
       const row = Array.isArray(data) ? data[0] : data;
       if (!row) throw new Error('The invite was not created');

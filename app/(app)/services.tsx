@@ -1,19 +1,21 @@
-import { Plus } from 'lucide-react-native';
+import { Plus, Tags } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
 import { SearchInput } from '@/components/shared';
-import { Button, Dialog, Drawer, ErrorState } from '@/components/ui';
+import { Button, Dialog, Drawer, ErrorState, useToast } from '@/components/ui';
 import { RouteGuard } from '@/features/auth';
 import {
   useDeleteService,
   useServices,
   type ServiceListItem,
 } from '@/features/services/api/useServices';
+import { CategoriesDrawer } from '@/features/services/components/CategoriesDrawer';
 import { ServiceForm } from '@/features/services/components/ServiceForm';
 import { ServiceList } from '@/features/services/components/ServiceList';
+import { serviceErrorKey } from '@/features/services/serviceErrorKey';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
@@ -23,11 +25,13 @@ import { theme } from '@/lib/theme';
  */
 export default function ServicesScreen() {
   const { t } = useTranslation();
+  const toast = useToast();
   const { businessId, branchId, business } = useCurrentScope();
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<ServiceListItem | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<ServiceListItem | null>(null);
+  const [managingCategories, setManagingCategories] = useState(false);
 
   const services = useServices(businessId, branchId, { search });
   const canManage = usePermission('services.manage');
@@ -44,9 +48,19 @@ export default function ServicesScreen() {
           count={services.data?.length}
           actions={
             canManage.allowed ? (
-              <Button size="sm" startIcon={Plus} onPress={() => setCreating(true)}>
-                {t('services.create')}
-              </Button>
+              <View style={styles.headerActions}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  startIcon={Tags}
+                  onPress={() => setManagingCategories(true)}
+                >
+                  {t('services.categories.title')}
+                </Button>
+                <Button size="sm" startIcon={Plus} onPress={() => setCreating(true)}>
+                  {t('services.create')}
+                </Button>
+              </View>
             ) : null
           }
         >
@@ -60,7 +74,7 @@ export default function ServicesScreen() {
             {services.isError ? (
               <ErrorState
                 title={t('services.error.title')}
-                description={services.error.message}
+                description={t(serviceErrorKey(services.error))}
                 onRetry={() => void services.refetch()}
                 retryLabel={t('actions.retry')}
               />
@@ -112,12 +126,32 @@ export default function ServicesScreen() {
             variant: 'danger',
             onPress: () => {
               if (!deleting) return;
-              remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
+              remove.mutate(deleting.id, {
+                onSuccess: () => {
+                  toast.show({ message: t('services.deleted'), tone: 'success' });
+                  setDeleting(null);
+                },
+                onError: (error) =>
+                  toast.show({ message: t(serviceErrorKey(error)), tone: 'error' }),
+              });
             },
           }}
           cancelLabel={t('actions.cancel')}
+        />
+
+        <CategoriesDrawer
+          businessId={businessId}
+          open={managingCategories}
+          onClose={() => setManagingCategories(false)}
         />
       </Screen>
     </RouteGuard>
   );
 }
+
+const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: 'row',
+    gap: theme.spacing[8],
+  },
+});

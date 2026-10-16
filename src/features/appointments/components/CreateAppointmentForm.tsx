@@ -7,12 +7,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Calendar, FormField, PhoneInput, SearchInput, TimePicker } from '@/components/shared';
 import { Button, SegmentedControl, Select, Text, Toggle, useToast } from '@/components/ui';
 import { useServices } from '@/features/services/api/useServices';
-import { useBranchSchedule } from '@/features/schedule/api/useBranchSchedule';
-import { useStaffSchedule } from '@/features/schedule/api/useSchedule';
 import { useStaff } from '@/features/staff/api/useStaff';
 import { useBranchCountry, useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
-import { todayInZone, weekdayOfLocalDate, zonedToUtc, type IanaTimeZone } from '@/lib/time';
+import { todayInZone, zonedToUtc, type IanaTimeZone } from '@/lib/time';
 
 import { useCreateAppointment } from '../api/useAppointments';
 import { useClientSearch } from '../api/useClientSearch';
@@ -22,7 +20,8 @@ import {
   emptyCreateAppointment,
   type CreateAppointmentValues,
 } from '../schemas/createAppointment.schemas';
-import { AppointmentRpcError, type AppointmentErrorCode } from '../types';
+import { useOutOfHoursWarning } from '../useOutOfHoursWarning';
+import { appointmentErrorKey, type AppointmentErrorKey } from '../appointmentErrorKey';
 
 export type CreateAppointmentFormProps = {
   timeZone: IanaTimeZone;
@@ -55,7 +54,7 @@ export function CreateAppointmentForm({
 
   const [clientSearch, setClientSearch] = useState('');
   const clientResults = useClientSearch(businessId, clientSearch);
-  const [serverError, setServerError] = useState<AppointmentErrorCode | null>(null);
+  const [serverError, setServerError] = useState<AppointmentErrorKey | null>(null);
 
   const isOwnScopeOnly = !canViewAllStaff.allowed;
 
@@ -123,11 +122,7 @@ export function CreateAppointmentForm({
           onDone();
         },
         onError: (error) => {
-          if (error instanceof AppointmentRpcError) {
-            setServerError(error.code as AppointmentErrorCode);
-          } else {
-            toast.show({ message: error.message, tone: 'error' });
-          }
+          setServerError(appointmentErrorKey(error));
         },
       },
     );
@@ -258,7 +253,7 @@ export function CreateAppointmentForm({
 
       {serverError ? (
         <Text variant="helper" color="error">
-          {t(`appointments.errors.${serverError}`)}
+          {t(serverError)}
         </Text>
       ) : null}
 
@@ -273,37 +268,6 @@ function minuteToTimeText(minute: number): string {
   const hour = Math.floor(minute / 60);
   const min = minute % 60;
   return `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-}
-
-/**
- * Warns when the chosen slot falls outside the staff member's recurring
- * working hours for that weekday, OR outside the branch's hours when no
- * staff is picked yet. Doc §6.2: staff can still book it — this is advisory
- * only, never a block, and the RPC enforces nothing based on it.
- */
-function useOutOfHoursWarning(
-  businessId: string | null,
-  branchId: string | null,
-  staffId: string | null,
-  date: string,
-  minute: number,
-): boolean {
-  const branchSchedule = useBranchSchedule(businessId, branchId);
-  const staffSchedule = useStaffSchedule(businessId, branchId, staffId);
-
-  if (!date) return false;
-  const dayOfWeek = weekdayOfLocalDate(date);
-
-  const intervals = staffId ? staffSchedule.data?.workingHours : branchSchedule.data?.hours;
-  if (!intervals) return false;
-
-  const withinHours = intervals.some(
-    (interval) =>
-      interval.dayOfWeek === dayOfWeek &&
-      minute >= interval.startMinute &&
-      minute < interval.endMinute,
-  );
-  return !withinHours;
 }
 
 const styles = StyleSheet.create({

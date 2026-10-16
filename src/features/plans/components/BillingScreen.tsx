@@ -218,9 +218,10 @@ function PlanDates({
     );
   }
   if (status === 'active' && periodEnd) {
+    const over = new Date(periodEnd) <= new Date();
     return (
-      <Text variant="paragraph" color="textSecondary">
-        {t('plans.billing.periodEnds', {
+      <Text variant="paragraph" color={over ? 'warning' : 'textSecondary'}>
+        {t(over ? 'plans.billing.periodEndedPast' : 'plans.billing.periodEnds', {
           date: formatDate(periodEnd as UtcIso, zone, locale, 'medium'),
         })}
       </Text>

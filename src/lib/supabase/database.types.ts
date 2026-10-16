@@ -859,6 +859,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          current_period_end: string | null
           default_country_code: string | null
           default_currency: string | null
           default_timezone: string | null
@@ -878,6 +879,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          current_period_end?: string | null
           default_country_code?: string | null
           default_currency?: string | null
           default_timezone?: string | null
@@ -897,6 +899,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          current_period_end?: string | null
           default_country_code?: string | null
           default_currency?: string | null
           default_timezone?: string | null
@@ -5322,6 +5325,8 @@ export type Database = {
       appointment_forms: { Args: { p_appointment_id: string }; Returns: Json }
       approve_appointment: { Args: { p_appointment_id: string }; Returns: Json }
       archive_branch: { Args: { p_branch_id: string }; Returns: Json }
+      archive_resource: { Args: { p_resource_id: string }; Returns: Json }
+      archive_staff: { Args: { p_staff_id: string }; Returns: Json }
       assign_member_role: {
         Args: { p_branch_id?: string; p_member_id: string; p_role_id: string }
         Returns: Json
@@ -5338,6 +5343,14 @@ export type Database = {
       bp_of: { Args: { p_part: number; p_whole: number }; Returns: number }
       branch_admin_gate: { Args: { p_business_id: string }; Returns: Json }
       branch_archive_blockers: { Args: { p_branch_id: string }; Returns: Json }
+      branch_closure_conflicts: {
+        Args: { p_branch_id: string; p_ends_on: string; p_starts_on: string }
+        Returns: number
+      }
+      branch_hours_conflicts: {
+        Args: { p_branch_id: string; p_intervals: Json }
+        Returns: number
+      }
       branch_is_bookable: { Args: { p_branch_id: string }; Returns: Json }
       branch_metrics: {
         Args: {
@@ -6448,6 +6461,10 @@ export type Database = {
         Returns: Json
       }
       resolve_manage_token: { Args: { p_token: string }; Returns: string }
+      resource_archive_blockers: {
+        Args: { p_resource_id: string }
+        Returns: Json
+      }
       restore_branch: { Args: { p_branch_id: string }; Returns: Json }
       retry_message: { Args: { p_outbox_id: string }; Returns: Json }
       reverse_payment: {
@@ -6663,6 +6680,7 @@ export type Database = {
           out_units: number
         }[]
       }
+      staff_archive_blockers: { Args: { p_staff_id: string }; Returns: Json }
       staff_in_scope: {
         Args: {
           p_business_id: string
@@ -6670,6 +6688,14 @@ export type Database = {
           p_staff_id: string
         }
         Returns: boolean
+      }
+      staff_schedule_conflicts: {
+        Args: { p_branch_id: string; p_intervals: Json; p_staff_id: string }
+        Returns: number
+      }
+      staff_time_off_conflicts: {
+        Args: { p_ends_at: string; p_staff_id: string; p_starts_at: string }
+        Returns: number
       }
       submit_form_request: {
         Args: {

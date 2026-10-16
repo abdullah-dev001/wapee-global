@@ -12,7 +12,10 @@ import { brand } from '@/config/brand';
 import { DEFAULT_COUNTRY, findCountry, timezoneOptionsFor } from '@/config/countries';
 import { allCountries, allCurrencies } from '@/config/localeData.generated';
 import { AuthLayout } from '@/features/auth';
+import { authErrorKey } from '@/features/auth/authErrorKey';
+import { isDeletedUserError, useDeletedAccountNotice } from '@/features/auth/deletedAccount';
 import { useCreateBusiness, useSlugAvailable } from '@/features/onboarding/api/useBusiness';
+import { getSupabase } from '@/lib/supabase';
 import {
   onboardingSchema,
   slugify,
@@ -46,6 +49,7 @@ export default function OnboardingScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const createBusiness = useCreateBusiness();
+  const deletedNotice = useDeletedAccountNotice();
   const [step, setStep] = useState(1);
   const [serverError, setServerError] = useState<string | null>(null);
   const [slugEdited, setSlugEdited] = useState(false);
@@ -129,7 +133,25 @@ export default function OnboardingScreen() {
     setServerError(null);
     createBusiness.mutate(values, {
       onSuccess: () => router.replace('/today'),
-      onError: (error) => setServerError(error.message),
+      onError: (error) => {
+        // A stale session whose user row no longer exists (deleted elsewhere
+        // while this tab stayed open): the JWT is still valid, but the write
+        // itself cannot reference a profile that is gone. Recovering in place
+        // is not possible — sign out and send them to a clean /login with a
+        // clear reason, instead of a raw foreign-key error.
+        if (isDeletedUserError(error)) {
+          deletedNotice.show();
+          // 'local': the server has nothing left to revoke for a user row that
+          // no longer exists, and a global sign-out could itself fail against
+          // that same missing row — clearing the local session is enough, and
+          // must not be blocked on a round trip succeeding.
+          void getSupabase()
+            .auth.signOut({ scope: 'local' })
+            .finally(() => router.replace('/login'));
+          return;
+        }
+        setServerError(t(authErrorKey(error)));
+      },
     });
   });
 

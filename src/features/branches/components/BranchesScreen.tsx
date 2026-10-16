@@ -135,7 +135,7 @@ export function BranchesScreen() {
             {branches.isError ? (
               <ErrorState
                 title={t('branches.error.title')}
-                description={branches.error.message}
+                description={t(branchErrorKey(rpcCode(branches.error)))}
                 onRetry={() => void branches.refetch()}
                 retryLabel={t('actions.retry')}
               />

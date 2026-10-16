@@ -10,6 +10,7 @@ import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useSaveService, useServiceCategories, type ServiceListItem } from '../api/useServices';
+import { serviceErrorKey } from '../serviceErrorKey';
 import { emptyService, serviceSchema, type ServiceValues } from '../schemas/service.schemas';
 
 /** Durations offered in the picker. Anything else can be typed in minutes. */
@@ -73,7 +74,7 @@ export function ServiceForm({
           toast.show({ message: t('services.saved'), tone: 'success' });
           onDone();
         },
-        onError: (error) => toast.show({ message: error.message, tone: 'error' }),
+        onError: (error) => toast.show({ message: t(serviceErrorKey(error)), tone: 'error' }),
       },
     );
   });

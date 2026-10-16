@@ -65,7 +65,7 @@ export function useStaff(
       if (!includeInactive) query = query.eq('is_active', true);
 
       const { data, error } = await query.order('sort_order').order('display_name');
-      if (error) throw new Error(error.message);
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
 
       const rows = (data ?? []).map((row) => ({
         id: row.id,
@@ -146,14 +146,14 @@ export function useSaveStaff(businessId: string | null) {
       let staffId = values.id;
       if (staffId) {
         const { error } = await supabase.from('staff_profiles').update(fields).eq('id', staffId);
-        if (error) throw new Error(error.message);
+        if (error) throw Object.assign(new Error(error.message), { code: error.code });
       } else {
         const { data, error } = await supabase
           .from('staff_profiles')
           .insert(fields)
           .select('id')
           .single();
-        if (error) throw new Error(error.message);
+        if (error) throw Object.assign(new Error(error.message), { code: error.code });
         staffId = data.id;
       }
 
@@ -163,7 +163,9 @@ export function useSaveStaff(businessId: string | null) {
         .from('staff_branches')
         .delete()
         .eq('staff_id', staffId);
-      if (clearBranches) throw new Error(clearBranches.message);
+      if (clearBranches) {
+        throw Object.assign(new Error(clearBranches.message), { code: clearBranches.code });
+      }
 
       if (values.branchIds.length > 0) {
         const { error } = await supabase.from('staff_branches').insert(
@@ -182,7 +184,7 @@ export function useSaveStaff(businessId: string | null) {
               .update({ is_active: false, deleted_at: new Date().toISOString() })
               .eq('id', staffId);
           }
-          throw new Error(error.message);
+          throw Object.assign(new Error(error.message), { code: error.code });
         }
       }
 
@@ -190,7 +192,9 @@ export function useSaveStaff(businessId: string | null) {
         .from('service_staff')
         .delete()
         .eq('staff_id', staffId);
-      if (clearServices) throw new Error(clearServices.message);
+      if (clearServices) {
+        throw Object.assign(new Error(clearServices.message), { code: clearServices.code });
+      }
 
       if (values.serviceIds.length > 0) {
         const { error } = await supabase.from('service_staff').insert(
@@ -200,7 +204,7 @@ export function useSaveStaff(businessId: string | null) {
             business_id: businessId,
           })),
         );
-        if (error) throw new Error(error.message);
+        if (error) throw Object.assign(new Error(error.message), { code: error.code });
       }
 
       // Last: the profile is already saved, so a refused link (login already used,
@@ -225,17 +229,20 @@ export function useSaveStaff(businessId: string | null) {
   });
 }
 
-/** Soft-deletes a staff profile, keeping their history intact. */
+/**
+ * Soft-deletes a staff profile, keeping their history intact. Goes through the
+ * `archive_staff` RPC (not a direct update): it refuses while the person has a
+ * future pending/confirmed appointment, the same way `archive_branch` refuses
+ * for a branch with future appointments — archiving must never silently orphan
+ * an existing booking.
+ */
 export function useDeleteStaff(businessId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation<undefined, Error, string>({
     mutationFn: async (staffId) => {
-      const { error } = await getSupabase()
-        .from('staff_profiles')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', staffId);
-      if (error) throw new Error(error.message);
+      const { data, error } = await getSupabase().rpc('archive_staff', { p_staff_id: staffId });
+      unwrapRpc(data, error);
       return undefined;
     },
     onSuccess: () => invalidateStaff(queryClient, businessId),

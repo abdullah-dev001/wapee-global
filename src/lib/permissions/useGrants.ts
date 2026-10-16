@@ -5,8 +5,11 @@ import { useMyFeatures } from '@/features/plans/api/useMyFeatures';
 import { staleTimes } from '@/lib/query';
 import { getSupabase } from '@/lib/supabase';
 
+import { isBusinessActive } from './businessActive';
 import { type Grant, type GrantSet } from './types';
 import { useCurrentScope, useMyProfile } from './useCurrentScope';
+
+export { isBusinessActive };
 
 /**
  * The signed-in member's permission set for the current business.
@@ -78,7 +81,11 @@ export function useGrantSet(): GrantSetResult {
   const set: GrantSet = {
     businessId: businessId ?? '',
     grants: grants.data ?? [],
-    isActive: isBusinessActive(business?.status ?? null, business?.trial_ends_at ?? null),
+    isActive: isBusinessActive(
+      business?.status ?? null,
+      business?.trial_ends_at ?? null,
+      business?.current_period_end ?? null,
+    ),
     // The server's answer; null (loading / failed) keeps every gated feature off.
     features: features.data?.features ?? null,
     isSuperAdmin,
@@ -150,19 +157,4 @@ export function useMyRoleLabel(): { label: string | null; isPending: boolean } {
     label: best?.roleName ?? null,
     isPending: scopePending || (Boolean(businessId) && roles.isPending),
   };
-}
-
-/**
- * Client-side mirror of SQL `business_is_active()`: active, or trialing with the
- * trial still running. Evaluated at render time, so a trial ending while the app
- * is open locks it on the next render, exactly as the database does per query.
- */
-export function isBusinessActive(
-  status: string | null,
-  trialEndsAt: string | null,
-  now: Date = new Date(),
-): boolean {
-  if (status === 'active') return true;
-  if (status === 'trialing' && trialEndsAt) return new Date(trialEndsAt) > now;
-  return false;
 }

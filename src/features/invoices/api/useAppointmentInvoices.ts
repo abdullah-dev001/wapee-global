@@ -37,7 +37,7 @@ export function useAppointmentInvoices(
         .eq('business_id', businessId ?? '')
         .in('appointment_id', ids)
         .is('deleted_at', null);
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       const map: Record<string, string> = {};
       for (const row of data ?? []) {
         if (row.appointment_id) map[row.appointment_id] = row.id;
