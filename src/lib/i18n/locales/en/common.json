@@ -858,6 +858,7 @@
     "cancelConfirmBody": "This cannot be undone. You'll need to book again if you change your mind.",
     "cancelConfirmAction": "Yes, cancel it",
     "cancelSuccess": "Your booking has been cancelled.",
+    "cancelledNote": "This booking is cancelled. The time is free again. You can close this page, or book again from the business's booking page.",
     "cancelFailed": "Couldn't cancel your booking. Please try again.",
     "cancelNotAllowed": "This booking can no longer be changed.",
     "windowPassed": "This booking can no longer be changed online (within {{hours}}h of the appointment).",

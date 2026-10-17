@@ -135,6 +135,8 @@ confirm dialogs, error copy). Reuses `bookingPublic.form.*` and
   on this page).
 
 ## Changelog
+
+- 2026-10-18: F13 fix (QA run): after a guest cancel the page no longer re-fetches (the cancel revokes the token, so the refetch said "This link is not valid"). It keeps the booking on screen as Cancelled with `bookingManage.cancelledNote` (`manageState.ts` `cancelledView`, unit-tested).
 - 2026-10-22: `get_booking` / `manage_booking get` return `branch_address`; the manage view shows the location (name, address) and the branch time zone.
 - 2026-10-04: Built. Route, `BookingManage` orchestrator, `ManageView`,
   `RescheduleView`, fragment-token reading (web + native deep link),

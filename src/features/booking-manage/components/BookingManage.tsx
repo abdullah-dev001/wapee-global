@@ -10,6 +10,8 @@ import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
 import { theme, useBreakpoint } from '@/lib/theme';
 
 import { useManageBooking } from '../api';
+import { cancelledView } from '../manageState';
+import type { ManageBookingView } from '../types';
 import { useTokenFromUrl } from '../useTokenFromUrl';
 import { actionFor } from '@/features/booking-public/errorHandling';
 import { PublicApiError } from '@/features/booking-public/types';
@@ -30,6 +32,9 @@ export function BookingManage() {
   const { isDesktop } = useBreakpoint();
   const token = useTokenFromUrl();
   const [mode, setMode] = useState<'view' | 'reschedule'>('view');
+  // Set once the guest cancels. Shown instead of re-fetching: the cancel
+  // revoked the token, so a refetch would say "link not valid" (QA F13).
+  const [afterCancel, setAfterCancel] = useState<ManageBookingView | null>(null);
 
   const booking = useManageBooking(token ?? null);
 
@@ -47,7 +52,16 @@ export function BookingManage() {
 
   let body: React.ReactNode;
 
-  if (token === undefined) {
+  if (afterCancel && token) {
+    body = (
+      <ManageView
+        token={token}
+        booking={afterCancel}
+        onReschedule={() => undefined}
+        onCancelled={() => undefined}
+      />
+    );
+  } else if (token === undefined) {
     // Still resolving (native's getInitialURL is async). A skeleton, not an
     // error — this is milliseconds, not a real wait.
     body = <ManageSkeleton />;
@@ -110,7 +124,7 @@ export function BookingManage() {
           token={token}
           booking={booking.data}
           onReschedule={() => setMode('reschedule')}
-          onCancelled={() => void booking.refetch()}
+          onCancelled={() => booking.data && setAfterCancel(cancelledView(booking.data))}
         />
       );
   }

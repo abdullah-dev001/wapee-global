@@ -146,6 +146,12 @@ export function ManageView({ token, booking, onReschedule, onCancelled }: Manage
         </View>
       ) : null}
 
+      {isCancelled ? (
+        <Text variant="body" color="textSecondary" align="center">
+          {t('bookingManage.cancelledNote')}
+        </Text>
+      ) : null}
+
       <Dialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
