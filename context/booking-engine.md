@@ -47,10 +47,15 @@ are all built. Rate limiting and bot protection (step 7) are live.
   hides buffered slots and the booking RPC re-checks it, but a receptionist
   deliberately overriding a buffer in Phase 4 must not be blocked by a
   constraint.
-- **"Any staff" rule:** the free eligible staff member with the **fewest
-  appointments that LOCAL day at that branch**; ties broken by `sort_order`,
-  then by `id`. Deterministic, so a test can assert it.
-  (`pick_staff_for_slot()`.)
+- **"Any staff" rule:** among eligible staff for whom the **slot engine
+  (`get_free_slots`, notice ignored) offers that exact start as available**
+  (so working hours, breaks, time off, closures, buffers and resources all
+  count), the one with the **fewest appointments that LOCAL day at that
+  branch**; ties broken by `sort_order`, then by `id`. Deterministic, so a test
+  can assert it. (`pick_staff_for_slot(…, p_allow_off_schedule default false)`.)
+  Only the dashboard's `create_appointment` passes `true`, which falls back to
+  the old narrow rule (no overlapping appointment) when nobody is on schedule,
+  because staff may book off-hours on purpose.
 - Appointments are **soft-deleted or cancelled, never removed** — there is no
   DELETE policy for anyone.
 - **A pending booking still gets a manage token**, so a customer can withdraw a
@@ -271,6 +276,8 @@ Namespace not created yet (`booking`).
   be surprised.
 
 ## Changelog
+
+- 2026-10-18: F1 fix (QA run): "Any staff" picked a staff member who was off (time off / hours / break / closure), so `create_booking` refused a free slot with `slot_unavailable`. `pick_staff_for_slot` now requires an engine-available slot (`20261025100000`); suite 44 (27/27) + 06/08/11/12 green on dev.
 
 - 2026-10-04: Guest manage page built (Phase 3 step 6, the last piece of
   Phase 3). See `booking-manage.md` for the UI; `booking-public-api.md` for

@@ -6207,6 +6207,7 @@ export type Database = {
       }
       pick_staff_for_slot: {
         Args: {
+          p_allow_off_schedule?: boolean
           p_branch_id: string
           p_ends_at: string
           p_service_id: string
