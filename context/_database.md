@@ -544,6 +544,7 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
   design, not an oversight.
 
 ## Changelog
+- 2026-10-18: `20261025130000_portal_packages_balance_and_timezone` — `portal_packages` counts usages inline (no member-gated helper) and returns `timezone`. Pushed to dev. Suite 26 111/111.
 - 2026-10-18: `20261025120000_create_appointment_validate_before_client` — `create_appointment` writes the client together with the appointment (validate first, write last). Pushed to dev. Suite 46.
 - 2026-10-18: `20261025110000_rate_limit_one_ip_row_per_attempt` — `check_rate_limit` business row has `ip_hash = null`; no all-null row. Pushed to dev (version = filename). Suite 45.
 - 2026-10-18: `20261025100000_pick_staff_respects_schedule` — `pick_staff_for_slot` gains `p_allow_off_schedule boolean default false` (old 4-arg overload dropped, grants re-applied: service_role only) and only returns staff for whom `get_free_slots` (notice ignored) offers that start; `create_appointment` re-created unchanged except passing `true`. Applied to dev with `supabase db push --linked` (version = filename). Suite 44 new; 06 updated for the new signature.

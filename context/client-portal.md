@@ -33,6 +33,8 @@ Customers of a business sign in WITHOUT a password at `/<slug>/portal` and see t
 - The dashboard has no "customer sessions" screen and no per-customer "sign out everywhere" button yet.
 
 ## Changelog
+
+- 2026-10-18: F22 fix (QA run): Packages tab showed every session as left ("5 of 5") because `portal_packages` used `client_package_used()`, which is gated by `package_visible()` (needs a signed-in member) and so counted 0 in the portal. It now counts `session_usages` directly and returns the package's branch `timezone`; the tab shows usage times and the expiry date in branch time instead of UTC (`20261025130000`). Suite 26 had been failing on dev on exactly this ("after a deduction: 3 left" got 4) and is now 111/111 with a new timezone assertion.
 - 2026-10-22: `portal_create_booking` takes an optional `p_branch_id` (null = primary; another business's or an archived branch is `not_bookable` before anything is written); the portal `book` action passes `branch_id`; `PortalBook` shows the same location picker when there are two or more.
 - 2026-10-07: Phase 10C built (migrations `20261015090000`, `…100000`, `…110000`, `…120000`, `…130000`; Edge `portal`; outbox `portal_login`; UI; suite 26; HTTP proof 26).
 - 2026-10-07: Phase 11B: tab **My data** (`PortalData`) with "Request a copy" / "Request erasure" (action `request_data`; creates a request row only; rate limit `portal_data_request`, 5 per customer per day in the database). See `gdpr.md`.
