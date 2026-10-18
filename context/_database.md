@@ -544,6 +544,7 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
   design, not an oversight.
 
 ## Changelog
+- 2026-10-18: `20261025160000_create_booking_client_in_insert_block` — `create_booking` client write moved into the insert block. Pushed to dev. Suite 49.
 - 2026-10-18: `20261025150000_return_package_session_on_customer_cancel` — new `reverse_package_sessions_for_customer_cancel(uuid)` (service_role only); `cancel_booking` calls it after revoking the token. Pushed to dev. Suite 48.
 - 2026-10-18: `20261025140000_no_show_not_before_start` — `mark_no_show` refuses before `starts_at` (`not_started`), before any write. Pushed to dev. Suite 47; suite 12 fixture adjusted.
 - 2026-10-18: `20261025130000_portal_packages_balance_and_timezone` — `portal_packages` counts usages inline (no member-gated helper) and returns `timezone`. Pushed to dev. Suite 26 111/111.

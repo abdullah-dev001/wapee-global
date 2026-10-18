@@ -277,6 +277,8 @@ Namespace not created yet (`booking`).
 
 ## Changelog
 
+- 2026-10-18: F9 follow-up: public `create_booking` writes the client (insert, or filling an empty email) inside the same begin/exception block as the appointment insert, so losing the exclusion-constraint race (`slot_taken`) leaves no client behind (`20261025160000`). Suite 49 (3 failures before, 10/10 after; race simulated with a test-only 23P01 trigger); 08, 09 green on dev.
+
 - 2026-10-18: F1 fix (QA run): "Any staff" picked a staff member who was off (time off / hours / break / closure), so `create_booking` refused a free slot with `slot_unavailable`. `pick_staff_for_slot` now requires an engine-available slot (`20261025100000`); suite 44 (27/27) + 06/08/11/12 green on dev.
 
 - 2026-10-04: Guest manage page built (Phase 3 step 6, the last piece of
