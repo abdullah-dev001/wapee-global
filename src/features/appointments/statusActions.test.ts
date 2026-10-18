@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  actionTimeGate,
   actionsForStatus,
   availabilityFor,
   isActionAvailableForStatus,
@@ -53,5 +54,28 @@ describe('availabilityFor', () => {
   it('no_show/complete use appointments.edit', () => {
     expect(availabilityFor('no_show')).toEqual({ permission: 'appointments.edit' });
     expect(availabilityFor('complete')).toEqual({ permission: 'appointments.edit' });
+  });
+});
+
+describe('actionTimeGate (QA F11)', () => {
+  const start = '2026-10-19T12:00:00Z';
+  const before = new Date('2026-10-19T11:59:00Z');
+  const after = new Date('2026-10-19T12:00:00Z');
+
+  it('hides no-show before the start', () => {
+    expect(actionTimeGate('no_show', start, before)).toBe('hidden');
+  });
+  it('offers no-show from the start', () => {
+    expect(actionTimeGate('no_show', start, after)).toBe('ok');
+  });
+  it('warns when completing before the start', () => {
+    expect(actionTimeGate('complete', start, before)).toBe('early');
+  });
+  it('completes normally after the start', () => {
+    expect(actionTimeGate('complete', start, after)).toBe('ok');
+  });
+  it('does not gate cancel or approve', () => {
+    expect(actionTimeGate('cancel', start, before)).toBe('ok');
+    expect(actionTimeGate('approve', start, before)).toBe('ok');
   });
 });

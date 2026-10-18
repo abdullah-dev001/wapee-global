@@ -749,7 +749,12 @@ begin
   perform pg_temp.chk('approving an already-confirmed appointment is refused', r->>'code', 'invalid_transition');
 end $$;
 
--- mark_no_show: confirmed -> no_show.
+-- mark_no_show: confirmed -> no_show. A no-show needs the appointment to
+-- have started (QA F11, suite 47), so the fixture is moved into the past first.
+update public.appointments
+set starts_at = now() - interval '2 hours', ends_at = now() - interval '1 hour'
+where id = pg_temp.id('appt_pending');
+
 do $$
 declare r jsonb;
 begin

@@ -34,7 +34,7 @@ import { useIsOwnerOrManager } from '../api/useIsOwnerOrManager';
 import { useMyStaffProfile } from '../api/useMyStaffProfile';
 import { appointmentErrorKey, type AppointmentErrorKey } from '../appointmentErrorKey';
 import { canShowReschedule, rescheduleScope } from '../reschedule';
-import { actionsForStatus, type AppointmentAction } from '../statusActions';
+import { actionTimeGate, actionsForStatus, type AppointmentAction } from '../statusActions';
 import { type AppointmentRow } from '../types';
 
 export type AppointmentDetailDrawerProps = {
@@ -106,7 +106,10 @@ export function AppointmentDetailDrawer({
     ? actionsForStatus(appointment.status).filter((action) => {
         if (action === 'approve') return canApprove.allowed;
         if (action === 'cancel') return canCancel.allowed;
-        if (action === 'no_show' || action === 'complete') return canEdit.allowed;
+        if (action === 'no_show' || action === 'complete') {
+          // No no-show before the start (QA F11); the RPC refuses it too.
+          return canEdit.allowed && actionTimeGate(action, appointment.startsAt) !== 'hidden';
+        }
         if (action === 'reopen') return isOwnerOrManager.data === true;
         return false;
       })
@@ -261,7 +264,15 @@ export function AppointmentDetailDrawer({
         open={confirmAction !== null}
         onClose={() => setConfirmAction(null)}
         title={confirmAction ? t(CONFIRM_KEYS[confirmAction].title) : ''}
-        message={confirmAction ? t(CONFIRM_KEYS[confirmAction].message) : ''}
+        message={
+          confirmAction === 'complete' &&
+          appointment &&
+          actionTimeGate('complete', appointment.startsAt) === 'early'
+            ? t('appointments.confirm.completeEarlyMessage')
+            : confirmAction
+              ? t(CONFIRM_KEYS[confirmAction].message)
+              : ''
+        }
         confirm={
           confirmAction
             ? {

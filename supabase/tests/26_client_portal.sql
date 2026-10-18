@@ -553,6 +553,7 @@ begin
   insert into public.session_usages (business_id, branch_id, client_package_id, kind, appointment_id, service_id) values (pg_temp.id('biza'), pg_temp.id('bra'), v_cp, 'deduct', pg_temp.id('a_past'), pg_temp.id('svc'));
   r := pg_temp.p('portal_packages', format('%L', pg_temp.S('alice')));
   perform pg_temp.chk('...after a deduction: 3 left and the history shows the date + service (no appointment ids)', (r->'rows'->0->>'remaining') || '/' || jsonb_array_length(r->'rows'->0->'history')::text || '/' || (r->'rows'->0->'history'->0->>'service_name') || '/' || (position(pg_temp.id('a_past')::text in r::text) = 0)::text, '3/1/Cut/true');
+  perform pg_temp.chk('packages: the row carries the branch time zone (usage times shown in branch time, QA F22)', r->'rows'->0->>'timezone', (select timezone from public.branches where id = pg_temp.id('bra')));
   perform pg_temp.chk('packages: bob and the other business see none', jsonb_array_length(pg_temp.p('portal_packages', format('%L', pg_temp.S('bob')))->'rows')::text || jsonb_array_length(pg_temp.p('portal_packages', format('%L', pg_temp.S('bobb')))->'rows')::text, '00');
 
   r := pg_temp.p('portal_invoices', format('%L', pg_temp.S('alice')));

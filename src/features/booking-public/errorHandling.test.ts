@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { actionFor } from './errorHandling';
+import { EMAIL_FIELD_ID, actionFor } from './errorHandling';
 
 describe('actionFor', () => {
   it('rate_limited carries the retry time and no automatic retry', () => {
@@ -30,7 +30,15 @@ describe('actionFor', () => {
     });
   });
 
-  it.each(['invalid_answer', 'invalid_phone', 'invalid_name', 'email_required'] as const)(
+  it('email_required highlights the built-in email field as missing', () => {
+    expect(actionFor('email_required', { fieldId: 'ignored' })).toEqual({
+      kind: 'highlight_field',
+      fieldId: EMAIL_FIELD_ID,
+      message: 'missing',
+    });
+  });
+
+  it.each(['invalid_answer', 'invalid_phone', 'invalid_name'] as const)(
     '%s highlights the field as invalid',
     (code) => {
       expect(actionFor(code, { fieldId: 'f2' })).toEqual({

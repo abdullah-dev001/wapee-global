@@ -29,6 +29,7 @@ import {
   useTimeOff,
 } from '../api/useSchedule';
 import { scheduleErrorKey } from '../scheduleErrorKey';
+import { formatBranchDay, timeOffDisplayRange } from '../timeOffDisplay';
 
 /** Upcoming time off, with a form to add more. No approval step (doc §6.3). */
 export function TimeOffList() {
@@ -61,12 +62,6 @@ export function TimeOffList() {
     null,
   );
 
-  const dateFormatter = new Intl.DateTimeFormat(i18n.language, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
 
   const doSave = (startsAt: string, endsAt: string) => {
     if (!staffId) return;
@@ -157,10 +152,18 @@ export function TimeOffList() {
                   {entry.staffName ?? t('schedule.staffMember')}
                 </Text>
                 <Text variant="helper" color="textSecondary" numberOfLines={1}>
-                  {dateFormatter.format(new Date(entry.startsAt))}
+                  {/* Read in the BRANCH zone; the stored end is exclusive (QA F17). */}
+                  {formatBranchDay(
+                    timeOffDisplayRange(entry.startsAt, entry.endsAt).firstInstant,
+                    branchTimeZone ?? 'UTC',
+                    i18n.language,
+                  )}
                   {' – '}
-                  {/* The stored end is exclusive, so show the last day OFF. */}
-                  {dateFormatter.format(new Date(new Date(entry.endsAt).getTime() - 86400000))}
+                  {formatBranchDay(
+                    timeOffDisplayRange(entry.startsAt, entry.endsAt).lastInstant,
+                    branchTimeZone ?? 'UTC',
+                    i18n.language,
+                  )}
                   {entry.reason ? ` · ${entry.reason}` : ''}
                 </Text>
               </View>

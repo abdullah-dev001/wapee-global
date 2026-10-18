@@ -36,6 +36,10 @@ export type PublicErrorCode =
   | 'invalid_phone'
   // the name was empty
   | 'invalid_name'
+  // the branch requires an email and none (or an unusable one) was sent.
+  // A 400 the page can show under the email field (QA follow-up: this was an
+  // unmapped RPC code and came back as a 500 server_error).
+  | 'email_required'
   // too many requests
   | 'rate_limited'
   // the form was submitted implausibly fast. A distinct code ONLY because the
@@ -88,6 +92,7 @@ const CODE_MAP: Record<string, PublicErrorCode> = {
   too_soon: 'slot_unavailable',
   invalid_phone: 'invalid_phone',
   invalid_name: 'invalid_name',
+  email_required: 'email_required',
   missing_answer: 'missing_answer',
   invalid_answer: 'invalid_answer',
   unknown_field: 'invalid_answer',
@@ -109,6 +114,7 @@ function statusFor(code: PublicErrorCode): number {
     case 'missing_answer':
     case 'invalid_phone':
     case 'invalid_name':
+    case 'email_required':
     case 'signature_required':
     case 'invalid_signature':
     case 'needs_details':

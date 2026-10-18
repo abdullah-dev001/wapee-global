@@ -145,10 +145,21 @@ export async function checkRateLimit(
   req: Request,
   db: SupabaseClient,
   endpoint: PublicEndpoint,
-  opts?: { phone?: string | null; key?: string | null; businessId?: string | null },
+  opts?: {
+    phone?: string | null;
+    key?: string | null;
+    businessId?: string | null;
+    /**
+     * Leave the IP out of this call. For a SECOND call in the same request
+     * (create_booking's business caps): the IP was already counted by the
+     * first call, and counting it again made one booking cost several IP
+     * attempts (QA F5).
+     */
+    skipIp?: boolean;
+  },
 ): Promise<RateLimitResult> {
   try {
-    const ip = clientIp(req);
+    const ip = opts?.skipIp ? null : clientIp(req);
     const ipHash = ip ? await hashWithSalt(ip) : null;
 
     // The phone is hashed with the same salt: the per-phone cap must work

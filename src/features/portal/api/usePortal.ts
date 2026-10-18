@@ -44,6 +44,8 @@ export type PortalPackage = {
   expires_at: string | null;
   is_expired: boolean;
   is_cancelled: boolean;
+  /** The package's branch time zone (IANA); usage times are shown in it. */
+  timezone: string;
   history: { kind: 'deduct' | 'reversal'; at: string; service_name: string | null }[];
 };
 

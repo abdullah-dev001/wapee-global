@@ -40,7 +40,8 @@ export type AppointmentErrorCode =
   | 'no_resource'
   | 'not_editable'
   | 'invalid_transition'
-  | 'invoiced';
+  | 'invoiced'
+  | 'not_started';
 
 export class AppointmentRpcError extends Error {
   code: AppointmentErrorCode | 'unknown';

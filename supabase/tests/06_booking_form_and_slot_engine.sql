@@ -885,7 +885,7 @@ select pg_temp.chk('service_role CAN execute get_free_slots',
   has_function_privilege('service_role', 'public.get_free_slots(uuid,uuid,uuid,date,date,boolean,boolean)', 'execute'),
   true);
 select pg_temp.chk('anon cannot execute pick_staff_for_slot',
-  has_function_privilege('anon', 'public.pick_staff_for_slot(uuid,uuid,timestamptz,timestamptz)', 'execute'),
+  has_function_privilege('anon', 'public.pick_staff_for_slot(uuid,uuid,timestamptz,timestamptz,boolean)', 'execute'),
   false);
 select pg_temp.chk('anon cannot execute ensure_form_version',
   has_function_privilege('anon', 'public.ensure_form_version(uuid)', 'execute'),

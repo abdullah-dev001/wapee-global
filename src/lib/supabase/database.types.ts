@@ -6207,6 +6207,7 @@ export type Database = {
       }
       pick_staff_for_slot: {
         Args: {
+          p_allow_off_schedule?: boolean
           p_branch_id: string
           p_ends_at: string
           p_service_id: string
@@ -6467,6 +6468,10 @@ export type Database = {
       }
       restore_branch: { Args: { p_branch_id: string }; Returns: Json }
       retry_message: { Args: { p_outbox_id: string }; Returns: Json }
+      reverse_package_sessions_for_customer_cancel: {
+        Args: { p_appointment_id: string }
+        Returns: number
+      }
       reverse_payment: {
         Args: {
           p_amount_minor?: number

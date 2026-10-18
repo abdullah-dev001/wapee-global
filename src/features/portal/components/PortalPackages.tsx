@@ -54,7 +54,7 @@ export function PortalPackages({ slug, session }: { slug: string; session: strin
             {p.expires_at ? (
               <Text variant="helper" color="textSecondary">
                 {t('portal.packages.expires', {
-                  date: formatDate(p.expires_at as UtcIso, 'UTC', i18n.language),
+                  date: formatDate(p.expires_at as UtcIso, p.timezone, i18n.language),
                 })}
               </Text>
             ) : null}
@@ -63,7 +63,7 @@ export function PortalPackages({ slug, session }: { slug: string; session: strin
                 <Text variant="label">{t('portal.packages.history')}</Text>
                 {p.history.map((h, i) => (
                   <Text key={`${h.at}-${i}`} variant="helper" color="textSecondary">
-                    {`${h.kind === 'deduct' ? t('portal.packages.used') : t('portal.packages.restored')} · ${formatDateTime(h.at as UtcIso, 'UTC', i18n.language, 'short')}${h.service_name ? ` · ${h.service_name}` : ''}`}
+                    {`${h.kind === 'deduct' ? t('portal.packages.used') : t('portal.packages.restored')} · ${formatDateTime(h.at as UtcIso, p.timezone, i18n.language, 'short')}${h.service_name ? ` · ${h.service_name}` : ''}`}
                   </Text>
                 ))}
               </View>

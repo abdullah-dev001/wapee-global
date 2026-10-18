@@ -38,6 +38,7 @@ import {
 import { minuteOfDayFromTime } from '../timeGrid';
 import { AppointmentDetailDrawer } from './AppointmentDetailDrawer';
 import { type AppointmentRow, type AppointmentStatus } from '../types';
+import { actionTimeGate } from '../statusActions';
 import { appointmentErrorKey } from '../appointmentErrorKey';
 
 /**
@@ -317,9 +318,11 @@ function TodayRow({
               <Button size="sm" variant="secondary" onPress={() => onQuickAction('complete')}>
                 {t('appointments.actions.complete')}
               </Button>
-              <Button size="sm" variant="ghost" onPress={() => onQuickAction('no_show')}>
-                {t('appointments.actions.noShow')}
-              </Button>
+              {actionTimeGate('no_show', appointment.startsAt) !== 'hidden' ? (
+                <Button size="sm" variant="ghost" onPress={() => onQuickAction('no_show')}>
+                  {t('appointments.actions.noShow')}
+                </Button>
+              ) : null}
             </>
           ) : null}
         </View>
@@ -355,7 +358,10 @@ function QuickActionDialog({
     },
     complete: {
       title: t('appointments.confirm.completeTitle'),
-      message: t('appointments.confirm.completeMessage'),
+      message:
+        actionTimeGate('complete', appointment.startsAt) === 'early'
+          ? t('appointments.confirm.completeEarlyMessage')
+          : t('appointments.confirm.completeMessage'),
       confirm: t('appointments.confirm.completeConfirm'),
     },
     no_show: {

@@ -233,6 +233,8 @@ midnight = London local midnight in October, when BST is UTC+1), same trap
 the production code already avoids correctly.
 
 ## Changelog
+
+- 2026-10-18: F17 fix (QA run): the Time off list showed whole-day entries one day early for branches ahead of UTC ("Oct 22" for a day off on 23 Oct, London BST): dates were formatted in UTC and the end had 24 h subtracted. Now read in the branch zone, end = the instant before the exclusive end (`timeOffDisplay.ts`, unit-tested incl. DST and UTC-4/+5).
 - 2026-10-16: Feature 11 audit — see "Feature 11 audit" above.
 - 2026-10-15: Feature 10 audit — see "Feature 10 audit" above.
 - 2026-10-20: Staff with no working hours at a branch get ZERO slots (engine has no fallback to branch hours). Now flagged: `branch_is_bookable` reason `no_staff_hours` (migration `20261020120000`), Staff list badge + "Set working hours" button in the edit panel (`staffHours.ts`).
