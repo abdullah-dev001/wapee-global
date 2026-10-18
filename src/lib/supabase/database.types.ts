@@ -6468,6 +6468,10 @@ export type Database = {
       }
       restore_branch: { Args: { p_branch_id: string }; Returns: Json }
       retry_message: { Args: { p_outbox_id: string }; Returns: Json }
+      reverse_package_sessions_for_customer_cancel: {
+        Args: { p_appointment_id: string }
+        Returns: number
+      }
       reverse_payment: {
         Args: {
           p_amount_minor?: number

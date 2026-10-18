@@ -31,4 +31,6 @@ Read gates: `addon_read_access`, `package_visible` (DEFINER; the add-on gate can
 - An inactive/deleted package already in a DRAFT is refused at issue (`unknown_package`).
 
 ## Changelog
+
+- 2026-10-18: F23 (founder decision): a CUSTOMER cancel before the visit (guest manage link `cancel_booking`, and the portal, which calls it) returns any session deducted for that appointment: `reverse_package_sessions_for_customer_cancel` (service_role only) writes one `reversal` row per un-reversed deduction (reason "Customer cancelled before the visit", created_by null, audit `package.session_reversed` with `by: customer_cancel`); `ON CONFLICT` on the reverses index keeps it idempotent; never after the start. Staff cancels are unchanged (manual reverse). `20261025150000`; suite 48 (26/26).
 - 2026-10-07: Phase 10A built (4 migrations `20261013100000`..`140000`, suite 22 = 198 assertions, concurrency script 23, unit tests, UI).

@@ -34,6 +34,8 @@ Customers of a business sign in WITHOUT a password at `/<slug>/portal` and see t
 
 ## Changelog
 
+- 2026-10-18: F23: a portal cancel gives back a package session used for that appointment (through `cancel_booking`); the Packages tab shows it as "restored".
+
 - 2026-10-18: F24 fix (QA run): Book a visit no longer shows every time twice (shared `SlotGrid` de-duplicates by start).
 
 - 2026-10-18: F22 fix (QA run): Packages tab showed every session as left ("5 of 5") because `portal_packages` used `client_package_used()`, which is gated by `package_visible()` (needs a signed-in member) and so counted 0 in the portal. It now counts `session_usages` directly and returns the package's branch `timezone`; the tab shows usage times and the expiry date in branch time instead of UTC (`20261025130000`). Suite 26 had been failing on dev on exactly this ("after a deduction: 3 left" got 4) and is now 111/111 with a new timezone assertion.
