@@ -169,8 +169,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Separate call, because it needs the resolved business id. A business that
     // has hit its cap stops taking bookings from everyone, which is the point:
     // the cap protects the CALENDAR, not the caller.
+    // skipIp: the first call above already counted this attempt against the
+    // IP; counting it again here made one booking cost several IP attempts.
     const bizLimit = await checkRateLimit(req, db, 'create_booking', {
       businessId: branch.businessId,
+      skipIp: true,
     });
     if (!bizLimit.allowed) {
       return jsonError(req, 'rate_limited', { retryAfterSeconds: bizLimit.retryAfterSeconds });
