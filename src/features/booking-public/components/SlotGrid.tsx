@@ -6,6 +6,7 @@ import { formatMinuteOfDay } from '@/lib/time';
 import { focusRing, theme } from '@/lib/theme';
 import { useInteractionState } from '@/components/ui/useInteractionState';
 
+import { uniqueSlotsByStart } from '../slotList';
 import type { PublicSlot } from '../types';
 
 export type SlotGridProps = {
@@ -44,7 +45,9 @@ export function SlotGrid({
 
   // With `only_available` the engine already omits taken slots; this filter is a
   // second line of defence so a mismatched config cannot leak them.
-  const visible = slotDisplay === 'all_greyed' ? slots : slots.filter((s) => s.available);
+  // One chip per start: "Any staff" returns a row per free person (QA F24).
+  const unique = uniqueSlotsByStart(slots);
+  const visible = slotDisplay === 'all_greyed' ? unique : unique.filter((s) => s.available);
 
   if (visible.length === 0) {
     return (
@@ -58,7 +61,7 @@ export function SlotGrid({
     <View style={styles.grid}>
       {visible.map((slot) => (
         <SlotChip
-          key={`${slot.startsAt}-${slot.staffId ?? 'any'}`}
+          key={slot.startsAt}
           slot={slot}
           selected={slot.startsAt === selectedStartsAt}
           readOnly={readOnly}
