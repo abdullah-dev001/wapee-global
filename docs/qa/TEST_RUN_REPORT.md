@@ -204,3 +204,35 @@ All checked screens had no horizontal scroll at 375 (scrollWidth = 375), and bot
 6. **F6:** any rebuild of the database from the migrations takes the whole product down. Verify production before the next migration push.
 
 After these are fixed, the Medium items (F9, F11, F14, F17, F20, F22, F24) should be fixed before more clinics are added. The rooms feature (F15) should not be offered yet.
+
+---
+
+## Fix round — 2026-10-18 (dev only)
+
+One commit per fix. Each has a test, and each was re-run live. Migrations were applied to dev with `supabase db push --linked`, so each version matches its filename.
+
+| Finding | Status | Commit | Migration | Tests | Live re-test |
+|---|---|---|---|---|---|
+| F1 "Any staff" refuses free slots | **Fixed** | d3b1022 | 20261025100000 | suite 44 (27/27); 06/08/11/12 green | Vercel dev, Nova: "Any available person" Mon 19 Oct → booked (Alex) |
+| F13 cancel ends on "link not valid" | **Fixed** | 2cb9965 | — | `manageState.test.ts` | local: cancel → "Cancelled" view and note; no refetch |
+| F5 IP cap trips at about 3 bookings | **Fixed** | ee1ae5e | 20261025110000 (+ `create_booking` redeployed to dev) | suite 45 (13/13); 10, 08 green | local HTTP: 10 allowed, 11th 429; dev: 1 ip row per booking |
+| F26 Back leaves the booking/manage flow | **Fixed** | 6ddaebc | — | `stepHistory` (6), `historyDepth` (3) | local 375: Back walks the steps; dirty form asks first; manage Reschedule → Back → view |
+| F9 refused booking creates a client | **Fixed** | e930e18 | 20261025120000 | suite 46 (5 fail before, 17/17 after) | local dashboard clash: no client row |
+| F22 portal package balance / UTC times | **Fixed** | 744a4e8 | 20261025130000 | suite 26 (was failing on dev on this exact case; 111/111) | local portal: "4 of 5 sessions left", time in BST |
+| F24 duplicate time chips | **Fixed** | 5671f64 | — | `slotList` (5) | local, two staff free: 31 chips, 31 unique (public page and portal) |
+| F17 time-off list shows the wrong day | **Fixed** | d0528dc | — | `timeOffDisplay` (4, incl. DST, +5, −4) | local: "Oct 23, 2026 – Oct 23, 2026" |
+| F11 no-show before the start | **Fixed** (no-show refused; early "completed" warns) | b27d071 | 20261025140000 | suite 47 (5 fail before, 9/9 after); suite 12 fixture updated (171/171) | local drawer: no "Mark no-show" on a future appointment; early-complete warning |
+
+**Checks:**
+- `tsc` clean and `eslint` clean.
+- vitest 905/905.
+- Public smoke against the local stack: 36/0 (1 skipped).
+- All 41 plain/pgTAP SQL suites on dev: 0 failures (the `.sh` concurrency suites and the `.mjs` HTTP suites were not re-run).
+- `check:migrations`: 164/164 replay from empty.
+- Supabase security advisors: no new kinds of warning.
+
+**Corrections and new findings:**
+- **F6 was not a product bug.** The local Docker image gives different default privileges. Production and dev grants match (`service_role` 86/86 on both). `check:migrations` already applies hosted default privileges before replaying.
+- **New (Low-Med):** `email_required` and `invalid_email` are missing from `_shared/response.ts` `CODE_MAP`. An API caller who leaves out a required email gets `500 server_error`. The booking form enforces email, so customers don't see this.
+- **New (Low):** `create_booking` still inserts the client before its insert block. Losing an exclusion-constraint race can leave a client row behind. This is the public twin of F9.
+- **Decided, not built yet:** F23. Return a package session when a customer cancels before the visit starts (founder: yes).
