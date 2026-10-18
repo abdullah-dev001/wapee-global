@@ -243,7 +243,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
   <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
   <div class="badges">
     <span class="badge lime">Last verified: 18 Oct 2026</span>
-    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">5671f64</span> (branch dev)</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">d0528dc</span> (branch dev)</span>
     <span class="badge">Prices dev database se, 11 Oct 2026</span>
   </div>
 </div>
@@ -479,7 +479,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <dt>Actions</dt><dd><ul>
         <li><b>Approve</b> (pending se confirmed): <code>appointments.approve</code>.</li>
         <li><b>Complete</b>: review link dialog khulta hai, review email queue hoti hai.</li>
-        <li><b>No-show</b>: hamesha haath se; khud-ba-khud nahin hota.</li>
+        <li><b>No-show</b>: hamesha haath se; khud-ba-khud nahin hota. Appointment ka waqt shuru hone se <b>pehle no-show nahin</b> ho sakta (button nazar nahin aata, server bhi rokta hai). Waqt se pehle "Completed" ho sakta hai, magar warning aati hai.</li>
         <li><b>Cancel</b>: <code>appointments.cancel</code> (Staff ke paas nahin). Cancelled hamesha ke liye final.</li>
         <li><b>Reopen</b> (completed/no-show se confirmed): sirf Owner ya Manager, aur sirf jab invoice na bana ho.</li>
         <li>Drawer mein client ka phone/email (Call, WhatsApp, Email, Copy) agar <code>clients.view_contact</code> ho; messages ka status aur fail hone par "Try again".</li>

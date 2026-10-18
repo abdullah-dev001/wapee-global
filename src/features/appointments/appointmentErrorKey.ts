@@ -30,6 +30,7 @@ const KNOWN_CODES: ReadonlySet<AppointmentErrorCode> = new Set<AppointmentErrorC
   'not_editable',
   'invalid_transition',
   'invoiced',
+  'not_started',
 ]);
 
 function sqlStateOf(error: unknown): string | null {

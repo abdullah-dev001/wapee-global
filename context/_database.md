@@ -544,6 +544,7 @@ Phase 8 follow-ups: `20261010120000_phase8a_super_admin_requires_aal2` (`platfor
   design, not an oversight.
 
 ## Changelog
+- 2026-10-18: `20261025140000_no_show_not_before_start` — `mark_no_show` refuses before `starts_at` (`not_started`), before any write. Pushed to dev. Suite 47; suite 12 fixture adjusted.
 - 2026-10-18: `20261025130000_portal_packages_balance_and_timezone` — `portal_packages` counts usages inline (no member-gated helper) and returns `timezone`. Pushed to dev. Suite 26 111/111.
 - 2026-10-18: `20261025120000_create_appointment_validate_before_client` — `create_appointment` writes the client together with the appointment (validate first, write last). Pushed to dev. Suite 46.
 - 2026-10-18: `20261025110000_rate_limit_one_ip_row_per_attempt` — `check_rate_limit` business row has `ip_hash = null`; no all-null row. Pushed to dev (version = filename). Suite 45.

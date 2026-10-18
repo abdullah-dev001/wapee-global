@@ -62,3 +62,23 @@ export function availabilityFor(action: AppointmentAction): ActionAvailability {
 export function isTerminalStatus(status: AppointmentStatus): boolean {
   return STATUS_ACTIONS[status].length === 0;
 }
+
+/**
+ * Time rule on top of the status rules (QA F11). A no-show cannot be known
+ * before the appointment starts, so it is not offered (the RPC refuses it too,
+ * `not_started`). Completing early stays possible (a client seen early, a
+ * walk-in) but the confirm dialog warns: `early`.
+ */
+export type ActionTimeGate = 'ok' | 'hidden' | 'early';
+
+export function actionTimeGate(
+  action: AppointmentAction,
+  startsAt: string,
+  now: Date = new Date(),
+): ActionTimeGate {
+  const started = now.getTime() >= new Date(startsAt).getTime();
+  if (started) return 'ok';
+  if (action === 'no_show') return 'hidden';
+  if (action === 'complete') return 'early';
+  return 'ok';
+}
