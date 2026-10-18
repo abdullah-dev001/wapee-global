@@ -164,6 +164,8 @@ top-level `phoneInput.*` group for `PhoneInput`.
 
 ## Changelog
 
+- 2026-10-18: a server `email_required` now shows "Enter your email." under the email field (was silent: the error had no field id).
+
 - 2026-10-18: F24 fix (QA run): `SlotGrid` shows one chip per start time (`uniqueSlotsByStart`, available if any staff is free). For "Any staff", `get_slots` returns a row per free staff member, so with two free people every time appeared twice (public page and portal) and one tap highlighted both.
 
 - 2026-10-18: F26 fix (QA run): browser / Android Chrome Back now steps back one step (service <- staff <- slot <- form) instead of leaving `/book`; a typed form still asks "Discard your details?" first; the confirmation owns no history (Back leaves). `useWebStepHistory(historyDepth(step, staffChoice), goBack)`. The location picker is not a history step (Back from "Choose a service" leaves the page).

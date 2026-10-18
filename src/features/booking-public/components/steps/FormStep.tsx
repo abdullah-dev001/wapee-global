@@ -8,6 +8,7 @@ import { FormField, PhoneInput } from '@/components/shared';
 import { Button, Select, Text, Toggle } from '@/components/ui';
 import { theme } from '@/lib/theme';
 
+import { EMAIL_FIELD_ID } from '../../errorHandling';
 import { buildBookingFormSchema } from '../../schemas/bookingForm.schema';
 import { HoneypotField } from '../HoneypotField';
 import type { PublicFormFieldSnapshot } from '../../types';
@@ -95,6 +96,10 @@ export function FormStep({
   // never during render, since this reaches into react-hook-form's state.
   useEffect(() => {
     if (!serverFieldError?.fieldId) return;
+    if (serverFieldError.fieldId === EMAIL_FIELD_ID) {
+      setError('email', { type: 'server', message: 'bookingPublic.form.errors.emailRequired' });
+      return;
+    }
     setError(`custom_${serverFieldError.fieldId}` as never, {
       type: 'server',
       message:

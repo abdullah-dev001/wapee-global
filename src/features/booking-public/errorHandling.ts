@@ -26,6 +26,9 @@ export type ErrorAction =
   /** Cancel/reschedule window has passed, or the booking is already finished with. */
   | { kind: 'not_allowed' };
 
+/** Marks a server error on the built-in email field (not a custom question). */
+export const EMAIL_FIELD_ID = '__email';
+
 export function actionFor(
   code: PublicErrorCode,
   opts?: { retryAfterSeconds?: number; fieldId?: string | null },
@@ -41,10 +44,12 @@ export function actionFor(
       return { kind: 'refresh_slots' };
     case 'missing_answer':
       return { kind: 'highlight_field', fieldId: opts?.fieldId ?? null, message: 'missing' };
+    case 'email_required':
+      // The built-in email field, not a custom question: shown under it.
+      return { kind: 'highlight_field', fieldId: EMAIL_FIELD_ID, message: 'missing' };
     case 'invalid_answer':
     case 'invalid_phone':
     case 'invalid_name':
-    case 'email_required':
     case 'signature_required':
     case 'invalid_signature':
     case 'needs_details':
