@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   currentStep,
+  historyDepth,
   initialFlowState,
   previousStep,
   resetFrom,
@@ -185,5 +186,24 @@ describe('staffIdsForService', () => {
 
   it('returns an empty list for a service with no staff', () => {
     expect(staffIdsForService('s3', pairs)).toEqual([]);
+  });
+});
+
+describe('historyDepth', () => {
+  it('is the step position with a staff step', () => {
+    expect(historyDepth('service', 'optional')).toBe(0);
+    expect(historyDepth('staff', 'optional')).toBe(1);
+    expect(historyDepth('slot', 'optional')).toBe(2);
+    expect(historyDepth('form', 'optional')).toBe(3);
+  });
+
+  it('skips the hidden staff step', () => {
+    expect(historyDepth('slot', 'hidden')).toBe(1);
+    expect(historyDepth('form', 'hidden')).toBe(2);
+  });
+
+  it('owns no history on the confirmation, so Back leaves the page', () => {
+    expect(historyDepth('confirmation', 'optional')).toBe(0);
+    expect(historyDepth('confirmation', 'hidden')).toBe(0);
   });
 });

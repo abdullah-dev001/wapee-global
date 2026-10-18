@@ -6,6 +6,7 @@ import { Screen, PageContainer } from '@/components/layout';
 import { LegalLinks } from '@/components/shared/LegalLinks';
 import { Button, Dialog, EmptyState, ErrorState, Skeleton, Text, useToast } from '@/components/ui';
 import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
+import { useWebStepHistory } from '@/hooks/useWebStepHistory';
 import { brand } from '@/config/brand';
 import { theme, useBreakpoint } from '@/lib/theme';
 import { Calendar as CalendarIcon } from 'lucide-react-native';
@@ -13,6 +14,7 @@ import { Calendar as CalendarIcon } from 'lucide-react-native';
 import { useBookingPage, useCreateBooking } from '../api';
 import {
   currentStep,
+  historyDepth,
   initialFlowState,
   previousStep,
   resetFrom,
@@ -95,6 +97,8 @@ export function BookingFlow({ slug, initialBranch = null }: BookingFlowProps) {
   // without asking, because `resetFrom` only clears fields that genuinely
   // stop being valid, and a dirty form confirms first (above).
   useOverlayDismiss(step !== 'service' && step !== 'confirmation', goBack);
+  // Web: the browser / Android Chrome Back button does the same (QA F26).
+  useWebStepHistory(historyDepth(step, staffChoice), goBack);
 
   const fieldsForService = useMemo(() => {
     const serviceId = flow.serviceId;

@@ -7,6 +7,7 @@ import { Screen, PageContainer } from '@/components/layout';
 import { LegalLinks } from '@/components/shared/LegalLinks';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui';
 import { useOverlayDismiss } from '@/components/ui/useOverlayDismiss';
+import { useWebStepHistory } from '@/hooks/useWebStepHistory';
 import { theme, useBreakpoint } from '@/lib/theme';
 
 import { useManageBooking } from '../api';
@@ -49,6 +50,8 @@ export function BookingManage() {
   // class of bug CLAUDE.md flags for any multi-step flow without a real
   // route per step (see the public booking flow's own goBack trap).
   useOverlayDismiss(mode === 'reschedule', () => setMode('view'));
+  // Web: the browser / Android Chrome Back button does the same (QA F26).
+  useWebStepHistory(mode === 'reschedule' && !afterCancel ? 1 : 0, () => setMode('view'));
 
   let body: React.ReactNode;
 

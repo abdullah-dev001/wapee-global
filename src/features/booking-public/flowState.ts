@@ -58,6 +58,16 @@ export function previousStep(step: BookingStep, staffChoice: StaffChoiceMode): B
   return steps[index - 1] ?? null;
 }
 
+/**
+ * How many browser-history entries this step owns above the page (QA F26): its
+ * position in the flow, so Back steps back one step. The confirmation owns
+ * none: after a booking, Back leaves the page instead of reopening the form.
+ */
+export function historyDepth(step: BookingStep, staffChoice: StaffChoiceMode): number {
+  if (step === 'confirmation') return 0;
+  return Math.max(0, stepsFor(staffChoice).indexOf(step));
+}
+
 /** Reset the fields that stop being valid when an earlier choice changes. */
 export function resetFrom(state: BookingFlowState, step: BookingStep): BookingFlowState {
   switch (step) {
