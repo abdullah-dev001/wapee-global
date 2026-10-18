@@ -236,3 +236,17 @@ One commit per fix. Each has a test, and each was re-run live. Migrations were a
 - **New (Low-Med):** `email_required` and `invalid_email` are missing from `_shared/response.ts` `CODE_MAP`. An API caller who leaves out a required email gets `500 server_error`. The booking form enforces email, so customers don't see this.
 - **New (Low):** `create_booking` still inserts the client before its insert block. Losing an exclusion-constraint race can leave a client row behind. This is the public twin of F9.
 - **Decided, not built yet:** F23. Return a package session when a customer cancels before the visit starts (founder: yes).
+
+## Fix round 2 — 2026-10-18 (dev only)
+
+| Item | Status | Commit | Migration | Tests | Live re-test |
+|---|---|---|---|---|---|
+| F23: a customer cancel returns the package session | **Built** | a39f917 | 20261025150000 | suite 48 (26/26); 11, 22, 26 green | local HTTP: manage-link cancel 2→1 used, portal cancel 1→0, portal shows "5 left" with two reversal lines, deduction rows unchanged |
+| `email_required` returned 500 | **Fixed**: 400 plus a message under the email field | 569189c | — (edge; `create_booking` redeployed to dev) | `_shared/response.test.ts` (3), errorHandling (+1) | local HTTP: `400 {code: email_required}`, no client row |
+| `create_booking` race left an orphan client | **Fixed** with a small change | ae4e797 | 20261025160000 | suite 49 (3 failures before, 10/10 after) | local smoke 36/0 |
+
+Checks after round 2: tsc and eslint clean; vitest 908/908; all 43 plain/pgTAP SQL suites on dev with 0 failures; `check:migrations` 166/166.
+
+Staff cancels from the dashboard still do not return a package session automatically (unchanged; staff reverse by hand).
+
+**Dev cleanup:** the guarded delete of the QA throwaway rows was declined twice at the tool-approval step, so those rows are still on dev. The exact SQL was handed to the founder.
