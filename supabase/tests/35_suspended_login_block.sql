@@ -16,7 +16,8 @@ end; $$;
 create or replace function pg_temp.act_as(p_user uuid, p_aal2 boolean default false) returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims',
-    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', case when p_aal2 then 'aal2' else 'aal1' end)::text, true);
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', case when p_aal2 then 'aal2' else 'aal1' end,
+      'amr', case when p_aal2 then json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)) else '[]'::json end)::text, true);
 end; $$;
 create or replace function pg_temp.as_(p_user text, p_sql text, p_aal2 boolean default false) returns jsonb language plpgsql as $$
 declare r jsonb;
@@ -108,7 +109,7 @@ begin
   -- Only a super admin may suspend.
   perform pg_temp.chk('owner cannot suspend', pg_temp.as_('owa', format($q$select public.set_business_status(%L, 'suspended')$q$, pg_temp.id('biza')), true)->>'code', 'forbidden');
   perform pg_temp.chk('...nothing changed', pg_temp.sess('owa'), '1/1');
-  perform pg_temp.chk('super admin without aal2 refused', pg_temp.as_('su', format($q$select public.set_business_status(%L, 'suspended')$q$, pg_temp.id('biza')), false)->>'code', 'mfa_required');
+  perform pg_temp.chk('super admin without a fresh password session refused', pg_temp.as_('su', format($q$select public.set_business_status(%L, 'suspended')$q$, pg_temp.id('biza')), false)->>'code', 'reauth_required');
   perform pg_temp.chk('...still not suspended', (select status::text from public.business_subscriptions where business_id = pg_temp.id('biza')), 'active');
   perform pg_temp.chk('...sessions intact', pg_temp.sess('solo'), '1/1');
 

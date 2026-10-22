@@ -56,8 +56,8 @@ export const ONBOARDING_ROUTE = 'onboarding';
  * Opening a password-recovery email link signs the user in like any other
  * session — verified, often with a business already — so every OTHER rule
  * below would normally bounce them off this screen before they can set a new
- * password (home if they have a business, `/admin/2fa` via `AdminAccessGate`
- * if they are a 2FA-enrolled super admin). This route is the one place a
+ * password (home if they have a business, `/admin/sign-in-again` via
+ * `AdminAccessGate` if they are a super admin). This route is the one place a
  * recovery session is always sent, and the only (auth) screen it is never
  * redirected away from.
  */

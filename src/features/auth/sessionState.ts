@@ -10,7 +10,7 @@ export type SessionTransition = {
    * Opening a password-recovery email link signs the user in via a distinct
    * `PASSWORD_RECOVERY` event. The gates read this to force the session onto
    * `/reset-password` instead of wherever it would otherwise send a signed-in
-   * user (home, the admin 2FA screen, …) — see gateSettled.ts.
+   * user (home, the admin sign-in-again screen, …) — see gateSettled.ts.
    */
   isPasswordRecovery: boolean;
 };

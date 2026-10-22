@@ -10,8 +10,8 @@ import { focusRing, theme } from '@/lib/theme';
 import { useAdminEnabled } from '../api/useAdminAccess';
 
 /**
- * Menu entry to the super admin area. Renders only for the platform flag AND an
- * aal2 session; for everyone else it renders nothing (not even a placeholder).
+ * Menu entry to the super admin area. Renders only for the platform flag AND a
+ * password session from the last 12 hours; for everyone else it renders nothing (not even a placeholder).
  */
 export function AdminEntry({
   variant,

@@ -22,7 +22,8 @@ end; $$;
 create or replace function pg_temp.act_as(p_user uuid, p_aal2 boolean default false) returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims',
-    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', case when p_aal2 then 'aal2' else 'aal1' end)::text, true);
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', case when p_aal2 then 'aal2' else 'aal1' end,
+      'amr', case when p_aal2 then json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)) else '[]'::json end)::text, true);
 end; $$;
 
 -- Run a jsonb-returning statement as a signed-in user.
@@ -101,8 +102,10 @@ $$;
 create or replace function pg_temp.perms(p_role uuid) returns text language sql as $$
   select coalesce(string_agg(permission || ':' || scope, ',' order by permission), '') from public.role_permissions where role_id = p_role
 $$;
+-- Scoped to this suite's own businesses: dev keeps real audit history (same fix as suite 19).
 create or replace function pg_temp.audit_n(p_action text) returns text language sql as $$
-  select count(*)::text from public.audit_logs where action = p_action
+  select count(*)::text from public.audit_logs
+  where action = p_action and business_id in (select v from ids where k in ('biza', 'bizb'))
 $$;
 create or replace function pg_temp.member(p_biz text, p_user text) returns uuid language sql as $$
   select id from public.business_members where business_id = pg_temp.id(p_biz) and user_id = pg_temp.id(p_user)

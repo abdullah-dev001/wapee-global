@@ -275,14 +275,17 @@ values ((select v from t where k='biz_a'), 'Conflict Test Client', '+44770090055
 insert into t values ('client_a', (select id from public.clients
   where business_id=(select v from t where k='biz_a') and full_name='Conflict Test Client'));
 
--- 2026-10-19 is a Monday; Europe/London is on BST (UTC+1) in October, so
--- 09:00 local is 08:00Z.
+-- Next week's Monday, 09:00-09:30 Europe/London (the conflict checks only count FUTURE
+-- appointments; a fixed date rotted once it passed). Built in local time, so DST is handled.
+create temporary table conflict_day on commit drop as
+  select (date_trunc('week', (now() at time zone 'Europe/London'))::date + 7) as d;
 insert into public.appointments (business_id, branch_id, client_id, service_id, staff_id,
   starts_at, ends_at, duration_minutes, status, form_version_id)
 values ((select v from t where k='biz_a'), (select v from t where k='branch_a'),
   (select v from t where k='client_a'), (select v from t where k='svc_cut'),
   (select v from t where k='staff_a'),
-  '2026-10-19T08:00:00Z', '2026-10-19T08:30:00Z', 30, 'confirmed',
+  ((select d from conflict_day) + time '09:00') at time zone 'Europe/London',
+  ((select d from conflict_day) + time '09:30') at time zone 'Europe/London', 30, 'confirmed',
   public.ensure_form_version((select v from t where k='biz_a')));
 
 select is(
@@ -296,11 +299,11 @@ select is(
   0, 'branch hours including the appointment''s time count 0 conflicts');
 
 select is(
-  public.branch_closure_conflicts((select v from t where k='branch_a'), '2026-10-19', '2026-10-19'),
+  public.branch_closure_conflicts((select v from t where k='branch_a'), (select d from conflict_day), (select d from conflict_day)),
   1, 'a closure covering the appointment''s day counts 1 conflict');
 
 select is(
-  public.branch_closure_conflicts((select v from t where k='branch_a'), '2026-10-21', '2026-10-21'),
+  public.branch_closure_conflicts((select v from t where k='branch_a'), (select d + 2 from conflict_day), (select d + 2 from conflict_day)),
   0, 'a closure on a different day counts 0 conflicts');
 
 select * from finish();

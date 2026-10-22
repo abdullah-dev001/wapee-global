@@ -243,7 +243,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
   <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
   <div class="badges">
     <span class="badge lime">Last verified: 23 Oct 2026</span>
-    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">5b97b41</span> + add-by-email (branch dev)</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">d1ec3cf</span> + super admin password-only (branch dev)</span>
     <span class="badge">Prices dev database se, 11 Oct 2026</span>
   </div>
 </div>
@@ -666,7 +666,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <li>Kam se kam ek active Owner hamesha.</li>
       <li>Billing sirf Owner; kisi custom role mein nahin.</li>
       <li>Trial khatam ya inactive business: Settings aur Billing ke ilawa har permission fail.</li>
-      <li>Super admin har jagah, magar sirf 2FA (aal2) ke saath; us ke direct reads logged nahin, support view logged hai.</li>
+      <li>Super admin har jagah, magar sirf 12 ghante purane password sign-in ke saath; us ke direct reads logged nahin, support view logged hai.</li>
     </ul></div>
     <div class="box searchable"><h3 style="margin-top:0">Plan gating</h3><ul>
       <li>Commission aur advanced reports: Team+.</li>
@@ -822,9 +822,9 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     </div></div></details>
 
     <details class="card"><summary><span class="ct">L. Super admin se plan / add-on change<small>/admin/business/&lt;id&gt;</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
-      <div class="flow" data-steps="Super admin login + TOTP|/admin: business dhoondo|Detail: plan, usage, add-ons|Assign plan (+ period end, note)|Limit se upar? Refuse|Add-on toggle (confirm)|Audit log mein record"></div>
+      <div class="flow" data-steps="Super admin login (email + password)|/admin: business dhoondo|Detail: plan, usage, add-ons|Assign plan (+ period end, note)|Limit se upar? Refuse|Add-on toggle (confirm)|Audit log mein record"></div>
       <div><ol class="steps">
-        <li>Email + password + authenticator code (TOTP); bina 2FA ke admin kuch nahin dekh sakta.</li>
+        <li>Email + password (TOTP nahin, dev par 23 Oct 2026 se); Google se ya 12 ghante se purane sign-in se admin kuch nahin dekh sakta.</li>
         <li><b>/admin</b>: search, plan / status filter. Business detail: subscription, usage (staff, locations, is mahine ki appointments, invoices, SMS balance), add-ons.</li>
         <li><b>Assign plan</b> (yehi activate bhi karta hai; suspended suspended hi rehta hai). Downgrade limit se upar ho to refuse aur kaun si location upar hai.</li>
         <li>Add-on toggle confirm ke saath; owner ko agle refresh par menu dikhta hai.</li>
@@ -901,7 +901,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr><td><code>/settings</code> + <code>/settings/booking</code>, <code>notifications</code>, <code>messages</code>, <code>billing</code>, <code>roles</code>, <code>branches</code>, <code>location</code>, <code>forms</code>, <code>advanced-reports</code>, <code>data-requests</code>, <code>delete-business</code>, <code>my-notifications</code>, <code>account</code>, <code>delete-account</code></td><td>Settings ke sab screens (<code>sms-credits</code> launch par Settings par wapas bhej deta hai)</td><td>Members (permission)</td></tr>
       <tr><td><code>/more</code></td><td>Mobile menu</td><td>Members</td></tr>
       <tr><td><code>/invoice-print/&lt;id&gt;</code> · <code>/report-print</code></td><td>Print views</td><td>Signed-in, permission</td></tr>
-      <tr><td><code>/admin</code> · <code>/admin/business/&lt;id&gt;</code> · <code>/admin/platform</code> · <code>/admin/2fa</code></td><td>Super admin area</td><td>Super admin (2FA)</td></tr>
+      <tr><td><code>/admin</code> · <code>/admin/business/&lt;id&gt;</code> · <code>/admin/platform</code> · <code>/admin/sign-in-again</code></td><td>Super admin area</td><td>Super admin (password, 12 ghante)</td></tr>
       <tr><td><code>/&lt;slug&gt;</code></td><td>Business ki website (publish ho to)</td><td>Public</td></tr>
       <tr><td><code>/&lt;slug&gt;/book</code> (<code>?branch=PREFIX</code>)</td><td>Booking page, share karne wala link</td><td>Public</td></tr>
       <tr><td><code>/&lt;slug&gt;/manage#token=</code></td><td>Guest: booking dekhna, cancel, reschedule</td><td>Link wala client</td></tr>
@@ -919,9 +919,10 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
 <section class="sec" id="s8">
   <div class="sec-head"><span class="sec-num">8</span><h2>Super admin</h2></div>
   <div class="grid">
-    <details class="card"><summary><span class="ct">Access aur TOTP login<small>/admin/2fa</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
-      <dt>Kaise</dt><dd>Profile par ek flag (sirf SQL se lagta hai) + authenticator app (TOTP). Flagged account sign in karte hi 2FA screen par jata hai; har admin action ko aal2 session chahiye. Bina 2FA admin aam user jaisa.</dd>
-      <dt>Recovery</dt><dd>Koi recovery flow nahin; factor kho jaye to developer database se hata kar dobara enrol karta hai.</dd>
+    <details class="card"><summary><span class="ct">Access: sirf email + password<small>/admin/sign-in-again</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
+      <dt>Kaise</dt><dd>Profile par ek flag (sirf SQL se lagta hai). TOTP / authenticator <b>hata diya</b> (founder ka faisla, 23 Oct 2026). Har admin action ko aisa session chahiye jo <b>password se pichhle 12 ghante mein</b> sign in hua ho. Google, password-reset link ya magic link wale session se admin kuch nahin dekh sakta; 12 ghante baad "Sign in again" screen aati hai.</dd>
+      <dt>Hifazat</dt><dd>Super admin ka Google sign-in refuse hota hai. Har admin sign-in (aur har refuse hua Google try) audit log mein jata hai aur admin ke apne email par alert jata hai (Resend chahiye).</dd>
+      <dt>Status</dt><dd><b>Sirf dev par.</b> Production par abhi purana TOTP rule hai jab tak rollout nahin hota.</dd>
     </dl></div></details>
     <details class="card"><summary><span class="ct">Businesses list aur detail<small>/admin, /admin/business/&lt;id&gt;</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
       <dt>List</dt><dd>Search (naam + slug, owner email nahin), plan / status filters, 20 per page.</dd>
@@ -933,7 +934,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     </dl></div></details>
     <details class="card"><summary><span class="ct">Sirf SQL / dashboard se hone wale kaam<small>Koi screen nahin</small></span><span class="chip partial">Partial</span></summary><div class="cb"><ul>
       <li>Super admin flag lagana (ek hi account).</li>
-      <li>Kho chuka TOTP factor hatana.</li>
+      <li>Rollout ke waqt super admin ka purana TOTP factor hatana (ek dafa).</li>
       <li>Branch ka Google review link set karna.</li>
       <li>Service categories banana / rename (screen nahin).</li>
       <li>Auth hook on karna, SMTP, redirect URLs (Supabase dashboard).</li>
@@ -1021,7 +1022,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <label><input type="checkbox"> Accounts: Vercel Pro, Resend, Supabase Pro, Expo, Apple ($99/yr), Google Play ($25)</label><br>
       <label><input type="checkbox"> support@ aur dmarc@ email forwarding</label><br>
       <label><input type="checkbox"> Privacy, Terms, Refund lawyer se review (abhi DRAFT)</label><br>
-      <label><input type="checkbox"> Super admin kaun hoga + authenticator app</label><br>
+      <label><input type="checkbox"> Super admin kaun hoga (strong password, password manager mein)</label><br>
       <label><input type="checkbox"> Final prices /admin/platform par confirm</label><br>
       <label><input type="checkbox"> Final icons aur splash (abhi placeholder)</label><br>
       <label><input type="checkbox"> Alerts kis ko jayenge (on-call person)</label><br>
@@ -1032,13 +1033,13 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <label><input type="checkbox"> Vault mein outbox_worker_url set, 5 cron jobs active</label><br>
       <label><input type="checkbox"> Naye production secrets (IP salt, form HMAC, unsubscribe key, Resend, VAPID)</label><br>
       <label><input type="checkbox"> Sab 17 Edge Functions deploy</label><br>
-      <label><input type="checkbox"> Auth: Site URL, redirect URLs (<code>/auth/callback</code> bhi), password 8, leaked-password protection, TOTP</label><br>
+      <label><input type="checkbox"> Auth: Site URL, redirect URLs (<code>/auth/callback</code> bhi), password 8, leaked-password protection</label><br>
       <label><input type="checkbox"> Google login: Google Cloud OAuth client (prod redirect URI = prod Supabase callback), consent screen "In production", Supabase Google provider on</label><br>
       <label><input type="checkbox"> Auth hook (Custom Access Token) on</label><br>
       <label><input type="checkbox"> Custom SMTP + Resend domain mail.wapee.online (SPF, DKIM, DMARC)</label><br>
       <label><input type="checkbox"> Asal inbox par email test (Gmail + Outlook)</label><br>
       <label><input type="checkbox"> Vercel project, env vars, domain, headers check</label><br>
-      <label><input type="checkbox"> Super admin bana kar TOTP enrol</label><br>
+      <label><input type="checkbox"> Super admin bana kar purana TOTP factor hatao (agar ho)</label><br>
       <label><input type="checkbox"> Backups on + storage copy schedule</label><br>
       <label><input type="checkbox"> Uptime monitors</label><br>
       <label><input type="checkbox"> smoke:public ek baar throwaway business par, phir erase</label><br>
@@ -1148,7 +1149,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr class="searchable"><td>Twilio</td><td>SMS bhejne wali service (band).</td></tr>
       <tr class="searchable"><td>Vercel</td><td>Jahan website host hoti hai.</td></tr>
       <tr class="searchable"><td>Supabase</td><td>Backend: database, login, files, functions.</td></tr>
-      <tr class="searchable"><td>TOTP / 2FA</td><td>Authenticator app ka 6-digit code; super admin ke liye zaroori.</td></tr>
+      <tr class="searchable"><td>TOTP / 2FA</td><td>Authenticator app ka 6-digit code. Super admin ke liye ab zaroori nahin (23 Oct 2026, dev); password + 12 ghante ka rule.</td></tr>
       <tr class="searchable"><td>Honeypot</td><td>Chhupa field jo sirf bots bharte hain; bhara to booking refuse.</td></tr>
       <tr class="searchable"><td>Rate limit</td><td>Ek waqt mein kitni dafa koi kaam ho sakta hai (spam se bachao).</td></tr>
       <tr class="searchable"><td>Polar</td><td>Future payment provider (merchant of record) subscriptions ke liye.</td></tr>
@@ -1198,7 +1199,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <li>Branch hours</li><li>Service + price</li><li>Staff (ya Add me as staff)</li><li>Staff ko service</li><li>Staff working hours</li>
     </ol></div>
     <div class="box searchable"><h4>Launch se pehle zaroori</h4><ul>
-      <li>Prod Supabase (Pro) + backups</li><li>Resend domain + SMTP</li><li>Auth hook on</li><li>Super admin + TOTP</li><li>Legal review</li><li>Monitoring</li>
+      <li>Prod Supabase (Pro) + backups</li><li>Resend domain + SMTP</li><li>Auth hook on</li><li>Super admin (password-only rollout)</li><li>Legal review</li><li>Monitoring</li>
     </ul></div>
   </div>
 </section>

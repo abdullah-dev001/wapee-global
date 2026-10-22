@@ -72,6 +72,7 @@ export function readOAuthCallbackError(href: string): OAuthCallbackError | null 
 export const OAUTH_ERROR_KEYS = {
   cancelled: 'auth.google.cancelled',
   disabled: 'auth.accountDisabled',
+  adminPasswordOnly: 'auth.google.adminPasswordOnly',
   failed: 'auth.google.failed',
 } as const;
 
@@ -79,13 +80,20 @@ export type OAuthErrorKey = (typeof OAUTH_ERROR_KEYS)[keyof typeof OAUTH_ERROR_K
 
 /**
  * Maps a callback error to a message key. The disabled-account case comes from our own Custom
- * Access Token hook (its message, as on the password sign-in path); `access_denied` is the user
+ * Access Token hook (its message, as on the password sign-in path), and so does the super admin
+ * refusal (20261026130000: super admins sign in with a password only); `access_denied` is the user
  * closing or refusing the Google screen. Everything else is one generic message: provider text
  * is never shown.
  */
 export function oauthErrorKey(err: OAuthCallbackError): OAuthErrorKey {
   if (err.description && /account is disabled/i.test(err.description)) {
     return OAUTH_ERROR_KEYS.disabled;
+  }
+  if (
+    err.description &&
+    /super admin accounts sign in with email and password/i.test(err.description)
+  ) {
+    return OAUTH_ERROR_KEYS.adminPasswordOnly;
   }
   if (err.error === 'access_denied' && !err.description?.match(/hook/i)) {
     return OAUTH_ERROR_KEYS.cancelled;

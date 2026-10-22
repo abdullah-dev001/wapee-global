@@ -40,13 +40,14 @@ create or replace function pg_temp.act_as(p_user uuid) returns void language plp
 begin
   perform set_config('request.jwt.claims',
     json_build_object('sub', p_user, 'role', 'authenticated',
-      'aal', case when (select is_super_admin from public.profiles where id = p_user) then 'aal2' else 'aal1' end)::text, true);
+      'aal', case when (select is_super_admin from public.profiles where id = p_user) then 'aal2' else 'aal1' end,
+      'amr', case when (select is_super_admin from public.profiles where id = p_user) then json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)) else '[]'::json end)::text, true);
 end; $$;
 -- Phase 8: super admin RPCs need a TOTP-verified (aal2) session.
 create or replace function pg_temp.act_as_mfa(p_user uuid) returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims',
-    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal2', 'amr', json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)))::text, true);
 end; $$;
 
 do $$

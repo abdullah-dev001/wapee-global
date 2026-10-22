@@ -8,13 +8,13 @@ import { PageContainer, Screen } from '@/components/layout';
 import { EmptyState, Skeleton } from '@/components/ui';
 import { theme } from '@/lib/theme';
 
-import { ADMIN_2FA } from '../adminLogic';
+import { ADMIN_REAUTH } from '../adminLogic';
 import { useAdminAccess } from '../api/useAdminAccess';
 
 /**
  * Wraps the whole (admin) route group. Not a super admin: the area is simply "not
- * found" (it does not advertise itself). Flagged but aal1: only the 2FA screen
- * opens. Flag + aal2: everything opens. The RPCs enforce the same rule.
+ * found" (it does not advertise itself). Flagged without a fresh password session:
+ * only the sign-in-again screen opens. Flag + fresh password session: everything opens. The RPCs enforce the same rule.
  */
 export function AdminGuard({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -43,7 +43,8 @@ export function AdminGuard({ children }: { children: ReactNode }) {
       </Screen>
     );
   }
-  if (access === 'needs_2fa' && pathname !== ADMIN_2FA) return <Redirect href={ADMIN_2FA} />;
+  if (access === 'needs_reauth' && pathname !== ADMIN_REAUTH)
+    return <Redirect href={ADMIN_REAUTH} />;
   return <>{children}</>;
 }
 

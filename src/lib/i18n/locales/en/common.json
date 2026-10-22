@@ -119,9 +119,7 @@
       "subtitle": "Pick something you haven't used before.",
       "submit": "Save password",
       "done": "Password updated",
-      "doneBody": "You can now sign in with your new password.",
-      "twoFactorTitle": "Confirm it's you",
-      "twoFactorIntro": "This account has two-factor sign-in. Enter the 6-digit code from your authenticator app to finish resetting your password."
+      "doneBody": "You can now sign in with your new password."
     },
     "verify": {
       "title": "Confirm your email",
@@ -171,6 +169,7 @@
       "signingIn": "Finishing sign-in with Google…",
       "cancelled": "Google sign-in was cancelled. You can try again or use your email and password.",
       "failed": "We could not sign you in with Google. Please try again.",
+      "adminPasswordOnly": "Super admin accounts sign in with email and password, not Google.",
       "incomplete": "Sign-in did not finish. Please go back and try again.",
       "backToSignIn": "Back to sign in"
     }
@@ -2161,20 +2160,10 @@
       "fieldsHint": "One per line: Label | type | required | options. Types: short_text, long_text, dropdown, yes_no, number. Dropdowns need two or more options separated by commas.",
       "saved": "Preset saved."
     },
-    "twoFactor": {
-      "title": "Two-factor sign-in",
-      "loadError": "We couldn't check your two-factor setup.",
-      "setupIntro": "Super admin access needs an authenticator app. Set it up now; you'll enter a 6-digit code every time you sign in.",
-      "startSetup": "Set up two-factor",
-      "scan": "Scan this code with your authenticator app.",
-      "qrLabel": "QR code for your authenticator app",
-      "secretHint": "Or type this key into the app.",
-      "enter": "Enter the 6-digit code from your authenticator app.",
-      "codeLabel": "6-digit code",
-      "verify": "Verify",
-      "verifySetup": "Verify and finish",
-      "wrongCode": "That code didn't work. Check the app and try again.",
-      "setupFailed": "We couldn't start the set-up. Try again."
+    "reauth": {
+      "title": "Sign in again",
+      "body": "The admin area needs an email and password sign-in from the last 12 hours. Google sign-in and password reset links don't open it. Sign out, then sign in with your email and password.",
+      "action": "Sign out and sign in again"
     },
     "validation": {
       "planRequired": "Choose a plan.",
@@ -2198,7 +2187,7 @@
     },
     "errors": {
       "forbidden": "You don't have access to that.",
-      "mfa_required": "Sign in with your two-factor code to continue.",
+      "reauth_required": "Your admin sign-in has expired. Sign out and sign in again with your email and password.",
       "invalid_input": "Some of that input isn't valid. Check it and try again.",
       "not_found": "That no longer exists.",
       "plan_required": "Assign a plan before activating this business.",

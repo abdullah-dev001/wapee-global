@@ -75,6 +75,16 @@ describe('oauthErrorKey', () => {
     ).toBe(OAUTH_ERROR_KEYS.disabled);
   });
 
+  it('maps the super admin Google refusal to its own message', () => {
+    expect(
+      oauthErrorKey({
+        error: 'server_error',
+        code: 'unexpected_failure',
+        description: 'Super admin accounts sign in with email and password.',
+      }),
+    ).toBe(OAUTH_ERROR_KEYS.adminPasswordOnly);
+  });
+
   it('never shows provider text: everything else is the generic failure', () => {
     expect(
       oauthErrorKey({ error: 'server_error', code: null, description: 'Unable to exchange code' }),

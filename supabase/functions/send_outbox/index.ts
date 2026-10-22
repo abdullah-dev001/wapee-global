@@ -18,6 +18,7 @@
 
 import { serviceClient } from '../_shared/supabase.ts';
 import { logUnexpected } from '../_shared/response.ts';
+import { sendAdminAlerts, type AdminAlert } from '../_shared/outbox/adminAlert.ts';
 import { processJob } from '../_shared/outbox/process.ts';
 import {
   emailConfigured,
@@ -163,7 +164,29 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (jobs.length < BATCH) break;
     }
 
-    return new Response(JSON.stringify({ ok: true, claimed, ...counts }), {
+    // Super admin sign-in alerts (their own queue, emailed to the admin's own address).
+    let adminAlerts = 0;
+    if (emailConfigured()) {
+      adminAlerts = await sendAdminAlerts({
+        async claim(limit) {
+          const { data, error } = await db.rpc('admin_alert_claim', { p_limit: limit });
+          if (error) throw error;
+          return (data ?? []) as AdminAlert[];
+        },
+        async finish(id, ok, message) {
+          const { error } = await db.rpc('admin_alert_finish', {
+            p_id: id,
+            p_ok: ok,
+            p_error: message ?? undefined,
+          });
+          if (error) throw error;
+        },
+        sendEmail,
+        siteUrl,
+      });
+    }
+
+    return new Response(JSON.stringify({ ok: true, claimed, ...counts, adminAlerts }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     });

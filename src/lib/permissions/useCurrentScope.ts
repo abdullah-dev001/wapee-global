@@ -43,7 +43,7 @@ export function useMyProfile() {
       const { data, error } = await getSupabase()
         .from('profiles')
         .select('id, email, full_name, is_super_admin, default_business_id, locale')
-        // An aal2 super admin can read EVERY profile (RLS), so name the row.
+        // A signed-in super admin can read EVERY profile (RLS), so name the row.
         .eq('id', user?.id ?? '')
         .maybeSingle();
       if (error) throw new Error(error.message);
