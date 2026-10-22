@@ -242,8 +242,8 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
   <h1>Wapee Product Memory Guide</h1>
   <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
   <div class="badges">
-    <span class="badge lime">Last verified: 18 Oct 2026</span>
-    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">569189c</span> (branch dev)</span>
+    <span class="badge lime">Last verified: 23 Oct 2026</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">d1ec3cf</span> + super admin password-only (branch dev)</span>
     <span class="badge">Prices dev database se, 11 Oct 2026</span>
   </div>
 </div>
@@ -353,7 +353,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     <details class="card"><summary><span class="ct">Caps (limits) kaise kaam karti hain<small>Staff per location, locations</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
       <dt>Staff cap</dt><dd>Solo 1, Team 5, Business unlimited. Ye <b>har location par active, bookable staff profiles</b> ginta hai. Inactive ya deleted staff nahin gina jata. Do locations mein kaam karne wala staff dono jagah gina jata hai.</dd>
       <dt>Location cap</dt><dd>Solo 1, Team 1, Business unlimited. Doosri location banane ki koshish database rok deta hai.</dd>
-      <dt>Kya NAHIN gina jata</dt><dd>Bookings, clients, services aur <b>logins</b>. Yaani Solo par bhi Manager ya Receptionist invite ho sakte hain. "Solo = sirf owner" <span class="chip display">Display-only</span>.</dd>
+      <dt>Kya NAHIN gina jata</dt><dd>Bookings, clients, services aur <b>logins</b>. Yaani Solo par bhi Manager ya Receptionist add ho sakte hain. "Solo = sirf owner" <span class="chip display">Display-only</span>.</dd>
       <dt>Downgrade</dt><dd>Agar business naye plan ki limit se upar hai to super admin ka downgrade <b>refuse</b> hota hai (kaun si location limit se upar hai, list dikhati hai). Kuch nahin badalta.</dd>
     </dl></div></details>
 
@@ -512,7 +512,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     <details class="card"><summary><span class="ct">Staff<small>Menu: Staff · staff.view (edit: staff.manage)</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
       <dt>Kya karta hai</dt><dd>Staff profile: display name, job title, contact, active, online-bookable, kin branches mein, kaun si services. Har person ka weekly schedule drawer.</dd>
       <dt>Hours, breaks, time off</dt><dd>Staff ke saath "Schedule" drawer: har branch ke weekly hours (split shift ok), breaks. Time off <b>Schedule &gt; Time off</b> par (poore din; approval nahin).</dd>
-      <dt>Login link</dt><dd>Staff profile ke liye login zaroori nahin. "App login" field se kisi member ko jorna, ya invite karte waqt profile chun'na. "No app access" badge dikhata hai kis ke paas login nahin.</dd>
+      <dt>Login link</dt><dd>Staff profile ke liye login zaroori nahin. "App login" field se kisi member ko jorna, ya email se add karte waqt profile chun'na. "No app access" badge dikhata hai kis ke paas login nahin.</dd>
       <dt>Add me as staff</dt><dd>Owner/Manager jin ka profile nahin, ek click mein apna bookable profile bana lete hain. <b>Solo owner ke liye zaroori</b>: owner khud-ba-khud staff nahin hota.</dd>
       <dt>Rules</dt><dd><ul><li>"No working hours set — no online slots" badge: bina hours staff ka koi slot nahin banta.</li><li>Plan cap yahan lagti hai (Solo 1, Team 5 per location).</li><li>Overnight shift nahin, half-day time off nahin.</li></ul></dd>
     </dl></div></details>
@@ -580,11 +580,11 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <dt>Display-only</dt><dd>"Har extra location ka same price" sirf dikhta hai, charge nahin hota.</dd>
     </dl></div></details>
 
-    <details class="card"><summary><span class="ct">Team (Members), invites, roles<small>Menu: Team · staff.view (invite: users.invite)</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
-      <dt>Kya</dt><dd>Sab members aur pending invites. Invite: email + role + (optional) branch + (optional) staff profile. Manage drawer: role per location add/change/remove, member remove, naya link (re-invite), invite cancel.</dd>
+    <details class="card"><summary><span class="ct">Team (Members), add by email, roles<small>Menu: Team · staff.view (add: users.invite)</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
+      <dt>Kya</dt><dd>Sab members aur "Pending" log. <b>Add person</b>: email + role + (optional) branch + (optional) staff profile. Koi link ya token nahin. Banda us email ko <b>verify</b> kar ke (Google, ya confirm kiya hua email account) sign in kare to khud-ba-khud join ho jata hai. Manage drawer: role per location add/change/remove, member remove, "Send the email again" (30 din aur), pending add cancel.</dd>
       <dt>Default roles</dt><dd>Owner, Manager, Receptionist, Staff (section 5). Custom roles add-on se.</dd>
-      <dt>Rules</dt><dd><ul><li>Invite link ek baar, 7 din valid; role invite ke waqt tay.</li><li>Aap wo role nahin de sakte jis ki permissions aap ke paas nahin (Manager Owner invite nahin kar sakta).</li><li>Business mein kam se kam ek Owner hamesha.</li></ul></dd>
-      <dt>Partial</dt><dd>Invite <b>email nahin hota</b>: app ek link dikhata hai jo owner khud WhatsApp/email se bhejta hai. List paginated nahin.</dd>
+      <dt>Rules</dt><dd><ul><li>Pending add 30 din valid; role add karte waqt tay.</li><li><b>Unverified email kabhi join nahin hota</b> (email confirm hone ke baad hi).</li><li>Aap wo role nahin de sakte jis ki permissions aap ke paas nahin (Manager Owner add nahin kar sakta).</li><li>Rate limit: 30 adds/ghanta per business, 200/din per adder. Har add, join aur cancel audit log mein.</li><li>Business mein kam se kam ek Owner hamesha.</li><li>Purane invite links (<code>/accept-invite?token=</code>) band: page batata hai ke usi email se sign in karein.</li></ul></dd>
+      <dt>Partial</dt><dd>"You were added" email jata hai (sirf /login ka link, token nahin), magar asli inbox delivery Resend domain verify hone tak sabit nahin. Business switcher abhi nahin: pehle se kisi aur business ka member add ho to wo join to ho jata hai magar doosre business tak pohanch nahin sakta (default business sirf khali ho to set hota hai). List paginated nahin.</dd>
     </dl></div></details>
 
     <details class="card"><summary><span class="ct">Commission<small>Menu: Commission · Team+</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
@@ -666,7 +666,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <li>Kam se kam ek active Owner hamesha.</li>
       <li>Billing sirf Owner; kisi custom role mein nahin.</li>
       <li>Trial khatam ya inactive business: Settings aur Billing ke ilawa har permission fail.</li>
-      <li>Super admin har jagah, magar sirf 2FA (aal2) ke saath; us ke direct reads logged nahin, support view logged hai.</li>
+      <li>Super admin har jagah, magar sirf 12 ghante purane password sign-in ke saath; us ke direct reads logged nahin, support view logged hai.</li>
     </ul></div>
     <div class="box searchable"><h3 style="margin-top:0">Plan gating</h3><ul>
       <li>Commission aur advanced reports: Team+.</li>
@@ -685,9 +685,10 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
 
   <div class="grid" id="workflows">
     <details class="card"><summary><span class="ct">A. Naya owner signup se pehle bookable slot tak<small>Setup checklist aur slot na aane ki wajahein</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
-      <div class="flow" data-steps="Signup (email + password)|Email confirm (/verify)|Onboarding 1: naam, slug, industry|Onboarding 2: location, country, currency, TZ|Today: setup checklist|Branch hours (Schedule)|Service + price (Services)|Staff / Add me as staff|Staff ko service do|Staff working hours|Copy booking link"></div>
+      <div class="flow" data-steps="Signup (email + password, ya Google)|Email confirm (/verify; Google mein zaroorat nahin)|Onboarding 1: naam, slug, industry|Onboarding 2: location, country, currency, TZ|Today: setup checklist|Branch hours (Schedule)|Service + price (Services)|Staff / Add me as staff|Staff ko service do|Staff working hours|Copy booking link"></div>
       <div><ol class="steps">
-        <li><b>/signup</b>: email + password (8-72). Email confirm karna zaroori; tab tak <b>/verify</b> par.</li>
+        <li><b>/signup</b>: email + password (8-72). Email confirm karna zaroori; tab tak <b>/verify</b> par. Ya <b>Continue with Google</b> (sirf web/PWA; installed iPhone PWA mein button chhupa hai): Google email pehle se verified hoti hai, seedha onboarding. Agar kisi business ne is email ko pehle add kiya ho to onboarding nahin, seedha us business mein (trial nahin banta).</li>
+        <li>Pehle se email/password account hai aur Google se aate hain: wohi account jurta hai (dono tareeqe chalte hain, naam nahin badalta). Kisi ne aap ki email par <b>unconfirmed</b> account bana rakha ho: Google aane par us ka password aur email-login hata diye jaate hain aur naam Google wala ho jata hai (dev par test kiya, 23 Oct 2026).</li>
         <li><b>/onboarding</b> step 1: business naam, slug (booking address, live check), industry. Step 2: pehli location ka naam, country, currency, time zone. Ek transaction mein business + branch + Owner + 14 din trial + booking settings (online booking ON, 24h cancel) ban jaate hain.</li>
         <li>Owner <b>Today</b> par aata hai: "Get ready for your first booking" checklist.</li>
         <li>Step 1 <b>Schedule &gt; Opening hours</b>. Step 2 <b>Services</b>: service, active, online-bookable, is branch par price. Step 3 <b>Staff</b>: staff banayein ya <b>Add me as staff</b> (Solo owner ke liye zaroori). Step 4: staff ko service do. Step 5: staff ke working hours (Staff &gt; Schedule).</li>
@@ -821,9 +822,9 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     </div></div></details>
 
     <details class="card"><summary><span class="ct">L. Super admin se plan / add-on change<small>/admin/business/&lt;id&gt;</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
-      <div class="flow" data-steps="Super admin login + TOTP|/admin: business dhoondo|Detail: plan, usage, add-ons|Assign plan (+ period end, note)|Limit se upar? Refuse|Add-on toggle (confirm)|Audit log mein record"></div>
+      <div class="flow" data-steps="Super admin login (email + password)|/admin: business dhoondo|Detail: plan, usage, add-ons|Assign plan (+ period end, note)|Limit se upar? Refuse|Add-on toggle (confirm)|Audit log mein record"></div>
       <div><ol class="steps">
-        <li>Email + password + authenticator code (TOTP); bina 2FA ke admin kuch nahin dekh sakta.</li>
+        <li>Email + password (TOTP nahin, dev par 23 Oct 2026 se); Google se ya 12 ghante se purane sign-in se admin kuch nahin dekh sakta.</li>
         <li><b>/admin</b>: search, plan / status filter. Business detail: subscription, usage (staff, locations, is mahine ki appointments, invoices, SMS balance), add-ons.</li>
         <li><b>Assign plan</b> (yehi activate bhi karta hai; suspended suspended hi rehta hai). Downgrade limit se upar ho to refuse aur kaun si location upar hai.</li>
         <li>Add-on toggle confirm ke saath; owner ko agle refresh par menu dikhta hai.</li>
@@ -852,12 +853,12 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       </ol><div class="note">Kuch buttons (export download, requests se "Run erase") click-test nahin hue; backend tests se prove. Privacy/terms abhi DRAFT.</div></div>
     </div></div></details>
 
-    <details class="card"><summary><span class="ct">O. Staff login link aur invite flow<small>Team &gt; Invite</small></span><span class="chip partial">Partial</span></summary><div class="cb"><div class="flow-wrap">
-      <div class="flow" data-steps="Team > Invite: email, role, branch|Optional: staff profile chuno|Ek baar ka link dikhta hai|Owner khud link bhejta hai|Invitee signup + email confirm|Same email se sign in, accept|Staff sirf apni appointments dekhe"></div>
+    <details class="card"><summary><span class="ct">O. Staff ko email se add karna<small>Team &gt; Add person</small></span><span class="chip partial">Partial</span></summary><div class="cb"><div class="flow-wrap">
+      <div class="flow" data-steps="Team > Add person: email, role, branch|Optional: staff profile chuno|Pending add (30 din) + email|Banda usi email se account banaye / sign in|Email verified ho to khud join|Staff sirf apni appointments dekhe"></div>
       <div><ol class="steps">
-        <li><b>Team</b> &gt; Invite: email, role, (branch), aur Staff role ke liye unlinked staff profile.</li>
-        <li>App ek-baar ka link dikhata hai (7 din). <b>Email automatic nahin jaati</b>: copy kar ke WhatsApp/email karein.</li>
-        <li>Invitee link kholta hai, account banata hai, email confirm karta hai (naya user ho to confirm ke baad link dobara kholna parta hai), <b>wohi email</b> se sign in, accept.</li>
+        <li><b>Team</b> &gt; Add person: email, role, (branch), aur Staff role ke liye unlinked staff profile.</li>
+        <li>System pending add banata hai (30 din) aur "you were added" email bhejta hai (sirf sign-in link, koi token nahin).</li>
+        <li>Banda <b>usi email</b> se account banaye ya sign in kare. Email verify hote hi (confirm link ya Google) wo khud join ho jata hai, onboarding nahin dikhti, trial nahin banta. Unverified email kabhi join nahin hota.</li>
         <li>Profile linked ho to Staff sirf apni appointments dekhta hai aur apni bookings ki push paata hai.</li>
         <li>Baad mein jorna: Staff form ka "App login" field. Owner ke liye "Add me as staff".</li>
       </ol></div>
@@ -891,7 +892,8 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr><td><code>/signup</code> · <code>/login</code> · <code>/verify</code></td><td>Account banana, sign in, email confirm ka intezar</td><td>Sab</td></tr>
       <tr><td><code>/forgot-password</code> · <code>/reset-password</code></td><td>Password reset</td><td>Sab</td></tr>
       <tr><td><code>/onboarding</code></td><td>Business banane ke 2 steps</td><td>Naya verified user</td></tr>
-      <tr><td><code>/accept-invite?token=</code></td><td>Team invite accept</td><td>Invited person</td></tr>
+      <tr><td><code>/accept-invite</code></td><td>Purana invite link: ab sirf "sign in karein" page (link band)</td><td>Koi bhi</td></tr>
+      <tr><td><code>/auth/callback</code></td><td>Google sign-in ke baad wapsi; error ho to saaf message</td><td>Koi bhi</td></tr>
       <tr><td><code>/today</code> · <code>/calendar</code> · <code>/clients</code> · <code>/clients/&lt;id&gt;</code></td><td>Dashboard ke main screens</td><td>Members</td></tr>
       <tr><td><code>/services</code> · <code>/staff</code> · <code>/members</code> · <code>/schedule</code></td><td>Catalogue, team, invites, hours</td><td>Members (permission)</td></tr>
       <tr><td><code>/invoices</code> · <code>/reports</code> · <code>/commission</code> · <code>/reviews</code> · <code>/website</code></td><td>Paisa, reports, commission, reviews, website editor</td><td>Members (permission)</td></tr>
@@ -899,7 +901,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr><td><code>/settings</code> + <code>/settings/booking</code>, <code>notifications</code>, <code>messages</code>, <code>billing</code>, <code>roles</code>, <code>branches</code>, <code>location</code>, <code>forms</code>, <code>advanced-reports</code>, <code>data-requests</code>, <code>delete-business</code>, <code>my-notifications</code>, <code>account</code>, <code>delete-account</code></td><td>Settings ke sab screens (<code>sms-credits</code> launch par Settings par wapas bhej deta hai)</td><td>Members (permission)</td></tr>
       <tr><td><code>/more</code></td><td>Mobile menu</td><td>Members</td></tr>
       <tr><td><code>/invoice-print/&lt;id&gt;</code> · <code>/report-print</code></td><td>Print views</td><td>Signed-in, permission</td></tr>
-      <tr><td><code>/admin</code> · <code>/admin/business/&lt;id&gt;</code> · <code>/admin/platform</code> · <code>/admin/2fa</code></td><td>Super admin area</td><td>Super admin (2FA)</td></tr>
+      <tr><td><code>/admin</code> · <code>/admin/business/&lt;id&gt;</code> · <code>/admin/platform</code> · <code>/admin/sign-in-again</code></td><td>Super admin area</td><td>Super admin (password, 12 ghante)</td></tr>
       <tr><td><code>/&lt;slug&gt;</code></td><td>Business ki website (publish ho to)</td><td>Public</td></tr>
       <tr><td><code>/&lt;slug&gt;/book</code> (<code>?branch=PREFIX</code>)</td><td>Booking page, share karne wala link</td><td>Public</td></tr>
       <tr><td><code>/&lt;slug&gt;/manage#token=</code></td><td>Guest: booking dekhna, cancel, reschedule</td><td>Link wala client</td></tr>
@@ -917,9 +919,10 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
 <section class="sec" id="s8">
   <div class="sec-head"><span class="sec-num">8</span><h2>Super admin</h2></div>
   <div class="grid">
-    <details class="card"><summary><span class="ct">Access aur TOTP login<small>/admin/2fa</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
-      <dt>Kaise</dt><dd>Profile par ek flag (sirf SQL se lagta hai) + authenticator app (TOTP). Flagged account sign in karte hi 2FA screen par jata hai; har admin action ko aal2 session chahiye. Bina 2FA admin aam user jaisa.</dd>
-      <dt>Recovery</dt><dd>Koi recovery flow nahin; factor kho jaye to developer database se hata kar dobara enrol karta hai.</dd>
+    <details class="card"><summary><span class="ct">Access: sirf email + password<small>/admin/sign-in-again</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
+      <dt>Kaise</dt><dd>Profile par ek flag (sirf SQL se lagta hai). TOTP / authenticator <b>hata diya</b> (founder ka faisla, 23 Oct 2026). Har admin action ko aisa session chahiye jo <b>password se pichhle 12 ghante mein</b> sign in hua ho. Google, password-reset link ya magic link wale session se admin kuch nahin dekh sakta; 12 ghante baad "Sign in again" screen aati hai.</dd>
+      <dt>Hifazat</dt><dd>Super admin ka Google sign-in refuse hota hai. Har admin sign-in (aur har refuse hua Google try) audit log mein jata hai aur admin ke apne email par alert jata hai (Resend chahiye).</dd>
+      <dt>Status</dt><dd><b>Sirf dev par.</b> Production par abhi purana TOTP rule hai jab tak rollout nahin hota.</dd>
     </dl></div></details>
     <details class="card"><summary><span class="ct">Businesses list aur detail<small>/admin, /admin/business/&lt;id&gt;</small></span><span class="chip live">Live</span></summary><div class="cb"><dl>
       <dt>List</dt><dd>Search (naam + slug, owner email nahin), plan / status filters, 20 per page.</dd>
@@ -931,7 +934,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     </dl></div></details>
     <details class="card"><summary><span class="ct">Sirf SQL / dashboard se hone wale kaam<small>Koi screen nahin</small></span><span class="chip partial">Partial</span></summary><div class="cb"><ul>
       <li>Super admin flag lagana (ek hi account).</li>
-      <li>Kho chuka TOTP factor hatana.</li>
+      <li>Rollout ke waqt super admin ka purana TOTP factor hatana (ek dafa).</li>
       <li>Branch ka Google review link set karna.</li>
       <li>Service categories banana / rename (screen nahin).</li>
       <li>Auth hook on karna, SMTP, redirect URLs (Supabase dashboard).</li>
@@ -981,7 +984,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr><td>Embed widget</td><td><span class="chip off">Off at launch</span></td><td><a href="#s3">Add-ons</a></td></tr>
       <tr><td>Email delivery: verified Resend domain + custom SMTP abhi nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">J</a>, <a href="#s11">Go-live</a></td></tr>
       <tr><td>Bina email wale client ko koi confirmation/reminder nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">B, J</a></td></tr>
-      <tr><td>Invite email nahin, link haath se bhejna</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">O</a></td></tr>
+      <tr><td>Add-by-email: real inbox delivery sabit nahin (Resend domain); business switcher nahin</td><td><span class="chip partial">Partial</span></td><td><a href="#s6">O</a></td></tr>
       <tr><td>Manage link dobara bhejne ka button</td><td><span class="chip missing">Missing</span></td><td><a href="#s6">B</a></td></tr>
       <tr><td>Google review link ka setting screen</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Reviews</a></td></tr>
       <tr><td>Service category banane ka screen</td><td><span class="chip missing">Missing</span></td><td><a href="#s4">Services</a></td></tr>
@@ -1019,7 +1022,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <label><input type="checkbox"> Accounts: Vercel Pro, Resend, Supabase Pro, Expo, Apple ($99/yr), Google Play ($25)</label><br>
       <label><input type="checkbox"> support@ aur dmarc@ email forwarding</label><br>
       <label><input type="checkbox"> Privacy, Terms, Refund lawyer se review (abhi DRAFT)</label><br>
-      <label><input type="checkbox"> Super admin kaun hoga + authenticator app</label><br>
+      <label><input type="checkbox"> Super admin kaun hoga (strong password, password manager mein)</label><br>
       <label><input type="checkbox"> Final prices /admin/platform par confirm</label><br>
       <label><input type="checkbox"> Final icons aur splash (abhi placeholder)</label><br>
       <label><input type="checkbox"> Alerts kis ko jayenge (on-call person)</label><br>
@@ -1030,12 +1033,13 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <label><input type="checkbox"> Vault mein outbox_worker_url set, 5 cron jobs active</label><br>
       <label><input type="checkbox"> Naye production secrets (IP salt, form HMAC, unsubscribe key, Resend, VAPID)</label><br>
       <label><input type="checkbox"> Sab 17 Edge Functions deploy</label><br>
-      <label><input type="checkbox"> Auth: Site URL, redirect URLs, password 8, leaked-password protection, TOTP</label><br>
+      <label><input type="checkbox"> Auth: Site URL, redirect URLs (<code>/auth/callback</code> bhi), password 8, leaked-password protection</label><br>
+      <label><input type="checkbox"> Google login: Google Cloud OAuth client (prod redirect URI = prod Supabase callback), consent screen "In production", Supabase Google provider on</label><br>
       <label><input type="checkbox"> Auth hook (Custom Access Token) on</label><br>
       <label><input type="checkbox"> Custom SMTP + Resend domain mail.wapee.online (SPF, DKIM, DMARC)</label><br>
       <label><input type="checkbox"> Asal inbox par email test (Gmail + Outlook)</label><br>
       <label><input type="checkbox"> Vercel project, env vars, domain, headers check</label><br>
-      <label><input type="checkbox"> Super admin bana kar TOTP enrol</label><br>
+      <label><input type="checkbox"> Super admin bana kar purana TOTP factor hatao (agar ho)</label><br>
       <label><input type="checkbox"> Backups on + storage copy schedule</label><br>
       <label><input type="checkbox"> Uptime monitors</label><br>
       <label><input type="checkbox"> smoke:public ek baar throwaway business par, phir erase</label><br>
@@ -1071,7 +1075,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr class="searchable"><td>Reminder kitne ghante pehle?</td><td>Settings &gt; Notifications</td></tr>
       <tr class="searchable"><td>Email gayi ya nahin?</td><td>Appointment drawer ka Messages block, ya Settings &gt; Messages</td></tr>
       <tr class="searchable"><td>Mujhe push notifications chahiye</td><td>Settings &gt; My notifications &gt; Enable notifications</td></tr>
-      <tr class="searchable"><td>Staff ko login dena?</td><td>Team &gt; Invite (staff profile chuno), ya Staff form &gt; App login</td></tr>
+      <tr class="searchable"><td>Staff ko login dena?</td><td>Team &gt; Add person (email + staff profile), ya Staff form &gt; App login</td></tr>
       <tr class="searchable"><td>Main khud bookable kaise banoon?</td><td>Staff &gt; Add me as staff</td></tr>
       <tr class="searchable"><td>Kisi ka role badalna / remove karna?</td><td>Team &gt; person &gt; Manage</td></tr>
       <tr class="searchable"><td>Naya role banana?</td><td>Settings &gt; Roles (Custom roles)</td></tr>
@@ -1145,7 +1149,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr class="searchable"><td>Twilio</td><td>SMS bhejne wali service (band).</td></tr>
       <tr class="searchable"><td>Vercel</td><td>Jahan website host hoti hai.</td></tr>
       <tr class="searchable"><td>Supabase</td><td>Backend: database, login, files, functions.</td></tr>
-      <tr class="searchable"><td>TOTP / 2FA</td><td>Authenticator app ka 6-digit code; super admin ke liye zaroori.</td></tr>
+      <tr class="searchable"><td>TOTP / 2FA</td><td>Authenticator app ka 6-digit code. Super admin ke liye ab zaroori nahin (23 Oct 2026, dev); password + 12 ghante ka rule.</td></tr>
       <tr class="searchable"><td>Honeypot</td><td>Chhupa field jo sirf bots bharte hain; bhara to booking refuse.</td></tr>
       <tr class="searchable"><td>Rate limit</td><td>Ek waqt mein kitni dafa koi kaam ho sakta hai (spam se bachao).</td></tr>
       <tr class="searchable"><td>Polar</td><td>Future payment provider (merchant of record) subscriptions ke liye.</td></tr>
@@ -1195,7 +1199,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <li>Branch hours</li><li>Service + price</li><li>Staff (ya Add me as staff)</li><li>Staff ko service</li><li>Staff working hours</li>
     </ol></div>
     <div class="box searchable"><h4>Launch se pehle zaroori</h4><ul>
-      <li>Prod Supabase (Pro) + backups</li><li>Resend domain + SMTP</li><li>Auth hook on</li><li>Super admin + TOTP</li><li>Legal review</li><li>Monitoring</li>
+      <li>Prod Supabase (Pro) + backups</li><li>Resend domain + SMTP</li><li>Auth hook on</li><li>Super admin (password-only rollout)</li><li>Legal review</li><li>Monitoring</li>
     </ul></div>
   </div>
 </section>

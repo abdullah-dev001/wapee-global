@@ -6,15 +6,15 @@ import { PageContainer, Screen } from '@/components/layout';
 import { Button, Drawer, ErrorState } from '@/components/ui';
 import { RouteGuard, useSession } from '@/features/auth';
 import { useMembers, type MemberRow } from '@/features/members/api/useMembers';
-import { InviteMemberForm } from '@/features/members/components/InviteMemberForm';
+import { AddMemberForm } from '@/features/members/components/AddMemberForm';
 import { MemberList } from '@/features/members/components/MemberList';
 import { MemberManageDrawer } from '@/features/members/components/MemberManageDrawer';
 import { usePermission, useCurrentScope } from '@/lib/permissions';
 
 /**
- * Who is in this business: active members and pending invites, plus the invite
- * form. Reading the list needs `staff.view`; inviting needs `users.invite`, so
- * a manager who may invite but not manage roles still works.
+ * Who is in this business: active members and pending adds, plus the "add by
+ * email" form. Reading the list needs `staff.view`; adding needs `users.invite`,
+ * so a manager who may add people but not manage roles still works.
  */
 export default function MembersScreen() {
   const { t } = useTranslation();
@@ -62,7 +62,7 @@ export default function MembersScreen() {
           title={t('members.invite.title')}
           subtitle={t('members.invite.subtitle')}
         >
-          <InviteMemberForm onDone={() => setInviteOpen(false)} />
+          <AddMemberForm onDone={() => setInviteOpen(false)} />
         </Drawer>
         <MemberManageDrawer
           member={managing}

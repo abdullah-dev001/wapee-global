@@ -119,9 +119,7 @@
       "subtitle": "Pick something you haven't used before.",
       "submit": "Save password",
       "done": "Password updated",
-      "doneBody": "You can now sign in with your new password.",
-      "twoFactorTitle": "Confirm it's you",
-      "twoFactorIntro": "This account has two-factor sign-in. Enter the 6-digit code from your authenticator app to finish resetting your password."
+      "doneBody": "You can now sign in with your new password."
     },
     "verify": {
       "title": "Confirm your email",
@@ -129,7 +127,8 @@
       "resend": "Resend email",
       "resent": "Sent. Check your inbox.",
       "wrongEmail": "Wrong email? Sign out and start again.",
-      "checking": "Checking your link…"
+      "checking": "Checking your link…",
+      "alreadyHaveAccount": "Already have an account with this email? Sign in instead."
     },
     "fields": {
       "fullName": "Your name",
@@ -162,7 +161,18 @@
       "generic": "Something went wrong. Please try again."
     },
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "google": {
+      "continue": "Continue with Google",
+      "or": "or",
+      "callbackTitle": "Signing you in",
+      "signingIn": "Finishing sign-in with Google…",
+      "cancelled": "Google sign-in was cancelled. You can try again or use your email and password.",
+      "failed": "We could not sign you in with Google. Please try again.",
+      "adminPasswordOnly": "Super admin accounts sign in with email and password, not Google.",
+      "incomplete": "Sign-in did not finish. Please go back and try again.",
+      "backToSignIn": "Back to sign in"
+    }
   },
   "onboarding": {
     "title": "Set up your business",
@@ -246,13 +256,13 @@
     "unknown": "Unknown",
     "status": {
       "active": "Active",
-      "invited": "Invited",
+      "invited": "Pending",
       "expired": "Expired",
       "disabled": "Disabled"
     },
     "empty": {
       "title": "No team members yet",
-      "description": "Invite the people who work with you so they can take bookings."
+      "description": "Add the people who work with you so they can take bookings."
     },
     "error": {
       "title": "Could not load the team"
@@ -261,13 +271,18 @@
       "roleRequired": "Choose a role",
       "forbidden": "You do not have permission to do that.",
       "invalidInput": "Check the role, branch and staff profile and try again.",
-      "alreadyMember": "That person is already part of this team, or the staff profile already has a login.",
-      "unknown": "Something went wrong. Please try again."
+      "alreadyMember": "That person is already part of this team.",
+      "unknown": "Something went wrong. Please try again.",
+      "invalidEmail": "Enter a valid email address.",
+      "staffHasLogin": "That staff profile already belongs to someone else.",
+      "cannotGrant": "You can only give a role whose permissions you have yourself.",
+      "featureUnavailable": "Custom roles are not included in your plan.",
+      "rateLimited": "You have added a lot of people in a short time. Please try again later."
     },
     "invite": {
-      "action": "Invite",
-      "title": "Invite someone",
-      "subtitle": "They get a link that works for 7 days.",
+      "action": "Add person",
+      "title": "Add someone by email",
+      "subtitle": "They get an email and join when they sign in with this address.",
       "email": "Email",
       "emailPlaceholder": "name@example.com",
       "role": "Role",
@@ -275,33 +290,23 @@
       "roleHint": "You can only grant permissions you have yourself.",
       "branch": "Branch",
       "allBranches": "All branches",
-      "submit": "Create invite link",
-      "linkReady": "Invite link ready",
-      "linkOnce": "Copy it now and send it to them. It is shown only once and works for 7 days.",
-      "copy": "Copy link",
-      "copied": "Link copied",
+      "submit": "Add",
       "staffProfile": "Staff profile",
-      "staffProfileHint": "Optional. When they accept, they see their own appointments.",
-      "noStaffProfile": "No staff profile"
+      "staffProfileHint": "Optional. When they join, they see their own appointments.",
+      "noStaffProfile": "No staff profile",
+      "added": "{{email}} was added. They join when they sign in with this email."
     },
     "accept": {
       "title": "Join the team",
-      "invalid": "That invite link is not valid. It may have expired or already been used. Ask for a new one.",
-      "joinAs": "You have been invited to join {{business}} as {{email}}.",
-      "join": "Join",
-      "joined": "You have joined",
-      "createFor": "You have been invited to join {{business}}. Create your account for {{email}} to continue.",
-      "createAndJoin": "Create account and join",
-      "confirmEmail": "Check your email to confirm your address. Confirming it brings you straight back here.",
-      "wrongAccount": "This invite is for {{invited}}. Sign out and sign in with that address to accept it.",
-      "switchAccount": "Sign out",
-      "backToLogin": "Go to sign in"
+      "retired": "Invite links are no longer used. If a business added you, sign in or create an account with the email address they used, and you will join automatically.",
+      "signIn": "Sign in",
+      "createAccount": "Create an account"
     },
     "manage": {
       "action": "Manage",
       "title": "Manage {{name}}",
       "subtitleActive": "Roles per location, and removing this person.",
-      "subtitleInvited": "This person has not joined yet.",
+      "subtitleInvited": "This person has not joined yet. They join when they sign in with this email.",
       "rolesTitle": "Roles",
       "noRoles": "No roles yet",
       "allBranches": "All locations",
@@ -321,15 +326,20 @@
       "removeMessage": "They lose access straight away. Their history stays. You can invite them again later.",
       "removeConfirm": "Remove",
       "removed": "Person removed",
-      "resend": "Send a new invite link",
-      "resent": "New link created. The old one no longer works.",
-      "revoke": "Cancel invite",
-      "revokeTitle": "Cancel this invite?",
-      "revokeMessage": "The link stops working. You can invite the same address again.",
-      "revokeConfirm": "Cancel invite",
-      "revoked": "Invite cancelled",
-      "expires": "Link valid until {{date}}",
+      "resend": "Send the email again",
+      "resent": "Email sent again. They have 30 more days to join.",
+      "revoke": "Cancel",
+      "revokeTitle": "Cancel this add?",
+      "revokeMessage": "They will not join, even if they sign in with this email. You can add them again later.",
+      "revokeConfirm": "Cancel add",
+      "revoked": "Add cancelled",
+      "expires": "Valid until {{date}}",
       "you": "You"
+    },
+    "claim": {
+      "joined_one": "You have joined a team.",
+      "joined_other": "You have joined {{count}} teams.",
+      "failed": "We could not check whether a team added you. We will try again shortly."
     }
   },
   "billing": {
@@ -2150,20 +2160,10 @@
       "fieldsHint": "One per line: Label | type | required | options. Types: short_text, long_text, dropdown, yes_no, number. Dropdowns need two or more options separated by commas.",
       "saved": "Preset saved."
     },
-    "twoFactor": {
-      "title": "Two-factor sign-in",
-      "loadError": "We couldn't check your two-factor setup.",
-      "setupIntro": "Super admin access needs an authenticator app. Set it up now; you'll enter a 6-digit code every time you sign in.",
-      "startSetup": "Set up two-factor",
-      "scan": "Scan this code with your authenticator app.",
-      "qrLabel": "QR code for your authenticator app",
-      "secretHint": "Or type this key into the app.",
-      "enter": "Enter the 6-digit code from your authenticator app.",
-      "codeLabel": "6-digit code",
-      "verify": "Verify",
-      "verifySetup": "Verify and finish",
-      "wrongCode": "That code didn't work. Check the app and try again.",
-      "setupFailed": "We couldn't start the set-up. Try again."
+    "reauth": {
+      "title": "Sign in again",
+      "body": "The admin area needs an email and password sign-in from the last 12 hours. Google sign-in and password reset links don't open it. Sign out, then sign in with your email and password.",
+      "action": "Sign out and sign in again"
     },
     "validation": {
       "planRequired": "Choose a plan.",
@@ -2187,7 +2187,7 @@
     },
     "errors": {
       "forbidden": "You don't have access to that.",
-      "mfa_required": "Sign in with your two-factor code to continue.",
+      "reauth_required": "Your admin sign-in has expired. Sign out and sign in again with your email and password.",
       "invalid_input": "Some of that input isn't valid. Check it and try again.",
       "not_found": "That no longer exists.",
       "plan_required": "Assign a plan before activating this business.",

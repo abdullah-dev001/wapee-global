@@ -68,6 +68,45 @@ export type Database = {
           },
         ]
       }
+      admin_signin_alerts: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          method: string
+          outcome: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          method: string
+          outcome: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          method?: string
+          outcome?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       appointment_field_values: {
         Row: {
           appointment_id: string
@@ -5181,6 +5220,16 @@ export type Database = {
         Args: { p_branch_id?: string; p_business_id: string }
         Returns: Json
       }
+      add_member_by_email: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_email: string
+          p_role_id: string
+          p_staff_id?: string
+        }
+        Returns: Json
+      }
       add_payment: {
         Args: {
           p_amount_minor: number
@@ -5221,6 +5270,11 @@ export type Database = {
         Args: { p_business: string; p_credits: number; p_note?: string }
         Returns: Json
       }
+      admin_alert_claim: { Args: { p_limit?: number }; Returns: Json }
+      admin_alert_finish: {
+        Args: { p_error?: string; p_id: string; p_ok: boolean }
+        Returns: undefined
+      }
       admin_gate: { Args: never; Returns: string }
       admin_list_reviews: {
         Args: {
@@ -5231,6 +5285,7 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_session_ok: { Args: never; Returns: boolean }
       admin_set_sms_rate: {
         Args: {
           p_country: string
@@ -5476,6 +5531,7 @@ export type Database = {
         Args: { p_branch_id: string; p_business_id: string; p_extra: number }
         Returns: undefined
       }
+      claim_pending_memberships: { Args: never; Returns: Json }
       cleanup_public_request_attempts: {
         Args: { p_older_than?: string }
         Returns: number
@@ -6343,6 +6399,10 @@ export type Database = {
       push_remove_dead_tokens: {
         Args: { p_outbox: string; p_token_ids: string[] }
         Returns: number
+      }
+      record_admin_sign_in: {
+        Args: { p_method: string; p_outcome: string; p_user: string }
+        Returns: undefined
       }
       record_signed_consent: {
         Args: {

@@ -646,6 +646,47 @@ describe('low stock alerts', () => {
   });
 });
 
+describe('member_added email (add staff by email)', () => {
+  const payload = { member_id: 'm1', role: 'Front <desk>' };
+  const memberJob = (over: Partial<Job> = {}) =>
+    job({
+      event: 'member_added',
+      client_first_name: null,
+      client_name: null,
+      starts_at: null,
+      to: 'new.person@example.com',
+      payload,
+      ...over,
+    });
+
+  it('names the business and the role, links ONLY to the sign-in page (no token)', async () => {
+    const { d, calls } = deps();
+    expect(await processJob(memberJob({ idempotency_key: 'member_added:m1:1' }), d)).toBe('sent');
+    const mail = calls.emails[0];
+    expect(mail?.to).toBe('new.person@example.com');
+    expect(mail?.subject).toBe('Nova Hair Studio added you to their team');
+    expect(mail?.text).toContain('Nova Hair Studio added you to their team as Front <desk>.');
+    expect(mail?.text).toMatch(/https?:\/\/[^\s]+\/login(\s|$)/);
+    expect(mail?.text).not.toContain('token');
+    expect(mail?.text).not.toContain('#');
+    expect(mail?.html).toContain('Front &lt;desk&gt;');
+    expect(mail?.unsubscribeUrl).toBeNull();
+    expect(mail?.idempotencyKey).toBe('member_added:m1:1');
+  });
+
+  it('a payload without a role cannot be rendered (the job fails, nothing is sent)', async () => {
+    const { d, calls } = deps();
+    expect(await processJob(memberJob({ payload: { member_id: 'm1' } }), d)).toBe('dead');
+    expect(calls.emails).toHaveLength(0);
+  });
+
+  it('needs the sign-in link: renderEmail without it returns null', () => {
+    expect(
+      renderEmail(memberJob(), { manageUrl: null, reviewUrl: null, unsubscribeUrl: null }),
+    ).toBeNull();
+  });
+});
+
 describe('form_request email', () => {
   const links = (url: string | null) => ({
     manageUrl: null,

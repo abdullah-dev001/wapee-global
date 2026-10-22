@@ -19,7 +19,8 @@ declare r jsonb;
 begin
   perform set_config('request.jwt.claims',
     json_build_object('sub', pg_temp.id(p_user), 'role', 'authenticated',
-                      'aal', case when p_aal2 then 'aal2' else 'aal1' end)::text, true);
+                      'aal', case when p_aal2 then 'aal2' else 'aal1' end,
+      'amr', case when p_aal2 then json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)) else '[]'::json end)::text, true);
   set local role authenticated;
   begin execute p_sql into r;
   exception when others then reset role; return jsonb_build_object('raised', true, 'state', sqlstate, 'msg', sqlerrm); end;
@@ -114,7 +115,7 @@ begin
   v_before := pg_temp.plan_row('team');
   perform pg_temp.chk('anon cannot set plan prices', pg_temp.anon($q$select public.set_plan_prices('team', 1, 1, 'USD')$q$)->>'state', '42501');
   perform pg_temp.chk('owner refused', pg_temp.as_('owner', $q$select public.set_plan_prices('team', 1, 1, 'USD', null, null, true)$q$, true)->>'code', 'forbidden');
-  perform pg_temp.chk('super admin aal1 refused', pg_temp.as_('su', $q$select public.set_plan_prices('team', 1, 1, 'USD', null, null, true)$q$, false)->>'code', 'mfa_required');
+  perform pg_temp.chk('super admin without a fresh password session refused', pg_temp.as_('su', $q$select public.set_plan_prices('team', 1, 1, 'USD', null, null, true)$q$, false)->>'code', 'reauth_required');
   perform pg_temp.chk('negative price refused', pg_temp.as_('su', $q$select public.set_plan_prices('team', -1, 1, 'USD', null, null, true)$q$, true)->>'code', 'invalid_input');
   perform pg_temp.chk('unknown plan', pg_temp.as_('su', $q$select public.set_plan_prices('gold', 1, 1, 'USD')$q$, true)->>'code', 'not_found');
   perform pg_temp.chk('...team row unchanged after every refusal', pg_temp.plan_row('team'), v_before);

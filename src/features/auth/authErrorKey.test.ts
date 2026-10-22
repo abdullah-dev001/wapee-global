@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { AUTH_ERROR_KEYS, authErrorKey, isInsufficientAalError } from './authErrorKey';
+import { AUTH_ERROR_KEYS, authErrorKey } from './authErrorKey';
 
 describe('authErrorKey', () => {
   it('maps invalid_credentials', () => {
-    expect(authErrorKey({ code: 'invalid_credentials', message: 'Invalid login credentials' })).toBe(
-      AUTH_ERROR_KEYS.invalidCredentials,
-    );
+    expect(
+      authErrorKey({ code: 'invalid_credentials', message: 'Invalid login credentials' }),
+    ).toBe(AUTH_ERROR_KEYS.invalidCredentials);
   });
 
   it('maps email_not_confirmed', () => {
@@ -93,20 +93,5 @@ describe('authErrorKey', () => {
     expect(authErrorKey({ code: 'insufficient_aal', message: 'AAL2 required' })).toBe(
       AUTH_ERROR_KEYS.insufficientAal,
     );
-  });
-});
-
-describe('isInsufficientAalError', () => {
-  it('is true only for the insufficient_aal code', () => {
-    expect(isInsufficientAalError({ code: 'insufficient_aal', message: 'AAL2 required' })).toBe(
-      true,
-    );
-  });
-
-  it('is false for every other error and non-Error input', () => {
-    expect(isInsufficientAalError({ code: 'invalid_credentials', message: 'nope' })).toBe(false);
-    expect(isInsufficientAalError(new Error('boom'))).toBe(false);
-    expect(isInsufficientAalError(null)).toBe(false);
-    expect(isInsufficientAalError(undefined)).toBe(false);
   });
 });

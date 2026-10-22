@@ -13,6 +13,7 @@ import { useLogin } from '@/features/auth/api/useAuthMutations';
 import { authErrorKey } from '@/features/auth/authErrorKey';
 import { useDeletedAccountNotice } from '@/features/auth/deletedAccount';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
+import { GoogleSignInButton } from '@/features/auth/components/GoogleSignInButton';
 import { PasswordField } from '@/features/auth/components/PasswordField';
 import { loginSchema, type LoginValues } from '@/features/auth/schemas/auth.schemas';
 import { theme } from '@/lib/theme';
@@ -83,6 +84,8 @@ export default function LoginScreen() {
             </Text>
           </View>
         ) : null}
+
+        <GoogleSignInButton />
 
         <FormField
           control={control}

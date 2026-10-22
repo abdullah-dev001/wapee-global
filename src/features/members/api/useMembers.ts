@@ -8,8 +8,7 @@ import { getSupabase } from '@/lib/supabase';
 import { unwrapRpc } from '@/lib/supabase/rpcResult';
 import { type Database } from '@/lib/supabase/database.types';
 
-import { buildInviteUrl } from '../inviteUrl';
-import { type InviteValues } from '../schemas/invite.schemas';
+import { type AddMemberValues } from '../schemas/addMember.schemas';
 
 type MemberStatus = Database['public']['Enums']['member_status'];
 
@@ -129,125 +128,42 @@ export function useRoles(businessId: string | null): UseQueryResult<AssignableRo
   });
 }
 
-export type InviteResult = {
+export type AddMemberResult = {
   memberId: string;
-  /** Shown to the inviter ONCE. Never stored by the app. */
-  token: string;
+  /** When the pending add stops being claimable (30 days; "resend" renews it). */
   expiresAt: string;
-  /** The full link to copy and send. */
-  url: string;
 };
 
 /**
- * Creates the invite and returns the link.
- *
- * The raw token exists only in this result and in whatever the inviter copies —
- * the database keeps a sha256 hash. There is no way to re-read it later, so
- * losing it means sending a fresh invite (which replaces the old one).
+ * Adds someone by email (`add_member_by_email`). There is no link or token: the database stores a
+ * pending membership bound to the email and queues a plain "you were added" email; the person joins
+ * when they sign in with that VERIFIED email (`useClaimPendingMemberships`). Re-adding the same
+ * email replaces the role and renews the expiry ("resend").
  */
-export function useInviteMember(businessId: string | null) {
+export function useAddMember(businessId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation<InviteResult, Error, InviteValues>({
+  return useMutation<AddMemberResult, Error, AddMemberValues>({
     mutationFn: async (values) => {
       if (!businessId) throw new Error('No business selected');
 
-      const { data, error } = await getSupabase().rpc('invite_member', {
+      const { data, error } = await getSupabase().rpc('add_member_by_email', {
         p_business_id: businessId,
         p_email: values.email,
         p_role_id: values.roleId,
         ...(values.branchId ? { p_branch_id: values.branchId } : {}),
         ...(values.staffId ? { p_staff_id: values.staffId } : {}),
       });
-      if (error) {
-        // invite_member raises (Postgres errcode), not the {ok,code} shape —
-        // keep the code so inviteMemberErrorKey() can map it to an i18n key.
-        const wrapped = new Error(error.message) as Error & { code?: string };
-        wrapped.code = error.code;
-        throw wrapped;
-      }
-
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!row) throw new Error('The invite was not created');
-
-      // The OUT columns carry an `out_` prefix so they cannot collide with a
-      // table column inside the function (see the 20261002162000 migration).
-      return {
-        memberId: row.out_member_id,
-        token: row.out_token,
-        expiresAt: row.out_expires_at,
-        url: buildInviteUrl(row.out_token),
-      };
+      // {ok:false, code} becomes an RpcError, mapped by memberAddErrorKey().
+      const result = unwrapRpc<{ member_id: string; expires_at: string }>(data, error);
+      return { memberId: result.member_id, expiresAt: result.expires_at };
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: memberKeys.lists({ businessId: businessId ?? 'none' }),
       });
-      // The chosen staff profile now points at the invited member.
+      // The chosen staff profile now points at the pending member.
       void queryClient.invalidateQueries({ queryKey: ['staff'] });
-    },
-  });
-}
-
-/**
- * Thrown for any invite that cannot be accepted. The reason is deliberately not
- * carried: unknown, used, expired and wrong-account all look the same, so the
- * screen cannot be used to discover which tokens or emails exist.
- */
-export class InviteNotValidError extends Error {
-  constructor() {
-    super('INVITE_NOT_VALID');
-    this.name = 'InviteNotValidError';
-  }
-}
-
-/** Accepts an invite as the signed-in user, then refreshes what they can see. */
-export function useAcceptInvite() {
-  const queryClient = useQueryClient();
-
-  return useMutation<string, Error, string>({
-    mutationFn: async (token) => {
-      const { data, error } = await getSupabase().rpc('accept_invite', { p_token: token });
-      if (error) throw new Error(error.message);
-      // The RPC returns null for every failure rather than raising, so the
-      // rate-limit counter is not rolled back (see migration 20261002163000).
-      if (!data) throw new InviteNotValidError();
-      return data;
-    },
-    onSuccess: (businessId) => {
-      // The user is now in a business they were not in a moment ago: their
-      // membership list and their permission set both change.
-      void queryClient.invalidateQueries({ queryKey: ['businesses', 'mine'] });
-      void queryClient.invalidateQueries({ queryKey: grantKeys.forBusiness(businessId) });
-      void queryClient.invalidateQueries({ queryKey: roleLabelKeys.forBusiness(businessId) });
-      // A role or membership change can also change what the plan lets this member use.
-      void invalidateMyFeatures(queryClient, businessId);
-    },
-  });
-}
-
-/** Business name + invited email for an invite link, before signing in. */
-export function useInvitePreview(token: string | null) {
-  return useQuery({
-    queryKey: ['invite-preview', token],
-    enabled: Boolean(token),
-    // A link is opened once; no point holding it.
-    staleTime: staleTimes.liveShort,
-    retry: false,
-    queryFn: async () => {
-      const { data, error } = await getSupabase().rpc('invite_preview', {
-        p_token: token ?? '',
-      });
-      if (error) throw new Error(error.message);
-      const row = Array.isArray(data) ? data[0] : data;
-      // No row = bad, used or expired token. The screen shows one generic message.
-      return row
-        ? {
-            businessName: row.business_name,
-            invitedEmail: row.invited_email,
-            expiresAt: row.expires_at,
-          }
-        : null;
     },
   });
 }

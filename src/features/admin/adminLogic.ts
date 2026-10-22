@@ -1,69 +1,54 @@
 /**
- * Pure logic for the super admin area (Phase 8B): who may see it, the 2FA code
- * helpers, and the mapping of every admin reason code to a message key.
+ * Pure logic for the super admin area: who may see it, the password-session rule,
+ * and the mapping of every admin reason code to a message key.
  *
- * Nothing here authorises anything. Every admin RPC checks the platform flag and an
- * aal2 session itself; this only decides what the UI shows.
+ * Nothing here authorises anything. Every admin RPC checks the platform flag and a
+ * fresh password session itself (`admin_session_ok`, migration 20261026130000); this
+ * only decides what the UI shows.
  */
 
 // ---------------------------------------------------------------------------
-// Assurance level (2FA)
+// Password session (replaced TOTP / aal2 in 20261026130000)
 // ---------------------------------------------------------------------------
 
-export type AssuranceLevel = 'aal1' | 'aal2';
+/** A super admin must have signed in WITH A PASSWORD within this long. Same as the DB. */
+export const ADMIN_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
-/** The `aal` claim of an access token (JWT), or `aal1` when it cannot be read. */
-export function aalFromAccessToken(token: string | null | undefined): AssuranceLevel {
-  if (!token) return 'aal1';
+/**
+ * When the session behind this access token signed in with a password (epoch ms), from
+ * the JWT `amr` claim (`[{method:'password', timestamp}]`; a token refresh keeps it), or
+ * null for a Google / OAuth, recovery-link or magic-link session, or an unreadable token.
+ */
+export function passwordSignInAt(token: string | null | undefined): number | null {
+  if (!token) return null;
   const part = token.split('.')[1];
-  if (!part) return 'aal1';
+  if (!part) return null;
   try {
     const base64 = part.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
     const payload: unknown = JSON.parse(atob(padded));
-    if (typeof payload === 'object' && payload !== null && 'aal' in payload) {
-      return (payload as { aal?: unknown }).aal === 'aal2' ? 'aal2' : 'aal1';
+    if (typeof payload !== 'object' || payload === null) return null;
+    const amr = (payload as { amr?: unknown }).amr;
+    if (!Array.isArray(amr)) return null;
+    let latest: number | null = null;
+    for (const entry of amr) {
+      if (typeof entry !== 'object' || entry === null) continue;
+      const { method, timestamp } = entry as { method?: unknown; timestamp?: unknown };
+      if (method !== 'password' || typeof timestamp !== 'number' || !Number.isFinite(timestamp))
+        continue;
+      const ms = timestamp * 1000;
+      if (latest === null || ms > latest) latest = ms;
     }
+    return latest;
   } catch {
-    // Malformed token: treat as the weaker level.
+    // Malformed token: no password session.
+    return null;
   }
-  return 'aal1';
 }
 
-/** Digits only, at most 6 (authenticator apps show "123 456"). */
-export function normaliseTotpCode(input: string): string {
-  return input.replace(/\D/g, '').slice(0, 6);
-}
-
-export function isTotpCodeComplete(code: string): boolean {
-  return /^\d{6}$/.test(code);
-}
-
-/**
- * Supabase returns the QR as `data:image/svg+xml;utf-8,<svg…>` (sometimes
- * percent-encoded). Returns the bare SVG markup, or null when it is not one.
- */
-export function qrSvgFromDataUri(uri: string): string | null {
-  const comma = uri.indexOf(',');
-  if (!uri.startsWith('data:image/svg+xml') || comma < 0) return null;
-  const body = uri.slice(comma + 1);
-  let svg = body;
-  if (!body.trimStart().startsWith('<')) {
-    try {
-      svg = decodeURIComponent(body);
-    } catch {
-      return null;
-    }
-  }
-  return svg.trimStart().startsWith('<svg') ? svg : null;
-}
-
-/** Groups a TOTP secret in fours for reading aloud / typing. */
-export function formatTotpSecret(secret: string): string {
-  return secret
-    .replace(/\s+/g, '')
-    .replace(/(.{4})/g, '$1 ')
-    .trim();
+/** The admin session is usable: a password sign-in no older than 12 hours. */
+export function isAdminSessionFresh(signedInAt: number | null, now: number): boolean {
+  return signedInAt !== null && now - signedInAt < ADMIN_SESSION_MAX_AGE_MS;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,40 +56,37 @@ export function formatTotpSecret(secret: string): string {
 // ---------------------------------------------------------------------------
 
 export const ADMIN_HOME = '/admin';
-export const ADMIN_2FA = '/admin/2fa';
+export const ADMIN_REAUTH = '/admin/sign-in-again';
 
 export type AdminAccess =
   /** Profile or session still loading: show a skeleton, decide nothing. */
   | 'loading'
   /** Not a super admin: the admin area does not exist for this user. */
   | 'hidden'
-  /** Flagged but the session is aal1: must pass the 2FA screen first. */
-  | 'needs_2fa'
-  /** Flagged and aal2: the admin area opens. */
+  /** Flagged, but not a password session from the last 12 hours: sign in again. */
+  | 'needs_reauth'
+  /** Flagged and a fresh password session: the admin area opens. */
   | 'granted';
 
-/** The admin entry (menu item, screens) is visible only for flag AND aal2. */
+/** The admin entry (menu item, screens) is visible only for flag AND a fresh password session. */
 export function adminAccess(input: {
   profilePending: boolean;
   isSuperAdmin: boolean;
-  aal: AssuranceLevel;
+  sessionFresh: boolean;
 }): AdminAccess {
   if (input.profilePending) return 'loading';
   if (!input.isSuperAdmin) return 'hidden';
-  return input.aal === 'aal2' ? 'granted' : 'needs_2fa';
+  return input.sessionFresh ? 'granted' : 'needs_reauth';
 }
 
 /**
  * Where a signed-in, verified user must be sent right now (or null = stay).
- * Flagged accounts are forced through 2FA at sign-in (decided with the user), and
- * a business-less admin skips onboarding.
+ * A flagged account without a fresh password session is sent to "sign in again",
+ * and a business-less admin skips onboarding.
  *
  * A password-recovery session is the one exception: `AuthGate` is already
- * sending it to `/reset-password` (not an admin route), and that screen asks
- * for the TOTP code itself if the account turns out to need aal2 to save the
- * new password — forcing the separate `/admin/2fa` detour first would strand
- * the user there with no way back to actually resetting the password (the
- * real production bug this guards against).
+ * sending it to `/reset-password` (not an admin route). Once the new password is
+ * saved the session is still a recovery session, so it lands on "sign in again".
  */
 export function adminRedirect(input: {
   access: AdminAccess;
@@ -115,10 +97,10 @@ export function adminRedirect(input: {
   const { access, pathname, hasBusiness, isPasswordRecovery } = input;
   if (isPasswordRecovery) return null;
   const onAdmin = pathname === ADMIN_HOME || pathname.startsWith(`${ADMIN_HOME}/`);
-  if (access === 'needs_2fa') return pathname === ADMIN_2FA ? null : ADMIN_2FA;
+  if (access === 'needs_reauth') return pathname === ADMIN_REAUTH ? null : ADMIN_REAUTH;
   if (access === 'granted' && !hasBusiness && !onAdmin) return ADMIN_HOME;
-  // A granted admin does not need the 2FA screen again.
-  if (access === 'granted' && pathname === ADMIN_2FA) return ADMIN_HOME;
+  // A granted admin does not need the sign-in-again screen.
+  if (access === 'granted' && pathname === ADMIN_REAUTH) return ADMIN_HOME;
   return null;
 }
 
@@ -128,7 +110,7 @@ export function adminRedirect(input: {
 
 export const ADMIN_ERROR_KEYS = {
   forbidden: 'admin.errors.forbidden',
-  mfa_required: 'admin.errors.mfa_required',
+  reauth_required: 'admin.errors.reauth_required',
   invalid_input: 'admin.errors.invalid_input',
   invalid: 'admin.errors.invalid_input',
   not_found: 'admin.errors.not_found',

@@ -5,21 +5,13 @@ import { Platform } from 'react-native';
 import { disablePush } from '@/lib/push';
 import { getSupabase } from '@/lib/supabase';
 
+import { OAUTH_CALLBACK_PATH } from '../oauth';
 import {
   type ForgotPasswordValues,
   type LoginValues,
   type ResetPasswordValues,
   type SignupValues,
 } from '../schemas/auth.schemas';
-
-export type SignupInput = SignupValues & {
-  /**
-   * Where the confirmation email sends them back, as an app path (e.g.
-   * `/accept-invite?token=…`). Defaults to `/verify`. Used by the invite screen
-   * so a pending invite survives email confirmation instead of being lost.
-   */
-  confirmRedirectPath?: string;
-};
 
 /**
  * Where Supabase sends the user back after an email link.
@@ -59,21 +51,45 @@ export function useLogin(): UseMutationResult<void, Error, LoginValues> {
   });
 }
 
+/**
+ * "Continue with Google" (web / PWA only; the button is not rendered elsewhere). Supabase sends
+ * the browser to Google and back to `/auth/callback`, where supabase-js reads the session from the
+ * URL fragment (`detectSessionInUrl`) and `AuthGate` routes the user: home, onboarding, or home in
+ * a business they were added to (the claim runs first). `prompt=select_account` lets someone with
+ * several Google accounts pick the right one instead of being signed in silently.
+ *
+ * The redirect URL must be listed in the dashboard (Authentication -> URL Configuration).
+ */
+export function useGoogleSignIn(): UseMutationResult<void, Error, void> {
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await getSupabase().auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo(OAUTH_CALLBACK_PATH),
+          queryParams: { prompt: 'select_account' },
+        },
+      });
+      toError(error);
+    },
+  });
+}
+
 export type SignupResult = {
   /** False when Supabase is waiting for the user to confirm their email. */
   sessionCreated: boolean;
 };
 
-export function useSignup(): UseMutationResult<SignupResult, Error, SignupInput> {
+export function useSignup(): UseMutationResult<SignupResult, Error, SignupValues> {
   return useMutation({
-    mutationFn: async ({ email, password, fullName, confirmRedirectPath }) => {
+    mutationFn: async ({ email, password, fullName }) => {
       const { data, error } = await getSupabase().auth.signUp({
         email,
         password,
         options: {
           // Copied into profiles by the handle_new_user trigger.
           data: { full_name: fullName },
-          emailRedirectTo: redirectTo(confirmRedirectPath ?? '/verify'),
+          emailRedirectTo: redirectTo('/verify'),
         },
       });
       toError(error);

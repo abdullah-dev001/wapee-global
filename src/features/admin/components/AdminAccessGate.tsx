@@ -14,10 +14,10 @@ import { useAdminAccess } from '../api/useAdminAccess';
 
 /**
  * Sits OUTSIDE `AuthGate`. For an ordinary user it renders straight through. A
- * flagged super admin is forced through the 2FA screen at sign-in (aal1 -> aal2),
- * and a business-less admin is sent to /admin instead of onboarding.
+ * flagged super admin without a password sign-in from the last 12 hours is sent to
+ * "sign in again", and a business-less admin is sent to /admin instead of onboarding.
  *
- * Convenience only: every admin RPC checks the flag and aal2 itself.
+ * Convenience only: every admin RPC checks the flag and the password session itself.
  *
  * `children` is always rendered, even while `waiting` (a spinner overlays it
  * instead) — see AuthGate's own comment for why: unmounting the route tree

@@ -1,21 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as Clipboard from 'expo-clipboard';
-import { Check, Copy } from 'lucide-react-native';
-import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { FormField } from '@/components/shared/FormField';
-import { Button, Select, Text, useToast } from '@/components/ui';
+import { Button, Select, useToast } from '@/components/ui';
 import { useStaff } from '@/features/staff/api/useStaff';
 import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 import { useAssignableRoles } from '../api/useAssignableRoles';
-import { useInviteMember, type InviteResult } from '../api/useMembers';
-import { inviteMemberErrorKey } from '../inviteMemberErrorKey';
-import { inviteSchema, type InviteValues } from '../schemas/invite.schemas';
+import { useAddMember } from '../api/useMembers';
+import { memberAddErrorKey } from '../memberAddErrorKey';
+import { addMemberSchema, type AddMemberValues } from '../schemas/addMember.schemas';
 
 /** Value used by the branch picker for "every branch" (the RPC wants null). */
 const ALL_BRANCHES = 'all';
@@ -23,25 +20,23 @@ const ALL_BRANCHES = 'all';
 const NO_STAFF = 'none';
 
 /**
- * Invite someone with a role and a branch.
+ * Add someone by email with a role and a branch (`add_member_by_email`).
  *
- * Email delivery is Phase 6 (Resend). Until then the link is shown here with a
- * copy button and the inviter sends it themselves — the raw token is returned
- * once and cannot be read again.
+ * There is no link to copy: the person gets a plain "you were added" email and joins when they
+ * sign in with that email once it is verified (Google, or a confirmed email account).
  */
-export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
+export function AddMemberForm({ onDone }: { onDone?: () => void }) {
   const { t } = useTranslation();
   const toast = useToast();
   const { businessId, branchId, business } = useCurrentScope();
-  const invite = useInviteMember(businessId);
+  const add = useAddMember(businessId);
   // Linking a staff profile is a staff.manage action (the RPC checks it again).
   const canManageStaff = usePermission('staff.manage');
   const staff = useStaff(businessId, null, { includeInactive: false });
   const unlinkedStaff = (staff.data ?? []).filter((entry) => entry.memberId === null);
-  const [result, setResult] = useState<InviteResult | null>(null);
 
-  const { control, handleSubmit, setValue, reset } = useForm<InviteValues>({
-    resolver: zodResolver(inviteSchema),
+  const { control, handleSubmit, setValue, reset } = useForm<AddMemberValues>({
+    resolver: zodResolver(addMemberSchema),
     defaultValues: { email: '', roleId: '', branchId, staffId: null },
   });
 
@@ -54,10 +49,7 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
   // Re-filtered as the form's own branch choice changes: a role grantable at
   // one branch is not always grantable at another (`can_grant_at`); `branchId`
   // (the caller's own current scope) is only the form's starting value.
-  const { roles, isPending: rolesPending } = useAssignableRoles(
-    businessId,
-    selectedBranch ?? null,
-  );
+  const { roles, isPending: rolesPending } = useAssignableRoles(businessId, selectedBranch ?? null);
 
   const branchOptions = [
     { value: ALL_BRANCHES, label: t('members.invite.allBranches') },
@@ -65,28 +57,18 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
   ];
 
   const onSubmit = handleSubmit((values) => {
-    invite.mutate(values, {
-      onSuccess: (data) => {
-        setResult(data);
+    add.mutate(values, {
+      onSuccess: () => {
+        toast.show({
+          message: t('members.invite.added', { email: values.email }),
+          tone: 'success',
+        });
         reset({ email: '', roleId: '', branchId, staffId: null });
+        onDone?.();
       },
-      onError: (error) => toast.show({ message: t(inviteMemberErrorKey(error)), tone: 'error' }),
+      onError: (error) => toast.show({ message: t(memberAddErrorKey(error)), tone: 'error' }),
     });
   });
-
-  // The link is shown once. Until it is dismissed the form stays out of the way,
-  // so the inviter cannot lose the token by starting another invite.
-  if (result) {
-    return (
-      <InviteLink
-        result={result}
-        onDone={() => {
-          setResult(null);
-          onDone?.();
-        }}
-      />
-    );
-  }
 
   return (
     <View style={styles.form}>
@@ -147,61 +129,8 @@ export function InviteMemberForm({ onDone }: { onDone?: () => void }) {
         />
       ) : null}
 
-      <Button onPress={onSubmit} loading={invite.isPending} fullWidth>
+      <Button onPress={onSubmit} loading={add.isPending} fullWidth>
         {t('members.invite.submit')}
-      </Button>
-    </View>
-  );
-}
-
-/** The one-time invite link, with a copy button. */
-export function InviteLink({ result, onDone }: { result: InviteResult; onDone: () => void }) {
-  const { t } = useTranslation();
-  const toast = useToast();
-  const [copied, setCopied] = useState(false);
-
-  const copy = async () => {
-    await Clipboard.setStringAsync(result.url);
-    setCopied(true);
-    toast.show({ message: t('members.invite.copied'), tone: 'success' });
-  };
-
-  return (
-    <View style={styles.form}>
-      <Text variant="bodyStrong">{t('members.invite.linkReady')}</Text>
-      <Text variant="helper" color="textSecondary">
-        {t('members.invite.linkOnce')}
-      </Text>
-
-      <View style={styles.linkBox}>
-        {/* Selectable so it can be copied by hand if the clipboard is blocked. */}
-        <Text variant="small" selectable numberOfLines={3} style={styles.linkText}>
-          {result.url}
-        </Text>
-      </View>
-
-      <Pressable
-        onPress={() => void copy()}
-        accessibilityRole="button"
-        accessibilityLabel={t('members.invite.copy')}
-        style={styles.copyRow}
-      >
-        {copied ? (
-          <Check size={theme.iconSize.sm} strokeWidth={2} color={theme.colors.success} />
-        ) : (
-          <Copy
-            size={theme.iconSize.sm}
-            strokeWidth={theme.iconStroke}
-            color={theme.colors.primary}
-          />
-        )}
-        <Text variant="bodyStrong" color={copied ? 'success' : 'primary'}>
-          {copied ? t('members.invite.copied') : t('members.invite.copy')}
-        </Text>
-      </Pressable>
-
-      <Button variant="ghost" onPress={onDone} fullWidth>
-        {t('actions.done')}
       </Button>
     </View>
   );
@@ -210,20 +139,5 @@ export function InviteLink({ result, onDone }: { result: InviteResult; onDone: (
 const styles = StyleSheet.create({
   form: {
     gap: theme.spacing[16],
-  },
-  linkBox: {
-    backgroundColor: theme.colors.primaryLight,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing[12],
-  },
-  linkText: {
-    color: theme.colors.primary,
-  },
-  copyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing[8],
-    minHeight: theme.layout.minTouchTarget,
   },
 });

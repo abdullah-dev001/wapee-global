@@ -14,6 +14,7 @@
  */
 
 import { lowStockPushVars, renderLowStockEmail } from './lowStock.ts';
+import { renderMemberAddedEmail } from './memberAdded.ts';
 import { renderReportEmail } from './report.ts';
 import type { Job, OutboxEvent } from './types.ts';
 
@@ -169,6 +170,8 @@ export type Links = {
   reviewUrl: string | null;
   formUrl?: string | null;
   portalUrl?: string | null;
+  /** member_added only: the plain sign-in page (no token). */
+  loginUrl?: string | null;
   unsubscribeUrl: string | null;
   oneClickUrl?: string | null;
 };
@@ -200,6 +203,7 @@ export type RenderedEmail = { subject: string; text: string; html: string };
 export function renderEmail(job: Job, links: Links): RenderedEmail | null {
   if (job.event === 'report_summary') return renderReportEmail(job);
   if (job.event === 'low_stock') return renderLowStockEmail(job);
+  if (job.event === 'member_added') return renderMemberAddedEmail(job, links.loginUrl ?? null);
   const { cat, locale } = catalogueFor(job.language);
   const entry = cat.email[job.event];
   if (!entry) return null;

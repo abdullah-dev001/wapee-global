@@ -7,7 +7,7 @@
 -- Run on a database without leftover test data.
 --
 -- Covered: seeds; subscription mirror; EVERY super admin RPC refused for owner,
--- manager, staff, other business, super admin WITHOUT aal2, and anon (with the
+-- manager, staff, other business, super admin WITHOUT a fresh password session, and anon (with the
 -- subscription/audit/prices proven unchanged); feature matrix per plan; add-on
 -- off/on; trial = business-level + add-ons on; trial expiry / extend / assign
 -- lifecycle; staff cap at 1 / 5 / unlimited, inactive staff, reactivation;
@@ -44,7 +44,7 @@ begin
 end $$;
 
 -- Call a jsonb-returning SQL expression as a user (authenticated), optionally
--- with an aal2 session, or as anon (p_user null).
+-- with a fresh PASSWORD session (amr; was aal2 before 20261026130000), or as anon (p_user null).
 create or replace function pg_temp.call_as(p_user uuid, p_mfa boolean, p_sql text) returns jsonb language plpgsql as $$
 declare r jsonb;
 begin
@@ -53,7 +53,8 @@ begin
     set local role anon;
   else
     perform set_config('request.jwt.claims',
-      json_build_object('sub', p_user, 'role', 'authenticated', 'aal', case when p_mfa then 'aal2' else 'aal1' end)::text, true);
+      json_build_object('sub', p_user, 'role', 'authenticated', 'aal', case when p_mfa then 'aal2' else 'aal1' end,
+      'amr', case when p_mfa then json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)) else '[]'::json end)::text, true);
     set local role authenticated;
   end if;
   execute p_sql into r;
@@ -63,7 +64,7 @@ exception when others then
   reset role;
   return jsonb_build_object('error', sqlstate);
 end $$;
--- super admin with a TOTP session
+-- super admin with a fresh password session
 create or replace function pg_temp.adm(p_sql text) returns jsonb language sql as $$
   select pg_temp.call_as(pg_temp.id('sadmin'), true, p_sql)
 $$;
@@ -235,7 +236,7 @@ begin
       perform pg_temp.chk(c.name || ' refused for ' || v_who, r ->> 'code', 'forbidden');
     end loop;
     r := pg_temp.call_as(pg_temp.id('sadmin'), false, c.sql);
-    perform pg_temp.chk(c.name || ' refused for a super admin WITHOUT aal2', r ->> 'code', 'mfa_required');
+    perform pg_temp.chk(c.name || ' refused for a super admin WITHOUT a fresh password session', r ->> 'code', 'reauth_required');
     r := pg_temp.call_as(null, false, c.sql);
     perform pg_temp.chk(c.name || ' refused for anon (no EXECUTE)', r ->> 'error', '42501');
   end loop;
@@ -870,9 +871,9 @@ select pg_temp.chk('the staff / branch / role guard triggers exist',
   (select count(*)::int from pg_trigger where tgname in ('staff_branches_enforce_cap', 'staff_profiles_enforce_cap', 'branches_enforce_limit', 'roles_enforce_custom_roles_feature', 'business_subscriptions_sync', 'businesses_create_subscription') and not tgisinternal), 6);
 
 -- ===========================================================================
--- 12b. is_super_admin() needs aal2 EVERYWHERE; admin notes never reach owners
+-- 12b. is_super_admin() needs a fresh password session EVERYWHERE; admin notes never reach owners
 -- ===========================================================================
-select pg_temp.chk('is_super_admin(): flag + aal1 session is false, flag + aal2 true',
+select pg_temp.chk('is_super_admin(): flag + no password session is false, flag + password session true',
   (pg_temp.call_as(pg_temp.id('sadmin'), false, 'select to_jsonb(public.is_super_admin())')::text) || ':' ||
   (pg_temp.call_as(pg_temp.id('sadmin'), true, 'select to_jsonb(public.is_super_admin())')::text), 'false:true');
 do $$
@@ -882,13 +883,135 @@ begin
                            'audit_logs','profiles','reviews','sms_credit_ledger','business_subscriptions','message_outbox','messages'] loop
     v_lo := pg_temp.call_as(pg_temp.id('sadmin'), false, format('select to_jsonb((select count(*) from public.%I))', t));
     v_hi := pg_temp.call_as(pg_temp.id('sadmin'), true, format('select to_jsonb((select count(*) from public.%I))', t));
-    -- aal1 super admin is just a stranger: only their OWN profile row is visible
-    perform pg_temp.chk('aal1 super admin sees nothing in ' || t, coalesce(v_lo::text, 'null'), case when t = 'profiles' then '1' else '0' end);
+    -- without a password session a super admin is just a stranger: only their OWN profile row is visible
+    perform pg_temp.chk('super admin without a password session sees nothing in ' || t, coalesce(v_lo::text, 'null'), case when t = 'profiles' then '1' else '0' end);
     if t in ('businesses', 'branches', 'business_members', 'audit_logs', 'business_subscriptions') then
-      perform pg_temp.chk('aal2 super admin does read ' || t, (v_hi::text)::int > 0, true);
+      perform pg_temp.chk('super admin with a password session does read ' || t, (v_hi::text)::int > 0, true);
     end if;
   end loop;
 end $$;
+
+-- ===========================================================================
+-- 12c. Password-only super admin (20261026130000): which sessions count, the
+--      hook (OAuth refused, audit, alert) and the alert queue
+-- ===========================================================================
+create or replace function pg_temp.call_claims(p_user uuid, p_amr jsonb, p_sql text) returns jsonb language plpgsql as $$
+declare r jsonb;
+begin
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal1', 'amr', p_amr)::text, true);
+  set local role authenticated;
+  execute p_sql into r;
+  reset role;
+  return r;
+exception when others then
+  reset role;
+  return jsonb_build_object('error', sqlstate);
+end $$;
+create or replace function pg_temp.amr(p_method text, p_age interval) returns jsonb language sql as $$
+  select jsonb_build_array(jsonb_build_object('method', p_method, 'timestamp', extract(epoch from now() - p_age)::bigint))
+$$;
+create temporary table admin_cases (n int, label text, amr jsonb, want_admin text, want_code text) on commit drop;
+insert into admin_cases values
+  (1, 'password, aal1, just now', pg_temp.amr('password', '0 seconds'), 'true', null),
+  (2, 'password 11h59m ago', pg_temp.amr('password', '11 hours 59 minutes'), 'true', null),
+  (3, 'password 12h01m ago', pg_temp.amr('password', '12 hours 1 minute'), 'false', 'reauth_required'),
+  (4, 'Google / OAuth session', pg_temp.amr('oauth', '0 seconds'), 'false', 'reauth_required'),
+  (5, 'recovery link session', pg_temp.amr('recovery', '0 seconds'), 'false', 'reauth_required'),
+  (6, 'magic link / otp session', pg_temp.amr('otp', '0 seconds'), 'false', 'reauth_required'),
+  (7, 'TOTP alone (no password)', pg_temp.amr('totp', '0 seconds'), 'false', 'reauth_required'),
+  (8, 'oauth now + password 13h ago', pg_temp.amr('oauth', '0 seconds') || pg_temp.amr('password', '13 hours'), 'false', 'reauth_required'),
+  (9, 'no amr at all', '[]'::jsonb, 'false', 'reauth_required'),
+  (10, 'malformed amr (a string)', '"password"'::jsonb, 'false', 'reauth_required'),
+  (11, 'malformed timestamp', '[{"method":"password","timestamp":"soon"}]'::jsonb, 'false', 'reauth_required');
+do $$
+declare c record; r jsonb;
+begin
+  for c in select * from admin_cases order by n loop
+    r := pg_temp.call_claims(pg_temp.id('sadmin'), c.amr, 'select to_jsonb(public.is_super_admin())');
+    perform pg_temp.chk('password-only: is_super_admin for ' || c.label, r::text, c.want_admin);
+    r := pg_temp.call_claims(pg_temp.id('sadmin'), c.amr, 'select public.list_businesses()');
+    if c.want_code is null then
+      perform pg_temp.chk('password-only: an admin RPC works for ' || c.label, r ->> 'ok', 'true');
+    else
+      perform pg_temp.chk('password-only: an admin RPC is refused for ' || c.label, r ->> 'code', c.want_code);
+    end if;
+  end loop;
+  -- A fresh password session gives NO admin power to someone without the flag.
+  r := pg_temp.call_claims(pg_temp.id('owner'), pg_temp.amr('password', '0 seconds'), 'select public.list_businesses()');
+  perform pg_temp.chk('password-only: owner with a fresh password session is still forbidden', r ->> 'code', 'forbidden');
+end $$;
+
+-- The hook, called the way Supabase Auth calls it (as the table owner here).
+select set_config('request.jwt.claims', '', true);
+create temporary table hook_before on commit drop as
+  select (select count(*) from public.audit_logs where actor_user_id = pg_temp.id('sadmin') and action = 'admin.signed_in') signed_in,
+         (select count(*) from public.audit_logs where actor_user_id = pg_temp.id('sadmin') and action = 'admin.oauth_refused') refused,
+         (select count(*) from public.admin_signin_alerts where user_id = pg_temp.id('sadmin')) alerts,
+         (select count(*) from public.admin_signin_alerts where user_id = pg_temp.id('owner')) owner_alerts;
+create temporary table hook_out (k text, v jsonb) on commit drop;
+insert into hook_out select 'oauth', public.custom_access_token_hook(jsonb_build_object(
+  'user_id', pg_temp.id('sadmin'), 'authentication_method', 'oauth', 'claims', jsonb_build_object('sub', pg_temp.id('sadmin'))));
+insert into hook_out select 'password', public.custom_access_token_hook(jsonb_build_object(
+  'user_id', pg_temp.id('sadmin'), 'authentication_method', 'password', 'claims', jsonb_build_object('sub', pg_temp.id('sadmin'))));
+insert into hook_out select 'refresh', public.custom_access_token_hook(jsonb_build_object(
+  'user_id', pg_temp.id('sadmin'), 'authentication_method', 'token_refresh', 'claims', jsonb_build_object('sub', pg_temp.id('sadmin'))));
+insert into hook_out select 'owner_oauth', public.custom_access_token_hook(jsonb_build_object(
+  'user_id', pg_temp.id('owner'), 'authentication_method', 'oauth', 'claims', jsonb_build_object('sub', pg_temp.id('owner'))));
+select pg_temp.chk('hook: a super admin OAuth (Google) sign-in is refused with 403',
+  (select v -> 'error' ->> 'http_code' from hook_out where k = 'oauth'), '403');
+select pg_temp.chk('hook: ...with a plain message',
+  (select v -> 'error' ->> 'message' from hook_out where k = 'oauth'), 'Super admin accounts sign in with email and password.');
+select pg_temp.chk('hook: a super admin password sign-in gets its token (event returned unchanged)',
+  (select (v ? 'claims' and not v ? 'error')::text from hook_out where k = 'password'), 'true');
+select pg_temp.chk('hook: a token refresh is passed through',
+  (select (v ? 'claims' and not v ? 'error')::text from hook_out where k = 'refresh'), 'true');
+select pg_temp.chk('hook: an ordinary user''s Google sign-in is NOT refused',
+  (select (v ? 'claims' and not v ? 'error')::text from hook_out where k = 'owner_oauth'), 'true');
+select pg_temp.chk('hook: audit admin.signed_in written once (password), not for the refresh',
+  (select count(*) from public.audit_logs where actor_user_id = pg_temp.id('sadmin') and action = 'admin.signed_in')::text,
+  ((select signed_in from hook_before) + 1)::text);
+select pg_temp.chk('hook: audit admin.oauth_refused written once',
+  (select count(*) from public.audit_logs where actor_user_id = pg_temp.id('sadmin') and action = 'admin.oauth_refused')::text,
+  ((select refused from hook_before) + 1)::text);
+select pg_temp.chk('hook: two alerts queued (allowed + refused), none for the refresh',
+  (select count(*) from public.admin_signin_alerts where user_id = pg_temp.id('sadmin'))::text,
+  ((select alerts from hook_before) + 2)::text);
+select pg_temp.chk('hook: no alert for an ordinary user',
+  (select count(*) from public.admin_signin_alerts where user_id = pg_temp.id('owner'))::text,
+  (select owner_alerts from hook_before)::text);
+select pg_temp.chk('hook: the alerts say what happened',
+  (select string_agg(method || '/' || outcome, ',' order by method) from public.admin_signin_alerts where user_id = pg_temp.id('sadmin')
+     and created_at = now()), 'oauth/refused,password/allowed');
+
+-- The alert queue: claim (address resolved from auth.users), finish ok / retry / give up.
+create temporary table claimed on commit drop as select public.admin_alert_claim(10) as j;
+select pg_temp.chk('alerts: claim returns the admin''s own address',
+  (select bool_and(e ->> 'to' = (select email from auth.users where id = pg_temp.id('sadmin')))::text
+   from claimed, jsonb_array_elements(j) e where (e ->> 'id')::uuid in (select id from public.admin_signin_alerts where user_id = pg_temp.id('sadmin'))),
+  'true');
+select pg_temp.chk('alerts: claimed rows are sending, locked, attempt 1',
+  (select string_agg(distinct status || ':' || attempts || ':' || (locked_until > now())::text, ',') from public.admin_signin_alerts
+   where user_id = pg_temp.id('sadmin') and created_at = now()), 'sending:1:true');
+select public.admin_alert_finish((select id from public.admin_signin_alerts where user_id = pg_temp.id('sadmin') and method = 'password' and created_at = now()), true, null);
+select public.admin_alert_finish((select id from public.admin_signin_alerts where user_id = pg_temp.id('sadmin') and method = 'oauth' and created_at = now()), false, 'provider down');
+select pg_temp.chk('alerts: success -> sent with sent_at',
+  (select status || ':' || (sent_at is not null)::text from public.admin_signin_alerts where user_id = pg_temp.id('sadmin') and method = 'password' and created_at = now()), 'sent:true');
+select pg_temp.chk('alerts: a failure goes back to pending with the error',
+  (select status || ':' || last_error from public.admin_signin_alerts where user_id = pg_temp.id('sadmin') and method = 'oauth' and created_at = now()), 'pending:provider down');
+update public.admin_signin_alerts set attempts = 5, status = 'sending' where user_id = pg_temp.id('sadmin') and method = 'oauth' and created_at = now();
+select public.admin_alert_finish((select id from public.admin_signin_alerts where user_id = pg_temp.id('sadmin') and method = 'oauth' and created_at = now()), false, 'still down');
+select pg_temp.chk('alerts: after 5 attempts a failure is final',
+  (select status from public.admin_signin_alerts where user_id = pg_temp.id('sadmin') and method = 'oauth' and created_at = now()), 'failed');
+
+select pg_temp.chk('grants: authenticated cannot run the alert / session internals',
+  (has_function_privilege('authenticated', 'public.admin_alert_claim(integer)', 'EXECUTE')
+   or has_function_privilege('authenticated', 'public.admin_alert_finish(uuid, boolean, text)', 'EXECUTE')
+   or has_function_privilege('authenticated', 'public.record_admin_sign_in(uuid, text, text)', 'EXECUTE')
+   or has_function_privilege('anon', 'public.admin_session_ok()', 'EXECUTE'))::text, 'false');
+select pg_temp.chk('grants: the alert table is closed to the API',
+  (has_table_privilege('authenticated', 'public.admin_signin_alerts', 'SELECT')
+   or has_table_privilege('anon', 'public.admin_signin_alerts', 'SELECT'))::text, 'false');
 
 -- the same marker goes into every admin note field; no owner-readable audit row may contain it
 select pg_temp.adm(format($q$select public.assign_plan(%L, 'team', null, 'ZZNOTE-assign')$q$, pg_temp.id('biza')));

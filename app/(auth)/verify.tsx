@@ -58,6 +58,17 @@ export default function VerifyScreen() {
         >
           {t('auth.verify.wrongEmail')}
         </Text>
+
+        {/* Signup answers the same for an address that already has an account (e.g. one made with
+            Google), so no email arrives for those: point them back to sign in. */}
+        <Text
+          variant="helper"
+          color="textMuted"
+          align="center"
+          onPress={() => router.replace('/login')}
+        >
+          {t('auth.verify.alreadyHaveAccount')}
+        </Text>
       </View>
     </AuthLayout>
   );

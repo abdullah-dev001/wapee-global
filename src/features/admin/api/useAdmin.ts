@@ -18,7 +18,7 @@ import { useAdminEnabled } from './useAdminAccess';
 /**
  * Admin queries. Everything here is platform-level, not tenant data, so the key
  * scope is either one business (`{businessId}`) or the literal `platform`.
- * Every query is disabled unless the session is flag + aal2 (the RPCs refuse
+ * Every query is disabled unless the session is flag + fresh password (the RPCs refuse
  * anyway), and the whole cache is cleared on sign-out (SessionProvider).
  */
 export const adminKeys = createQueryKeys('admin');
@@ -461,7 +461,7 @@ export function useRemoveReview(businessId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Platform settings (catalogue tables are readable by the aal2 super admin)
+// Platform settings (catalogue tables are readable by the signed-in super admin)
 // ---------------------------------------------------------------------------
 export function usePlansCatalogue() {
   const enabled = useAdminEnabled();

@@ -28,7 +28,7 @@ export type SessionState = {
    * True from the moment a password-recovery email link signs the user in
    * until the password is actually saved (or the session ends). The gates
    * (`AuthGate`, `AdminAccessGate`) read this to force `/reset-password`
-   * instead of their ordinary redirect, including for a 2FA-enrolled admin.
+   * instead of their ordinary redirect, including for a super admin.
    */
   isPasswordRecovery: boolean;
 };

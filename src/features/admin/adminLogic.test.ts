@@ -1,18 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  ADMIN_2FA,
   ADMIN_ERROR_KEYS,
+  ADMIN_REAUTH,
+  ADMIN_SESSION_MAX_AGE_MS,
   AdminRpcError,
-  aalFromAccessToken,
   adminAccess,
   adminErrorKey,
   adminRedirect,
-  formatTotpSecret,
-  isTotpCodeComplete,
-  normaliseTotpCode,
+  isAdminSessionFresh,
   parseOverLimit,
-  qrSvgFromDataUri,
+  passwordSignInAt,
   unwrapAdminResult,
 } from './adminLogic';
 
@@ -22,87 +20,94 @@ function jwt(payload: object): string {
   return `${b64({ alg: 'HS256' })}.${b64(payload)}.sig`;
 }
 
-describe('aalFromAccessToken', () => {
-  it('reads aal2 and aal1', () => {
-    expect(aalFromAccessToken(jwt({ aal: 'aal2' }))).toBe('aal2');
-    expect(aalFromAccessToken(jwt({ aal: 'aal1' }))).toBe('aal1');
+describe('passwordSignInAt', () => {
+  const T = 1_790_000_000;
+  it('reads the password entry of the amr claim (seconds -> ms)', () => {
+    expect(passwordSignInAt(jwt({ amr: [{ method: 'password', timestamp: T }] }))).toBe(T * 1000);
   });
-  it('is aal1 for anything unreadable or missing', () => {
-    expect(aalFromAccessToken(null)).toBe('aal1');
-    expect(aalFromAccessToken('')).toBe('aal1');
-    expect(aalFromAccessToken('nonsense')).toBe('aal1');
-    expect(aalFromAccessToken('a.!!!.c')).toBe('aal1');
-    expect(aalFromAccessToken(jwt({ sub: 'x' }))).toBe('aal1');
-    expect(aalFromAccessToken(jwt({ aal: 'AAL2' }))).toBe('aal1');
+  it('takes the latest password entry and ignores other methods', () => {
+    const amr = [
+      { method: 'totp', timestamp: T + 50 },
+      { method: 'password', timestamp: T },
+      { method: 'password', timestamp: T + 10 },
+    ];
+    expect(passwordSignInAt(jwt({ amr }))).toBe((T + 10) * 1000);
+  });
+  it('is null for Google / OAuth, recovery and magic-link sessions', () => {
+    for (const method of ['oauth', 'recovery', 'otp', 'magiclink', 'totp']) {
+      expect(passwordSignInAt(jwt({ amr: [{ method, timestamp: T }] }))).toBeNull();
+    }
+  });
+  it('is null for anything unreadable or missing', () => {
+    expect(passwordSignInAt(null)).toBeNull();
+    expect(passwordSignInAt('')).toBeNull();
+    expect(passwordSignInAt('nonsense')).toBeNull();
+    expect(passwordSignInAt('a.!!!.c')).toBeNull();
+    expect(passwordSignInAt(jwt({ sessionFresh: true }))).toBeNull();
+    expect(passwordSignInAt(jwt({ amr: 'password' }))).toBeNull();
+    expect(passwordSignInAt(jwt({ amr: [{ method: 'password', timestamp: 'soon' }] }))).toBeNull();
   });
 });
 
-describe('TOTP helpers', () => {
-  it('keeps six digits only', () => {
-    expect(normaliseTotpCode('123 456')).toBe('123456');
-    expect(normaliseTotpCode('12ab34-56789')).toBe('123456');
-    expect(normaliseTotpCode('')).toBe('');
+describe('isAdminSessionFresh', () => {
+  const now = 2_000_000_000_000;
+  it('is fresh up to 12 hours after the password sign-in, not after', () => {
+    expect(isAdminSessionFresh(now, now)).toBe(true);
+    expect(isAdminSessionFresh(now - ADMIN_SESSION_MAX_AGE_MS + 60_000, now)).toBe(true);
+    expect(isAdminSessionFresh(now - ADMIN_SESSION_MAX_AGE_MS, now)).toBe(false);
+    expect(isAdminSessionFresh(now - ADMIN_SESSION_MAX_AGE_MS - 60_000, now)).toBe(false);
   });
-  it('knows when a code is complete', () => {
-    expect(isTotpCodeComplete('123456')).toBe(true);
-    expect(isTotpCodeComplete('12345')).toBe(false);
-    expect(isTotpCodeComplete('12345a')).toBe(false);
-  });
-  it('extracts the svg from the data uri, plain or percent-encoded', () => {
-    expect(qrSvgFromDataUri('data:image/svg+xml;utf-8,<svg xmlns="x"></svg>')).toBe(
-      '<svg xmlns="x"></svg>',
-    );
-    expect(qrSvgFromDataUri('data:image/svg+xml;utf-8,%3Csvg%20a%3D%221%22%3E%3C%2Fsvg%3E')).toBe(
-      '<svg a="1"></svg>',
-    );
-    expect(qrSvgFromDataUri('data:text/plain,hello')).toBeNull();
-    expect(qrSvgFromDataUri('<svg></svg>')).toBeNull();
-    expect(qrSvgFromDataUri('data:image/svg+xml,%E0%A4%A')).toBeNull();
-    expect(qrSvgFromDataUri('data:image/svg+xml,<div></div>')).toBeNull();
-  });
-  it('groups the secret in fours', () => {
-    expect(formatTotpSecret('ABCDEFGHIJ')).toBe('ABCD EFGH IJ');
+  it('is never fresh without a password sign-in', () => {
+    expect(isAdminSessionFresh(null, now)).toBe(false);
   });
 });
 
 describe('adminAccess', () => {
   it('waits for the profile', () => {
-    expect(adminAccess({ profilePending: true, isSuperAdmin: true, aal: 'aal2' })).toBe('loading');
-  });
-  it('hides the area from everyone without the flag, even at aal2', () => {
-    expect(adminAccess({ profilePending: false, isSuperAdmin: false, aal: 'aal2' })).toBe('hidden');
-    expect(adminAccess({ profilePending: false, isSuperAdmin: false, aal: 'aal1' })).toBe('hidden');
-  });
-  it('needs 2FA for a flagged aal1 session and grants only flag + aal2', () => {
-    expect(adminAccess({ profilePending: false, isSuperAdmin: true, aal: 'aal1' })).toBe(
-      'needs_2fa',
+    expect(adminAccess({ profilePending: true, isSuperAdmin: true, sessionFresh: true })).toBe(
+      'loading',
     );
-    expect(adminAccess({ profilePending: false, isSuperAdmin: true, aal: 'aal2' })).toBe('granted');
+  });
+  it('hides the area from everyone without the flag, even with a fresh session', () => {
+    expect(adminAccess({ profilePending: false, isSuperAdmin: false, sessionFresh: true })).toBe(
+      'hidden',
+    );
+    expect(adminAccess({ profilePending: false, isSuperAdmin: false, sessionFresh: false })).toBe(
+      'hidden',
+    );
+  });
+  it('needs a new sign-in for a flagged stale session and grants only flag + fresh', () => {
+    expect(adminAccess({ profilePending: false, isSuperAdmin: true, sessionFresh: false })).toBe(
+      'needs_reauth',
+    );
+    expect(adminAccess({ profilePending: false, isSuperAdmin: true, sessionFresh: true })).toBe(
+      'granted',
+    );
   });
 });
 
 describe('adminRedirect', () => {
-  it('forces a flagged aal1 user to the 2FA screen, from anywhere', () => {
+  it('forces a flagged stale session to sign in again, from anywhere', () => {
     expect(
       adminRedirect({
-        access: 'needs_2fa',
+        access: 'needs_reauth',
         pathname: '/today',
         hasBusiness: true,
         isPasswordRecovery: false,
       }),
-    ).toBe(ADMIN_2FA);
+    ).toBe(ADMIN_REAUTH);
     expect(
       adminRedirect({
-        access: 'needs_2fa',
+        access: 'needs_reauth',
         pathname: '/login',
         hasBusiness: false,
         isPasswordRecovery: false,
       }),
-    ).toBe(ADMIN_2FA);
+    ).toBe(ADMIN_REAUTH);
     expect(
       adminRedirect({
-        access: 'needs_2fa',
-        pathname: ADMIN_2FA,
+        access: 'needs_reauth',
+        pathname: ADMIN_REAUTH,
         hasBusiness: false,
         isPasswordRecovery: false,
       }),
@@ -134,7 +139,7 @@ describe('adminRedirect', () => {
       }),
     ).toBeNull();
   });
-  it('leaves an admin who owns a business alone, and bounces off the 2FA screen once done', () => {
+  it('leaves an admin who owns a business alone, and bounces off the sign-in-again screen once fresh', () => {
     expect(
       adminRedirect({
         access: 'granted',
@@ -146,7 +151,7 @@ describe('adminRedirect', () => {
     expect(
       adminRedirect({
         access: 'granted',
-        pathname: ADMIN_2FA,
+        pathname: ADMIN_REAUTH,
         hasBusiness: true,
         isPasswordRecovery: false,
       }),
@@ -171,14 +176,13 @@ describe('adminRedirect', () => {
     ).toBeNull();
   });
 
-  it('never forces a password-recovery session through the 2FA screen, from anywhere — the production bug this guards against', () => {
-    // A 2FA-enrolled super admin opening a reset link is aal1 (needs_2fa) until
-    // they verify, exactly like signing in — but AuthGate is already sending
-    // them to /reset-password, and forcing /admin/2fa here first would strand
-    // them with no way back to actually resetting the password.
+  it('never forces a password-recovery session to sign in again first, from anywhere', () => {
+    // A super admin opening a reset link has a recovery session (needs_reauth),
+    // but AuthGate is already sending them to /reset-password; forcing the
+    // sign-in-again screen first would strand them before the new password.
     expect(
       adminRedirect({
-        access: 'needs_2fa',
+        access: 'needs_reauth',
         pathname: '/reset-password',
         hasBusiness: true,
         isPasswordRecovery: true,
@@ -186,7 +190,7 @@ describe('adminRedirect', () => {
     ).toBeNull();
     expect(
       adminRedirect({
-        access: 'needs_2fa',
+        access: 'needs_reauth',
         pathname: '/today',
         hasBusiness: true,
         isPasswordRecovery: true,
@@ -208,7 +212,7 @@ describe('adminRedirect', () => {
 describe('admin error mapping', () => {
   const RPC_CODES = [
     'forbidden',
-    'mfa_required',
+    'reauth_required',
     'invalid_input',
     'invalid',
     'not_found',
@@ -250,7 +254,7 @@ describe('unwrapAdminResult', () => {
     expect(unwrapAdminResult({ ok: true, items: [] }, null)).toEqual({ ok: true, items: [] });
   });
   it('throws the server code', () => {
-    expect(() => unwrapAdminResult({ ok: false, code: 'mfa_required' }, null)).toThrow(
+    expect(() => unwrapAdminResult({ ok: false, code: 'reauth_required' }, null)).toThrow(
       AdminRpcError,
     );
     try {
