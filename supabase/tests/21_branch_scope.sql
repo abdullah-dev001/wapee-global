@@ -331,7 +331,7 @@ begin
   perform pg_temp.chk('audit member.removed has who/what', (select (before->>'email') from public.audit_logs where action = 'member.removed' and entity_id = v_m::text), 'p9bt.recep@example.com');
   perform pg_temp.chk('removing twice -> not_found', pg_temp.as_('owner', format($q$select public.remove_member(%L)$q$, v_m))->>'code', 'not_found');
   -- invites
-  perform pg_temp.chk('the owner invites someone', (pg_temp.as_('owner', format($q$select to_jsonb(i) from public.invite_member(%L, 'invitee@example.com', %L, %L) i$q$, pg_temp.id('biza'), pg_temp.rid('staff'), pg_temp.id('bra'))) is not null)::text, 'true');
+  perform pg_temp.chk('the owner adds someone by email', pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'invitee@example.com', %L, %L)$q$, pg_temp.id('biza'), pg_temp.rid('staff'), pg_temp.id('bra')))->>'ok', 'true');
   select id into v_inv from public.business_members where business_id = pg_temp.id('biza') and invited_email = 'invitee@example.com';
   perform pg_temp.chk('an invite is removed with revoke_invite, not remove_member', pg_temp.as_('owner', format($q$select public.remove_member(%L)$q$, v_inv))->>'code', 'use_revoke_invite');
   perform pg_temp.chk('staff cannot revoke', pg_temp.as_('staffa', format($q$select public.revoke_invite(%L)$q$, v_inv))->>'code', 'forbidden');
@@ -342,9 +342,9 @@ begin
   perform pg_temp.chk('a manager (users.invite) may revoke a Staff invite', r->>'ok', 'true');
   perform pg_temp.chk('stored: invite dead (disabled, deleted, no token hash, no assignment)', (select status::text || '/' || (deleted_at is not null)::text || '/' || (invite_token_hash is null)::text || '/' || (select count(*) from public.member_role_assignments where member_id = v_inv) from public.business_members where id = v_inv), 'disabled/true/true/0');
   perform pg_temp.chk('audit invite.revoked', pg_temp.audit_n('invite.revoked'), '1');
-  perform pg_temp.chk('the same address can be invited again (the unique index is freed)', (pg_temp.as_('owner', format($q$select to_jsonb(i) from public.invite_member(%L, 'invitee@example.com', %L, %L) i$q$, pg_temp.id('biza'), pg_temp.rid('staff'), pg_temp.id('bra'))) is not null)::text, 'true');
+  perform pg_temp.chk('the same address can be invited again (the unique index is freed)', pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'invitee@example.com', %L, %L)$q$, pg_temp.id('biza'), pg_temp.rid('staff'), pg_temp.id('bra')))->>'ok', 'true');
   -- a Manager cannot revoke an invite for a role above theirs (an Owner invite)
-  perform pg_temp.as_('owner', format($q$select to_jsonb(i) from public.invite_member(%L, 'boss@example.com', %L, null) i$q$, pg_temp.id('biza'), pg_temp.rid('owner')));
+  perform pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'boss@example.com', %L)$q$, pg_temp.id('biza'), pg_temp.rid('owner')));
   perform pg_temp.chk('manager cannot revoke an Owner invite', pg_temp.as_('mgra', format($q$select public.revoke_invite(%L)$q$, (select id from public.business_members where invited_email = 'boss@example.com')))->>'code', 'cannot_modify_higher_role');
 end $$;
 

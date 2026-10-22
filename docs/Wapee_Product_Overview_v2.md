@@ -108,9 +108,9 @@ Surfaces: business app (iOS/Android/web); super admin (same app, platform flag);
 |---|---|---|
 | Super admin | Directly in DB, exactly one | All businesses, subscriptions, platform settings |
 | Owner | Self-signup, 14-day trial | Everything in their business |
-| Manager | Invited | Branch operations |
-| Receptionist | Invited | Bookings, clients, invoices |
-| Staff | Invited | Own schedule and appointments |
+| Manager | Added by email | Branch operations |
+| Receptionist | Added by email | Bookings, clients, invoices |
+| Staff | Added by email | Own schedule and appointments |
 | Customer | Guest booking, no account (account only with Client portal) | Own data via portal |
 
 Super admin: platform-level flag (never a business role); mandatory 2FA; every action on a business audit-logged.
@@ -194,7 +194,7 @@ Default roles matrix:
 | Staff and schedules | All | Branch | View | Own |
 | Commission | Manage rules | View branch | No | Own only |
 | Website and settings | Yes | Booking settings | No | No |
-| Roles and invites | Yes | Invite staff | No | No |
+| Roles and adding staff | Yes | Add staff by email | No | No |
 | Wapee billing | Yes | No | No | No |
 
 Default roles cannot be deleted; owners can clone into custom roles.
@@ -246,7 +246,7 @@ RLS on every table; super admin 2FA + logged access; private storage buckets wit
 
 ## 14. Full build scope (no MVP)
 1. Foundation: Expo project, theme, responsive shell, i18n + RTL, Supabase schema + RLS, timezone/DST and money handling, soft delete, audit log.
-2. Auth: login, self-signup, 14-day trial, invites, super admin with 2FA, inactive-after-trial.
+2. Auth: login, self-signup, 14-day trial, add staff by email (joins on verified sign-in), super admin with 2FA, inactive-after-trial.
 3. Roles and permissions incl. custom roles add-on.
 4. Booking engine: form, custom fields, settings, slot calculation, DB double-booking guard, guest manage links.
 5. Dashboard: calendar (multi-staff columns), services, staff, clients, invoices with tax, basic reports.

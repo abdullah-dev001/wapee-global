@@ -11,22 +11,20 @@ import { theme } from '@/lib/theme';
 
 import { useAssignableRoles } from '../api/useAssignableRoles';
 import {
+  useAddMember,
   useAssignMemberRole,
-  useInviteMember,
   useRemoveMember,
   useRemoveMemberRole,
   useRevokeInvite,
-  type InviteResult,
   type MemberRow,
 } from '../api/useMembers';
-import { inviteMemberErrorKey } from '../inviteMemberErrorKey';
-import { InviteLink } from './InviteMemberForm';
+import { memberAddErrorKey } from '../memberAddErrorKey';
 
 const ALL = 'all';
 
 /**
  * One person: their roles per location (add, change, remove), removing them from
- * the business, or - for a pending invite - sending a new link or cancelling it.
+ * the business, or - for a pending add - sending the email again (renews it) or cancelling it.
  * The role pickers only offer what the signed-in person may grant; the database
  * refuses the rest (and the last Owner, and anything above their own role).
  */
@@ -61,7 +59,7 @@ function Body({
   const unassign = useRemoveMemberRole(businessId);
   const removeMember = useRemoveMember(businessId);
   const revoke = useRevokeInvite(businessId);
-  const resend = useInviteMember(businessId);
+  const resend = useAddMember(businessId);
 
   const [addRole, setAddRole] = useState<string | null>(null);
   const [addBranch, setAddBranch] = useState<string>(ALL);
@@ -71,7 +69,6 @@ function Body({
   } | null>(null);
   const [changeTo, setChangeTo] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<'remove' | 'revoke' | null>(null);
-  const [link, setLink] = useState<InviteResult | null>(null);
 
   const branches = business?.branches ?? [];
   const branchName = (id: string | null) =>
@@ -97,14 +94,6 @@ function Body({
 
   const fail = (error: Error) =>
     toast.show({ message: t(roleErrorKey(rpcCode(error))), tone: 'error' });
-
-  if (link) {
-    return (
-      <Drawer open onClose={onClose} title={t('members.manage.title', { name })}>
-        <InviteLink result={link} onDone={onClose} />
-      </Drawer>
-    );
-  }
 
   const invited = member.status === 'invited';
 
@@ -283,12 +272,12 @@ function Body({
                     staffId: null,
                   },
                   {
-                    onSuccess: (result) => {
+                    onSuccess: () => {
                       toast.show({ message: t('members.manage.resent'), tone: 'success' });
-                      setLink(result);
+                      onClose();
                     },
                     onError: (error) =>
-                      toast.show({ message: t(inviteMemberErrorKey(error)), tone: 'error' }),
+                      toast.show({ message: t(memberAddErrorKey(error)), tone: 'error' }),
                   },
                 );
               }}

@@ -202,9 +202,9 @@ begin
 end $$;
 
 -- ===========================================================================
--- 6. No OTHER unintended function in public is anon-executable. get_public_pricing and invite_preview are
---    the only two functions explicitly, intentionally granted to anon (public pricing page; token-gated
---    invite preview, needed before login) -- everything else must come back empty.
+-- 6. No OTHER unintended function in public is anon-executable. get_public_pricing is the only function
+--    explicitly, intentionally granted to anon (public pricing page); invite_preview was retired in
+--    20261026110000 -- everything else must come back empty.
 -- ===========================================================================
 do $$
 declare v_unexpected text;
@@ -215,8 +215,8 @@ begin
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
     and has_function_privilege('anon', p.oid, 'EXECUTE')
-    and p.proname not in ('get_public_pricing', 'invite_preview');
-  perform pg_temp.chk('no unintended function in public is anon-executable (only get_public_pricing/invite_preview may be)',
+    and p.proname not in ('get_public_pricing');
+  perform pg_temp.chk('no unintended function in public is anon-executable (only get_public_pricing may be)',
     v_unexpected, '');
 end $$;
 

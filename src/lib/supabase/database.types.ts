@@ -5181,6 +5181,16 @@ export type Database = {
         Args: { p_branch_id?: string; p_business_id: string }
         Returns: Json
       }
+      add_member_by_email: {
+        Args: {
+          p_branch_id?: string
+          p_business_id: string
+          p_email: string
+          p_role_id: string
+          p_staff_id?: string
+        }
+        Returns: Json
+      }
       add_payment: {
         Args: {
           p_amount_minor: number
@@ -5476,6 +5486,7 @@ export type Database = {
         Args: { p_branch_id: string; p_business_id: string; p_extra: number }
         Returns: undefined
       }
+      claim_pending_memberships: { Args: never; Returns: Json }
       cleanup_public_request_attempts: {
         Args: { p_older_than?: string }
         Returns: number

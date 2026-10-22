@@ -22,7 +22,8 @@ export type OutboxEvent =
   | 'staff_low_stock'
   | 'low_stock'
   | 'form_request'
-  | 'portal_login';
+  | 'portal_login'
+  | 'member_added';
 
 export type Job = {
   id: string;

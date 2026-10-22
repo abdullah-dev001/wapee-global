@@ -22,27 +22,23 @@ describe('showGateSpinner', () => {
 });
 
 describe('shouldWaitForRejoin', () => {
-  it('waits while a just-accepted invite is still refetching the membership list', () => {
+  it('waits while a just-joined membership list is still refetching', () => {
     // hasBusiness=false (stale cache), isFetching=true (invalidated refetch in
-    // flight), not on onboarding or accept-invite — the exact post-join moment.
-    expect(shouldWaitForRejoin(false, true, false, false)).toBe(true);
+    // flight), not on onboarding — the exact post-join moment.
+    expect(shouldWaitForRejoin(false, true, false)).toBe(true);
   });
 
   it('does not wait once the refetch has landed a real business', () => {
-    expect(shouldWaitForRejoin(true, false, false, false)).toBe(false);
-    expect(shouldWaitForRejoin(true, true, false, false)).toBe(false);
+    expect(shouldWaitForRejoin(true, false, false)).toBe(false);
+    expect(shouldWaitForRejoin(true, true, false)).toBe(false);
   });
 
   it('does not wait when the list is not fetching at all', () => {
-    expect(shouldWaitForRejoin(false, false, false, false)).toBe(false);
+    expect(shouldWaitForRejoin(false, false, false)).toBe(false);
   });
 
   it('never waits on the onboarding screen, even with zero businesses and a refetch in flight', () => {
-    expect(shouldWaitForRejoin(false, true, true, false)).toBe(false);
-  });
-
-  it('never waits on the accept-invite screen, even with zero businesses and a refetch in flight', () => {
-    expect(shouldWaitForRejoin(false, true, false, true)).toBe(false);
+    expect(shouldWaitForRejoin(false, true, true)).toBe(false);
   });
 });
 
@@ -57,6 +53,7 @@ describe('authGateDecision', () => {
     hasBusiness: false,
     waitForBusinesses: false,
     waitForRejoin: false,
+    waitForClaim: false,
   };
 
   it('renders through when Supabase is not configured, regardless of everything else', () => {
@@ -115,20 +112,72 @@ describe('authGateDecision', () => {
     ).toEqual({ kind: 'redirect', href: '/onboarding' });
   });
 
-  it('never redirects a verified user with no business away from /accept-invite — the actual bug', () => {
-    // This is the exact regression this suite exists for: a user arriving at
-    // /accept-invite?token=… with zero businesses (not yet joined) must stay
-    // on that screen, never bounce to /onboarding, so its own auto-join effect
-    // gets the chance to run. See members.md changelog 2026-10-12.
+  it('waits for the first claim of pending adds before sending a business-less user to onboarding', () => {
+    // A person added by email has zero businesses until claim_pending_memberships
+    // lands; deciding earlier would flash /onboarding (the 2026-10-12 bug class).
     expect(
       authGateDecision({
         ...base,
         isAuthenticated: true,
         isEmailVerified: true,
         hasBusiness: false,
+        segments: ['(auth)', 'auth', 'callback'],
+        waitForClaim: true,
+      }),
+    ).toEqual({ kind: 'wait' });
+    expect(
+      authGateDecision({
+        ...base,
+        isAuthenticated: true,
+        isEmailVerified: true,
+        hasBusiness: false,
+        segments: ['(auth)', 'verify'],
+        waitForClaim: true,
+      }),
+    ).toEqual({ kind: 'wait' });
+  });
+
+  it('never waits for the claim while the email is unverified (it would join nothing)', () => {
+    expect(
+      authGateDecision({
+        ...base,
+        isAuthenticated: true,
+        isEmailVerified: false,
+        segments: ['(app)', 'today'],
+        waitForClaim: true,
+      }),
+    ).toEqual({ kind: 'redirect', href: '/verify' });
+  });
+
+  it('a claim that joined a business sends the user home, not to onboarding', () => {
+    expect(
+      authGateDecision({
+        ...base,
+        isAuthenticated: true,
+        isEmailVerified: true,
+        hasBusiness: true,
+        segments: ['(auth)', 'auth', 'callback'],
+      }),
+    ).toEqual({ kind: 'redirect', href: '/' });
+  });
+
+  it('the retired /accept-invite page is an ordinary (auth) screen now', () => {
+    expect(
+      authGateDecision({
+        ...base,
+        isAuthenticated: false,
         segments: ['(auth)', 'accept-invite'],
       }),
     ).toEqual({ kind: 'render' });
+    expect(
+      authGateDecision({
+        ...base,
+        isAuthenticated: true,
+        isEmailVerified: true,
+        hasBusiness: true,
+        segments: ['(auth)', 'accept-invite'],
+      }),
+    ).toEqual({ kind: 'redirect', href: '/' });
   });
 
   it('never redirects a verified user with no business away from /onboarding itself', () => {
@@ -167,19 +216,6 @@ describe('authGateDecision', () => {
     ).toEqual({ kind: 'redirect', href: '/' });
   });
 
-  it('never redirects away from /accept-invite even once the user has another business', () => {
-    // Someone already in one business can still open a second invite link.
-    expect(
-      authGateDecision({
-        ...base,
-        isAuthenticated: true,
-        isEmailVerified: true,
-        hasBusiness: true,
-        segments: ['(auth)', 'accept-invite'],
-      }),
-    ).toEqual({ kind: 'render' });
-  });
-
   it('waits instead of deciding while the membership list is still pending', () => {
     expect(
       authGateDecision({
@@ -192,7 +228,7 @@ describe('authGateDecision', () => {
     ).toEqual({ kind: 'wait' });
   });
 
-  it('waits instead of deciding while a just-accepted invite is still refetching (waitForRejoin)', () => {
+  it('waits instead of deciding while a just-joined membership list is still refetching (waitForRejoin)', () => {
     expect(
       authGateDecision({
         ...base,

@@ -30,21 +30,20 @@ export function useGateSpinner(pending: boolean, userId: string | null): boolean
 
 /**
  * Whether the gate should wait rather than decide, while the membership list
- * currently reads empty. A membership-changing mutation (accepting an invite,
- * creating a business) invalidates that list; the cached value is stale "zero
- * businesses" while the refetch it triggered is still in flight, and deciding
- * on it would redirect someone who just joined to onboarding before the
- * refetch lands. Only matters away from onboarding/accept-invite, which both
- * handle zero businesses on purpose — so this never adds a wait for a routine
- * focus/reconnect refetch of a user legitimately sitting on either of those.
+ * currently reads empty. A membership-changing action (a pending add being
+ * claimed on focus, creating a business) invalidates that list; the cached value
+ * is stale "zero businesses" while the refetch it triggered is still in flight,
+ * and deciding on it would redirect someone who just joined to onboarding before
+ * the refetch lands. Only matters away from onboarding, which handles zero
+ * businesses on purpose — so this never adds a wait for a routine
+ * focus/reconnect refetch of a user legitimately sitting there.
  */
 export function shouldWaitForRejoin(
   hasBusiness: boolean,
   isFetchingBusinesses: boolean,
   onOnboardingScreen: boolean,
-  onAcceptInviteScreen: boolean,
 ): boolean {
-  return !hasBusiness && isFetchingBusinesses && !onOnboardingScreen && !onAcceptInviteScreen;
+  return !hasBusiness && isFetchingBusinesses && !onOnboardingScreen;
 }
 
 /** Route groups that an unauthenticated visitor may open. */
@@ -53,13 +52,6 @@ export const PUBLIC_GROUPS = new Set(['(auth)', '(public)']);
 export const VERIFY_ROUTE = 'verify';
 /** Where a verified user with no business goes. */
 export const ONBOARDING_ROUTE = 'onboarding';
-/**
- * The invite screen. An invited person arrives here with no account and no
- * business, so it must be reachable while signed out AND must not be
- * redirected to onboarding — accepting the invite is what gives them a
- * business.
- */
-export const ACCEPT_INVITE_ROUTE = 'accept-invite';
 /**
  * Opening a password-recovery email link signs the user in like any other
  * session — verified, often with a business already — so every OTHER rule
@@ -81,13 +73,13 @@ export type AuthGateDecision =
  * - signed out, private route     -> /login
  * - password-recovery session     -> /reset-password (before anything else)
  * - signed in, unverified         -> /verify
- * - verified, but has no business -> /onboarding
+ * - verified, but has no business -> /onboarding (only once the first claim of
+ *   pending "add by email" memberships has finished: `waitForClaim`)
  * - fully set up, on an auth page -> /
  *
  * `'wait'` means: render the route tree as-is and overlay a spinner, never
  * unmount it — see AuthGate's own comment for why unmounting the tree for a
- * loading spinner is unsafe (it can lose the current URL, including a
- * `?token=…` query on `/accept-invite`).
+ * loading spinner is unsafe (it can lose the current URL).
  */
 export function authGateDecision(input: {
   isSupabaseConfigured: boolean;
@@ -99,6 +91,12 @@ export function authGateDecision(input: {
   hasBusiness: boolean;
   waitForBusinesses: boolean;
   waitForRejoin: boolean;
+  /**
+   * The first `claim_pending_memberships` call for this user has not finished. A
+   * verified person who was added by email has zero businesses until it lands;
+   * deciding before it would flash /onboarding (and could start a trial).
+   */
+  waitForClaim: boolean;
 }): AuthGateDecision {
   const {
     isSupabaseConfigured,
@@ -110,6 +108,7 @@ export function authGateDecision(input: {
     hasBusiness,
     waitForBusinesses,
     waitForRejoin,
+    waitForClaim,
   } = input;
 
   if (!isSupabaseConfigured) return { kind: 'render' };
@@ -121,7 +120,6 @@ export function authGateDecision(input: {
   const onAdminRoute = group === '(admin)';
   const onVerifyScreen = segments.includes(VERIFY_ROUTE);
   const onOnboardingScreen = segments.includes(ONBOARDING_ROUTE);
-  const onAcceptInviteScreen = segments.includes(ACCEPT_INVITE_ROUTE);
   const onResetPasswordScreen = segments.includes(RESET_PASSWORD_ROUTE);
 
   if (!isAuthenticated && !isPublicGroup) return { kind: 'redirect', href: '/login' };
@@ -136,13 +134,11 @@ export function authGateDecision(input: {
     return { kind: 'redirect', href: '/verify' };
   }
   if (isAuthenticated && isEmailVerified) {
-    if (waitForBusinesses || waitForRejoin) return { kind: 'wait' };
-    // Accepting an invite is how an invited person gets their first business,
-    // so that screen is never redirected to onboarding or away from (auth).
-    if (!hasBusiness && !onOnboardingScreen && !onAcceptInviteScreen && !onAdminRoute) {
+    if (waitForBusinesses || waitForRejoin || waitForClaim) return { kind: 'wait' };
+    if (!hasBusiness && !onOnboardingScreen && !onAdminRoute) {
       return { kind: 'redirect', href: '/onboarding' };
     }
-    if (hasBusiness && isAuthGroup && !onAcceptInviteScreen) return { kind: 'redirect', href: '/' };
+    if (hasBusiness && isAuthGroup) return { kind: 'redirect', href: '/' };
   }
   return { kind: 'render' };
 }

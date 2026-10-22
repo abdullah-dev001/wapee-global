@@ -1,5 +1,5 @@
 -- Staff logins <-> staff profiles (migration 20261022090000): link / unlink RPC, the
--- direct-write guard, invite-with-profile through accept, add_me_as_staff, removal
+-- direct-write guard, add-by-email-with-profile through claim (20261026100000), add_me_as_staff, removal
 -- releasing the link, own scope + push recipients after linking.
 --
 --   supabase db query --linked -f supabase/tests/37_staff_member_link.sql
@@ -238,36 +238,34 @@ begin
   perform pg_temp.try(format($q$update public.staff_profiles set member_id = null where id = %L$q$, pg_temp.id('p3')));
 end $$;
 
--- ============ invite with a staff profile ============
+-- ============ add by email with a staff profile (20261026100000) ============
 do $$
 declare v_role text := (select id::text from public.roles where business_id is null and key = 'staff');
         v_inv jsonb; v_mid text;
 begin
-  v_inv := pg_temp.as_('owner', format($q$select to_jsonb(r) from public.invite_member(%L, 'lnk.invitee@example.com', %L, null, %L) r$q$, pg_temp.id('biza'), v_role, pg_temp.id('p3')));
-  v_mid := v_inv ->> 'out_member_id';
-  perform pg_temp.chk('invite with a staff profile: returns a token', ((v_inv ->> 'out_token') is not null)::text, 'true');
-  perform pg_temp.chk('...the profile is linked to the INVITED member row', pg_temp.member_of('p3'), v_mid);
-  perform pg_temp.chk('...the invited row has status invited', (select status::text from public.business_members where id = v_mid::uuid), 'invited');
-  perform set_config('lnk.token', v_inv ->> 'out_token', true);
+  v_inv := pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'lnk.invitee@example.com', %L, null, %L)$q$, pg_temp.id('biza'), v_role, pg_temp.id('p3')));
+  v_mid := v_inv ->> 'member_id';
+  perform pg_temp.chk('add with a staff profile: ok', v_inv ->> 'ok', 'true');
+  perform pg_temp.chk('...the profile is linked to the PENDING member row', pg_temp.member_of('p3'), v_mid);
+  perform pg_temp.chk('...the pending row has status invited', (select status::text from public.business_members where id = v_mid::uuid), 'invited');
   perform set_config('lnk.member', v_mid, true);
 
-  perform pg_temp.chk('inviting someone else with an already-linked profile is refused (23505)',
-    pg_temp.as_('owner', format($q$select to_jsonb(r) from public.invite_member(%L, 'lnk.invitee2@example.com', %L, null, %L) r$q$, pg_temp.id('biza'), v_role, pg_temp.id('p3'))) ->> 'state', '23505');
-  perform pg_temp.chk('inviting with a profile of ANOTHER business is refused (22023)',
-    pg_temp.as_('owner', format($q$select to_jsonb(r) from public.invite_member(%L, 'lnk.invitee2@example.com', %L, null, %L) r$q$, pg_temp.id('biza'), v_role, pg_temp.id('pb'))) ->> 'state', '22023');
-  perform pg_temp.chk('...neither attempt created an invite row for invitee2',
+  perform pg_temp.chk('adding someone else with an already-linked profile is refused (staff_has_login)',
+    pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'lnk.invitee2@example.com', %L, null, %L)$q$, pg_temp.id('biza'), v_role, pg_temp.id('p3'))) ->> 'code', 'staff_has_login');
+  perform pg_temp.chk('adding with a profile of ANOTHER business is refused (unknown_staff)',
+    pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'lnk.invitee2@example.com', %L, null, %L)$q$, pg_temp.id('biza'), v_role, pg_temp.id('pb'))) ->> 'code', 'unknown_staff');
+  perform pg_temp.chk('...neither attempt created a pending row for invitee2',
     (select count(*)::text from public.business_members where business_id = pg_temp.id('biza') and invited_email = 'lnk.invitee2@example.com'), '0');
-  perform pg_temp.chk('an invite WITHOUT a profile still works (old 4-arg call)',
-    ((pg_temp.as_('owner', format($q$select to_jsonb(r) from public.invite_member(%L, 'lnk.invitee2@example.com', %L, null) r$q$, pg_temp.id('biza'), v_role)) ->> 'out_token') is not null)::text, 'true');
+  perform pg_temp.chk('an add WITHOUT a profile still works',
+    pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'lnk.invitee2@example.com', %L)$q$, pg_temp.id('biza'), v_role)) ->> 'ok', 'true');
 end $$;
 
--- accept as the invitee: the link is unchanged and the person now owns the profile
+-- the invitee signs in with that (verified) email: joined, and the person now owns the profile
 do $$
-declare v_res jsonb; v_tok text := current_setting('lnk.token');
+declare v_res jsonb;
 begin
-  perform pg_temp.act_as(pg_temp.id('invitee')); set local role authenticated;
-  perform pg_temp.chk('accept_invite returns the business id', (public.accept_invite(v_tok))::text, pg_temp.id('biza')::text);
-  reset role;
+  v_res := pg_temp.as_('invitee', 'select public.claim_pending_memberships()');
+  perform pg_temp.chk('claim joins the business', v_res -> 'joined' ->> 0, pg_temp.id('biza')::text);
   perform pg_temp.chk('...member is active and still linked to the same profile',
     (select status::text from public.business_members where id = current_setting('lnk.member')::uuid) || '/' || pg_temp.member_of('p3'), 'active/' || current_setting('lnk.member'));
   perform pg_temp.act_as(pg_temp.id('invitee')); set local role authenticated;
@@ -275,17 +273,17 @@ begin
   reset role;
 end $$;
 
--- re-invite with a different profile releases the earlier one; revoke releases the link
+-- re-adding with a different profile releases the earlier one; cancelling releases the link
 do $$
 declare v_role text := (select id::text from public.roles where business_id is null and key = 'staff');
         v_inv jsonb; v_mid text;
 begin
   insert into public.staff_profiles (business_id, display_name) values (pg_temp.id('biza'), 'Profile Four') returning id into v_mid;  -- reuse var as uuid text
   insert into ids values ('p4', v_mid::uuid);
-  v_inv := pg_temp.as_('owner', format($q$select to_jsonb(r) from public.invite_member(%L, 'lnk.invitee2@example.com', %L, null, %L) r$q$, pg_temp.id('biza'), v_role, pg_temp.id('p4')));
-  perform pg_temp.chk('re-invite (pending row) linking profile four: linked to the pending member', pg_temp.member_of('p4'), v_inv ->> 'out_member_id');
+  v_inv := pg_temp.as_('owner', format($q$select public.add_member_by_email(%L, 'lnk.invitee2@example.com', %L, null, %L)$q$, pg_temp.id('biza'), v_role, pg_temp.id('p4')));
+  perform pg_temp.chk('re-add (pending row) linking profile four: linked to the pending member', pg_temp.member_of('p4'), v_inv ->> 'member_id');
   perform pg_temp.chk('revoke_invite releases the link',
-    (pg_temp.as_('owner', format($q$select public.revoke_invite(%L)$q$, v_inv ->> 'out_member_id')) ->> 'ok') || '/' || coalesce(pg_temp.member_of('p4'), 'null'), 'true/null');
+    (pg_temp.as_('owner', format($q$select public.revoke_invite(%L)$q$, v_inv ->> 'member_id')) ->> 'ok') || '/' || coalesce(pg_temp.member_of('p4'), 'null'), 'true/null');
 end $$;
 
 -- removing an active member releases the profile

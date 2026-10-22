@@ -54,6 +54,7 @@ async function buildLinks(job: Job, deps: Deps): Promise<Links> {
     formUrl: token && job.event === 'form_request' ? `${base}/${slug}/sign#token=${token}` : null,
     portalUrl:
       token && job.event === 'portal_login' ? `${base}/${slug}/portal#token=${token}` : null,
+    loginUrl: job.event === 'member_added' ? `${base}/login` : null,
     unsubscribeUrl,
     oneClickUrl,
   };

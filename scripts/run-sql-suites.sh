@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs every SQL suite in supabase/tests (01-05 pgTAP through run_pgtap.py, the rest plain SQL that ends with a
+# Runs every SQL suite in supabase/tests (pgTAP files, i.e. those with `select plan(`, through run_pgtap.py; the rest plain SQL that ends with a
 # `result` row) and the concurrency scripts, and exits non-zero if anything failed.
 #
 #   scripts/run-sql-suites.sh            # against the LINKED project (rolled-back fixtures; needs `supabase link`)
@@ -42,7 +42,7 @@ for f in supabase/tests/[0-9][0-9]_*.sql; do
   n="${base%%_*}"
   case "$base" in *seed*|*cleanup*) continue ;; esac
   picked "$n" || continue
-  if [ "$n" -le 5 ]; then
+  if grep -q 'select plan(' "$f"; then
     out="$(python3 supabase/tests/run_pgtap.py "$f" 2>&1)"; rc=$?
     echo "$([ $rc -eq 0 ] && echo 'ok  ' || echo 'FAIL') $base: $out"
     [ $rc -ne 0 ] && fail=1

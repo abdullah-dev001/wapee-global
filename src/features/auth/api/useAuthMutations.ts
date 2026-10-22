@@ -12,15 +12,6 @@ import {
   type SignupValues,
 } from '../schemas/auth.schemas';
 
-export type SignupInput = SignupValues & {
-  /**
-   * Where the confirmation email sends them back, as an app path (e.g.
-   * `/accept-invite?token=…`). Defaults to `/verify`. Used by the invite screen
-   * so a pending invite survives email confirmation instead of being lost.
-   */
-  confirmRedirectPath?: string;
-};
-
 /**
  * Where Supabase sends the user back after an email link.
  * Native uses the `wapee://` scheme; web uses the current origin so a preview
@@ -64,16 +55,16 @@ export type SignupResult = {
   sessionCreated: boolean;
 };
 
-export function useSignup(): UseMutationResult<SignupResult, Error, SignupInput> {
+export function useSignup(): UseMutationResult<SignupResult, Error, SignupValues> {
   return useMutation({
-    mutationFn: async ({ email, password, fullName, confirmRedirectPath }) => {
+    mutationFn: async ({ email, password, fullName }) => {
       const { data, error } = await getSupabase().auth.signUp({
         email,
         password,
         options: {
           // Copied into profiles by the handle_new_user trigger.
           data: { full_name: fullName },
-          emailRedirectTo: redirectTo(confirmRedirectPath ?? '/verify'),
+          emailRedirectTo: redirectTo('/verify'),
         },
       });
       toError(error);

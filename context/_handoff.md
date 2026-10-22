@@ -1,5 +1,7 @@
 # Handoff
-Last updated: 2026-10-18 · Branch: `dev`.
+Last updated: 2026-10-23 · Branch: `dev`.
+
+**Add staff by email, Part B of B/A/C (2026-10-23)** — `context/members.md`, `auth.md`, `_database.md`. Invite links replaced: `20261026100000` (`add_member_by_email`, `claim_pending_memberships`, `member_added` outbox email, `member_add` rate limits) + `20261026110000` (tokens cleared, `invite_member`/`accept_invite`/`invite_preview` not callable), both pushed to dev only; types regenerated; `send_outbox` redeployed to dev. `AuthGate` waits for the first claim. Suites 04/12/17/18/19/21/22/24/26/29/34/37/38/42/50 green on dev; 906 unit tests. Live browser checks on dev passed (members.md Verification). `scripts/run-sql-suites.sh` now picks pgTAP by `select plan(` instead of by number. **Dev QA fixtures left on purpose for Parts A/C** (delete at the end, ids in the session scratchpad): users `qa.b.owner@`, `qa.b.verified@`, `qa.b.new@wapee-dev.test`, business slug `qa-add-by-email`. Not on prod. Next: Part A (Google sign-in), Part C (super admin password-only).
 
 **QA fix round 2 (2026-10-18)** — **F23** `20261025150000` customer cancel (manage link / portal) before the visit returns a deducted package session via reversal rows (suite 48); **email_required** is a public 400 with "Enter your email." under the field (`_shared/response.ts`, FormStep; `create_booking` redeployed); **create_booking race** `20261025160000` client write inside the insert block (suite 49). Dev QA throwaway rows still NOT deleted: the guarded delete was declined twice at the tool-approval step; SQL is in the user report.
 
