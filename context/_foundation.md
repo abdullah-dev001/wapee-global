@@ -25,7 +25,7 @@ Project setup every feature builds on: Expo app, theme, providers, env, data lay
 | app/_layout.tsx                                                                                                          | Root providers + font loading + splash + SW registration                                    |
 | app/+html.tsx                                                                                                            | Web HTML shell: viewport-fit=cover, iOS web-app meta, manifest, icons, base CSS             |
 | app/(auth)/login.tsx · (app)/index.tsx · (public)/[slug]/index.tsx · (admin)/admin/index.tsx | Placeholder routes (`/login`, `/`, `/:slug`, `/admin`)                           |
-| src/config/launch.ts | Launch switches (`widget`, `sms`, both false): features that are built but hidden |
+| src/config/launch.ts | Launch switches (`widget`, `sms`: false; `googleSignIn`: build-time env `EXPO_PUBLIC_GOOGLE_SIGNIN`, on only for `1`/`true` via `isLaunchFlagOn`, tested): features that are built but hidden |
 | src/components/shared/LegalLinks.tsx | Terms + Privacy links (open `brand.urls.terms` / `privacy`); used on signup, Settings, public pages |
 | src/config/brand.ts                                                                                                      | Product name, slug, scheme, bundle ID `online.wapee.app`, URLs. Only place "Wapee" lives       |
 | src/config/env.ts                                                                                                        | zod-validated public env; `env`, `isSupabaseConfigured`, `missingEnvKeys`, `warnAboutEnv()` |
