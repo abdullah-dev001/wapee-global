@@ -11,6 +11,7 @@ import { Button, Text } from '@/components/ui';
 import { useSignup } from '@/features/auth/api/useAuthMutations';
 import { authErrorKey } from '@/features/auth/authErrorKey';
 import { AuthLayout } from '@/features/auth/components/AuthLayout';
+import { GoogleSignInButton } from '@/features/auth/components/GoogleSignInButton';
 import { PasswordField } from '@/features/auth/components/PasswordField';
 import { signupSchema, type SignupValues } from '@/features/auth/schemas/auth.schemas';
 import { theme } from '@/lib/theme';
@@ -59,6 +60,8 @@ export default function SignupScreen() {
             </Text>
           </View>
         ) : null}
+
+        <GoogleSignInButton />
 
         <FormField
           control={control}

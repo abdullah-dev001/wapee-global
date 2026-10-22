@@ -38,7 +38,7 @@
       ]
     },
     {
-      "source": "/(accept-invite|admin|admin/.*|calendar|clients|clients/.*|commission|forgot-password|inventory|invoices|login|members|more|onboarding|packages|reports|reset-password|reviews|schedule|services|settings|settings/.*|signup|staff|today|verify|website)",
+      "source": "/(accept-invite|admin|admin/.*|auth/.*|calendar|clients|clients/.*|commission|forgot-password|inventory|invoices|login|members|more|onboarding|packages|reports|reset-password|reviews|schedule|services|settings|settings/.*|signup|staff|today|verify|website)",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },
     {

@@ -73,7 +73,7 @@ Specs come from DESIGN_GUIDE §12 + CLAUDE.md §5. Every component works on iOS,
 | Component | Key props | Notes |
 |---|---|---|
 | `Text` | `variant`, `color`, `align` | The only text component. Always pick a variant; never set `fontWeight`. |
-| `Button` | `variant` primary/secondary/ghost/danger, `size` sm/md/lg, `loading`, `disabled`, `fullWidth`, `startIcon` | Label is a plain string. Loading swaps the icon for a Spinner and blocks presses. |
+| `Button` | `variant` primary/secondary/ghost/danger, `size` sm/md/lg, `loading`, `disabled`, `fullWidth`, `startIcon`, `startElement` | Label is a plain string. Loading swaps the icon for a Spinner and blocks presses. `startElement` (2026-10-23) is for a non-lucide mark that keeps its own colours (the Google "G" on `GoogleSignInButton`); ignored when `startIcon` is set. |
 | `Input` | `label`, `hint`, `error`, `required`, `prefix`, `endAdornment`, `editable` | ~40px tall (matches md Button). Error border beats focus. `editable={false}` = disabled look. |
 | `Card` | `onPress`, `noPadding`, `featured` | Flat at rest. `onPress` adds hover border + md shadow (web). Padding 24 / 18 mobile. |
 | `Badge` | `tone` neutral/success/warning/error/info/primary, `dot`, `icon` | Pill, 11px/600. |

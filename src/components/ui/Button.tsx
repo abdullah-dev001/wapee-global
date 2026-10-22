@@ -1,4 +1,5 @@
 import { type LucideIcon } from 'lucide-react-native';
+import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { focusRing, theme } from '@/lib/theme';
@@ -82,6 +83,11 @@ export type ButtonProps = {
   fullWidth?: boolean;
   /** Lucide icon shown before the label. Replaced by the spinner while loading. */
   startIcon?: LucideIcon;
+  /**
+   * A non-lucide mark shown before the label (e.g. a third-party brand logo that must keep its own
+   * colours). Ignored when `startIcon` is set; replaced by the spinner while loading.
+   */
+  startElement?: ReactNode;
   /** Accessible name when the label alone is not clear enough. */
   accessibilityLabel?: string;
   testID?: string;
@@ -102,6 +108,7 @@ export function Button({
   loading = false,
   fullWidth = false,
   startIcon: StartIcon,
+  startElement,
   accessibilityLabel,
   testID,
   style,
@@ -149,6 +156,8 @@ export function Button({
             color={theme.colors[palette.text]}
           />
         </View>
+      ) : startElement ? (
+        <View style={styles.icon}>{startElement}</View>
       ) : null}
       <Text variant={sizing.variant} color={palette.text} numberOfLines={1}>
         {children}

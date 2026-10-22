@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { disablePush } from '@/lib/push';
 import { getSupabase } from '@/lib/supabase';
 
+import { OAUTH_CALLBACK_PATH } from '../oauth';
 import {
   type ForgotPasswordValues,
   type LoginValues,
@@ -45,6 +46,30 @@ export function useLogin(): UseMutationResult<void, Error, LoginValues> {
   return useMutation({
     mutationFn: async ({ email, password }) => {
       const { error } = await getSupabase().auth.signInWithPassword({ email, password });
+      toError(error);
+    },
+  });
+}
+
+/**
+ * "Continue with Google" (web / PWA only; the button is not rendered elsewhere). Supabase sends
+ * the browser to Google and back to `/auth/callback`, where supabase-js reads the session from the
+ * URL fragment (`detectSessionInUrl`) and `AuthGate` routes the user: home, onboarding, or home in
+ * a business they were added to (the claim runs first). `prompt=select_account` lets someone with
+ * several Google accounts pick the right one instead of being signed in silently.
+ *
+ * The redirect URL must be listed in the dashboard (Authentication -> URL Configuration).
+ */
+export function useGoogleSignIn(): UseMutationResult<void, Error, void> {
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await getSupabase().auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo(OAUTH_CALLBACK_PATH),
+          queryParams: { prompt: 'select_account' },
+        },
+      });
       toError(error);
     },
   });

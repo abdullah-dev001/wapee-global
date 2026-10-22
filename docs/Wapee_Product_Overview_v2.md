@@ -246,7 +246,7 @@ RLS on every table; super admin 2FA + logged access; private storage buckets wit
 
 ## 14. Full build scope (no MVP)
 1. Foundation: Expo project, theme, responsive shell, i18n + RTL, Supabase schema + RLS, timezone/DST and money handling, soft delete, audit log.
-2. Auth: login, self-signup, 14-day trial, add staff by email (joins on verified sign-in), super admin with 2FA, inactive-after-trial.
+2. Auth: login, self-signup, "Continue with Google" (web and PWA only; hidden in an installed iOS PWA), 14-day trial, add staff by email (joins on verified sign-in), super admin with 2FA, inactive-after-trial.
 3. Roles and permissions incl. custom roles add-on.
 4. Booking engine: form, custom fields, settings, slot calculation, DB double-booking guard, guest manage links.
 5. Dashboard: calendar (multi-staff columns), services, staff, clients, invoices with tax, basic reports.

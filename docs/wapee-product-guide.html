@@ -685,9 +685,10 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
 
   <div class="grid" id="workflows">
     <details class="card"><summary><span class="ct">A. Naya owner signup se pehle bookable slot tak<small>Setup checklist aur slot na aane ki wajahein</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
-      <div class="flow" data-steps="Signup (email + password)|Email confirm (/verify)|Onboarding 1: naam, slug, industry|Onboarding 2: location, country, currency, TZ|Today: setup checklist|Branch hours (Schedule)|Service + price (Services)|Staff / Add me as staff|Staff ko service do|Staff working hours|Copy booking link"></div>
+      <div class="flow" data-steps="Signup (email + password, ya Google)|Email confirm (/verify; Google mein zaroorat nahin)|Onboarding 1: naam, slug, industry|Onboarding 2: location, country, currency, TZ|Today: setup checklist|Branch hours (Schedule)|Service + price (Services)|Staff / Add me as staff|Staff ko service do|Staff working hours|Copy booking link"></div>
       <div><ol class="steps">
-        <li><b>/signup</b>: email + password (8-72). Email confirm karna zaroori; tab tak <b>/verify</b> par.</li>
+        <li><b>/signup</b>: email + password (8-72). Email confirm karna zaroori; tab tak <b>/verify</b> par. Ya <b>Continue with Google</b> (sirf web/PWA; installed iPhone PWA mein button chhupa hai): Google email pehle se verified hoti hai, seedha onboarding. Agar kisi business ne is email ko pehle add kiya ho to onboarding nahin, seedha us business mein (trial nahin banta).</li>
+        <li>Pehle se email/password account hai aur Google se aate hain: wohi account jurta hai (dono tareeqe chalte hain, naam nahin badalta). Kisi ne aap ki email par <b>unconfirmed</b> account bana rakha ho: Google aane par us ka password aur email-login hata diye jaate hain aur naam Google wala ho jata hai (dev par test kiya, 23 Oct 2026).</li>
         <li><b>/onboarding</b> step 1: business naam, slug (booking address, live check), industry. Step 2: pehli location ka naam, country, currency, time zone. Ek transaction mein business + branch + Owner + 14 din trial + booking settings (online booking ON, 24h cancel) ban jaate hain.</li>
         <li>Owner <b>Today</b> par aata hai: "Get ready for your first booking" checklist.</li>
         <li>Step 1 <b>Schedule &gt; Opening hours</b>. Step 2 <b>Services</b>: service, active, online-bookable, is branch par price. Step 3 <b>Staff</b>: staff banayein ya <b>Add me as staff</b> (Solo owner ke liye zaroori). Step 4: staff ko service do. Step 5: staff ke working hours (Staff &gt; Schedule).</li>
@@ -892,6 +893,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <tr><td><code>/forgot-password</code> · <code>/reset-password</code></td><td>Password reset</td><td>Sab</td></tr>
       <tr><td><code>/onboarding</code></td><td>Business banane ke 2 steps</td><td>Naya verified user</td></tr>
       <tr><td><code>/accept-invite</code></td><td>Purana invite link: ab sirf "sign in karein" page (link band)</td><td>Koi bhi</td></tr>
+      <tr><td><code>/auth/callback</code></td><td>Google sign-in ke baad wapsi; error ho to saaf message</td><td>Koi bhi</td></tr>
       <tr><td><code>/today</code> · <code>/calendar</code> · <code>/clients</code> · <code>/clients/&lt;id&gt;</code></td><td>Dashboard ke main screens</td><td>Members</td></tr>
       <tr><td><code>/services</code> · <code>/staff</code> · <code>/members</code> · <code>/schedule</code></td><td>Catalogue, team, invites, hours</td><td>Members (permission)</td></tr>
       <tr><td><code>/invoices</code> · <code>/reports</code> · <code>/commission</code> · <code>/reviews</code> · <code>/website</code></td><td>Paisa, reports, commission, reviews, website editor</td><td>Members (permission)</td></tr>
@@ -1030,7 +1032,8 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <label><input type="checkbox"> Vault mein outbox_worker_url set, 5 cron jobs active</label><br>
       <label><input type="checkbox"> Naye production secrets (IP salt, form HMAC, unsubscribe key, Resend, VAPID)</label><br>
       <label><input type="checkbox"> Sab 17 Edge Functions deploy</label><br>
-      <label><input type="checkbox"> Auth: Site URL, redirect URLs, password 8, leaked-password protection, TOTP</label><br>
+      <label><input type="checkbox"> Auth: Site URL, redirect URLs (<code>/auth/callback</code> bhi), password 8, leaked-password protection, TOTP</label><br>
+      <label><input type="checkbox"> Google login: Google Cloud OAuth client (prod redirect URI = prod Supabase callback), consent screen "In production", Supabase Google provider on</label><br>
       <label><input type="checkbox"> Auth hook (Custom Access Token) on</label><br>
       <label><input type="checkbox"> Custom SMTP + Resend domain mail.wapee.online (SPF, DKIM, DMARC)</label><br>
       <label><input type="checkbox"> Asal inbox par email test (Gmail + Outlook)</label><br>

@@ -129,7 +129,8 @@
       "resend": "Resend email",
       "resent": "Sent. Check your inbox.",
       "wrongEmail": "Wrong email? Sign out and start again.",
-      "checking": "Checking your link…"
+      "checking": "Checking your link…",
+      "alreadyHaveAccount": "Already have an account with this email? Sign in instead."
     },
     "fields": {
       "fullName": "Your name",
@@ -162,7 +163,17 @@
       "generic": "Something went wrong. Please try again."
     },
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "google": {
+      "continue": "Continue with Google",
+      "or": "or",
+      "callbackTitle": "Signing you in",
+      "signingIn": "Finishing sign-in with Google…",
+      "cancelled": "Google sign-in was cancelled. You can try again or use your email and password.",
+      "failed": "We could not sign you in with Google. Please try again.",
+      "incomplete": "Sign-in did not finish. Please go back and try again.",
+      "backToSignIn": "Back to sign in"
+    }
   },
   "onboarding": {
     "title": "Set up your business",
