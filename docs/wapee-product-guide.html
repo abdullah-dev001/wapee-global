@@ -243,7 +243,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
   <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
   <div class="badges">
     <span class="badge lime">Last verified: 23 Oct 2026</span>
-    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">d1ec3cf</span> + super admin password-only (branch dev)</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">1d261c0</span> + Google launch flag (branch dev)</span>
     <span class="badge">Prices dev database se, 11 Oct 2026</span>
   </div>
 </div>
@@ -687,7 +687,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     <details class="card"><summary><span class="ct">A. Naya owner signup se pehle bookable slot tak<small>Setup checklist aur slot na aane ki wajahein</small></span><span class="chip live">Live</span></summary><div class="cb"><div class="flow-wrap">
       <div class="flow" data-steps="Signup (email + password, ya Google)|Email confirm (/verify; Google mein zaroorat nahin)|Onboarding 1: naam, slug, industry|Onboarding 2: location, country, currency, TZ|Today: setup checklist|Branch hours (Schedule)|Service + price (Services)|Staff / Add me as staff|Staff ko service do|Staff working hours|Copy booking link"></div>
       <div><ol class="steps">
-        <li><b>/signup</b>: email + password (8-72). Email confirm karna zaroori; tab tak <b>/verify</b> par. Ya <b>Continue with Google</b> (sirf web/PWA; installed iPhone PWA mein button chhupa hai): Google email pehle se verified hoti hai, seedha onboarding. Agar kisi business ne is email ko pehle add kiya ho to onboarding nahin, seedha us business mein (trial nahin banta).</li>
+        <li><b>/signup</b>: email + password (8-72). Email confirm karna zaroori; tab tak <b>/verify</b> par. Ya <b>Continue with Google</b> (sirf web/PWA; installed iPhone PWA mein button chhupa hai). <b>Production par band</b> jab tak build mein <code>EXPO_PUBLIC_GOOGLE_SIGNIN=1</code> na ho; dev preview par on: Google email pehle se verified hoti hai, seedha onboarding. Agar kisi business ne is email ko pehle add kiya ho to onboarding nahin, seedha us business mein (trial nahin banta).</li>
         <li>Pehle se email/password account hai aur Google se aate hain: wohi account jurta hai (dono tareeqe chalte hain, naam nahin badalta). Kisi ne aap ki email par <b>unconfirmed</b> account bana rakha ho: Google aane par us ka password aur email-login hata diye jaate hain aur naam Google wala ho jata hai (dev par test kiya, 23 Oct 2026).</li>
         <li><b>/onboarding</b> step 1: business naam, slug (booking address, live check), industry. Step 2: pehli location ka naam, country, currency, time zone. Ek transaction mein business + branch + Owner + 14 din trial + booking settings (online booking ON, 24h cancel) ban jaate hain.</li>
         <li>Owner <b>Today</b> par aata hai: "Get ready for your first booking" checklist.</li>

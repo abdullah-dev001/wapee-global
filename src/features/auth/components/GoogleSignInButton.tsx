@@ -4,6 +4,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { Button, Text } from '@/components/ui';
+import { launch } from '@/config/launch';
 import { theme } from '@/lib/theme';
 
 import { useGoogleSignIn } from '../api/useAuthMutations';
@@ -18,7 +19,8 @@ const GOOGLE_G = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><p
 
 /**
  * "Continue with Google" plus an "or" divider, for the login and signup screens. Renders nothing
- * where Google sign-in is not offered (native apps; an installed iOS PWA — see `oauth.ts`).
+ * where Google sign-in is not offered: switched off for this build (`launch.googleSignIn`, env
+ * EXPO_PUBLIC_GOOGLE_SIGNIN), native apps, or an installed iOS PWA (see `oauth.ts`).
  * A failure to START the redirect is shown here; a failure coming BACK is shown by
  * `/auth/callback`.
  */
@@ -27,7 +29,7 @@ export function GoogleSignInButton() {
   const google = useGoogleSignIn();
   const [error, setError] = useState<string | null>(null);
   const available = useMemo(
-    () => isGoogleSignInAvailable(browserAvailabilityInput(Platform.OS)),
+    () => launch.googleSignIn && isGoogleSignInAvailable(browserAvailabilityInput(Platform.OS)),
     [],
   );
 
