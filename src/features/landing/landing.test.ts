@@ -213,7 +213,13 @@ describe('legal page templates (privacy.html, terms.html)', () => {
       );
       expect(template).not.toMatch(/DRAFT|class="draft"|to be set|to be confirmed|once it is final/i);
       expect(template).toMatch(/Last updated: \d{4}-\d{2}-\d{2}/);
+      expect(template).toContain('<p>{{brandName}} is operated by {{operator}}.</p>');
     }
+    const buildScript = nodeFs.readFileSync(
+      nodeFs.join(nodeFs.root, 'scripts/build-landing.mjs'),
+      'utf8',
+    );
+    expect(buildScript).toContain("replaceAll('{{operator}}', brand.operator)");
   });
 });
 

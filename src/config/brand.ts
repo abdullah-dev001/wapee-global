@@ -29,6 +29,11 @@ export const brand = {
    * Switch to 'support@wapee.online' once its forwarding is confirmed.
    */
   supportEmail: 'wapeeglobal@gmail.com',
+  /**
+   * Who operates the service, shown on /terms and /privacy. The name must match the
+   * payment provider's KYC record exactly.
+   */
+  operator: 'Abdullah, Lahore, Pakistan',
   urls: {
     /**
      * The single origin: landing page (/), dashboard and admin (/login, /today, /admin),

@@ -186,6 +186,7 @@ for (const page of ['privacy', 'terms']) {
   const html = readFileSync(join(landingSrc, 'legal', `${page}.html`), 'utf8')
     .replaceAll('{{brandName}}', brand.name)
     .replaceAll('{{supportEmail}}', brand.supportEmail)
+    .replaceAll('{{operator}}', brand.operator)
     .replaceAll('{{siteUrl}}', brand.urls.site);
   if (html.includes('{{')) fail(`legal/${page}.html has an unknown {{placeholder}}.`);
   writeFileSync(join(out, `${page}.html`), html);
