@@ -121,7 +121,7 @@ Approved 2026-10-23: Polar (Merchant of Record) collects businesses' payments to
 
 ## Known limits / TODO
 - No `/billing` route exists yet — it is in the allowed list ready for Phase 8. Today the owner reaches Settings only.
-- `brand.supportEmail` is `support@wapee.online`, the real mailbox.
+- `brand.supportEmail` is `wapeeglobal@gmail.com` (2026-10-24) until `support@wapee.online` forwarding is confirmed; then switch it back in `src/config/brand.ts`.
 - No plan self-service, no checkout, no invoice history (Phase 8, super admin assigns plans by hand).
 
 ## Changelog

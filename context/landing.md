@@ -1,10 +1,12 @@
 # Marketing landing page (+ /refund)
-Status: done · Phase: pre-launch · Last updated: 2026-10-10
+Status: done · Phase: pre-launch · Last updated: 2026-10-24
 
 ## What it does
 - `/` (on the one origin `https://wapee.online`) is a static, pre-rendered marketing page: header, hero, who it's for, how it works, features, pricing (plans + add-ons + compare table), FAQ, CTA band, footer (Terms, Privacy, Refund, support email).
 - `/` is the static landing page for EVERY visitor (signed in or not; no redirect). Auth-aware header: an inline `<head>` script (`authSession.ts`, types stripped, no network, no SDK) reads `sb-<ref>-auth-token` from localStorage (also chunks / `base64-` / `{currentSession}`); a valid, NOT expired session sets `html[data-auth="in"]` and `window.__landingUser`. CSS then shows the signed-in variants (name + "Dashboard" in header and mobile menu; hero + final CTA "Go to Dashboard" to `/today`) and hides "Log in" / "Start free trial"; secondary CTAs stay. An inline script right after the header fills `[data-user-name]` with textContent. Expired (even with a refresh token) / malformed / no JS = signed out. Native app: `app/index.tsx` still redirects to `/today`; in-app (client-side) navigation to `/` does too. PWA `start_url` stays `/today`.
-- `/refund`: Refund Policy, DRAFT for lawyer review, same look as /privacy and /terms (reseller name is a placeholder).
+- `/refund`: Refund Policy, same look as /privacy and /terms; reseller = Polar Software, Inc. (merchant of record), cancel by emailing support.
+- Legal pages (`/privacy`, `/terms`, `/refund`): no DRAFT banner, only a "Last updated" line (privacy/terms: date in the HTML; refund: `REFUND_UPDATED` in `build-landing.mjs`). Governing law Pakistan. Privacy processors: Supabase (Seoul, South Korea), Vercel, Resend, Polar, the browser's push service (no Expo row: native push has no EAS `projectId`; no Google row: Google sign-in is off on prod; no Cloudflare). No backup claim until Supabase Pro (founder decision 2026-10-24). "We" = brand name only (no legal name/address yet). Not lawyer-reviewed.
+- Support email everywhere = `brand.supportEmail` (now `wapeeglobal@gmail.com` until `support@wapee.online` forwarding is confirmed). The DB Auth hook text still says `support@wapee.online` (never shown; matched by regex only).
 
 ## Business rules
 - **No price in code.** Plans and add-ons come at runtime from `get_public_pricing()` (GET, anon key). Skeleton while loading, friendly error + retry + support email on failure, noscript note. A unit test fails on any price literal in the landing source, strings or build script.
@@ -56,12 +58,13 @@ Status: done · Phase: pre-launch · Last updated: 2026-10-10
 
 ## Known limits / TODO
 - `npm run web` (dev server) still shows the app at `/`; preview the landing with `npm run build:web` and serve `dist` (fallback to `/_app/shell`).
-- Refund page: `RESELLER` = `Polar Software, Inc.` (merchant of record per polar.sh/legal/checkout-buyer-terms, checked 2026-10-10), `REFUND_UPDATED` date; lawyer review.
+- Legal pages: lawyer review; legal entity name/address; add Google (privacy) when Google sign-in goes live on prod, Expo when native push is live, backups line when on Supabase Pro; switch `brand.supportEmail` back to `support@wapee.online` once forwarding works.
 - `get_public_pricing` is not rate-limited (a STABLE read of two tiny tables; PostgREST cannot count without writing).
 - `addons.available_plans` is display + admin data only: `set_addon` does not yet refuse enabling an add-on on a plan outside it.
 - Only English; another language = another `i18n/<lang>.json` + a page per language.
 
 ## Changelog
+- 2026-10-24: Legal pages ready for the Polar review: DRAFT banners removed, governing law Pakistan, accurate processor list + Seoul region, deletion text matches the code, refund page explains Polar's role and email cancellation, terms mention add-staff-by-email and Polar; `brand.supportEmail` = `wapeeglobal@gmail.com`; tests guard against draft/placeholder wording.
 - 2026-10-12: Full SEO pass (see the new "SEO" section above): robots meta + Twitter card + OG image dimensions on `/`/`/refund`; canonical/robots/OG added to `privacy.html`/`terms.html`; new `Organization`/`WebSite`/`FAQPage` JSON-LD; brand-style 1200x630 OG image (`scripts/ogImage.mjs`, `sharp` added as a real dependency); `robots.txt`/`sitemap.xml` now Disallow every private app route (derived from the route files, not hand-written); `NoIndexHead` on `(app)`/`(admin)`/new `(auth)` layouts + matching `X-Robots-Tag` headers in `vercel.json`; `/<slug>/book`'s title/description now dynamic (branch name) but still noindex by design.
 - 2026-10-22: Copy made truthful for manual billing: cancelling and changing plans go through support (FAQ, refund policy, fineprint), add-ons say "ask us to enable", the "Ready-made team roles" row is gone (`default_roles` is no longer in `DISPLAY_FEATURES`: nothing enforces it), multi-location and "set up in minutes" claims are now true (booking-page location choice, Today setup checklist). Prices still come from `get_public_pricing()`. English is the only language. Tests added in `landing.test.ts` / `pricingModel.test.ts`.
 - 2026-10-10: `/` no longer redirects signed-in visitors; auth-aware header and CTAs from the stored session (no network); header screenshots `docs/screenshots/landing/header-*`, `menu-mobile-*`.

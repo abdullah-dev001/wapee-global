@@ -21,9 +21,6 @@
         --text: #111827;
         --muted: #4b5563;
         --border: #e5e7eb;
-        --warn-bg: #fffbeb;
-        --warn-bd: #f59e0b;
-        --warn-tx: #78350f;
       }
       * {
         box-sizing: border-box;
@@ -57,15 +54,6 @@
         max-width: 760px;
         margin: 0 auto;
         padding: 24px 16px 64px;
-      }
-      .draft {
-        background: var(--warn-bg);
-        border: 1px solid var(--warn-bd);
-        color: var(--warn-tx);
-        border-radius: 8px;
-        padding: 12px 16px;
-        font-weight: 700;
-        margin-bottom: 24px;
       }
       h1 {
         font-size: 28px;
@@ -109,11 +97,8 @@
   <body>
     <header><a href="/">{{brandName}}</a></header>
     <main>
-      <div class="draft" role="note">
-        DRAFT - replace with reviewed text. This page has not been reviewed by a lawyer.
-      </div>
       <h1>Terms of Service</h1>
-      <p class="muted">Last updated: 2026-10-09</p>
+      <p class="muted">Last updated: 2026-10-24</p>
 
       <p>
         These terms govern your use of {{brandName}}, an appointment booking service. By creating an
@@ -133,8 +118,10 @@
           activity under your account.
         </li>
         <li>
-          The person who creates a business is its Owner and is responsible for the people they
-          invite and the roles they give.
+          The person who creates a business is its Owner. An Owner (or a team member with
+          permission) can add staff by email address; that person gets access when they sign up or
+          sign in with that email. The Owner is responsible for the people they add and the roles they
+          give.
         </li>
         <li>
           You can delete your account at any time (see
@@ -163,7 +150,8 @@
       <h2>5. Plans, trial and payment</h2>
       <p>
         New businesses start with a free trial. Plans and add-ons, and their prices, are shown in
-        the app. Renewal, cancellation and refunds are described in the
+        the app. Subscription payments are handled by Polar Software, Inc. ("Polar"), our reseller
+        and merchant of record. Renewal, cancellation and refunds are described in the
         <a href="/refund">Refund Policy</a>. Online card payments between a business and its clients
         are not part of the service.
       </p>
@@ -184,7 +172,6 @@
       <p>
         To the extent the law allows, {{brandName}} is provided "as is" and we are not liable for
         indirect or lost-profit losses. Nothing here limits liability that cannot be limited by law.
-        (Final wording to be set by a lawyer.)
       </p>
 
       <h2>9. Ending</h2>
@@ -194,7 +181,7 @@
       </p>
 
       <h2>10. Governing law</h2>
-      <p>To be set before launch.</p>
+      <p>These terms are governed by the laws of Pakistan.</p>
 
       <h2>11. Contact</h2>
       <p><a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>

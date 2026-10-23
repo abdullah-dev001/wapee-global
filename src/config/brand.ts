@@ -25,9 +25,10 @@ export const brand = {
   description: 'Appointment booking for salons, clinics, barbers and more.',
   /**
    * Where a customer writes for help — e.g. an inactive business asking to have
-   * a plan assigned. Public support mailbox.
+   * a plan assigned. Public support mailbox, shown in the app, landing and legal pages.
+   * Switch to 'support@wapee.online' once its forwarding is confirmed.
    */
-  supportEmail: 'support@wapee.online',
+  supportEmail: 'wapeeglobal@gmail.com',
   urls: {
     /**
      * The single origin: landing page (/), dashboard and admin (/login, /today, /admin),

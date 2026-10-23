@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { brand } from '@/config/brand';
 import { listFiles, loadNodeFs } from '@/test/nodeFs';
 
 import { isAccountDisabledError } from './accountDisabled';
 
-/** The exact text the Auth hook returns (SQL cannot read brand.ts, so it is checked here). */
-const HOOK_MESSAGE = `This account is disabled. Contact ${brand.supportEmail}`;
+/**
+ * The exact text the Auth hook returns. Only matched by `isAccountDisabledError`, never shown:
+ * the app shows its own `auth.accountDisabled` text with `brand.supportEmail`.
+ */
+const HOOK_MESSAGE = 'This account is disabled. Contact support@wapee.online';
 
 describe('isAccountDisabledError', () => {
   it('matches the Auth hook message', () => {
@@ -19,10 +21,6 @@ describe('isAccountDisabledError', () => {
 });
 
 describe('suspended-account message', () => {
-  it('reads exactly "This account is disabled. Contact <brand.supportEmail>"', () => {
-    expect(HOOK_MESSAGE).toBe('This account is disabled. Contact support@wapee.online');
-  });
-
   it('the LATEST custom_access_token_hook in the migrations returns that exact text', async () => {
     const nodeFs = await loadNodeFs();
     const defining = listFiles(nodeFs, 'supabase/migrations', /\.sql$/)

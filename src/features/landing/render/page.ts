@@ -166,7 +166,7 @@ ${footer(ctx)}
 `;
 }
 
-/** /refund: same look as /privacy and /terms, marked DRAFT. */
+/** /refund: same look as /privacy and /terms. */
 export function renderRefund(
   ctx: PageContext,
   o: { fontCss: string; updated: string; reseller: string | null },
@@ -188,7 +188,6 @@ ${head(ctx, {
 <body class="legal">
 <header class="site-header"><div class="wrap header-row">${logo(ctx)}</div></header>
 <main class="legal-main" id="main">
-  <div class="draft" role="note">${tx(ctx, r.draft)}</div>
   <h1>${tx(ctx, r.title)}</h1>
   <p class="muted">${tx(ctx, r.updated, { date: o.updated })}</p>
   <p>${tx(ctx, r.intro)}</p>

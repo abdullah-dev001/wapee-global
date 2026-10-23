@@ -3,7 +3,7 @@
  *
  *   dist/index.html            the landing page (pre-rendered HTML, no React)
  *   dist/_app/shell.html       Expo's own index.html, kept as the SPA fallback (see vercel.json, public/sw.js)
- *   dist/refund.html           the Refund Policy (DRAFT)
+ *   dist/refund.html           the Refund Policy
  *   dist/privacy.html, dist/terms.html   from src/features/landing/legal/*.html ({{brandName}}, {{supportEmail}})
  *   dist/assets/landing/*      the browser script (content-hashed) and DM Sans font files
  *   dist/icons/og-image.png    Open Graph / Twitter share image (1200x630, brand style; scripts/ogImage.mjs)
@@ -45,7 +45,7 @@ const out = resolve(root, outArg > -1 ? process.argv[outArg + 1] : 'dist');
 const landingSrc = join(root, 'src/features/landing');
 
 /** Date shown on the refund page; bump when its text changes. */
-const REFUND_UPDATED = '2026-10-10';
+const REFUND_UPDATED = '2026-10-24';
 /**
  * Merchant of record shown on the refund page (null shows "[name to be added]").
  * Source: polar.sh/legal/checkout-buyer-terms names "Polar Software, Inc., 3500 South DuPont Highway, Dover, DE,

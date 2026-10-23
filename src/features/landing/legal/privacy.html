@@ -21,9 +21,6 @@
         --text: #111827;
         --muted: #4b5563;
         --border: #e5e7eb;
-        --warn-bg: #fffbeb;
-        --warn-bd: #f59e0b;
-        --warn-tx: #78350f;
       }
       * {
         box-sizing: border-box;
@@ -57,15 +54,6 @@
         max-width: 760px;
         margin: 0 auto;
         padding: 24px 16px 64px;
-      }
-      .draft {
-        background: var(--warn-bg);
-        border: 1px solid var(--warn-bd);
-        color: var(--warn-tx);
-        border-radius: 8px;
-        padding: 12px 16px;
-        font-weight: 700;
-        margin-bottom: 24px;
       }
       h1 {
         font-size: 28px;
@@ -109,11 +97,8 @@
   <body>
     <header><a href="/">{{brandName}}</a></header>
     <main>
-      <div class="draft" role="note">
-        DRAFT - replace with reviewed text. This page has not been reviewed by a lawyer.
-      </div>
       <h1>Privacy Policy</h1>
-      <p class="muted">Last updated: 2026-10-09</p>
+      <p class="muted">Last updated: 2026-10-24</p>
 
       <p>
         {{brandName}} is an appointment booking service for salons, clinics, barbers and similar
@@ -184,36 +169,51 @@
         </tr>
         <tr>
           <td>Supabase</td>
-          <td>Database, sign-in, file storage and server functions.</td>
+          <td>Database, sign-in, file storage and server functions. Region: Seoul, South Korea.</td>
+        </tr>
+        <tr>
+          <td>Vercel</td>
+          <td>Hosting and delivering the website and app.</td>
         </tr>
         <tr>
           <td>Resend</td>
           <td>Sending email (confirmations, reminders, sign-in and reset emails).</td>
         </tr>
         <tr>
-          <td>Expo</td>
-          <td>Delivering push notifications to the mobile app.</td>
+          <td>Polar (Polar Software, Inc.)</td>
+          <td>
+            Subscription payments, as our reseller and merchant of record. Polar collects the
+            payment details; we do not see or store card numbers.
+          </td>
         </tr>
         <tr>
-          <td>Cloudflare</td>
-          <td>Hosting and delivering the website and app.</td>
+          <td>Your browser's push service</td>
+          <td>
+            Delivering web push notifications, only if you turn them on. The service depends on
+            your browser (for example Google for Chrome, Apple for Safari, Mozilla for Firefox).
+          </td>
         </tr>
       </table>
       <p>
-        Data may be processed in countries other than yours. We will list the exact hosting region
-        here once it is final.
+        Our database, sign-in data and stored files are hosted by Supabase in Seoul, South Korea.
+        The other processors above may process data in other countries, so your data may be
+        processed outside the country where you live.
       </p>
 
       <h2>5. How long we keep it</h2>
       <ul>
         <li>Account and business data is kept while the account is active.</li>
         <li>
-          When a business or an account is deleted, the data is removed as described below.
-          Financial records that a business must keep by law are the business's responsibility to
-          export first.
+          When an Owner deletes a business, its data (clients, appointments, invoices, files) is
+          deleted. Financial records that a business must keep by law are the business's
+          responsibility to export first.
+        </li>
+        <li>
+          When you delete your account, your sign-in account is deleted. Appointments and records
+          you created inside a business stay with that business. The only Owner of a business must
+          first delete the business or add another Owner.
         </li>
         <li>Booking links and sign-in links expire automatically.</li>
-        <li>Backups are overwritten on a regular cycle. (Final period to be confirmed.)</li>
       </ul>
 
       <h2>6. Your rights</h2>

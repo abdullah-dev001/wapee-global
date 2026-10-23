@@ -166,8 +166,10 @@ describe('wordmark and hero', () => {
 describe('refund page', () => {
   const html = renderRefund(ctx, { fontCss: '', updated: '2030-01-01', reseller: null });
 
-  it('is marked DRAFT, names the contact email and leaves the reseller to fill', () => {
-    expect(html).toContain('class="draft"');
+  it('has no DRAFT banner, names the contact email and leaves the reseller to fill', () => {
+    expect(html).not.toContain('class="draft"');
+    expect(html).not.toMatch(/DRAFT/);
+    expect(html).toContain('Last updated: 2030-01-01');
     expect(html).toContain('mailto:help@example.com');
     expect(html).toContain(en.refund.resellerPending);
     expect(html).toContain('<link rel="canonical" href="https://example.com/refund">');
@@ -200,6 +202,18 @@ describe('legal page templates (privacy.html, terms.html)', () => {
       'utf8',
     );
     expect(buildScript).toContain("replaceAll('{{siteUrl}}', brand.urls.site)");
+  });
+
+  it('carry no draft banner or unresolved wording, and keep a Last updated line', async () => {
+    const nodeFs = await loadNodeFs();
+    for (const page of ['privacy', 'terms']) {
+      const template = nodeFs.readFileSync(
+        nodeFs.join(nodeFs.root, 'src/features/landing/legal', `${page}.html`),
+        'utf8',
+      );
+      expect(template).not.toMatch(/DRAFT|class="draft"|to be set|to be confirmed|once it is final/i);
+      expect(template).toMatch(/Last updated: \d{4}-\d{2}-\d{2}/);
+    }
   });
 });
 

@@ -242,8 +242,8 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
   <h1>Wapee Product Memory Guide</h1>
   <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
   <div class="badges">
-    <span class="badge lime">Last verified: 23 Oct 2026</span>
-    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">c7d1e34</span> + Polar billing parts 1-3 (branch dev)</span>
+    <span class="badge lime">Last verified: 24 Oct 2026</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">65123f2</span> + legal pages for Polar review (branch dev)</span>
     <span class="badge">Prices dev database se, 11 Oct 2026</span>
   </div>
 </div>
@@ -850,7 +850,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
         <li>Client portal "My data" se copy / erase request → <b>Settings &gt; Data requests</b> (Open / Done / Declined) se run ya decline.</li>
         <li><b>Settings &gt; Delete this business</b> (Owner role, business ka naam type): pehle files, phir sab data. Members ke login accounts nahin mitte.</li>
         <li><b>Settings &gt; Account &gt; Delete my account</b>: apna login mitana (akela Owner ho to refuse). Public explanation page <code>/delete-account</code> (Play Store ke liye).</li>
-      </ol><div class="note">Kuch buttons (export download, requests se "Run erase") click-test nahin hue; backend tests se prove. Privacy/terms abhi DRAFT.</div></div>
+      </ol><div class="note">Kuch buttons (export download, requests se "Run erase") click-test nahin hue; backend tests se prove. Privacy/terms ka DRAFT banner hat gaya; lawyer review baqi.</div></div>
     </div></div></details>
 
     <details class="card"><summary><span class="ct">O. Staff ko email se add karna<small>Team &gt; Add person</small></span><span class="chip partial">Partial</span></summary><div class="cb"><div class="flow-wrap">
@@ -875,7 +875,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <dt>Honesty</dt><dd>Koi price code mein nahin; SMS, widget, online payment, custom domain, testimonials ka dawa nahin (test check karta hai). Sirf English.</dd>
     </dl></div></details>
     <details class="card"><summary><span class="ct">Legal pages: /privacy, /terms, /refund<small>Brand se generate</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
-      <dt>Status</dt><dd>Teeno build par bante hain magar <b>DRAFT</b> hain; lawyer review chahiye. Refund page par reseller Polar Software, Inc.</dd>
+      <dt>Status</dt><dd>Teeno build par bante hain. DRAFT banner hata diya (24 Oct 2026), sirf "Last updated" line. Governing law: Pakistan. Privacy processors: Supabase (Seoul, South Korea), Vercel, Resend, Polar, browser push service. Refund: Polar merchant of record, cancel sirf support email se. Terms: staff email se add, payments Polar. Backups ka koi dawa nahin (Supabase abhi FREE). Support email abhi <code>wapeeglobal@gmail.com</code> (<code>brand.supportEmail</code>). Lawyer review abhi bhi nahin hua.</dd>
     </dl></div></details>
     <details class="card"><summary><span class="ct">PWA install<small>"App ki tarah install"</small></span><span class="chip partial">Partial</span></summary><div class="cb"><dl>
       <dt>Kya</dt><dd>Manifest (start <code>/today</code>, theme #024751), service worker (sirf app shell cache), iPhone ke liye "Add to Home Screen" hint, naye version par "Update available" toast. Internet na ho to "No internet connection" overlay.</dd>
@@ -888,7 +888,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
     <thead><tr><th>URL</th><th>Kya hai</th><th>Kaun</th></tr></thead>
     <tbody>
       <tr><td><code>/</code></td><td>Landing page</td><td>Sab</td></tr>
-      <tr><td><code>/privacy</code> · <code>/terms</code> · <code>/refund</code></td><td>Legal pages (draft)</td><td>Sab</td></tr>
+      <tr><td><code>/privacy</code> · <code>/terms</code> · <code>/refund</code></td><td>Legal pages</td><td>Sab</td></tr>
       <tr><td><code>/signup</code> · <code>/login</code> · <code>/verify</code></td><td>Account banana, sign in, email confirm ka intezar</td><td>Sab</td></tr>
       <tr><td><code>/forgot-password</code> · <code>/reset-password</code></td><td>Password reset</td><td>Sab</td></tr>
       <tr><td><code>/onboarding</code></td><td>Business banane ke 2 steps</td><td>Naya verified user</td></tr>
@@ -1021,7 +1021,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
       <label><input type="checkbox"> wapee.online ka DNS access confirm</label><br>
       <label><input type="checkbox"> Accounts: Vercel Pro, Resend, Supabase Pro, Expo, Apple ($99/yr), Google Play ($25)</label><br>
       <label><input type="checkbox"> support@ aur dmarc@ email forwarding</label><br>
-      <label><input type="checkbox"> Privacy, Terms, Refund lawyer se review (abhi DRAFT)</label><br>
+      <label><input type="checkbox"> Privacy, Terms, Refund lawyer se review (DRAFT banner hat gaya, review baqi)</label><br>
       <label><input type="checkbox"> Super admin kaun hoga (strong password, password manager mein)</label><br>
       <label><input type="checkbox"> Final prices /admin/platform par confirm</label><br>
       <label><input type="checkbox"> Final icons aur splash (abhi placeholder)</label><br>
