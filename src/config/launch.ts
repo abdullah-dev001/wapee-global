@@ -23,4 +23,11 @@ export const launch = {
    * Must stay dot notation so Expo inlines it.
    */
   googleSignIn: isLaunchFlagOn(process.env.EXPO_PUBLIC_GOOGLE_SIGNIN),
+  /**
+   * Self-service plan & add-on checkout (Polar) on the Owner billing screen, plus the
+   * "Choose a plan" button on the trial-ended lock screen. Off unless the build sets
+   * EXPO_PUBLIC_BILLING_CHECKOUT=1. Web/PWA only even when on — the native apps never show a
+   * purchase UI (store policy). Must stay dot notation so Expo inlines it.
+   */
+  billingCheckout: isLaunchFlagOn(process.env.EXPO_PUBLIC_BILLING_CHECKOUT),
 } as const;
