@@ -402,6 +402,171 @@ export type Database = {
           },
         ]
       }
+      billing_products: {
+        Row: {
+          active: boolean
+          created_at: string
+          interval: string
+          key: string
+          kind: string
+          polar_product_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          interval: string
+          key: string
+          kind: string
+          polar_product_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          interval?: string
+          key?: string
+          kind?: string
+          polar_product_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_products_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_subscriptions: {
+        Row: {
+          access_until: string | null
+          business_id: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          followup: string | null
+          interval: string
+          key: string
+          kind: string
+          live: boolean
+          past_due_since: string | null
+          polar_created_at: string
+          polar_customer_id: string
+          polar_modified_at: string
+          polar_product_id: string
+          polar_status: string
+          polar_subscription_id: string
+          seats: number | null
+          updated_at: string
+        }
+        Insert: {
+          access_until?: string | null
+          business_id: string
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          followup?: string | null
+          interval: string
+          key: string
+          kind: string
+          live: boolean
+          past_due_since?: string | null
+          polar_created_at: string
+          polar_customer_id: string
+          polar_modified_at: string
+          polar_product_id: string
+          polar_status: string
+          polar_subscription_id: string
+          seats?: number | null
+          updated_at?: string
+        }
+        Update: {
+          access_until?: string | null
+          business_id?: string
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          followup?: string | null
+          interval?: string
+          key?: string
+          kind?: string
+          live?: boolean
+          past_due_since?: string | null
+          polar_created_at?: string
+          polar_customer_id?: string
+          polar_modified_at?: string
+          polar_product_id?: string
+          polar_status?: string
+          polar_subscription_id?: string
+          seats?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_webhook_events: {
+        Row: {
+          attempts: number
+          business_id: string | null
+          error: string | null
+          event_type: string
+          polar_subscription_id: string | null
+          processed_at: string | null
+          received_at: string
+          result: string | null
+          webhook_id: string
+        }
+        Insert: {
+          attempts?: number
+          business_id?: string | null
+          error?: string | null
+          event_type: string
+          polar_subscription_id?: string | null
+          processed_at?: string | null
+          received_at?: string
+          result?: string | null
+          webhook_id: string
+        }
+        Update: {
+          attempts?: number
+          business_id?: string | null
+          error?: string | null
+          event_type?: string
+          polar_subscription_id?: string | null
+          processed_at?: string | null
+          received_at?: string
+          result?: string | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_webhook_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_manage_tokens: {
         Row: {
           appointment_id: string
@@ -723,27 +888,36 @@ export type Database = {
       }
       business_addons: {
         Row: {
+          access_until: string | null
           addon_key: string
           business_id: string
           created_at: string
           enabled: boolean
           enabled_by: string | null
+          polar_detached_at: string | null
+          source: string
           updated_at: string
         }
         Insert: {
+          access_until?: string | null
           addon_key: string
           business_id: string
           created_at?: string
           enabled?: boolean
           enabled_by?: string | null
+          polar_detached_at?: string | null
+          source?: string
           updated_at?: string
         }
         Update: {
+          access_until?: string | null
           addon_key?: string
           business_id?: string
           created_at?: string
           enabled?: boolean
           enabled_by?: string | null
+          polar_detached_at?: string | null
+          source?: string
           updated_at?: string
         }
         Relationships: [
@@ -843,36 +1017,42 @@ export type Database = {
       business_subscriptions: {
         Row: {
           assigned_by: string | null
+          billing_source: string
           business_id: string
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
           notes: string | null
           plan: Database["public"]["Enums"]["business_plan"] | null
+          polar_detached_at: string | null
           status: Database["public"]["Enums"]["business_status"]
           trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
           assigned_by?: string | null
+          billing_source?: string
           business_id: string
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           notes?: string | null
           plan?: Database["public"]["Enums"]["business_plan"] | null
+          polar_detached_at?: string | null
           status?: Database["public"]["Enums"]["business_status"]
           trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
           assigned_by?: string | null
+          billing_source?: string
           business_id?: string
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           notes?: string | null
           plan?: Database["public"]["Enums"]["business_plan"] | null
+          polar_detached_at?: string | null
           status?: Database["public"]["Enums"]["business_status"]
           trial_ends_at?: string | null
           updated_at?: string
@@ -5395,6 +5575,90 @@ export type Database = {
         }
         Returns: Json
       }
+      billing_apply_subscription: { Args: { p_snapshot: Json }; Returns: Json }
+      billing_begin_event: {
+        Args: {
+          p_subscription_id: string
+          p_type: string
+          p_webhook_id: string
+        }
+        Returns: Json
+      }
+      billing_cleanup_events: { Args: never; Returns: number }
+      billing_derive: { Args: { p_business_id: string }; Returns: Json }
+      billing_finish_event: {
+        Args: {
+          p_business_id: string
+          p_error: string
+          p_result: string
+          p_webhook_id: string
+        }
+        Returns: Json
+      }
+      billing_followups: { Args: { p_business_id: string }; Returns: Json }
+      billing_grace: { Args: never; Returns: string }
+      billing_mark_followup: {
+        Args: { p_reason: string; p_subscription_id: string }
+        Returns: Json
+      }
+      billing_monthly_equivalent: {
+        Args: {
+          p_interval: string
+          p_key: string
+          p_kind: string
+          p_seats: number
+        }
+        Returns: number
+      }
+      billing_paid_seats: { Args: { p_business_id: string }; Returns: number }
+      billing_prepare: {
+        Args: { p_action: string; p_args?: Json; p_business_id: string }
+        Returns: Json
+      }
+      billing_primary: {
+        Args: { p_business_id: string; p_key: string; p_kind: string }
+        Returns: {
+          access_until: string | null
+          business_id: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          followup: string | null
+          interval: string
+          key: string
+          kind: string
+          live: boolean
+          past_due_since: string | null
+          polar_created_at: string
+          polar_customer_id: string
+          polar_modified_at: string
+          polar_product_id: string
+          polar_status: string
+          polar_subscription_id: string
+          seats: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "billing_subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      billing_reconcile_targets: { Args: never; Returns: Json }
+      billing_record_refund: {
+        Args: {
+          p_business_id: string
+          p_currency: string
+          p_order_id: string
+          p_reason: string
+          p_refunded_minor: number
+          p_subscription_id: string
+        }
+        Returns: Json
+      }
       bp_of: { Args: { p_part: number; p_whole: number }; Returns: number }
       branch_admin_gate: { Args: { p_business_id: string }; Returns: Json }
       branch_archive_blockers: { Args: { p_branch_id: string }; Returns: Json }
@@ -5963,6 +6227,7 @@ export type Database = {
           total: number
         }[]
       }
+      invoke_billing_reconcile: { Args: never; Returns: number }
       invoke_outbox_worker: { Args: never; Returns: number }
       is_allowed_appointment_transition: {
         Args: {
@@ -6643,6 +6908,20 @@ export type Database = {
           p_monthly_minor: number
           p_name?: string
         }
+        Returns: Json
+      }
+      set_billing_product: {
+        Args: {
+          p_active?: boolean
+          p_interval: string
+          p_key: string
+          p_kind: string
+          p_product_id: string
+        }
+        Returns: Json
+      }
+      set_billing_source: {
+        Args: { p_business_id: string; p_source: string }
         Returns: Json
       }
       set_business_status: {

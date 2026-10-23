@@ -1,5 +1,9 @@
 # Handoff
-Last updated: 2026-10-23 · Branch: `dev`.
+Last updated: 2026-10-24 · Branch: `dev`.
+
+**Legal pages for the Polar review (2026-10-24, dev)** — `context/landing.md`. DRAFT banners gone, governing law Pakistan, real processor list (Supabase Seoul, Vercel, Resend, Polar, browser push), refund page explains Polar + email cancellation, no backup claim until Supabase Pro. `brand.supportEmail` = `wapeeglobal@gmail.com` (one value) until `support@wapee.online` forwarding is confirmed. Operator line from `brand.operator` ("Abdullah, Lahore, Pakistan"). dev merged into main (no db push). Open: lawyer review, Google/Expo/backup lines later.
+
+**Polar subscription billing (2026-10-23, DEV ONLY, in progress)** — `context/billing.md` ("Polar subscription billing"). Parts 1-3 done on dev: `20261027100000_billing_schema` (suite 52, 61), `20261027110000_billing_apply` (suite 53, 77), `20261027120000_billing_actions` (suite 54, 52) + Edge Functions `billing`, `polar_webhook`, `billing_reconcile` deployed to dev WITHOUT Polar secrets (they answer not_configured). Waiting on the founder's Polar sandbox setup (18 products, not 14). Next: then STOP for the founder's Polar sandbox setup (one customer holding plan + add-on subscriptions must be verified first), then part 4 UI. Prod untouched.
 
 **Google button launch flag (2026-10-23, dev)** — `launch.googleSignIn` from `EXPO_PUBLIC_GOOGLE_SIGNIN` (default OFF; on only for `1`/`true`). Production build: leave unset until Google is configured on prod, then set `1` and rebuild. Dev preview / local: `1`. Details `context/auth.md`.
 

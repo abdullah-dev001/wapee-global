@@ -258,5 +258,4 @@ export const legalCss = `
 .legal-main h2 { font-size: ${px(fontSize['4xl'])}; margin: ${px(spacing[32])} 0 ${px(spacing[8])}; }
 .legal-main p { margin: 0 0 ${px(spacing[12])}; }
 .legal-main .muted { color: var(--text-2); font-size: ${px(fontSize.base)}; }
-.draft { background: ${colors.warningLight}; border: 1px solid ${colors.warning}; color: ${colors.warningText}; border-radius: var(--r-md); padding: ${px(spacing[12])} ${px(spacing[16])}; font-weight: 700; margin-bottom: ${px(spacing[24])}; }
 `;

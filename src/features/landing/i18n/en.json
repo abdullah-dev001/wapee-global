@@ -258,7 +258,6 @@
   "refund": {
     "title": "Refund Policy",
     "metaDescription": "How trials, renewals, cancellations and refunds work for {{name}} subscriptions.",
-    "draft": "DRAFT - replace with reviewed text. This page has not been reviewed by a lawyer.",
     "updated": "Last updated: {{date}}",
     "intro": "This policy explains how trials, renewals, cancellations and refunds work for {{name}} subscriptions.",
     "sections": {
@@ -272,7 +271,7 @@
       },
       "cancel": {
         "title": "3. Cancelling",
-        "body": "To cancel, email us at {{email}}. After you cancel, you keep access until the end of the period you have already paid for, and you are not charged again."
+        "body": "To cancel a plan or an add-on, email us at {{email}} and we will cancel it for you. After you cancel, you keep access until the end of the period you have already paid for, and you are not charged again."
       },
       "refunds": {
         "title": "4. Refunds",
@@ -281,7 +280,7 @@
       },
       "reseller": {
         "title": "5. Who processes your payment",
-        "body": "Payments are processed by our reseller and merchant of record, {{reseller}}, who appears on your receipt and bank statement."
+        "body": "Subscriptions are sold and billed by {{reseller}} (\"Polar\"), our reseller and merchant of record. Polar takes your payment and appears on your receipt and bank statement. Send refund requests to us; any refund we approve under this policy is issued through Polar."
       },
       "contact": {
         "title": "6. Contact",
