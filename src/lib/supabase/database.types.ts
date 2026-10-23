@@ -5575,7 +5575,43 @@ export type Database = {
         }
         Returns: Json
       }
+      billing_apply_subscription: { Args: { p_snapshot: Json }; Returns: Json }
+      billing_begin_event: {
+        Args: {
+          p_subscription_id: string
+          p_type: string
+          p_webhook_id: string
+        }
+        Returns: Json
+      }
+      billing_derive: { Args: { p_business_id: string }; Returns: Json }
+      billing_finish_event: {
+        Args: {
+          p_business_id: string
+          p_error: string
+          p_result: string
+          p_webhook_id: string
+        }
+        Returns: Json
+      }
+      billing_followups: { Args: { p_business_id: string }; Returns: Json }
+      billing_grace: { Args: never; Returns: string }
+      billing_mark_followup: {
+        Args: { p_reason: string; p_subscription_id: string }
+        Returns: Json
+      }
       billing_paid_seats: { Args: { p_business_id: string }; Returns: number }
+      billing_record_refund: {
+        Args: {
+          p_business_id: string
+          p_currency: string
+          p_order_id: string
+          p_reason: string
+          p_refunded_minor: number
+          p_subscription_id: string
+        }
+        Returns: Json
+      }
       bp_of: { Args: { p_part: number; p_whole: number }; Returns: number }
       branch_admin_gate: { Args: { p_business_id: string }; Returns: Json }
       branch_archive_blockers: { Args: { p_branch_id: string }; Returns: Json }

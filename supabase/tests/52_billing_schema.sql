@@ -271,6 +271,8 @@ end $$;
 -- 7. Deleting a business with billing rows cascades
 -- ---------------------------------------------------------------------------
 insert into public.billing_webhook_events (webhook_id, event_type, business_id) values ('bs52-evt-1', 'subscription.updated', pg_temp.id('biza'));
+-- As the system (no signed-in user), like the tenant-delete path.
+select set_config('request.jwt.claims', '', true);
 select pg_temp.chk('delete from businesses with billing rows: ok',
   pg_temp.q(format($q$with d as (delete from public.businesses where id = %L returning 1) select count(*)::text from d$q$, pg_temp.id('biza'))), '1');
 select pg_temp.chk('...its billing subscriptions are gone',

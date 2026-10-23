@@ -1,7 +1,7 @@
 # Handoff
 Last updated: 2026-10-23 · Branch: `dev`.
 
-**Polar subscription billing (2026-10-23, DEV ONLY, in progress)** — `context/billing.md` ("Polar subscription billing"). Part 1 done: migration `20261027100000_billing_schema` on dev, suite 52 (61). Next: part 2 `billing_apply_subscription`, part 3 Edge Functions, then STOP for the founder's Polar sandbox setup (one customer holding plan + add-on subscriptions must be verified first), then part 4 UI. Prod untouched.
+**Polar subscription billing (2026-10-23, DEV ONLY, in progress)** — `context/billing.md` ("Polar subscription billing"). Parts 1-2 done on dev: `20261027100000_billing_schema` (suite 52, 61), `20261027110000_billing_apply` (suite 53, 77). Next: part 3 Edge Functions, then STOP for the founder's Polar sandbox setup (one customer holding plan + add-on subscriptions must be verified first), then part 4 UI. Prod untouched.
 
 **Google button launch flag (2026-10-23, dev)** — `launch.googleSignIn` from `EXPO_PUBLIC_GOOGLE_SIGNIN` (default OFF; on only for `1`/`true`). Production build: leave unset until Google is configured on prod, then set `1` and rebuild. Dev preview / local: `1`. Details `context/auth.md`.
 
