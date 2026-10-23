@@ -5584,6 +5584,7 @@ export type Database = {
         }
         Returns: Json
       }
+      billing_cleanup_events: { Args: never; Returns: number }
       billing_derive: { Args: { p_business_id: string }; Returns: Json }
       billing_finish_event: {
         Args: {
@@ -5600,7 +5601,53 @@ export type Database = {
         Args: { p_reason: string; p_subscription_id: string }
         Returns: Json
       }
+      billing_monthly_equivalent: {
+        Args: {
+          p_interval: string
+          p_key: string
+          p_kind: string
+          p_seats: number
+        }
+        Returns: number
+      }
       billing_paid_seats: { Args: { p_business_id: string }; Returns: number }
+      billing_prepare: {
+        Args: { p_action: string; p_args?: Json; p_business_id: string }
+        Returns: Json
+      }
+      billing_primary: {
+        Args: { p_business_id: string; p_key: string; p_kind: string }
+        Returns: {
+          access_until: string | null
+          business_id: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          followup: string | null
+          interval: string
+          key: string
+          kind: string
+          live: boolean
+          past_due_since: string | null
+          polar_created_at: string
+          polar_customer_id: string
+          polar_modified_at: string
+          polar_product_id: string
+          polar_status: string
+          polar_subscription_id: string
+          seats: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "billing_subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      billing_reconcile_targets: { Args: never; Returns: Json }
       billing_record_refund: {
         Args: {
           p_business_id: string
@@ -6180,6 +6227,7 @@ export type Database = {
           total: number
         }[]
       }
+      invoke_billing_reconcile: { Args: never; Returns: number }
       invoke_outbox_worker: { Args: never; Returns: number }
       is_allowed_appointment_transition: {
         Args: {
