@@ -1,12 +1,14 @@
-import { Lock, Mail } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { CreditCard, Lock, Mail } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Linking, Platform, StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
 import { Button, Card, Text } from '@/components/ui';
 import { brand } from '@/config/brand';
+import { launch } from '@/config/launch';
 import { useSignOut } from '@/features/auth';
-import { useCurrentScope } from '@/lib/permissions';
+import { useCurrentScope, usePermission } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 
 /**
@@ -23,8 +25,18 @@ import { theme } from '@/lib/theme';
  */
 export function TrialEndedScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { business } = useCurrentScope();
   const signOut = useSignOut();
+  const canBilling = usePermission('settings.billing').allowed;
+
+  // Owners can self-serve a plan from here when checkout is on (web/PWA only). Suspended
+  // businesses are a support matter, so they still only get "Contact us".
+  const showChoosePlan =
+    launch.billingCheckout &&
+    Platform.OS === 'web' &&
+    canBilling &&
+    business?.status !== 'suspended';
 
   const email = `mailto:${brand.supportEmail}?subject=${encodeURIComponent(
     t('billing.locked.emailSubject', { business: business?.name ?? '' }),
@@ -62,8 +74,19 @@ export function TrialEndedScreen() {
           </Text>
 
           <View style={styles.actions}>
+            {showChoosePlan ? (
+              <Button
+                fullWidth
+                startIcon={CreditCard}
+                onPress={() => router.push('/settings/billing')}
+              >
+                {t('billing.locked.choosePlan')}
+              </Button>
+            ) : null}
+
             <Button
               fullWidth
+              variant={showChoosePlan ? 'secondary' : 'primary'}
               startIcon={Mail}
               onPress={() => {
                 void Linking.openURL(email);
