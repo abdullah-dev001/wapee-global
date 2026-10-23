@@ -243,7 +243,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
   <p>Founder ke liye ek jagah poori yaad-dasht: har feature, har add-on, har plan rule aur har workflow. Sab kuch <b>asal code</b> se check kiya gaya hai, purane planning docs se nahin. Jo cheez kaam nahin karti, wo saaf likhi hai.</p>
   <div class="badges">
     <span class="badge lime">Last verified: 23 Oct 2026</span>
-    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">1d261c0</span> + Google launch flag (branch dev)</span>
+    <span class="badge">Commit <span class="mono" style="background:transparent;color:#fff">c7d1e34</span> + Polar billing part 1 (branch dev)</span>
     <span class="badge">Prices dev database se, 11 Oct 2026</span>
   </div>
 </div>
@@ -365,7 +365,7 @@ footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
         <li><b>Paid period end</b> (<code>current_period_end</code>) save hota hai magar <b>koi use check nahin karta</b> <span class="chip display">Display-only</span>. Active business khud kabhi lock nahin hota; paise band hon to super admin khud inactive ya suspended karega.</li>
         <li>Monthly / yearly aur "per location" price sirf dikhte hain, kahin charge nahin hote.</li>
       </ul></dd>
-      <dt>Planned (baad mein)</dt><dd>Polar (merchant of record) se online checkout: checkout aur webhook Edge Functions, plan auto-assign, past-due rule. Refund page par reseller "Polar Software, Inc." pehle se likha hai. Polar ka koi code abhi nahin <span class="chip missing">Missing</span>.</dd>
+      <dt>Planned (baad mein)</dt><dd>Polar (merchant of record) se online checkout: checkout aur webhook Edge Functions, plan auto-assign, past-due rule. Refund page par reseller "Polar Software, Inc." pehle se likha hai. Faisla (23 Oct 2026): plans <b>aur</b> add-ons dono khud-ba-khud (har add-on ki alag chhoti Polar subscription), manual billing sirf super admin override. <b>Dev par kaam jari</b>: database hissa (part 1) ban gaya; super admin ka "Assign plan" / add-on toggle ab business ko Polar se alag (manual) kar deta hai. Checkout abhi nahin <span class="chip partial">Partial</span>.</dd>
     </dl></div></details>
   </div>
 </section>
