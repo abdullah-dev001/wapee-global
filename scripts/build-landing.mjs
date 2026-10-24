@@ -146,6 +146,7 @@ const ctx = {
   year: new Date().getUTCFullYear(),
   paths: {
     dashboard: '/today',
+    billing: '/settings/billing',
     login: '/login',
     signup: '/signup',
     terms: '/terms',

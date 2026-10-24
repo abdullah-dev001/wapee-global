@@ -8,6 +8,7 @@ import {
   interpolate,
   parsePublicPricing,
   perMonthMinor,
+  planChoiceHref,
   planHighlights,
   yearlyMonthsFree,
   type PublicPricing,
@@ -226,5 +227,21 @@ describe('what each plan includes (from the gating flags)', () => {
 describe('interpolate', () => {
   it('fills known placeholders and leaves unknown ones', () => {
     expect(interpolate('{{a}} and {{b}}', { a: 1 })).toBe('1 and {{b}}');
+  });
+});
+
+describe('planChoiceHref', () => {
+  it('carries the plan and the toggle as the app expects (month | year)', () => {
+    expect(planChoiceHref('/signup', 'team', 'monthly')).toBe('/signup?plan=team&interval=month');
+    expect(planChoiceHref('/signup', 'business', 'yearly')).toBe(
+      '/signup?plan=business&interval=year',
+    );
+    expect(planChoiceHref('/settings/billing', 'solo', 'yearly')).toBe(
+      '/settings/billing?plan=solo&interval=year',
+    );
+  });
+
+  it('encodes the key', () => {
+    expect(planChoiceHref('/signup', 'a&b', 'monthly')).toBe('/signup?plan=a%26b&interval=month');
   });
 });

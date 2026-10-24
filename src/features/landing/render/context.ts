@@ -19,6 +19,8 @@ export type PageContext = {
     refund: string;
     /** Where a signed-in visitor goes (the app). */
     dashboard: string;
+    /** Where a signed-in visitor's plan button goes (with `?plan=…&interval=…`). */
+    billing: string;
   };
 };
 

@@ -16,6 +16,7 @@ import {
   interpolate,
   parsePublicPricing,
   perMonthMinor,
+  planChoiceHref,
   planHighlights,
   POPULAR_PLAN,
   yearlyMonthsFree,
@@ -33,6 +34,8 @@ export type LandingConfig = {
   apiKey: string;
   locale: string;
   signupPath: string;
+  /** Where a signed-in visitor's plan button goes (the app's Billing screen). */
+  billingPath: string;
   jsonLd: Record<string, unknown>;
   strings: PricingStrings;
 };
@@ -133,7 +136,8 @@ function planCard(data: PublicPricing, index: number, period: Period, cfg: Landi
   <p class="plan-for">${forLine(plan, s)}</p>
   <p class="plan-price"><span class="plan-amount">${escapeHtml(amount)}</span> <span class="plan-unit">${t(plan.perBranch ? s.perBranchMonth : s.perMonth)}</span></p>
   <p class="plan-billed">${billed}</p>
-  <a class="btn ${popular ? 'btn-primary' : 'btn-outline'} btn-block" href="${escapeHtml(cfg.signupPath)}">${t(s.cta)}</a>
+  <a class="btn ${popular ? 'btn-primary' : 'btn-outline'} btn-block auth-out" href="${escapeHtml(planChoiceHref(cfg.signupPath, plan.key, period))}">${t(s.cta)}</a>
+  <a class="btn ${popular ? 'btn-primary' : 'btn-outline'} btn-block auth-in" href="${escapeHtml(planChoiceHref(cfg.billingPath, plan.key, period))}">${t(s.ctaSignedIn)}</a>
   <ul class="checks">${checks}</ul>
 </article>`;
 }

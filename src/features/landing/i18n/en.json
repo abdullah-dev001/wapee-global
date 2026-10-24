@@ -136,6 +136,7 @@
     "billedYearlyPerBranch": "Billed {{amount}} per location per year",
     "billedMonthly": "Billed monthly",
     "cta": "Start 14-day free trial",
+    "ctaSignedIn": "Choose this plan",
     "everythingIn": "Everything in {{plan}}, plus:",
     "fineprint": "No credit card needed for the trial. Cancel by contacting us. Prices in USD, taxes may apply.",
     "loading": "Loading prices",
