@@ -15,6 +15,7 @@ import { AuthLayout } from '@/features/auth';
 import { authErrorKey } from '@/features/auth/authErrorKey';
 import { isDeletedUserError, useDeletedAccountNotice } from '@/features/auth/deletedAccount';
 import { useCreateBusiness, useSlugAvailable } from '@/features/onboarding/api/useBusiness';
+import { TeamSizeQuestion } from '@/features/onboarding/components/TeamSizeQuestion';
 import { getSupabase } from '@/lib/supabase';
 import {
   onboardingSchema,
@@ -244,6 +245,8 @@ export default function OnboardingScreen() {
                 />
               )}
             />
+
+            <TeamSizeQuestion />
 
             <Button fullWidth size="lg" onPress={goNext}>
               {t('onboarding.actions.continue')}
