@@ -18,7 +18,6 @@ import { brand } from '@/config/brand';
 import {
   addonOffered,
   formatAmount,
-  perMonthMinor,
   type Period,
   type PublicAddon,
   type PublicPlan,
@@ -313,7 +312,11 @@ function PlanCard({
   onUncancel: () => void;
 }) {
   const { t } = useTranslation();
-  const price = formatAmount(perMonthMinor(plan, period), plan.currency, locale);
+  const price = formatAmount(
+    period === 'yearly' ? plan.annualMinor : plan.monthlyMinor,
+    plan.currency,
+    locale,
+  );
   const unitLabel = plan.perBranch
     ? period === 'yearly'
       ? t('plans.billing.checkout.perSeatYear', { price })
