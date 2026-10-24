@@ -14,11 +14,16 @@ import { ServiceWorkerUpdater } from '@/components/layout/ServiceWorkerUpdater';
 import { ToastProvider } from '@/components/ui';
 import { AdminAccessGate } from '@/features/admin/components';
 import { AuthGate, SessionProvider } from '@/features/auth';
+import { captureIntentFromUrl } from '@/features/billing/planIntentStore';
 import { useTabletOrientation } from '@/lib/device/useTabletOrientation';
 import { applyDirection, i18n } from '@/lib/i18n';
 import { queryClient, useAppFocusManager, useOnlineManager } from '@/lib/query';
 import { useSupabaseAutoRefresh } from '@/lib/supabase';
 import { theme, useAppFonts } from '@/lib/theme';
+
+// A landing plan button's `?plan=…&interval=…`, saved before the router or an auth
+// redirect can touch the address. No-op on native.
+captureIntentFromUrl();
 
 // Keep the native splash visible until fonts are ready. No-op on web.
 void SplashScreen.preventAutoHideAsync();
