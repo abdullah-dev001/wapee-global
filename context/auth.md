@@ -81,6 +81,8 @@ from the running app, not assumed:
 
 All four are configured in the dashboard. Add the real domain's two paths at launch.
 
+**Signup / resend confirmation carry the plan choice** (2026-10-24): `verifyRedirect()` = `/verify?plan=…&interval=…` when a choice is saved, so a link opened on another device still brings it. Probed live on dev 2026-10-24: `/auth/v1/verify?redirect_to=http://localhost:8090/verify?plan=team&interval=year` keeps the query (a foreign host falls back to Site URL), and the dev "Confirm sign up" template is the default (`{{ .ConfirmationURL }}`, no custom SMTP, no send-email hook). Prod entry `https://wapee.online/**` must match the query too (see _handoff).
+
 **Google (`signInWithOAuth`, implicit flow like the email links):** redirect `<origin>/auth/callback` must be in Redirect URLs (dev: `http://localhost:8090/auth/callback`; prod: `https://wapee.online/auth/callback`). Provider config lives in the dashboard (Authentication > Sign In / Providers > Google) with a Google Cloud OAuth client per project whose **Authorized redirect URI** is the Supabase callback, with `/v1/`: dev `https://rfuovquhultjydtswtqf.supabase.co/auth/v1/callback`, prod `https://bvnurpuqrcwfqguxniio.supabase.co/auth/v1/callback` (not `/auth/callback`, which is the APP's return page and goes in Supabase's Redirect URLs instead); `config.toml` has a disabled local block reading env vars.
 
 ## Data & caching
@@ -110,6 +112,7 @@ display text and can be reused server-side.
 
 ## Changelog
 - 2026-10-23: Google button behind a build-time launch flag: `launch.googleSignIn` (`EXPO_PUBLIC_GOOGLE_SIGNIN=1`/`true`, default OFF). Production stays hidden until the Google provider is set up there; local `.env` and dev preview set it to 1. Verified on web: flag off = no button (375, 1440), flag on = button (375, 1440). `/auth/callback` stays routable either way (harmless).
+- 2026-10-24: Signup and resend `emailRedirectTo` carry `?plan=&interval=` (`verifyRedirect`). Dev allow-list / template checked, no dashboard change needed.
 - 2026-10-23: Part C (super admin password-only): reset-password's TOTP step-up removed (no account has a factor any more); `isInsufficientAalError` removed; Google callback maps the super admin refusal; Google redirect URI documented exactly (with `/v1/`).
 - 2026-10-23: "Continue with Google" (web / PWA; hidden in installed iOS PWA): `useGoogleSignIn`, `GoogleSignInButton`, `/auth/callback`, `oauth.ts` (+tests), `Button.startElement`, verify-screen hint, `vercel.json` noindex for `auth/*`, local `config.toml` block (disabled). Profile name follows the verified identity (`20261026113000`). Verified live on dev with a real Google account (A3, A4, G1) and Playwright cold returns; see the "Google sign-in" section.
 - 2026-10-23: `AuthGate` claims pending "add by email" memberships (`useClaimPendingMemberships`, members feature) once the session is verified and waits for that FIRST claim (`waitForClaim` in `authGateDecision`) before it may send a business-less user to `/onboarding`; the `/accept-invite` exemptions were removed (the page is now a retired-link notice); `shouldWaitForRejoin` lost its accept-invite argument; `useSignup` lost `confirmRedirectPath`. Tests in `gateSettled.test.ts`. Verified live on dev: `/login` -> `/today` with no `/onboarding` in between for an added user.

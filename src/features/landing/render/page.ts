@@ -122,6 +122,7 @@ export function renderLanding(ctx: PageContext, assets: LandingAssets): string {
     apiKey: assets.apiKey,
     locale: 'en',
     signupPath: ctx.paths.signup,
+    billingPath: ctx.paths.billing,
     jsonLd,
     strings: ctx.s.pricing,
   };

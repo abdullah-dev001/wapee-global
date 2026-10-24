@@ -238,7 +238,19 @@
       "timezoneRequired": "Pick a timezone"
     },
     "creating": "Creating your business…",
-    "locationIntro": "These settings belong to this location. If you add more locations later, each one can have its own country, currency and timezone."
+    "locationIntro": "These settings belong to this location. If you add more locations later, each one can have its own country, currency and timezone.",
+    "teamSize": {
+      "label": "How many people work here?",
+      "placeholder": "Optional",
+      "hint": "Optional. We use it to suggest a plan for after your free trial.",
+      "justMe": "Just me",
+      "exactly": "{{count}} people",
+      "range": "{{min}} to {{max}} people",
+      "atLeast": "{{count}} or more people",
+      "suggested": "Suggested plan: {{plan}}. Your free trial includes everything either way.",
+      "picked": "You picked {{plan}} on our pricing page. You can change it any time.",
+      "pickTooSmall": "You picked {{plan}}, which allows up to {{count}} staff. You can choose a bigger plan in Billing any time."
+    }
   },
   "permissions": {
     "noAccess": {
@@ -1995,6 +2007,7 @@
         "billedYearly": "Billed {{price}} a year",
         "subscribe": "Subscribe",
         "currentBadge": "Current plan",
+        "pickedBadge": "Your pick",
         "switchTo": "Switch to this plan",
         "manage": "Manage payment & invoices",
         "cancel": "Cancel plan",

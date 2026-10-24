@@ -172,6 +172,15 @@ export function perMonthMinor(item: Priced, period: Period): number {
 }
 
 /**
+ * A plan button's link. The app saves `plan` / `interval` at startup
+ * (`features/billing/planIntent.ts`) and preselects that plan on the Billing screen.
+ */
+export function planChoiceHref(path: string, planKey: string, period: Period): string {
+  const interval = period === 'yearly' ? 'year' : 'month';
+  return `${path}?plan=${encodeURIComponent(planKey)}&interval=${interval}`;
+}
+
+/**
  * Months free with yearly billing, when every plan gives the same whole number
  * (e.g. pay 10 x monthly = 2 months free). Null when it differs or is not positive.
  */

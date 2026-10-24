@@ -2,6 +2,8 @@ import { useMutation, type UseMutationResult } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
+import { planIntentQuery } from '@/features/billing/planIntent';
+import { readPlanIntent } from '@/features/billing/planIntentStore';
 import { disablePush } from '@/lib/push';
 import { getSupabase } from '@/lib/supabase';
 
@@ -40,6 +42,17 @@ function toError(error: { message: string; code?: string; status?: number } | nu
   wrapped.code = error.code;
   wrapped.status = error.status;
   throw wrapped;
+}
+
+/**
+ * Where the email confirmation link lands. It carries the visitor's plan choice
+ * (`?plan=…&interval=…`) so it survives a link opened on another device, where this
+ * browser's localStorage is not available; the root layout saves it again on arrival.
+ * Accepted by the redirect allow-list as long as the path's entry matches the query too
+ * (dev: checked live 2026-10-24; prod: `https://wapee.online/**`).
+ */
+function verifyRedirect(): string {
+  return redirectTo(`/verify${planIntentQuery(readPlanIntent())}`);
 }
 
 export function useLogin(): UseMutationResult<void, Error, LoginValues> {
@@ -89,7 +102,7 @@ export function useSignup(): UseMutationResult<SignupResult, Error, SignupValues
         options: {
           // Copied into profiles by the handle_new_user trigger.
           data: { full_name: fullName },
-          emailRedirectTo: redirectTo('/verify'),
+          emailRedirectTo: verifyRedirect(),
         },
       });
       toError(error);
@@ -125,7 +138,7 @@ export function useResendVerification(): UseMutationResult<void, Error, { email:
       const { error } = await getSupabase().auth.resend({
         type: 'signup',
         email,
-        options: { emailRedirectTo: redirectTo('/verify') },
+        options: { emailRedirectTo: verifyRedirect() },
       });
       toError(error);
     },

@@ -19,6 +19,7 @@ const ctx: PageContext = {
     privacy: '/privacy',
     refund: '/refund',
     dashboard: '/today',
+    billing: '/settings/billing',
   },
 };
 const assets = {
