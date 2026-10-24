@@ -1995,6 +1995,7 @@
         "billedYearly": "Billed {{price}} a year",
         "subscribe": "Subscribe",
         "currentBadge": "Current plan",
+        "pickedBadge": "Your pick",
         "switchTo": "Switch to this plan",
         "manage": "Manage payment & invoices",
         "cancel": "Cancel plan",

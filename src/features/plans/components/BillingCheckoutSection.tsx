@@ -1,10 +1,9 @@
 import { CreditCard, Mail } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import {
-  Badge,
   Button,
   Card,
   Dialog,
@@ -15,13 +14,9 @@ import {
   useToast,
 } from '@/components/ui';
 import { brand } from '@/config/brand';
-import {
-  addonOffered,
-  formatAmount,
-  type Period,
-  type PublicAddon,
-  type PublicPlan,
-} from '@/features/landing/pricingModel';
+import { intentPlanKey } from '@/features/billing/planIntent';
+import { clearPlanIntent, readPlanIntent } from '@/features/billing/planIntentStore';
+import { type Period } from '@/features/landing/pricingModel';
 import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
 import { formatDate, type UtcIso } from '@/lib/time';
@@ -29,6 +24,9 @@ import { formatDate, type UtcIso } from '@/lib/time';
 import { BillingActionError, useBillingActions } from '../api/useBillingActions';
 import { useMyBilling, type BillingInterval, type MyBilling } from '../api/useMyBilling';
 import { usePublicPricing } from '../api/usePublicPricing';
+
+import { BillingAddonsCard } from './BillingAddonsCard';
+import { BillingPlanCard } from './BillingPlanCard';
 
 type Confirm = { title: string; body: string; onConfirm: () => void };
 
@@ -53,9 +51,21 @@ export function BillingCheckoutSection({ businessId }: { businessId: string | nu
   const fmtDate = (iso: string | null) =>
     iso ? formatDate(iso as UtcIso, zone, i18n.language, 'medium') : '';
 
+  // The plan picked before signup (landing button, onboarding team size): read once.
+  const [intent] = useState(readPlanIntent);
   const planInterval = billing.data?.plan?.interval ?? 'month';
-  const [period, setPeriod] = useState<Period>(planInterval === 'year' ? 'yearly' : 'monthly');
+  const [period, setPeriod] = useState<Period>(() =>
+    (billing.data?.plan ? planInterval : (intent?.interval ?? planInterval)) === 'year'
+      ? 'yearly'
+      : 'monthly',
+  );
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+
+  // Subscribed: the pre-signup pick has done its job.
+  const subscribed = billing.data?.billingSource === 'polar' && billing.data.plan !== null;
+  useEffect(() => {
+    if (subscribed) clearPlanIntent();
+  }, [subscribed]);
 
   const run = async (fn: () => Promise<void>, notify = false) => {
     try {
@@ -123,6 +133,8 @@ export function BillingCheckoutSection({ businessId }: { businessId: string | nu
   }
 
   const hasPolarPlan = b.billingSource === 'polar' && b.plan !== null;
+  // Only before the first subscription: afterwards the current plan is what matters.
+  const pickedKey = hasPolarPlan ? null : intentPlanKey(intent, pricing.data.plans);
 
   return (
     <View style={styles.stack}>
@@ -147,12 +159,13 @@ export function BillingCheckoutSection({ businessId }: { businessId: string | nu
           />
           <View style={styles.stack}>
             {pricing.data.plans.map((plan) => (
-              <PlanCard
+              <BillingPlanCard
                 key={plan.key}
                 plan={plan}
                 period={period}
                 locale={i18n.language}
                 current={hasPolarPlan && b.plan?.key === plan.key}
+                picked={pickedKey === plan.key}
                 hasPolarPlan={hasPolarPlan}
                 cancelScheduled={b.plan?.cancelAtPeriodEnd === true}
                 busy={anyPending(actions)}
@@ -201,7 +214,7 @@ export function BillingCheckoutSection({ businessId }: { businessId: string | nu
       </Card>
 
       {hasPolarPlan && b.plan ? (
-        <AddonsCard
+        <BillingAddonsCard
           billing={b}
           addons={pricing.data.addons}
           currentPlanKey={b.plan.key}
@@ -286,182 +299,7 @@ function StatusLine({
   );
 }
 
-function PlanCard({
-  plan,
-  period,
-  locale,
-  current,
-  hasPolarPlan,
-  cancelScheduled,
-  busy,
-  onSubscribe,
-  onSwitch,
-  onCancel,
-  onUncancel,
-}: {
-  plan: PublicPlan;
-  period: Period;
-  locale: string;
-  current: boolean;
-  hasPolarPlan: boolean;
-  cancelScheduled: boolean;
-  busy: boolean;
-  onSubscribe: () => void;
-  onSwitch: () => void;
-  onCancel: () => void;
-  onUncancel: () => void;
-}) {
-  const { t } = useTranslation();
-  const price = formatAmount(
-    period === 'yearly' ? plan.annualMinor : plan.monthlyMinor,
-    plan.currency,
-    locale,
-  );
-  const unitLabel = plan.perBranch
-    ? period === 'yearly'
-      ? t('plans.billing.checkout.perSeatYear', { price })
-      : t('plans.billing.checkout.perSeatMonth', { price })
-    : period === 'yearly'
-      ? t('plans.billing.checkout.perYear', { price })
-      : t('plans.billing.checkout.perMonth', { price });
-  return (
-    <View style={[styles.planRow, current ? styles.planRowCurrent : null]}>
-      <View style={styles.grow}>
-        <View style={styles.titleRow}>
-          <Text variant="bodyStrong">{plan.name}</Text>
-          {current ? (
-            <Badge tone="success">{t('plans.billing.checkout.currentBadge')}</Badge>
-          ) : null}
-        </View>
-        <Text variant="helper" color="textSecondary">
-          {unitLabel}
-        </Text>
-      </View>
-      <View style={styles.planActions}>
-        {!hasPolarPlan ? (
-          <Button size="sm" disabled={busy} onPress={onSubscribe}>
-            {t('plans.billing.checkout.subscribe')}
-          </Button>
-        ) : current ? (
-          cancelScheduled ? (
-            <Button size="sm" variant="secondary" disabled={busy} onPress={onUncancel}>
-              {t('plans.billing.checkout.uncancel')}
-            </Button>
-          ) : (
-            <Button size="sm" variant="danger" disabled={busy} onPress={onCancel}>
-              {t('plans.billing.checkout.cancel')}
-            </Button>
-          )
-        ) : (
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={busy || cancelScheduled}
-            onPress={onSwitch}
-          >
-            {t('plans.billing.checkout.switchTo')}
-          </Button>
-        )}
-      </View>
-    </View>
-  );
-}
-
-function AddonsCard({
-  billing,
-  addons,
-  currentPlanKey,
-  plans,
-  fmtDate,
-  busy,
-  onAdd,
-  onKeep,
-  onRemove,
-}: {
-  billing: MyBilling;
-  addons: PublicAddon[];
-  currentPlanKey: string;
-  plans: PublicPlan[];
-  fmtDate: (iso: string | null) => string;
-  busy: boolean;
-  onAdd: (key: string) => void;
-  onKeep: (key: string) => void;
-  onRemove: (key: string, name: string) => void;
-}) {
-  const { t } = useTranslation();
-  const plan = plans.find((p) => p.key === currentPlanKey);
-  const offered = plan ? addons.filter((a) => addonOffered(a, plan)) : [];
-  return (
-    <Card>
-      <View style={styles.stack}>
-        <Text variant="sectionTitle">{t('plans.billing.checkout.addonsTitle')}</Text>
-        {offered.length === 0 ? (
-          <Text variant="helper" color="textSecondary">
-            {t('plans.billing.checkout.addonUnavailableOnPlan')}
-          </Text>
-        ) : (
-          offered.map((addon) => {
-            const live = billing.addons.find((a) => a.key === addon.key);
-            return (
-              <View key={addon.key} style={styles.titleRow}>
-                <View style={styles.grow}>
-                  <Text variant="body">{addon.name}</Text>
-                  {live?.cancelAtPeriodEnd ? (
-                    <Text variant="helper" color="warning">
-                      {t('plans.billing.checkout.addonEndsOn', { date: fmtDate(live.accessUntil) })}
-                    </Text>
-                  ) : null}
-                </View>
-                {!live ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy}
-                    onPress={() => onAdd(addon.key)}
-                  >
-                    {t('plans.billing.checkout.addonAdd')}
-                  </Button>
-                ) : live.cancelAtPeriodEnd ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy}
-                    onPress={() => onKeep(addon.key)}
-                  >
-                    {t('plans.billing.checkout.addonKeep')}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={busy}
-                    onPress={() => onRemove(addon.key, addon.name)}
-                  >
-                    {t('plans.billing.checkout.addonRemove')}
-                  </Button>
-                )}
-              </View>
-            );
-          })
-        )}
-      </View>
-    </Card>
-  );
-}
-
 const styles = StyleSheet.create({
   stack: { gap: theme.spacing[12] },
   left: { alignItems: 'flex-start' },
-  grow: { flex: 1 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing[8] },
-  planRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing[12],
-    paddingVertical: theme.spacing[8],
-    borderTopWidth: theme.borderWidth.hairline,
-    borderTopColor: theme.colors.border,
-  },
-  planRowCurrent: {},
-  planActions: { alignItems: 'flex-end' },
 });
