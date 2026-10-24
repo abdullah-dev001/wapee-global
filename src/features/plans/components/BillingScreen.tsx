@@ -1,11 +1,12 @@
 import { Mail } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
 
 import { PageContainer, Screen } from '@/components/layout';
 import { Badge, Button, Card, ErrorState, Skeleton, Text, type BadgeTone } from '@/components/ui';
 import { brand } from '@/config/brand';
+import { launch } from '@/config/launch';
 import { trialCountdown } from '@/features/billing/trialCountdown';
 import { useCurrentScope } from '@/lib/permissions';
 import { theme } from '@/lib/theme';
@@ -13,6 +14,7 @@ import { formatDate, type UtcIso } from '@/lib/time';
 
 import { usePlanUsage, useMyFeatures } from '../api/useMyFeatures';
 import { useBillingInfo } from '../api/useBilling';
+import { BillingCheckoutSection } from './BillingCheckoutSection';
 import {
   ADDON_FEATURE_KEYS,
   isAtCap,
@@ -162,24 +164,28 @@ export function BillingScreen() {
               </View>
             </Card>
 
-            <Card>
-              <View style={styles.stack}>
-                <Text variant="sectionTitle">{t('plans.billing.changeTitle')}</Text>
-                <Text variant="paragraph" color="textSecondary">
-                  {t('plans.billing.changeBody')}
-                </Text>
-                <View style={styles.action}>
-                  <Button
-                    startIcon={Mail}
-                    onPress={() => {
-                      void Linking.openURL(mailto);
-                    }}
-                  >
-                    {t('plans.billing.contact')}
-                  </Button>
+            {launch.billingCheckout && Platform.OS === 'web' ? (
+              <BillingCheckoutSection businessId={businessId} />
+            ) : (
+              <Card>
+                <View style={styles.stack}>
+                  <Text variant="sectionTitle">{t('plans.billing.changeTitle')}</Text>
+                  <Text variant="paragraph" color="textSecondary">
+                    {t('plans.billing.changeBody')}
+                  </Text>
+                  <View style={styles.action}>
+                    <Button
+                      startIcon={Mail}
+                      onPress={() => {
+                        void Linking.openURL(mailto);
+                      }}
+                    >
+                      {t('plans.billing.contact')}
+                    </Button>
+                  </View>
                 </View>
-              </View>
-            </Card>
+              </Card>
+            )}
           </View>
         )}
       </PageContainer>

@@ -6152,6 +6152,7 @@ export type Database = {
         }
       }
       get_invoice_print_data: { Args: { p_invoice_id: string }; Returns: Json }
+      get_my_billing: { Args: { p_business_id: string }; Returns: Json }
       get_public_pricing: { Args: never; Returns: Json }
       get_review_request: { Args: { p_token: string }; Returns: Json }
       get_signed_consent: { Args: { p_id: string }; Returns: Json }
