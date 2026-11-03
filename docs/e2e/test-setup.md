@@ -1,6 +1,6 @@
 # E2E test setup: data, accounts, tools
 
-Status: **PROPOSAL — nothing seeded, nothing written to any database.** Approve before Round 0.
+Status (2026-11-03): **approved by the founder; nothing seeded yet.** Seed script written (`scripts/e2e/seed-dev.mjs`, not committed, not run); it runs only after the container can reach DEV.
 Project: **DEV only** `rfuovquhultjydtswtqf`. Production `bvnurpuqrcwfqguxniio` is never touched by this plan.
 No password, key or token is written in this file or anywhere in the repo.
 
@@ -59,13 +59,13 @@ Numbers are from fictional/reserved ranges (555-01xx, Ofcom 07700 900xxx).
 
 Principle: **build fixtures through the real paths**, so the seed itself is a smoke test, and every row is tagged for cleanup.
 
-1. **Users**: sign up through `/signup` (or Auth admin `createUser` with `email_confirm=true` using the service key read from the environment at run time, never saved). Emails `e2e.<role>.<fx>@wapee-dev.test`.
+1. **Users**: real `auth.signUp` with plus-addresses `wapeeglobal+e2e-<id>@gmail.com` (founder decision). If the Supabase mailer refuses or rate-limits a signup, the script STOPS — no workaround. Passwords: allowed to reset only `@wapee-dev.test` and E2E accounts, never `wapee.owner.1790890259@gmail.com`; kept only in the session scratchpad.
 2. **Businesses**: each owner runs onboarding in the browser (= F01 for FX-SOLO) or calls `create_business_with_owner` with their own JWT.
 3. **Plan / add-ons / status**: super admin (U-SA) through `/admin` (= part of F17), so `assign_plan`, `set_addon` audit rows exist.
 4. **Branches, services, staff, hours, booking settings, custom fields, roles, members**: the owner through the app or the same RPCs the app calls (`create_branch`, `save_booking_settings`, `add_member_by_email`, `create_custom_role`, …).
 5. **History for reports / money** (past appointments, paid invoices): dashboard RPCs as the owner (`create_appointment` in the past is allowed for staff; `mark_completed`, `create_invoice_draft`, `issue_invoice`, `add_payment`). No direct INSERT into invoice / payment tables (guards refuse it anyway).
 6. **Expired trial**: reuse FX-LAPSED; if we need our own, create a trial business then have U-SA run the status change, or (only with your OK) one `update business_subscriptions set trial_ends_at = now() - interval '1 minute'` as postgres.
-7. A single script would live at `scripts/e2e/seed-dev.mjs` (Node, `@supabase/supabase-js` already in the repo; refuses to run unless the URL contains `rfuovquhultjydtswtqf`). **Not written yet** — I will write it only after you approve this section.
+7. Script `scripts/e2e/seed-dev.mjs` (Node, `@supabase/supabase-js` already in the repo; refuses unless the URL is DEV and the state folder is outside the repo). Phases: `owners` → `businesses` → `plans` (super admin) → `members` → `claim` → `report`. Written, **not run**.
 8. **Record every created id** in the session scratchpad (`e2e-fixtures.json`), never in the repo.
 9. **Cleanup** after the campaign: Owner "Delete this business" for each `E2E*` business (that is also test F18-x), then delete the `e2e.*@wapee-dev.test` auth users. Guarded by name prefix + id list; asks you first.
 
@@ -81,7 +81,7 @@ Rate-limit budget traps (from `_handoff.md`): `create_booking` 10/h per IP, port
 | App under test | Local `npm run build:web` served from `dist/` (landing + shell, like Vercel) with DEV keys in a git-ignored `.env` (`EXPO_PUBLIC_SUPABASE_URL`, publishable anon key, `EXPO_PUBLIC_GOOGLE_SIGNIN=1` only for F01 Google cases) — or your Vercel preview URL if you have one | Needs the same network access |
 | SQL checks | Supabase MCP `execute_sql` on DEV, **read-only SELECTs** | Works now |
 | Writes for setup | App UI / RPCs as the role under test; anything else only after you say yes | — |
-| pgTAP suites | `python3 supabase/tests/run_pgtap.py` via the Supabase CLI (`supabase db query --linked`) | Supabase CLI is **not installed** in this container (psql is); would need the CLI or a DB connection string → ask |
+| pgTAP suites | `python3 supabase/tests/run_pgtap.py` via the Supabase CLI (`supabase db query --linked`) | CLI v3.0.0 installed globally (not in package.json); **blocked**: linked commands need `SUPABASE_ACCESS_TOKEN` |
 | Unit tests | `npm test` (vitest, already a dependency) | Works offline |
 | HTTP (public endpoints, rate limits, tokens) | Node `fetch` scripts in scratchpad, existing `scripts/smoke-public.mjs` and `supabase/tests/*_http.mjs` | Needs network access |
 | Email | `message_outbox` + `messages` rows; real inbox only for `wapeeglobal@gmail.com` (Gmail connector, if you allow) | — |
