@@ -59,7 +59,7 @@ Numbers are from fictional/reserved ranges (555-01xx, Ofcom 07700 900xxx).
 
 Principle: **build fixtures through the real paths**, so the seed itself is a smoke test, and every row is tagged for cleanup.
 
-1. **Users**: real `auth.signUp` with plus-addresses `wapeeglobal+e2e-<id>@gmail.com` (founder decision). If the Supabase mailer refuses or rate-limits a signup, the script STOPS — no workaround. Passwords: allowed to reset only `@wapee-dev.test` and E2E accounts, never `wapee.owner.1790890259@gmail.com`; kept only in the session scratchpad.
+1. **Users** (founder decision 2026-11-03): fixture accounts `wapeeglobal+e2e-<id>@gmail.com` are made with Auth admin `createUser` (`email_confirm: true`, no Auth mail). The DEV service role key is read at runtime from the git-ignored `.env.e2e-admin`, used for Auth admin only, never printed; the script refuses a non-DEV URL or a key minted for another project. Only the real signup cases (F01, F03-02, F03-03) use real emails clicked in Gmail. Passwords: allowed to reset only `@wapee-dev.test` and E2E accounts, never `wapee.owner.1790890259@gmail.com`; kept only in `~/.wapee-e2e/e2e-secrets.json` (outside the repo, mode 600).
 2. **Businesses**: each owner runs onboarding in the browser (= F01 for FX-SOLO) or calls `create_business_with_owner` with their own JWT.
 3. **Plan / add-ons / status**: super admin (U-SA) through `/admin` (= part of F17), so `assign_plan`, `set_addon` audit rows exist.
 4. **Branches, services, staff, hours, booking settings, custom fields, roles, members**: the owner through the app or the same RPCs the app calls (`create_branch`, `save_booking_settings`, `add_member_by_email`, `create_custom_role`, …).

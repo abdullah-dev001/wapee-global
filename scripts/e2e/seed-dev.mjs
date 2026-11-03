@@ -2,40 +2,46 @@
 /**
  * E2E fixtures for the DEV project ONLY (docs/e2e/test-setup.md).
  *
- * Builds FX-SOLO, FX-TEAM, FX-BIZ and FX-OTHER through the SAME paths the app uses: real
- * `auth.signUp`, `create_business_with_owner`, `create_branch`, `update_branch`, the schedule /
+ * Builds FX-SOLO, FX-TEAM, FX-BIZ and FX-OTHER through the SAME paths the app uses:
+ * `create_business_with_owner`, `create_branch`, `update_branch`, the schedule /
  * booking-settings RPCs, the table writes the app's own hooks make (RLS applies), super admin
  * `assign_plan` / `set_addon`, and `add_member_by_email` + `claim_pending_memberships`.
- * No service key, no raw SQL, no writes the app could not make itself.
+ * The service key is used ONLY for Auth admin (`createUser` with email_confirm, so no mail is
+ * sent, and the super admin password reset). Every data write runs under the user's own JWT.
+ * Real signups with real emails are test cases (F01, F03-02, F03-03), not part of the seed.
  *
  * Run phase by phase (each is idempotent; ids go to the state file, never to the repo):
- *   node --env-file=.env scripts/e2e/seed-dev.mjs <phase>
- *     owners     sign up the 4 owners (confirmation emails go to wapeeglobal+e2e-*@gmail.com)
+ *   node --env-file=.env.remote-backup scripts/e2e/seed-dev.mjs <phase>
+ *     sa-reset   new password for the DEV super admin (Auth admin)
+ *     owners     create the 4 owner accounts, already confirmed
  *     businesses onboarding + branches + hours + services + staff + settings + fields + room
- *     plans      super admin assigns plans and add-ons (needs the SA password in the secrets file)
- *     members    owners add people by email, then their accounts are signed up
+ *     plans      super admin assigns plans and add-ons
+ *     members    owners add people by email, then their accounts are created (confirmed)
  *     claim      each member signs in and joins (claim_pending_memberships)
  *     report     prints ids and status (no secrets)
  *
- * Required env: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY (public values, git-ignored
- * .env), E2E_STATE_DIR = a folder OUTSIDE the repo (session scratchpad). Passwords are generated
- * here and written only to `$E2E_STATE_DIR/e2e-secrets.json` (mode 600); they are never printed.
- * The super admin password is read from that same file (`sa`), put there by hand after a reset.
+ * Required env: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY (public DEV values).
+ * The DEV service role key is read at runtime from the git-ignored `.env.e2e-admin`
+ * (`E2E_DEV_SERVICE_ROLE_KEY=`), never from the shell, never printed.
+ * State + passwords live in E2E_STATE_DIR (default `~/.wapee-e2e`, must be outside the repo);
+ * passwords only in `e2e-secrets.json` (mode 600), never printed.
  *
- * STOPS (exit 2) on: a non-DEV URL, a state dir inside the repo, or the Auth mailer refusing /
- * rate-limiting a signup (user instruction: do not work around it).
+ * STOPS (exit 2) on: a non-DEV URL, a service key minted for another project, a state dir inside
+ * the repo, or a missing key file.
  */
 import { createClient } from '@supabase/supabase-js';
+import { Buffer } from 'node:buffer';
 import { randomBytes } from 'node:crypto';
-import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 
 const DEV_REF = 'rfuovquhultjydtswtqf';
 const PROD_REF = 'bvnurpuqrcwfqguxniio';
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-const stateDir = process.env.E2E_STATE_DIR ?? '';
 const repoRoot = resolve(new URL('../..', import.meta.url).pathname);
+const stateDir = resolve(process.env.E2E_STATE_DIR ?? resolve(homedir(), '.wapee-e2e'));
 
 function stop(message) {
   console.error(`STOP: ${message}`);
@@ -43,7 +49,32 @@ function stop(message) {
 }
 if (!url.includes(DEV_REF) || url.includes(PROD_REF)) stop('EXPO_PUBLIC_SUPABASE_URL is not the DEV project.');
 if (!anonKey) stop('EXPO_PUBLIC_SUPABASE_ANON_KEY missing.');
-if (!stateDir || resolve(stateDir).startsWith(repoRoot)) stop('E2E_STATE_DIR must be a folder outside the repo.');
+if (stateDir.startsWith(repoRoot)) stop('E2E_STATE_DIR must be a folder outside the repo.');
+mkdirSync(stateDir, { recursive: true, mode: 0o700 });
+
+// Service key: read from the git-ignored file only. A legacy JWT key carries its project ref,
+// so refuse one minted for any other project.
+function readServiceKey() {
+  const file = resolve(repoRoot, '.env.e2e-admin');
+  if (!existsSync(file)) stop('.env.e2e-admin not found in the repo root.');
+  const line = readFileSync(file, 'utf8').split('\n').find((l) => l.startsWith('E2E_DEV_SERVICE_ROLE_KEY='));
+  const key = line?.slice('E2E_DEV_SERVICE_ROLE_KEY='.length).trim().replace(/^["']|["']$/g, '') ?? '';
+  if (!key) stop('E2E_DEV_SERVICE_ROLE_KEY missing in .env.e2e-admin.');
+  if (key.split('.').length === 3) {
+    let claims = {};
+    try {
+      claims = JSON.parse(Buffer.from(key.split('.')[1], 'base64url').toString('utf8'));
+    } catch {
+      stop('service key is not a readable JWT.');
+    }
+    if (claims.ref !== DEV_REF || claims.role !== 'service_role') stop('service key is not a DEV service_role key.');
+  } else if (!key.startsWith('sb_secret_')) {
+    stop('service key has an unknown format.');
+  }
+  return key;
+}
+let adminClient;
+const admin = () => (adminClient ??= createClient(url, readServiceKey(), { auth: { persistSession: false, autoRefreshToken: false } }).auth.admin);
 
 const statePath = resolve(stateDir, 'e2e-fixtures.json');
 const secretsPath = resolve(stateDir, 'e2e-secrets.json');
@@ -146,19 +177,27 @@ function must(label, { data, error }) {
   return data;
 }
 
-async function signUp(id) {
+async function createAccount(id) {
   state.users ??= {};
-  if (state.users[id]?.signedUp) return;
+  if (state.users[id]?.userId) return;
   secrets[id] ??= randomBytes(18).toString('base64url');
   save();
-  const { error } = await newClient().auth.signUp({ email: email(id), password: secrets[id] });
-  if (error) {
-    // Mailer refused or rate-limited: user instruction is to stop, not to work around it.
-    stop(`signUp ${id} refused by Auth (${error.status ?? ''} ${error.code ?? ''}). Mailer limit? Not retrying.`);
-  }
-  state.users[id] = { email: email(id), signedUp: new Date().toISOString() };
+  const { data, error } = await admin().createUser({ email: email(id), password: secrets[id], email_confirm: true });
+  if (error) stop(`createUser ${id}: ${error.status ?? ''} ${error.code ?? error.message}`);
+  state.users[id] = { email: email(id), userId: data.user.id, created: new Date().toISOString() };
   save();
-  console.log(`signed up ${id} -> confirmation email sent to ${email(id)}`);
+  console.log(`created ${id} (${email(id)}), confirmed`);
+}
+
+async function findUserId(address) {
+  for (let page = 1; page < 50; page += 1) {
+    const { data, error } = await admin().listUsers({ page, perPage: 200 });
+    if (error) stop(`listUsers: ${error.code ?? error.message}`);
+    const hit = data.users.find((u) => u.email?.toLowerCase() === address.toLowerCase());
+    if (hit) return hit.id;
+    if (data.users.length < 200) return null;
+  }
+  return null;
 }
 
 async function as(id) {
@@ -176,8 +215,21 @@ async function as(id) {
 // --------------------------------------------------------------------------------------------
 // Phases
 // --------------------------------------------------------------------------------------------
+async function phaseSaReset() {
+  const address = process.env.E2E_SA_EMAIL ?? 'dev.superadmin@wapee-dev.test';
+  if (!address.endsWith('@wapee-dev.test')) stop('only a @wapee-dev.test super admin may be reset.');
+  const id = await findUserId(address);
+  if (!id) stop(`${address} not found on DEV`);
+  const password = randomBytes(18).toString('base64url');
+  const { error } = await admin().updateUserById(id, { password });
+  if (error) stop(`updateUserById: ${error.code ?? error.message}`);
+  secrets.sa = password;
+  save();
+  console.log(`super admin ${address} password reset (stored in ${secretsPath})`);
+}
+
 async function phaseOwners() {
-  for (const fx of Object.values(FIXTURES)) await signUp(fx.owner);
+  for (const fx of Object.values(FIXTURES)) await createAccount(fx.owner);
 }
 
 async function phaseBusinesses() {
@@ -330,8 +382,8 @@ async function phaseMembers() {
       save();
     }
   }
-  // Their accounts: real signups (the mailer sends one confirmation each).
-  for (const fx of Object.values(FIXTURES)) for (const m of fx.members) await signUp(m.id);
+  // Their accounts, already confirmed (no Auth mail; `member_added` still goes through the outbox).
+  for (const fx of Object.values(FIXTURES)) for (const m of fx.members) await createAccount(m.id);
 }
 
 async function phaseClaim() {
@@ -351,7 +403,7 @@ function phaseReport() {
   for (const [id, u] of Object.entries(state.users ?? {})) console.log(`user ${id}: ${u.email}`);
 }
 
-const phases = { owners: phaseOwners, businesses: phaseBusinesses, plans: phasePlans, members: phaseMembers, claim: phaseClaim, report: phaseReport };
+const phases = { 'sa-reset': phaseSaReset, owners: phaseOwners, businesses: phaseBusinesses, plans: phasePlans, members: phaseMembers, claim: phaseClaim, report: phaseReport };
 const phase = process.argv[2];
 if (!phases[phase]) stop(`phase must be one of: ${Object.keys(phases).join(', ')}`);
 try {
