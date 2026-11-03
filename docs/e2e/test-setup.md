@@ -1,6 +1,17 @@
 # E2E test setup: data, accounts, tools
 
-Status (2026-11-03): **approved by the founder; nothing seeded yet.** Seed script written (`scripts/e2e/seed-dev.mjs`, not committed, not run); it runs only after the container can reach DEV.
+Status (2026-11-03): **seeded on DEV** with `scripts/e2e/seed-dev.mjs` (phases `sa-reset`, `owners`, `businesses`, `plans`, `members`, `claim`), each phase checked by read-only SQL. Ids and passwords only in `~/.wapee-e2e/` (outside the repo).
+
+**Seeded fixtures (2026-11-03)**
+| Fixture | Slug | Plan / add-ons | Branches (currency, tz, prefix, tax bp) | People (role @ branch) |
+|---|---|---|---|---|
+| FX-SOLO | `e2e-solo` | Solo, active | London (GBP, Europe/London, SOL, 2000) | solo-owner Owner @ all, also its own staff profile |
+| FX-TEAM | `e2e-team` | Team, active, none | New York (USD, America/New_York, TEA, 888) | team-owner Owner; team-mgr Manager @ New York; team-rec Receptionist @ New York; team-stf1 Staff @ New York linked to "Sam"; profiles Lee, Kim, Ana, Raj without login (5 = Team cap) |
+| FX-BIZ | `e2e-multi` | Business, active, packages + inventory + files_photos + forms_consent + client_portal | LDN primary (GBP, Europe/London, LDN, 2000, owner approves, rooms on, Room 1 for Colour) · NYC (USD, America/New_York, NYC, 888, 3 per slot) · TYO (JPY, Asia/Tokyo, TYO, 1000); window 180 d | biz-owner Owner; biz-mgr-ldn Manager @ LDN; biz-stf-nyc Staff @ NYC linked to "Nora"; biz-custom "Front desk lite" @ LDN (appointments.view/create + clients.view, branch); profiles Lena, Liam (LDN), Taro (TYO) |
+| FX-OTHER | `e2e-other` | Team, active, none | Chicago (USD, America/Chicago, OTH, 1025) | oth-owner Owner; oth-rec Receptionist @ Chicago; profile Ola |
+
+All users are `wapeeglobal+e2e-<id>@gmail.com`, made confirmed by Auth admin (no Auth mail). Every business: Haircut 30, Colour 90 + 15 buffer, Consult 15 (not online), Mon-Sat 09:00-18:00 branch + staff hours, break 13:00-13:30, all staff on all services, `branch_is_bookable` = true. FX-BIZ has the 7 custom fields. The 7 `member_added` outbox rows go to plus-addresses the DEV Resend sender refuses (expected `dead/rejected`).
+Notes for the plan: tax is stored in basis points, so "8.875 %" is **888 bp = 8.88 %** (F07-04 / F13-02 expectations must use 8.88 %). The Solo owner's staff name is the email local part (no profile name was set). Not seeded yet: holidays, time off, history (past appointments / invoices), customers C-*.
 Project: **DEV only** `rfuovquhultjydtswtqf`. Production `bvnurpuqrcwfqguxniio` is never touched by this plan.
 No password, key or token is written in this file or anywhere in the repo.
 

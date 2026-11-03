@@ -291,8 +291,9 @@ async function phaseBusinesses() {
     for (const st of fx.staff) {
       if (!s.staff[st.key]) {
         if (st.self) {
-          const res = must('add_me_as_staff', await db.rpc('add_me_as_staff', { p_business_id: biz, p_branch_id: s.branches[st.branches[0]] }));
-          s.staff[st.key] = res.staff_id ?? res.id;
+          const res = await db.rpc('add_me_as_staff', { p_business_id: biz, p_branch_id: s.branches[st.branches[0]] });
+          // A re-run after a partial failure answers already_staff with the existing id.
+          s.staff[st.key] = res.data?.code === 'already_staff' ? res.data.staff_id : must('add_me_as_staff', res).staff_id;
         } else {
           const row = must(`staff ${st.name}`, await db.from('staff_profiles').insert({
             business_id: biz, display_name: st.name, is_active: true, is_bookable_online: true,
@@ -301,9 +302,11 @@ async function phaseBusinesses() {
           must(`staff_branches ${st.name}`, await db.from('staff_branches').insert(
             st.branches.map((k) => ({ staff_id: row.id, branch_id: s.branches[k], business_id: biz }))));
         }
-        must(`service_staff ${st.name}`, await db.from('service_staff').upsert(
-          Object.values(s.services).map((sid) => ({ staff_id: s.staff[st.key], service_id: sid, business_id: biz })),
-          { onConflict: 'service_id,staff_id' }));
+        save();
+        // Same writes as useSaveStaff: the link table has no UPDATE grant, so replace, never upsert.
+        must(`clear service_staff ${st.name}`, await db.from('service_staff').delete().eq('staff_id', s.staff[st.key]));
+        must(`service_staff ${st.name}`, await db.from('service_staff').insert(
+          Object.values(s.services).map((sid) => ({ staff_id: s.staff[st.key], service_id: sid, business_id: biz }))));
         for (const k of st.branches) {
           must(`hours ${st.name}`, await db.rpc('replace_staff_working_hours', { p_staff_id: s.staff[st.key], p_branch_id: s.branches[k], p_intervals: hours(540, 1080) }));
           must(`break ${st.name}`, await db.rpc('replace_staff_breaks', { p_staff_id: s.staff[st.key], p_branch_id: s.branches[k], p_intervals: hours(780, 810) }));
