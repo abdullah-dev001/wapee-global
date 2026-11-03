@@ -13,6 +13,8 @@
  * Run phase by phase (each is idempotent; ids go to the state file, never to the repo):
  *   node --env-file=.env.remote-backup scripts/e2e/seed-dev.mjs <phase>
  *     sa-reset   new password for the DEV super admin (Auth admin)
+ *     reset <email>  new password for one @wapee-dev.test account
+ *     account <id>   one extra confirmed account wapeeglobal+e2e-<id>@gmail.com for a test case
  *     owners     create the 4 owner accounts, already confirmed
  *     businesses onboarding + branches + hours + services + staff + settings + fields + room
  *     plans      super admin assigns plans and add-ons
@@ -215,17 +217,34 @@ async function as(id) {
 // --------------------------------------------------------------------------------------------
 // Phases
 // --------------------------------------------------------------------------------------------
-async function phaseSaReset() {
-  const address = process.env.E2E_SA_EMAIL ?? 'dev.superadmin@wapee-dev.test';
-  if (!address.endsWith('@wapee-dev.test')) stop('only a @wapee-dev.test super admin may be reset.');
+// Only @wapee-dev.test accounts may be reset (founder rule); the password is stored under `key`.
+async function resetDevUser(address, key) {
+  if (!address.endsWith('@wapee-dev.test')) stop('only a @wapee-dev.test account may be reset.');
   const id = await findUserId(address);
   if (!id) stop(`${address} not found on DEV`);
   const password = randomBytes(18).toString('base64url');
   const { error } = await admin().updateUserById(id, { password });
   if (error) stop(`updateUserById: ${error.code ?? error.message}`);
-  secrets.sa = password;
+  secrets[key] = password;
   save();
-  console.log(`super admin ${address} password reset (stored in ${secretsPath})`);
+  console.log(`${address} password reset (stored in ${secretsPath} as "${key}")`);
+}
+
+async function phaseSaReset() {
+  await resetDevUser(process.env.E2E_SA_EMAIL ?? 'dev.superadmin@wapee-dev.test', 'sa');
+}
+
+// `reset <email>`: any @wapee-dev.test account, stored under its email.
+async function phaseReset() {
+  const address = process.argv[3] ?? '';
+  await resetDevUser(address, address);
+}
+
+// `account <id>`: one extra confirmed E2E account (wapeeglobal+e2e-<id>@gmail.com) for a test case.
+async function phaseAccount() {
+  const id = process.argv[3] ?? '';
+  if (!/^[a-z0-9-]+$/.test(id)) stop('account id must be lower-case letters, digits or dashes.');
+  await createAccount(id);
 }
 
 async function phaseOwners() {
@@ -406,7 +425,7 @@ function phaseReport() {
   for (const [id, u] of Object.entries(state.users ?? {})) console.log(`user ${id}: ${u.email}`);
 }
 
-const phases = { 'sa-reset': phaseSaReset, owners: phaseOwners, businesses: phaseBusinesses, plans: phasePlans, members: phaseMembers, claim: phaseClaim, report: phaseReport };
+const phases = { 'sa-reset': phaseSaReset, reset: phaseReset, account: phaseAccount, owners: phaseOwners, businesses: phaseBusinesses, plans: phasePlans, members: phaseMembers, claim: phaseClaim, report: phaseReport };
 const phase = process.argv[2];
 if (!phases[phase]) stop(`phase must be one of: ${Object.keys(phases).join(', ')}`);
 try {
